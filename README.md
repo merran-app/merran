@@ -113,6 +113,8 @@ The web app is on http://localhost:5173 and the API on :3000, on SQLite in `apps
 - `pnpm --filter @merran/server openapi`, then `pnpm --filter @merran/web api` and `pnpm --filter @merran/extension api`, after changing the API.
 - `pnpm --filter @merran/server db:migration <name>` after changing the database's entities.
 
+[AGENTS.md](AGENTS.md) has the conventions, and what else to update with each kind of change. It's written for AI coding agents, and works as well for people.
+
 The repo: `apps/server` (Hono, MikroORM, the jobs), `apps/web` (React, TanStack Router and Query, shadcn/ui on Base UI), `apps/extension` (WXT) and `packages/shared` (what the server and the apps share: the ingredient parser, units, foods, planning). The plan and the reasoning behind it are in [docs/](docs/README.md).
 
 ### Releases

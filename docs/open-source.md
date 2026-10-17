@@ -19,6 +19,7 @@ What it takes to run Merran as a public project: the name and license, how peopl
 |---|---|
 | `README.md` | What Merran is, screenshots, a two-minute install, links to the docs |
 | `CONTRIBUTING.md` | Setting up, the commands, how to send a change, pull request titles (`feat:`, `fix:`...), the DCO |
+| `AGENTS.md` | How to work on Merran, for AI coding agents and people alike (decided October 17, 2026): the commands, the conventions, and what else to update with each kind of change, so the docs, the public site and the generated files stay current. `CLAUDE.md` only points Claude Code to it |
 | `CODE_OF_CONDUCT.md` | Contributor Covenant |
 | `SECURITY.md` | How to report a vulnerability privately, and what happens next |
 | `SUPPORT.md` | Where to ask questions (Discussions), and what issues are for |
