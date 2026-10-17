@@ -1,6 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="title desc">
   <title id="title">Merran — Dinner, planned.</title>
   <desc id="desc">Recipes, plan, shop, cook. Your kitchen on your own server.</desc>
+  <defs>
+    <clipPath id="banner-corners"><rect width="1200" height="300" rx="24"/></clipPath>
+  </defs>
+  <g clip-path="url(#banner-corners)">
   <rect width="1200" height="300" rx="24" fill="#f9f7ef"/>
   <circle cx="1115" cy="35" r="200" fill="#e8edde"/>
   <circle cx="1200" cy="280" r="170" fill="#f0e5d6"/>
@@ -23,5 +27,6 @@
       <text x="43" y="87">Recipes</text><text x="126" y="87">Plan</text><text x="210" y="87">Shop</text><text x="295" y="87">Cook</text>
     </g>
     <g fill="#a7b29c"><path d="m75 41 5 4-5 4z"/><path d="m159 41 5 4-5 4z"/><path d="m243 41 5 4-5 4z"/></g>
+  </g>
   </g>
 </svg>
