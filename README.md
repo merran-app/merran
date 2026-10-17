@@ -81,6 +81,8 @@ See the [installation guide](https://merran.app/docs/get-started/install/) for D
 
 Visit [merran.app](https://merran.app/) for the product overview, documentation, and API reference.
 
+See the [public roadmap](https://merran.app/docs/project/roadmap/) for what is up next, planned features, and ideas open for feedback.
+
 ## Contribute
 
 Bug reports, documentation improvements, and code contributions are welcome. See the [contributor guide](https://merran.app/docs/project/contribute/).

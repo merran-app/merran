@@ -1,51 +1,68 @@
-# Public site implementation
+# Public site implementation and backlog
 
-The public site lives in apps/docs and uses Astro, Starlight, and the supplied Merran landing-page export. GitHub Actions builds it; GitHub Pages hosts the static output. A live demo needs separate hosting.
+Reconciled October 17, 2026 against main `f5129c9`, release `v0.1.0-alpha.1` (tag commit `d0461a5`), published assets, and the live site. Public guides live in apps/docs; this file is an internal record.
 
-## First milestone
+## Shipped before this refresh
 
-- [x] Separate workspace package and local development command.
-- [x] Import the existing landing-page design and browser interactions.
-- [x] Replace placeholder navigation with documentation destinations.
-- [x] Bundle fonts locally.
-- [x] Add installation, setup, and first-week guides.
-- [x] Add initial configuration, update, and backup instructions.
-- [x] Generate API reference from the committed OpenAPI schema; expose its download.
-- [x] Build the site and validate local links in CI.
-- [ ] Verify installation and first-week instructions on a fresh released container.
-- [ ] Audit every marketing claim and comparison against the intended release.
-- [ ] Review homepage keyboard and mobile behavior.
-- [ ] Configure the domain and GitHub Pages; publish after the launch review.
+- [x] Astro/Starlight site preserving the landing-page design, shared header, fonts, three palettes and light/dark settings.
+- [x] Installation, account setup and first-week walkthrough.
+- [x] Recipes, planning, shopping/pantry, cooking and assistant guides.
+- [x] AI setup, key ownership, costs/limits, privacy and proposal approval.
+- [x] Configuration, household permissions, troubleshooting, updating and backups.
+- [x] Generated settings/API references, OpenAPI download, API quickstart and search.
+- [x] Homepage claims/comparisons audited and workflow sections linked to guides.
+- [x] All 14 recorded browser-QA findings fixed; evidence in site-browser-qa.md.
+- [x] Updated demo layout and recipe photography.
+- [x] Application alpha and extension archives released; https://merran.app is live (HTTP 200 checked).
+- [x] CI builds and link checks; Pages publication remains manual on main.
 
-## Remaining page inventory
+Publication is complete. It does not certify every deployment, device or integration.
 
-| Area | Pages | Priority | Source |
+## This change: documentation delivered, not yet published
+
+| Priority | Deliverable | Status | Remaining verification |
 | --- | --- | --- | --- |
-| Product | Dedicated feature overview and links from each demo to its guide | P0 | features.md, verified app |
-| Use | Recipes/imports, plan, list, pantry, cook mode | P0 | Verified app workflows |
-| AI | Provider setup, key ownership, limits, costs, proposal review | P0 | Platform plan and implementation |
-| Run | Troubleshooting, household roles, generated settings reference | P0 | Server code, operations plan |
-| API | Expanded permissions/conventions, pagination/errors, live events | P0 | OpenAPI and middleware |
-| Project | Privacy/external services, support, credits, releases | P0 | Project policies and actual releases |
-| Integrations | Extension, stores, voice, phone sharing | P1 | Module code, extension README |
-| Run | Postgres and migration, reverse proxies, remote access | P1 | Tested deployment recipes |
-| Contribute | Architecture, tests, adding stores/importers/providers | P1 | Repository conventions |
-| Integrations | Webhooks and MCP guides | P2 | Implementation when shipped |
+| 1 | Backlog refresh and release-verification record | Written | Keep evidence current |
+| 2 | Extension download/install by browser, connection, imports, sidebar, permissions, troubleshooting | Written | Real Chrome/Edge/Firefox acceptance |
+| 3 | Kroger developer setup, linking, product matching and cart transfers; experimental Walmart | Written | Live retailer accounts and carts |
+| 4 | Android sharing, iPhone Shortcut, nutrition, video, AI photos, server voices | Written | Actual phones and providers |
+| 5 | HTTPS/remote access, Postgres, concrete backup and restore walkthroughs | Written with scoped verification | Public DNS/ACME, proxy browser login, tunnel/VPN, external Postgres, other hosts/ARM64 |
+| 6 | API permissions, pagination, errors, rate limits, SSE, runnable recipe-index script | Written; script exercised | Long-running external-client and proxy interruption tests |
 
-P0 is needed for a complete public launch, P1 follows the essentials, and P2 depends on product work.
+## Release verification completed in this pass
 
-## Release and content policy
+- [x] Pull the actual alpha.1 image and record its digest.
+- [x] Fresh SQLite and Postgres 18 Compose startup, migrations, readiness and setup.
+- [x] Synthetic API workflow: recipes, plan, pantry deduction, list purchase/put-away, cooked status, rating/note.
+- [x] Stopped SQLite full-directory archive and restore into separate empty directories: accounts, existing API key, recipes, rating, pantry, uploaded image and matching secret checked.
+- [x] Postgres custom-format dump/restore into a separate empty database with copied app files: login, key, recipes and rating checked.
+- [x] Public recipe-index example run against the release; pagination and permission rejection checked.
+- [x] SSE ready permission filtering, recipe mutation event and reconnect checked; 300 requests allowed and the 301st rejected with Retry-After.
+- [x] Local Caddy TLS with explicit test-CA trust: homepage, readiness and authenticated recipe requests passed.
+- [x] Published Chrome/Firefox ZIPs downloaded and manifests inspected.
 
-The current site is a development foundation. Do not present it as release-verified documentation until the milestone review is complete. The initial edition should describe the current published alpha; development-only and experimental behavior must be labeled.
+Evidence: site-release-verification.md and the public project/release-verification page. These replace the blanket “no fresh install/restore tested” status, not the remaining acceptance work.
 
-Keep planning and decision records in the repository's docs directory. Write public tutorials as complete tasks. Generate technical reference from code, and update affected guides in the same change as behavior.
+## Remaining acceptance work, not missing guides
 
-The homepage was supplied as a self-contained HTML export. Its header, main content, footer, icon definitions, styles, and script are now separate source files. Continue extracting individual sections into Astro components as their content changes.
+- [ ] Full first-week UI walkthrough, representative real-site imports and interrupted job recovery.
+- [ ] Actual extension installation/use/update in Chrome, Edge and Firefox, including restart behavior.
+- [ ] Android and iPhone/iPad share-sheet workflows on devices.
+- [ ] Kroger authorization/product/cart transfer and experimental Walmart; human review before purchases.
+- [ ] Live nutrition, video, image and voice provider checks; no fixed cost guarantees.
+- [ ] Public certificate issuance, proxy cookie/login and streaming behavior, Cloudflare and VPN topologies.
+- [ ] ARM64, another host, large libraries, external Postgres and encrypted real-provider credential recovery.
+- [ ] Screen readers, Safari/Firefox site behavior, touch keyboards, zoom, measured contrast and broader page sampling.
+- [ ] Long-running API clients, concurrent pagination and proxy interruption/reconnect tests.
 
-## Validation and deployment
+## Additional backlog
 
-Run the docs typecheck and build. The build validates local links, fragments, and assets. Review desktop and mobile layouts, theme switching, tabs, cooking controls, and search in the browser.
+Public roadmap added October 17, 2026 under Project, linked from the homepage footer and README. Reconciled candidates against alpha.1: fridge/freezer/cupboard already ship; offline use, prep notifications, additional sign-in, webhooks, MCP and interface translations do not. Up next reflects the chosen acceptance work above, not an invented feature order. GitHub had no issue records to link at this check; add item-specific links when tracking issues exist. Longer-term ideas remain explicitly exploratory.
 
-The Pages workflow builds PRs and main, but deployment is manual and restricted to main. Set SITE_URL and SITE_BASE repository variables when using a project Pages URL. For merran.app use SITE_URL=https://merran.app and SITE_BASE=/. Enable GitHub Actions as the repository Pages source and configure DNS/custom domain before publishing.
+Feature overview, credits/release policy, architecture and contributor recipes can follow. Webhook/MCP guides need shipped-code verification first. An in-place SQLite-to-Postgres migration is not a verified procedure; do not advertise one.
 
-Public text is intended to use CC BY 4.0 under the existing project plan; the code remains AGPL-3.0-or-later.
+## Validation and publication policy
+
+Run docs typecheck, docs tests, Prettier on apps/docs (not internal docs), and the production build/link checker. Review new navigation and narrow layouts. Public guides describe the release, label newer behavior, and defer to the running server's schema when versions differ.
+
+The Pages workflow still deploys only on manual dispatch with deploy=true on main. Keep that unchanged. Publication and remaining acceptance testing are separate statuses.

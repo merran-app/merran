@@ -7,6 +7,8 @@ Merran runs as one container, with SQLite included. You need Docker, disk space 
 
 AI keys and a separate database are optional. The steps below assume a shell on the machine running Docker.
 
+Fresh SQLite and Postgres Compose installations of **0.1.0-alpha.1** were smoke-tested on Linux AMD64 containers under Docker Desktop. See [release verification](../../project/release-verification/) for the exact scope; this does not verify every device, provider, or optional integration. To reproduce that version, download Compose and `.env.example` from the `v0.1.0-alpha.1` tag and set `MERRAN_IMAGE=ghcr.io/merran-app/merran:0.1.0-alpha.1` in `.env`. The commands below follow `main` and the moving `next` image tag.
+
 ## Docker Compose
 
 Create a directory for the configuration and persistent data:

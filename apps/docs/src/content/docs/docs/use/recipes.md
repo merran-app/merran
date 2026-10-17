@@ -124,6 +124,8 @@ The same card also accepts Paprika exports. Merran's own household archive uses 
 
 ## Next steps
 
+For importing from another device, follow [Browser extension](../../integrations/browser-extension/) or [Share from a phone](../../integrations/phone-sharing/). See [optional modules](../../integrations/optional-modules/) for video, nutrition, and generated recipe photos.
+
 For optional imports and recipe suggestions, read [AI setup and costs](../../run/ai-setup/), [AI privacy](../../project/ai-privacy/), and [proposal review](../assistant/).
 
 [Plan meals for the week](../planning/), then [build a shopping list](../shopping-and-pantry/). To use a recipe right now, [start cooking](../cooking/).

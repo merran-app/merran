@@ -35,6 +35,8 @@ Check the generated reference for response fields and pagination parameters. Mis
 
 ## Explore the API
 
+For permission examples, pagination, errors, rate limits, and a runnable script, follow [Build a recipe-index integration](./practical-integration/). Then [listen for live changes](./live-events/) to keep a client refreshed.
+
 - [Endpoint reference](./reference/): routes, schemas, permissions, and examples.
 - <a href="../../openapi.json" download="merran-openapi.json">Download OpenAPI JSON</a>: use it in an API client or generate types.
 - Your server's **/api/docs**: interactive API explorer.

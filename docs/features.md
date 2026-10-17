@@ -141,7 +141,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Ran out of anything? Check off what you used up after cooking | Key | Planned | With "How did it go?": the recipe's ingredients in a list, each one checked comes out of the pantry and can go on the list |
 | Put away what you bought in one tap | Detail | Built | |
 | Select and act on many list or pantry items | Detail | Built | |
-| Fridge, freezer or cupboard | Detail | Planned | |
+| Fridge, freezer or cupboard | Detail | Built | Released in 0.1.0-alpha.1; storedIn on pantry items and place controls in the pantry UI |
 | Receipts into the pantry: looked over, then off the list | Key | Built | AI; a photo, screenshots, a PDF or pasted text, shared from Android or an iPhone, or sent to the assistant |
 | Kroger stores (Fry's, Ralphs...): products, send the cart, prices, sales | Key | Built | Module (stores), with the server admin's Kroger developer app: a store by ZIP code, one linked account for the household, Merran's pick and how many for each thing, today's price and sale, sent to the cart by barcode |
 | What the list costs, and the deals on it | Key | Built | Module (stores): each thing left on the list for Kroger priced for the packs needed (~ when how many is a guess), from the product kept for it and the last price seen; what a real deal saves under its price, and what it's for on one line under the name; each list's card says about what it comes to and what the sales save |

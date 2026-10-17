@@ -7,7 +7,7 @@ sidebar:
 
 ## Back up before updating
 
-You need access to the deployment's files and container controls, and to database backup/restore tools if using Postgres. This procedure follows the repository's deployment layout; verification against a published release is still outstanding.
+You need access to the deployment's files and container controls, and to database backup/restore tools if using Postgres. A stopped SQLite restore and Postgres logical restore were smoke-tested against **0.1.0-alpha.1** with synthetic data. See the [backup/restore walkthrough](../backup-restore/) for commands and the [verification record](../../project/release-verification/) for coverage and remaining limits.
 
 Keep a copy of the application's complete data directory, configuration, and any externally supplied secrets.
 
