@@ -1,0 +1,174 @@
+---
+import MerranBrand from "./MerranBrand.astro"
+interface Props {
+  docs?: boolean
+}
+const { docs = false } = Astro.props
+const base = import.meta.env.BASE_URL
+const api = Astro.url.pathname.includes("/docs/api/")
+---
+
+<div class:list={["merran-header", { "with-docs": docs }]}>
+  <MerranBrand />
+  <nav aria-label="Merran site">
+    <a href={`${base}#recipes`}>Features</a>
+    <a href={`${base}docs/`} aria-current={docs && !api ? "page" : undefined}
+      >Docs</a
+    >
+    <a href={`${base}docs/api/`} aria-current={api ? "page" : undefined}>API</a>
+  </nav>
+  <div class="search"><slot name="search" /></div>
+  <div class="actions">
+    <a class="github" href="https://github.com/merran-app/merran">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.6"
+        aria-hidden="true"
+        ><path
+          d="M9 19c-4 1-4-2-6-2m12 5v-4a3 3 0 0 0-.8-2.2c2.7-.3 5.5-1.3 5.5-6A4.7 4.7 0 0 0 18.4 6a4.3 4.3 0 0 0-.1-3.7S17.3 2 15 3.6a12.8 12.8 0 0 0-6 0C6.7 2 5.7 2.3 5.7 2.3A4.3 4.3 0 0 0 5.6 6a4.7 4.7 0 0 0-1.3 3.3c0 4.7 2.8 5.7 5.5 6A3 3 0 0 0 9 17.5V22"
+        ></path></svg
+      >
+      <span>GitHub</span>
+    </a>
+    <a class="install" href={`${base}docs/get-started/install/`}>Install</a>
+    <slot name="theme" />
+  </div>
+</div>
+<style>
+  .merran-header {
+    width: 100%;
+    max-width: 76rem;
+    margin-inline: auto;
+    min-height: 4.25rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+  .with-docs {
+    max-width: none;
+    min-height: 0;
+    height: 100%;
+  }
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+  }
+  nav a {
+    font: 500 0.97rem var(--sans);
+    color: var(--muted-foreground);
+    text-decoration: none;
+  }
+  nav a:hover,
+  nav a[aria-current] {
+    color: var(--foreground);
+  }
+  nav a[aria-current] {
+    text-decoration: underline;
+    text-decoration-color: var(--primary);
+    text-underline-offset: 0.5rem;
+  }
+  .search {
+    margin-left: auto;
+    width: min(22vw, 20rem);
+  }
+  .search:empty {
+    display: none;
+  }
+  .actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .with-docs .actions {
+    margin-left: 0;
+  }
+  .github,
+  .install {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    height: 2.4rem;
+    box-sizing: border-box;
+    padding: 0 1rem;
+    font: 600 0.92rem/1.2 var(--sans);
+    text-decoration: none;
+    white-space: nowrap;
+    color: var(--foreground);
+    background: var(--card);
+  }
+  .github svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+  .install {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+  @media (max-width: 70rem) {
+    .with-docs {
+      gap: 1.25rem;
+    }
+    .with-docs .github {
+      display: none;
+    }
+  }
+  @media (max-width: 50rem) {
+    .merran-header {
+      gap: 1rem;
+    }
+    nav {
+      gap: 1rem;
+    }
+    nav a:first-child,
+    .github {
+      display: none;
+    }
+    .with-docs .search {
+      width: auto;
+    }
+    .with-docs .install {
+      display: none;
+    }
+    .with-docs .actions {
+      gap: 0.25rem;
+    }
+  }
+  @media (max-width: 30rem) {
+    .with-docs nav {
+      display: none;
+    }
+    /* Only the theme is left here, and it doesn't fit beside Starlight's
+       Menu button: the menu has its own theme select at this size. */
+    .with-docs .actions {
+      display: none;
+    }
+    .merran-header:not(.with-docs) nav a:first-child {
+      display: none;
+    }
+    .merran-header {
+      gap: 0.75rem;
+    }
+    .install {
+      padding-inline: 0.8rem;
+    }
+  }
+
+  @media (max-width: 50rem) {
+    .merran-header.with-docs nav {
+      display: none;
+    }
+  }
+  @media (max-width: 30rem) {
+    .merran-header:not(.with-docs) nav a:last-child {
+      display: none;
+    }
+  }
+</style>

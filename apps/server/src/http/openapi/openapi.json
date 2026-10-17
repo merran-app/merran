@@ -29057,11 +29057,7 @@
         ],
         "description": "With a username and password. Sets the session cookie that signed-in requests send. Scripts and tools like Home Assistant use an API key instead. Answers in Better Auth's error shape.",
         "operationId": "signIn",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -29274,11 +29270,7 @@
         ],
         "description": "The same as signing in with a username, with the account's email address instead.",
         "operationId": "signInWithEmail",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "parameters": [],
         "requestBody": {
           "required": true,

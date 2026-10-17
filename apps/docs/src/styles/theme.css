@@ -1,0 +1,271 @@
+@import "@fontsource-variable/figtree";
+@import "@fontsource-variable/fraunces";
+
+/* Layout: one weekly loop (Recipes, Plan, Shop, Cook) around the assistant, each chapter a live piece of the app.
+   Color: the app's own three palettes, light and dark, switchable on the page. Type: Fraunces display, Figtree body. */
+:root {
+  --serif: "Fraunces Variable", ui-serif, Georgia, "Times New Roman", serif;
+  --sans:
+    "Figtree Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+  --max: 76rem;
+  --radius: 0.75rem;
+
+  /* Sage & Cream, light (apps/web/src/index.css) */
+  --background: oklch(0.985 0.008 85);
+  --foreground: oklch(0.25 0.018 65);
+  --card: oklch(0.995 0.003 85);
+  --primary: oklch(0.47 0.08 152);
+  --primary-foreground: oklch(0.985 0.01 95);
+  --secondary: oklch(0.95 0.016 88);
+  --muted: oklch(0.955 0.012 85);
+  --muted-foreground: oklch(0.5 0.02 65);
+  --accent: oklch(0.935 0.035 150);
+  --accent-foreground: oklch(0.33 0.06 152);
+  --destructive: oklch(0.55 0.19 28);
+  --border: oklch(0.9 0.014 85);
+  --input: oklch(0.885 0.014 85);
+  --highlight: oklch(0.55 0.13 42);
+  --highlight-foreground: oklch(0.985 0.01 90);
+  --sidebar: oklch(0.97 0.012 85);
+  --warn: oklch(0.72 0.14 75);
+  /* Marketing-only: the self-hosting band */
+  --deep: oklch(0.3 0.05 152);
+  --deep-2: oklch(0.21 0.03 152);
+  --on-deep: oklch(0.97 0.012 95);
+  --on-deep-muted: oklch(0.86 0.035 140);
+  --deep-accent: oklch(0.86 0.09 150);
+  --shadow:
+    0 1px 2px oklch(0.25 0.02 65 / 6%),
+    0 14px 34px -14px oklch(0.25 0.02 65 / 22%);
+  --shadow-lg:
+    0 2px 4px oklch(0.25 0.02 65 / 5%),
+    0 40px 80px -30px oklch(0.25 0.03 65 / 35%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: oklch(0.185 0.01 75);
+    --foreground: oklch(0.94 0.012 85);
+    --card: oklch(0.225 0.012 75);
+    --primary: oklch(0.75 0.1 150);
+    --primary-foreground: oklch(0.22 0.04 155);
+    --secondary: oklch(0.28 0.012 75);
+    --muted: oklch(0.26 0.01 75);
+    --muted-foreground: oklch(0.72 0.016 80);
+    --accent: oklch(0.3 0.035 150);
+    --accent-foreground: oklch(0.9 0.04 150);
+    --destructive: oklch(0.68 0.17 28);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --highlight: oklch(0.72 0.12 50);
+    --highlight-foreground: oklch(0.2 0.03 45);
+    --sidebar: oklch(0.205 0.011 75);
+    --deep: oklch(0.25 0.035 152);
+    --deep-2: oklch(0.17 0.02 152);
+    --shadow:
+      0 1px 2px oklch(0 0 0 / 30%), 0 14px 34px -14px oklch(0 0 0 / 55%);
+    --shadow-lg:
+      0 2px 4px oklch(0 0 0 / 25%), 0 40px 80px -30px oklch(0 0 0 / 70%);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --background: oklch(0.185 0.01 75);
+  --foreground: oklch(0.94 0.012 85);
+  --card: oklch(0.225 0.012 75);
+  --primary: oklch(0.75 0.1 150);
+  --primary-foreground: oklch(0.22 0.04 155);
+  --secondary: oklch(0.28 0.012 75);
+  --muted: oklch(0.26 0.01 75);
+  --muted-foreground: oklch(0.72 0.016 80);
+  --accent: oklch(0.3 0.035 150);
+  --accent-foreground: oklch(0.9 0.04 150);
+  --destructive: oklch(0.68 0.17 28);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --highlight: oklch(0.72 0.12 50);
+  --highlight-foreground: oklch(0.2 0.03 45);
+  --sidebar: oklch(0.205 0.011 75);
+  --deep: oklch(0.25 0.035 152);
+  --deep-2: oklch(0.17 0.02 152);
+  --shadow: 0 1px 2px oklch(0 0 0 / 30%), 0 14px 34px -14px oklch(0 0 0 / 55%);
+  --shadow-lg:
+    0 2px 4px oklch(0 0 0 / 25%), 0 40px 80px -30px oklch(0 0 0 / 70%);
+  color-scheme: dark;
+}
+
+/* Paprika & Linen */
+:root[data-palette="paprika"] {
+  --background: oklch(0.982 0.011 78);
+  --foreground: oklch(0.26 0.022 45);
+  --card: oklch(0.995 0.004 78);
+  --primary: oklch(0.555 0.165 42);
+  --primary-foreground: oklch(0.985 0.01 80);
+  --secondary: oklch(0.948 0.02 75);
+  --muted: oklch(0.952 0.014 75);
+  --muted-foreground: oklch(0.5 0.03 50);
+  --accent: oklch(0.94 0.04 115);
+  --accent-foreground: oklch(0.36 0.07 120);
+  --destructive: oklch(0.53 0.2 18);
+  --border: oklch(0.895 0.018 75);
+  --input: oklch(0.88 0.018 75);
+  --highlight: oklch(0.55 0.1 120);
+  --highlight-foreground: oklch(0.985 0.01 90);
+  --sidebar: oklch(0.965 0.016 76);
+  --deep: oklch(0.34 0.08 40);
+  --deep-2: oklch(0.24 0.05 40);
+  --on-deep-muted: oklch(0.88 0.04 60);
+  --deep-accent: oklch(0.86 0.08 115);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="paprika"]:not([data-theme="light"]) {
+    --background: oklch(0.19 0.013 50);
+    --foreground: oklch(0.94 0.014 75);
+    --card: oklch(0.23 0.015 50);
+    --primary: oklch(0.72 0.15 48);
+    --primary-foreground: oklch(0.21 0.05 40);
+    --secondary: oklch(0.285 0.015 50);
+    --muted: oklch(0.265 0.012 50);
+    --muted-foreground: oklch(0.72 0.02 65);
+    --accent: oklch(0.31 0.04 115);
+    --accent-foreground: oklch(0.9 0.05 115);
+    --destructive: oklch(0.66 0.19 20);
+    --highlight: oklch(0.74 0.1 120);
+    --highlight-foreground: oklch(0.2 0.04 120);
+    --sidebar: oklch(0.21 0.014 50);
+    --deep: oklch(0.26 0.04 45);
+    --deep-2: oklch(0.17 0.02 45);
+  }
+}
+:root[data-palette="paprika"][data-theme="dark"] {
+  --background: oklch(0.19 0.013 50);
+  --foreground: oklch(0.94 0.014 75);
+  --card: oklch(0.23 0.015 50);
+  --primary: oklch(0.72 0.15 48);
+  --primary-foreground: oklch(0.21 0.05 40);
+  --secondary: oklch(0.285 0.015 50);
+  --muted: oklch(0.265 0.012 50);
+  --muted-foreground: oklch(0.72 0.02 65);
+  --accent: oklch(0.31 0.04 115);
+  --accent-foreground: oklch(0.9 0.05 115);
+  --destructive: oklch(0.66 0.19 20);
+  --highlight: oklch(0.74 0.1 120);
+  --highlight-foreground: oklch(0.2 0.04 120);
+  --sidebar: oklch(0.21 0.014 50);
+  --deep: oklch(0.26 0.04 45);
+  --deep-2: oklch(0.17 0.02 45);
+}
+
+/* Cast Iron & Saffron */
+:root[data-palette="castiron"] {
+  --background: oklch(0.985 0.004 90);
+  --foreground: oklch(0.22 0.01 70);
+  --card: oklch(1 0 0);
+  --primary: oklch(0.28 0.012 70);
+  --primary-foreground: oklch(0.97 0.01 90);
+  --secondary: oklch(0.955 0.008 85);
+  --muted: oklch(0.958 0.006 85);
+  --muted-foreground: oklch(0.5 0.012 70);
+  --accent: oklch(0.95 0.06 92);
+  --accent-foreground: oklch(0.4 0.08 75);
+  --destructive: oklch(0.55 0.2 27);
+  --border: oklch(0.91 0.006 85);
+  --input: oklch(0.895 0.006 85);
+  --highlight: oklch(0.8 0.15 82);
+  --highlight-foreground: oklch(0.25 0.04 70);
+  --sidebar: oklch(0.97 0.005 88);
+  --deep: oklch(0.24 0.01 70);
+  --deep-2: oklch(0.17 0.008 70);
+  --on-deep-muted: oklch(0.84 0.01 80);
+  --deep-accent: oklch(0.84 0.15 84);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="castiron"]:not([data-theme="light"]) {
+    --background: oklch(0.165 0.006 70);
+    --foreground: oklch(0.95 0.008 90);
+    --card: oklch(0.205 0.008 70);
+    --primary: oklch(0.82 0.15 82);
+    --primary-foreground: oklch(0.22 0.03 70);
+    --secondary: oklch(0.27 0.008 70);
+    --muted: oklch(0.25 0.007 70);
+    --muted-foreground: oklch(0.72 0.012 80);
+    --accent: oklch(0.3 0.05 85);
+    --accent-foreground: oklch(0.92 0.07 90);
+    --destructive: oklch(0.68 0.18 25);
+    --highlight: oklch(0.82 0.15 82);
+    --highlight-foreground: oklch(0.22 0.03 70);
+    --sidebar: oklch(0.19 0.007 70);
+    --deep: oklch(0.22 0.008 70);
+    --deep-2: oklch(0.14 0.006 70);
+  }
+}
+:root[data-palette="castiron"][data-theme="dark"] {
+  --background: oklch(0.165 0.006 70);
+  --foreground: oklch(0.95 0.008 90);
+  --card: oklch(0.205 0.008 70);
+  --primary: oklch(0.82 0.15 82);
+  --primary-foreground: oklch(0.22 0.03 70);
+  --secondary: oklch(0.27 0.008 70);
+  --muted: oklch(0.25 0.007 70);
+  --muted-foreground: oklch(0.72 0.012 80);
+  --accent: oklch(0.3 0.05 85);
+  --accent-foreground: oklch(0.92 0.07 90);
+  --destructive: oklch(0.68 0.18 25);
+  --highlight: oklch(0.82 0.15 82);
+  --highlight-foreground: oklch(0.22 0.03 70);
+  --sidebar: oklch(0.19 0.007 70);
+  --deep: oklch(0.22 0.008 70);
+  --deep-2: oklch(0.14 0.006 70);
+}
+
+/* Each palette shares the same quiet border treatment after dark mode resolves. */
+:root[data-theme="dark"] {
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+  }
+}
+
+/* Subtle rails that follow all three palettes in light and dark mode. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(
+      in oklch,
+      var(--muted-foreground) 40%,
+      var(--background)
+    )
+    var(--background);
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--background);
+}
+*::-webkit-scrollbar-thumb {
+  background: color-mix(
+    in oklch,
+    var(--muted-foreground) 40%,
+    var(--background)
+  );
+  border: 2px solid var(--background);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+*::-webkit-scrollbar-corner {
+  background: var(--background);
+}
+@media (forced-colors: active) {
+  * {
+    scrollbar-color: auto;
+  }
+}

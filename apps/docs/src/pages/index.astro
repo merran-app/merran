@@ -1,0 +1,58 @@
+---
+import "../styles/landing.css"
+import icons from "../components/landing/icons.html?raw"
+import SiteHeader from "../components/SiteHeader.astro"
+import ThemeState from "../components/ThemeState.astro"
+import main from "../components/landing/main.html?raw"
+import footer from "../components/landing/footer.html?raw"
+import { recipePhoto } from "../scripts/recipe-photos.js"
+const base = import.meta.env.BASE_URL
+const photographedMain = main.replace(
+  /<div\b[^>]*data-dish="([^"]+)"[^>]*>/g,
+  (tag, dish) => tag + recipePhoto(dish, base)
+)
+const links = (html: string) => html.replaceAll("__BASE__", base)
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Merran — Dinner, planned.</title>
+    <meta
+      name="description"
+      content="A free, open-source, self-hosted meal planner. Recipes, a weekly plan, a pantry, and a shopping list, with an optional AI cooking assistant."
+    />
+    <link rel="canonical" href={new URL(base, Astro.site)} />
+    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+    <meta property="og:title" content="Merran — Dinner, planned." />
+    <meta
+      property="og:description"
+      content="Your recipes, your kitchen, your server. Meet Merran, the open-source meal planner."
+    />
+    <meta property="og:type" content="website" />
+    <ThemeState />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <Fragment set:html={icons} />
+    <header class="nav" id="top"><div class="wrap"><SiteHeader /></div></header>
+    <aside class="site-context" aria-label="Project status">
+      Merran is in alpha. These are scripted previews with sample data and
+      AI-generated sample recipe photos, not a live Merran server. Selected
+      controls work locally; no imports, AI requests, microphone access or store
+      orders occur here. Features describe the current implementation; release
+      verification is still pending. <a href={`${base}docs/`}
+        >Read the docs and get started →</a
+      >
+    </aside>
+    <main id="main-content" tabindex="-1">
+      <Fragment set:html={links(photographedMain)} />
+    </main>
+    <Fragment set:html={links(footer)} />
+    <script>
+      import "../scripts/landing.js"
+    </script>
+  </body>
+</html>

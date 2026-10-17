@@ -45,6 +45,15 @@ describe("the API reference", () => {
     expect(paths).not.toContain("/api/auth/organization/delete")
   })
 
+  test("public sign-in has no bearer requirement, while switching needs a session", async () => {
+    const spec = JSON.parse(await createOpenApiFile())
+    expect(spec.paths["/api/auth/sign-in/username"].post.security).toEqual([])
+    expect(spec.paths["/api/auth/sign-in/email"].post.security).toEqual([])
+    expect(
+      spec.paths["/api/auth/organization/set-active"].post.security
+    ).toEqual([{ session: [] }])
+  })
+
   // Merran's own routes are checked in routes.test.ts; these hold the whole
   // published file to the same, Better Auth's endpoints included.
   test("every operation has a summary, and an operationId of its own", async () => {

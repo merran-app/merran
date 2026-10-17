@@ -8,7 +8,9 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
+    "dev": "pnpm --filter !@merran/docs -r --parallel dev",
+    "docs:dev": "pnpm --filter @merran/docs dev",
+    "docs:build": "pnpm --filter @merran/docs build",
     "build": "pnpm --filter @merran/web build",
     "start": "pnpm --filter @merran/server start",
     "test": "pnpm -r test",
@@ -19,6 +21,7 @@
   },
   "devDependencies": {
     "prettier": "3.9.10",
+    "prettier-plugin-astro": "0.14.1",
     "prettier-plugin-tailwindcss": "0.8.1",
     "typescript": "7.0.2"
   }

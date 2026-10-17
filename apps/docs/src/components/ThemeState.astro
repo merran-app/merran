@@ -1,0 +1,10 @@
+<script is:inline>
+  try {
+    const palette = localStorage.getItem("merran-palette")
+    if (palette === "paprika" || palette === "castiron")
+      document.documentElement.dataset.palette = palette
+    const mode = localStorage.getItem("starlight-theme")
+    if (mode === "light" || mode === "dark")
+      document.documentElement.dataset.theme = mode
+  } catch {}
+</script>

@@ -1,0 +1,42 @@
+---
+const { title } = Astro.locals.starlightRoute.entry.data
+const id = Astro.locals.starlightRoute.id
+const section = id.includes("/api")
+  ? "API & integrations"
+  : id.includes("/run/")
+    ? "Run Merran"
+    : id.includes("/use/")
+      ? "Use Merran"
+      : id.includes("/project/")
+        ? "The project"
+        : "Get started"
+---
+
+<p class="docs-eyebrow">
+  Merran documentation <span aria-hidden="true">/</span>
+  {section}
+</p>
+<h1 id="_top">{title}</h1>
+<style>
+  .docs-eyebrow {
+    margin: 1.25rem 0 1rem;
+    font: 600 0.73rem/1.4 var(--sans);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--primary);
+  }
+  .docs-eyebrow span {
+    margin-inline: 0.6rem;
+    color: var(--muted-foreground);
+  }
+  h1 {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(2.8rem, 4.6vw, 4.5rem);
+    font-weight: 560;
+    letter-spacing: -0.04em;
+    line-height: 1.08;
+    text-wrap: balance;
+    color: var(--foreground);
+  }
+</style>
