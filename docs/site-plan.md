@@ -57,7 +57,7 @@ Evidence: site-release-verification.md and the public project/release-verificati
 
 ## Additional backlog
 
-Public roadmap added October 17, 2026 under Project, linked from the homepage footer and README. Reconciled candidates against alpha.1: fridge/freezer/cupboard already ship; offline use, prep notifications, additional sign-in, webhooks, MCP and interface translations do not. Up next reflects the chosen acceptance work above, not an invented feature order. GitHub had no issue records to link at this check; add item-specific links when tracking issues exist. Longer-term ideas remain explicitly exploratory.
+Public roadmap added October 17, 2026 under Project, linked from the homepage footer and README. Reconciled candidates against alpha.1: fridge/freezer/cupboard already ship; offline use, prep notifications, additional sign-in, webhooks, MCP and interface translations do not. Up next reflects the chosen acceptance work above, not an invented feature order. GitHub had no issue records to link at this check; add item-specific links when tracking issues exist. Longer-term ideas remain explicitly exploratory. A follow-up [source audit](site-roadmap-audit.md) checks each public candidate, lists released capabilities separately, and splits mixed completed/planned feature rows. Remaining administration, email, onboarding, pantry follow-up and distribution work is now visible without implying that secret rotation, manual restores or the public docs are missing.
 
 Feature overview, credits/release policy, architecture and contributor recipes can follow. Webhook/MCP guides need shipped-code verification first. An in-place SQLite-to-Postgres migration is not a verified procedure; do not advertise one.
 

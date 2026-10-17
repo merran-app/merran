@@ -230,3 +230,9 @@ In this order:
 
 - **On the way to 1.0:** fixes and requests from early users, translations open on Weblate, and the API and export format promised stable.
 - **Later:** household-owned API keys; OAuth so the ChatGPT and Claude apps can connect to the MCP server; AI-ranked suggestions; the providers' batch APIs for library runs; meaning-based search with `pgvector`; recipe translations; step photos; barcode scanning; a Tandoor importer; OpenTelemetry; a Helm chart; a limited role for kids.
+
+## Roadmap status reconciliation — October 17, 2026
+
+The phase lists above describe intended scope, not a record that every listed task shipped. The public roadmap was compared with release v0.1.0-alpha.1 and PR #8 at 10ce841; the evidence is in [site-roadmap-audit.md](site-roadmap-audit.md), and current individual statuses are in [features.md](features.md).
+
+Already implemented: pantry storage locations, home-screen installation, measurement conversion, secret encryption/rotation, scoped API keys and SSE. Public docs are published, and PR #8 records manual release installation/restore smoke tests. These must not remain grouped with unfinished work. Offline data/sync, prep notifications, passkeys/2FA/OIDC, SMTP, webhooks/MCP, non-English UI, tours, automatic pre-migration backups, audit logging and the database-copy command still need implementation at this baseline. Real-device/provider acceptance work is tracked separately from missing features. Uncommitted telemetry work in another checkout was excluded from the released baseline.

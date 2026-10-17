@@ -10,7 +10,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 - **Key:** worth its own section or screenshot on a feature page.
 - **Detail:** belongs in a feature list or the docs, not a headline.
 
-**Status** (as of October 16, 2026)
+**Status** (reconciled October 17, 2026 against v0.1.0-alpha.1 and PR #8; see [roadmap audit](site-roadmap-audit.md))
 
 - **Built:** works in the rewrite today.
 - **Building:** started in the rewrite, not finished.
@@ -34,8 +34,10 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Problems page for the server admin | Detail | Planned | |
 | Update badge when a new release is out | Detail | Built | GitHub's releases every 6 hours (pre-releases for a server on one), a badge for the server admin in the sidebar and account menu, the notes and update commands in Settings, This server |
 | Prebuilt, signed images; releases with notes | Detail | Built | A Release workflow run with a version: images for amd64 and arm64, signed with cosign, with an SBOM and provenance; the extension's zips; notes drafted by Release Drafter from each pull request's title (`feat:`, `fix:`...), under a heading for each kind, with highlights written by hand; `edge` from every commit to main |
-| Backups before migrations, and a restore test | Detail | Planned | |
-| Unraid template, docs site, public demo | Key | Planned | |
+| Automatic backups before migrations | Detail | Planned | Manual backups and restores are available; startup migration currently calls the migrator directly |
+| Release installation and backup/restore smoke tests | Detail | Built | SQLite and Postgres tests recorded in [site-release-verification.md](site-release-verification.md); automated restore coverage in CI remains planned |
+| Public documentation site | Key | Built | https://merran.app is published; PR #8 adds integration/deployment guides and scoped release verification |
+| Unraid template and hosted app demo | Key | Planned | Homepage previews are scripted examples, not a hosted application instance |
 
 ## Accounts and households
 
@@ -50,7 +52,8 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Two-step sign-in | Detail | Planned | |
 | Single sign-on (OIDC) | Key | Planned | |
 | Email for invites and password resets (SMTP) | Detail | Planned | |
-| Audit log; secrets encrypted with a rotatable key | Detail | Planned | Settings' secrets are already sealed |
+| Encrypted saved secrets and secret rotation | Detail | Built | SecretBox storage and the merran rotate-secret command ship in alpha.1 |
+| Audit log | Detail | Planned | Secret encryption and rotation are not an audit trail |
 | A limited role for kids | Detail | Later | |
 
 ## Recipes
