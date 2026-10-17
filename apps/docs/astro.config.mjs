@@ -54,6 +54,10 @@ export default defineConfig({
           ],
         },
         {
+          label: "Integrations",
+          items: [{ autogenerate: { directory: "docs/integrations" } }],
+        },
+        {
           label: "Run Merran",
           items: [{ autogenerate: { directory: "docs/run" } }],
         },
@@ -62,6 +66,11 @@ export default defineConfig({
           collapsed: true,
           items: [
             { label: "Make your first request", slug: "docs/api" },
+            {
+              label: "Build a recipe index",
+              slug: "docs/api/practical-integration",
+            },
+            { label: "Listen for live changes", slug: "docs/api/live-events" },
             ...openAPISidebarGroups,
           ],
         },

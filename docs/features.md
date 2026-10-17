@@ -10,7 +10,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 - **Key:** worth its own section or screenshot on a feature page.
 - **Detail:** belongs in a feature list or the docs, not a headline.
 
-**Status** (as of October 16, 2026)
+**Status** (reconciled October 17, 2026 against v0.1.0-alpha.1 and PR #8; see [roadmap audit](site-roadmap-audit.md))
 
 - **Built:** works in the rewrite today.
 - **Building:** started in the rewrite, not finished.
@@ -34,8 +34,10 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Problems page for the server admin | Detail | Planned | |
 | Update badge when a new release is out | Detail | Built | GitHub's releases every 6 hours (pre-releases for a server on one), a badge for the server admin in the sidebar and account menu, the notes and update commands in Settings, This server |
 | Prebuilt, signed images; releases with notes | Detail | Built | A Release workflow run with a version: images for amd64 and arm64, signed with cosign, with an SBOM and provenance; the extension's zips; notes drafted by Release Drafter from each pull request's title (`feat:`, `fix:`...), under a heading for each kind, with highlights written by hand; `edge` from every commit to main |
-| Backups before migrations, and a restore test | Detail | Planned | |
-| Unraid template, docs site, public demo | Key | Planned | |
+| Automatic backups before migrations | Detail | Planned | Manual backups and restores are available; startup migration currently calls the migrator directly |
+| Release installation and backup/restore smoke tests | Detail | Built | SQLite and Postgres tests recorded in [site-release-verification.md](site-release-verification.md); automated restore coverage in CI remains planned |
+| Public documentation site | Key | Built | https://merran.app is published; PR #8 adds integration/deployment guides and scoped release verification |
+| Unraid template and hosted app demo | Key | Planned | Homepage previews are scripted examples, not a hosted application instance |
 
 ## Accounts and households
 
@@ -50,7 +52,8 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Two-step sign-in | Detail | Planned | |
 | Single sign-on (OIDC) | Key | Planned | |
 | Email for invites and password resets (SMTP) | Detail | Planned | |
-| Audit log; secrets encrypted with a rotatable key | Detail | Planned | Settings' secrets are already sealed |
+| Encrypted saved secrets and secret rotation | Detail | Built | SecretBox storage and the merran rotate-secret command ship in alpha.1 |
+| Audit log | Detail | Planned | Secret encryption and rotation are not an audit trail |
 | A limited role for kids | Detail | Later | |
 
 ## Recipes
@@ -141,7 +144,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Ran out of anything? Check off what you used up after cooking | Key | Planned | With "How did it go?": the recipe's ingredients in a list, each one checked comes out of the pantry and can go on the list |
 | Put away what you bought in one tap | Detail | Built | |
 | Select and act on many list or pantry items | Detail | Built | |
-| Fridge, freezer or cupboard | Detail | Planned | |
+| Fridge, freezer or cupboard | Detail | Built | Released in 0.1.0-alpha.1; storedIn on pantry items and place controls in the pantry UI |
 | Receipts into the pantry: looked over, then off the list | Key | Built | AI; a photo, screenshots, a PDF or pasted text, shared from Android or an iPhone, or sent to the assistant |
 | Kroger stores (Fry's, Ralphs...): products, send the cart, prices, sales | Key | Built | Module (stores), with the server admin's Kroger developer app: a store by ZIP code, one linked account for the household, Merran's pick and how many for each thing, today's price and sale, sent to the cart by barcode |
 | What the list costs, and the deals on it | Key | Built | Module (stores): each thing left on the list for Kroger priced for the packs needed (~ when how many is a guess), from the product kept for it and the last price seen; what a real deal saves under its price, and what it's for on one line under the name; each list's card says about what it comes to and what the sales save |
@@ -191,3 +194,16 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | MCP server for Claude Desktop, Claude Code and other AI apps | Headline | Planned | |
 | OAuth so the ChatGPT and Claude apps can connect | Detail | Later | |
 | Household-owned API keys; OpenTelemetry; a Helm chart | Detail | Later | |
+
+## Research candidates — October 17, 2026
+
+These are exploratory additions from [roadmap research](roadmap-research.md), not commitments for 0.1. Existing Planned items retain their status. For this table, Later means consideration after the current planned scope, not a promise to implement.
+
+| Feature | Importance | Status | Notes |
+|---|---|---|---|
+| Saved meal plans and menus | Key | Later | Exploring; Save named plans such as a busy week, camping trip, or holiday dinner and reuse them with new dates and serving counts. Goes beyond Repeat last week. |
+| Prepared meals and freezer portions | Key | Later | Exploring; Track portions of food already cooked, when they were made or frozen, and schedule them without buying the original ingredients again. Goes beyond storage locations and leftover notes. |
+| Meal-plan calendar subscriptions | Key | Later | Exploring; Opt in to a read-only iCalendar feed for external calendar apps, with revocable links and recipe references; refresh timing depends on the calendar app. |
+| Minimum-stock reminders | Key | Later | Exploring; Set a desired stock level and review suggested top-ups based on measured pantry quantities. Complements recurring buys and staples. |
+| Recipe sharing outside the household | Key | Later | Exploring; Share one recipe through a revocable read-only link without inviting the recipient to the household. Must preserve household isolation. |
+| Print-friendly recipes, plans and cookbooks | Detail | Later | Exploring; Print a clean recipe, shopping list or meal plan; later assemble selected recipes into a family cookbook using print/PDF export. Complements structured data export. |

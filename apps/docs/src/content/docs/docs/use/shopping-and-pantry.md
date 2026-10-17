@@ -90,4 +90,6 @@ With AI receipt reading available, choose **Pantry → Scan a receipt**, then ta
 
 ## Next steps
 
+Set up [Kroger products and carts](../../integrations/kroger/), [experimental Walmart](../../integrations/walmart/), or the [extension's shopping sidebar](../../integrations/browser-extension/#shop-beside-a-store-page) when you want a store connection.
+
 [Cook the planned meals](../cooking/), then update stock or [plan the next week](../planning/) around what remains.

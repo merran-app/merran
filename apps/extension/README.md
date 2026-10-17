@@ -4,6 +4,8 @@ Add recipes to Merran from the page you're on, even on sites that turn Merran's 
 
 ## What it does
 
+For released ZIP downloads, browser-specific installation, connecting, permissions and troubleshooting, use the [public extension guide](https://merran.app/docs/integrations/browser-extension/). The instructions below cover development builds. Alpha archives are on the [releases list](https://github.com/merran-app/merran/releases); GitHub's `latest` shortcut can omit pre-releases.
+
 - **The toolbar button:** connects to your Merran, then adds the recipe on the page you're on. A page with recipe data goes straight in; one without is read by your household's AI, if it has AI.
 - **Right-click:** a page or a link to add its recipe, or selected text to add it to the shopping list ("2 lemons, a bag of rice").
 - **The shopping list beside the page:** Chrome and Edge's side panel, Firefox's sidebar. Find each thing at one of your stores (pick which at the top), check things off as they go in the cart, and add what's missing.

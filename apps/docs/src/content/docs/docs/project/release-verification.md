@@ -1,0 +1,41 @@
+---
+title: Release verification
+description: What was tested on the published alpha, and what still needs real-device or external-service verification.
+---
+
+The application release **0.1.0-alpha.1** and the public documentation site are published. Publication is separate from verification of every deployment and integration. This record is dated **October 17, 2026**.
+
+## Tested on the published image
+
+Tests used `ghcr.io/merran-app/merran:0.1.0-alpha.1`, digest `sha256:bd4d97da003d5b8ffbc7d55ca764e40809bebfec391a614069db0a19e1ea64ae`, on Docker Desktop's Linux AMD64 engine. They used fresh, separate data directories and synthetic accounts/recipes. No live provider keys, purchases, or household data were used.
+
+| Check                         | Result                                                                                                                                                                                                    |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fresh SQLite installation     | Supplied Compose layout started, migrations ran, readiness passed, and first account/household setup succeeded.                                                                                           |
+| Fresh Postgres installation   | Supplied Postgres 18 profile started, readiness identified Postgres, and account setup succeeded.                                                                                                         |
+| Core workflow through the API | Created recipes, added pantry stock, planned a meal, generated a list with pantry deductions, checked/put away purchases, marked the meal cooked, and saved a rating/note.                                |
+| SQLite restore                | A stopped app-directory archive was extracted into a separate empty directory. Login, existing API key, recipes, rating, remaining pantry stock, and a recipe image were checked; the secret matched.     |
+| Postgres restore              | A custom-format `pg_dump` was restored with `pg_restore` into a separate empty database; a copied app directory retained the secret. Login, API key, recipes, and rating passed after reconnecting to it. |
+| API tutorial                  | The downloadable recipe-index script returned the test recipes. Offset pagination, missing-permission rejection, and the 300-request rate-limit boundary with Retry-After were checked.                   |
+| Live events                   | A recipes-only API key received a filtered `ready` event, a recipe-change event after a cooking-note write, and a new `ready` event after reconnecting.                                                   |
+| Local HTTPS proxy             | Caddy 2.11.7 forwarded the homepage, readiness, and authenticated recipe requests with a verified local test-CA certificate.                                                                              |
+| Extension packaging           | Both published browser archives downloaded and contained their expected manifests; Firefox's declared minimum is 128.                                                                                     |
+
+These are smoke tests, not a complete UI acceptance suite or a backup guarantee for every installation. The core workflow was exercised through the API, not by clicking every step in the public guides. Operators should test their own backups with representative data.
+
+## Existing site review
+
+The homepage claim/comparison audit and fixes for all 14 recorded browser-QA findings are present on main. The recorded checks covered selected mobile/tablet/desktop widths and palette/mode combinations. They did not establish universal browser, screen-reader, or real-device compatibility.
+
+## Still to verify
+
+- Full first-week UI walkthrough against the release, including imports from representative real websites and background-job recovery.
+- ARM64 and another physical host, large-library recovery, externally managed Postgres, and stored real-provider credential recovery.
+- Extension installation, approval, imports, sidebar, and updates in Chrome, Edge, and Firefox; Firefox restart behavior on a real installation.
+- Android share targets and the iPhone/iPad Shortcut on devices.
+- Live Kroger authorization/product/cart transfer and experimental Walmart browser automation.
+- Actual nutrition, AI image/video, and server-voice requests with configured providers.
+- Public DNS/ACME certificates, HTTPS session/login flows in representative proxy topologies, Cloudflare Tunnel, private VPN access, and SSE continuity through those deployments.
+- Long-running external integration/reconnect behavior through proxies, accessibility/assistive technology, and broader browser coverage.
+
+The new integration guides describe implementation and prerequisites where external verification is still pending. No unattended publication is enabled by these tests; the Pages deployment remains manual.
