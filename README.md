@@ -21,9 +21,9 @@ https://img.shields.io/github/v/release/merran-app/merran?include_prereleases=tr
 </p>
 
 <p align="center">
-  <a href="apps/docs/src/content/docs/docs/index.md"><strong>Documentation</strong></a> ·
-  <a href="apps/docs/src/content/docs/docs/get-started/install.md">Install</a> ·
-  <a href="apps/docs/src/content/docs/docs/api/index.md">API</a> ·
+  <a href="https://merran.app/docs/"><strong>Documentation</strong></a> ·
+  <a href="https://merran.app/docs/get-started/install/">Install</a> ·
+  <a href="https://merran.app/docs/api/">API</a> ·
   <a href="https://github.com/merran-app/merran/releases">Releases</a> ·
   <a href="https://github.com/merran-app/merran/issues">Report a bug</a>
 </p>
@@ -47,7 +47,7 @@ _Light-mode app previews with sample data and AI-generated recipe photos. The sl
 - **Add AI when you want it** for imports, substitutions, and an assistant that proposes kitchen changes for review.
 - **Make it yours** with separate households, three palettes, a browser extension, and an API with scoped keys.
 
-Core recipes, planning, lists, and pantry tracking work without AI. AI, nutrition, voice, and store connections have their own setup requirements. Start with [your first week](apps/docs/src/content/docs/docs/get-started/first-week.md).
+Core recipes, planning, lists, and pantry tracking work without AI. AI, nutrition, voice, and store connections have their own setup requirements. Start with [your first week](https://merran.app/docs/get-started/first-week/).
 
 ## Get started
 
@@ -66,24 +66,24 @@ Open **http://YOUR-SERVER:3000** and use the setup code from the log to create y
 
 **Merran is in alpha.** The `edge` image follows development on main. Once releases are available, choose a published version for a repeatable installation. Back up the complete data directory before updating.
 
-See the [installation guide](apps/docs/src/content/docs/docs/get-started/install.md) for Docker Compose and image tags, and [updating and backups](apps/docs/src/content/docs/docs/run/updating-and-backups.md) for maintaining your server.
+See the [installation guide](https://merran.app/docs/get-started/install/) for Docker Compose and image tags, and [updating and backups](https://merran.app/docs/run/updating-and-backups/) for maintaining your server.
 
 ## Find your way
 
-| I want to…                     | Start here                                                                                                                                                                                                  |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Import and organize recipes    | [Recipes](apps/docs/src/content/docs/docs/use/recipes.md)                                                                                                                                                   |
-| Plan, shop, and cook           | [Planning](apps/docs/src/content/docs/docs/use/planning.md) · [Shopping and pantry](apps/docs/src/content/docs/docs/use/shopping-and-pantry.md) · [Cooking](apps/docs/src/content/docs/docs/use/cooking.md) |
-| Set up AI and understand costs | [AI setup](apps/docs/src/content/docs/docs/run/ai-setup.md) · [Privacy and data flow](apps/docs/src/content/docs/docs/project/ai-privacy.md)                                                                |
-| Configure or fix my server     | [Configuration](apps/docs/src/content/docs/docs/run/configuration.md) · [Troubleshooting](apps/docs/src/content/docs/docs/run/troubleshooting.md)                                                           |
-| Connect another tool           | [API quickstart](apps/docs/src/content/docs/docs/api/index.md) · [OpenAPI schema](apps/server/src/http/openapi/openapi.json)                                                                                |
-| Install the browser extension  | [Extension guide](apps/extension/README.md)                                                                                                                                                                 |
+| I want to…                     | Start here                                                                                                                                                                    |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Import and organize recipes    | [Recipes](https://merran.app/docs/use/recipes/)                                                                                                                               |
+| Plan, shop, and cook           | [Planning](https://merran.app/docs/use/planning/) · [Shopping and pantry](https://merran.app/docs/use/shopping-and-pantry/) · [Cooking](https://merran.app/docs/use/cooking/) |
+| Set up AI and understand costs | [AI setup](https://merran.app/docs/run/ai-setup/) · [Privacy and data flow](https://merran.app/docs/project/ai-privacy/)                                                      |
+| Configure or fix my server     | [Configuration](https://merran.app/docs/run/configuration/) · [Troubleshooting](https://merran.app/docs/run/troubleshooting/)                                                 |
+| Connect another tool           | [API quickstart](https://merran.app/docs/api/) · [OpenAPI schema](https://merran.app/openapi.json)                                                                            |
+| Install the browser extension  | [Extension guide](apps/extension/README.md)                                                                                                                                   |
 
-The public site is being prepared for **merran.app**; these links open the guides in the repository until publication.
+Visit [merran.app](https://merran.app/) for the product overview, documentation, and API reference.
 
 ## Contribute
 
-Bug reports, documentation improvements, and code contributions are welcome. See the [contributor guide](apps/docs/src/content/docs/docs/project/contribute.md).
+Bug reports, documentation improvements, and code contributions are welcome. See the [contributor guide](https://merran.app/docs/project/contribute/).
 
 For local development, use Node 24 and the repository's pinned pnpm version:
 
