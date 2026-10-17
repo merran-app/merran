@@ -181,10 +181,13 @@ jobs:
       - run: npm pkg set version="$VERSION"
         working-directory: apps/extension
       - run: pnpm --filter @merran/extension zip
+      # WXT writes the zips to .output, which upload-artifact counts as
+      # hidden and leaves out unless told otherwise.
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: extension
           path: apps/extension/.output/*.zip
+          include-hidden-files: true
           if-no-files-found: error
 
   release:
