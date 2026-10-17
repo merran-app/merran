@@ -236,3 +236,7 @@ In this order:
 The phase lists above describe intended scope, not a record that every listed task shipped. The public roadmap was compared with release v0.1.0-alpha.1 and PR #8 at 10ce841; the evidence is in [site-roadmap-audit.md](site-roadmap-audit.md), and current individual statuses are in [features.md](features.md).
 
 Already implemented: pantry storage locations, home-screen installation, measurement conversion, secret encryption/rotation, scoped API keys and SSE. Public docs are published, and PR #8 records manual release installation/restore smoke tests. These must not remain grouped with unfinished work. Offline data/sync, prep notifications, passkeys/2FA/OIDC, SMTP, webhooks/MCP, non-English UI, tours, automatic pre-migration backups, audit logging and the database-copy command still need implementation at this baseline. Real-device/provider acceptance work is tracked separately from missing features. Uncommitted telemetry work in another checkout was excluded from the released baseline.
+
+## Research candidates — October 17, 2026
+
+Saved menus, prepared-meal/freezer portions, iCalendar subscriptions, minimum-stock reminders, recipe-only share links and print/cookbook views were added to public Exploring after comparing official documentation from similar apps with Merran's source. These are not added to the 0.1 commitments or build order. See [roadmap-research.md](roadmap-research.md) for evidence, suggested first slices and tradeoffs.

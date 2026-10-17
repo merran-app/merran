@@ -9,6 +9,8 @@ Merran is in alpha. This roadmap describes our direction, not a delivery schedul
 
 The feature baseline is [v0.1.0-alpha.1](https://github.com/merran-app/merran/releases/tag/v0.1.0-alpha.1). See the [release verification record](../release-verification/) for what we have tested and what still needs checking.
 
+**Last reviewed:** October 17, 2026. Features move to Planned when we choose to build them; In progress will be used only when implementation starts.
+
 ## Available now
 
 These features already ship in alpha.1 and are not future roadmap items:
@@ -64,5 +66,18 @@ These ideas need more feedback and design work before we choose whether or how t
 - **OAuth connections for external AI apps:** make connecting supported remote AI clients easier without manually copying an API key.
 - **More recipe tools:** consider Tandoor migration, step photos, recipe translations beyond import, and AI-ranked meal suggestions.
 - **Larger deployments:** consider household-owned integration keys, OpenTelemetry, and a Helm chart.
+
+### More ideas from everyday kitchens
+
+These are research candidates, not scheduled work. We would like feedback before choosing their scope.
+
+- **Saved meal plans and menus:** keep named plans for a busy week, a holiday, or a camping trip, then reuse them with new dates and serving counts. Repeat last week already works; this would add a reusable library.
+- **Prepared meals and freezer portions:** record portions of meals you have already cooked, plan when to eat them, and avoid buying their original ingredients again. Fridge/freezer locations and leftover notes already exist; this would track the prepared food itself.
+- **Calendar subscriptions:** show the meal plan in your preferred calendar through an optional read-only iCalendar feed with a revocable link. Calendar apps control how often they refresh it.
+- **Minimum-stock reminders:** set a target amount for staples and review suggested top-ups when measured pantry stock falls below it. This would complement recurring buys and usual-buy suggestions.
+- **Share a recipe with a friend:** create a revocable, read-only link to one recipe without adding the recipient to your household or exposing its other data.
+- **Print and keep:** print clean recipes, plans, and shopping lists, with a possible later option to assemble selected recipes into a family cookbook.
+
+Research included [Paprika's reusable menus](https://www.paprikaapp.com/help/windows/), [Plan to Eat's freezer workflow](https://learn.plantoeat.com/help/app-freezer-cooking), [AnyList's calendar subscriptions](https://help.anylist.com/articles/meal-plan-icalendar-overview/), [Grocy's stock thresholds](https://grocy.info/), [Tandoor's sharing controls](https://docs.tandoor.dev/system/configuration/), and [Recipe Keeper's printable cookbooks](https://recipekeeperonline.com/). These examples informed the ideas; they do not set Merran's implementation or delivery dates.
 
 Tell us which problem matters to you and how you handle it today in [GitHub issues](https://github.com/merran-app/merran/issues). We will link individual tracking issues here as they are opened. For current capabilities and setup instructions, start with [your first week](../../get-started/first-week/).

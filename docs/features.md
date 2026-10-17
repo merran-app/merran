@@ -194,3 +194,16 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | MCP server for Claude Desktop, Claude Code and other AI apps | Headline | Planned | |
 | OAuth so the ChatGPT and Claude apps can connect | Detail | Later | |
 | Household-owned API keys; OpenTelemetry; a Helm chart | Detail | Later | |
+
+## Research candidates — October 17, 2026
+
+These are exploratory additions from [roadmap research](roadmap-research.md), not commitments for 0.1. Existing Planned items retain their status. For this table, Later means consideration after the current planned scope, not a promise to implement.
+
+| Feature | Importance | Status | Notes |
+|---|---|---|---|
+| Saved meal plans and menus | Key | Later | Exploring; Save named plans such as a busy week, camping trip, or holiday dinner and reuse them with new dates and serving counts. Goes beyond Repeat last week. |
+| Prepared meals and freezer portions | Key | Later | Exploring; Track portions of food already cooked, when they were made or frozen, and schedule them without buying the original ingredients again. Goes beyond storage locations and leftover notes. |
+| Meal-plan calendar subscriptions | Key | Later | Exploring; Opt in to a read-only iCalendar feed for external calendar apps, with revocable links and recipe references; refresh timing depends on the calendar app. |
+| Minimum-stock reminders | Key | Later | Exploring; Set a desired stock level and review suggested top-ups based on measured pantry quantities. Complements recurring buys and staples. |
+| Recipe sharing outside the household | Key | Later | Exploring; Share one recipe through a revocable read-only link without inviting the recipient to the household. Must preserve household isolation. |
+| Print-friendly recipes, plans and cookbooks | Detail | Later | Exploring; Print a clean recipe, shopping list or meal plan; later assemble selected recipes into a family cookbook using print/PDF export. Complements structured data export. |
