@@ -1,0 +1,10 @@
+---
+import Search from "@astrojs/starlight/components/Search.astro"
+import ThemeSelect from "@astrojs/starlight/components/ThemeSelect.astro"
+import SiteHeader from "./SiteHeader.astro"
+---
+
+<SiteHeader docs>
+  <Search slot="search" />
+  <ThemeSelect slot="theme" />
+</SiteHeader>

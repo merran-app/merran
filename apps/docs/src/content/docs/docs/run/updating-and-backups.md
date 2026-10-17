@@ -1,0 +1,64 @@
+---
+title: Updating and backups
+description: Preserve your data before changing Merran versions.
+sidebar:
+  order: 4
+---
+
+## Back up before updating
+
+You need access to the deployment's files and container controls, and to database backup/restore tools if using Postgres. This procedure follows the repository's deployment layout; verification against a published release is still outstanding.
+
+Keep a copy of the application's complete data directory, configuration, and any externally supplied secrets.
+
+With the supplied SQLite Compose setup, stop Merran before copying **./data/app** so the database and its files form a consistent snapshot:
+
+```bash
+docker compose stop merran
+```
+
+Copy the directory to a separate backup location using your backup tool. Include compose.yaml and .env, store secrets securely, then restart:
+
+```bash
+docker compose start merran
+```
+
+For the standalone Docker command, the application's directory is **./data** instead. Postgres installations also need a consistent database backup; copying only the app directory is insufficient.
+
+Automatic backups are not part of this initial guide. Arrange and verify your own backups.
+
+A household export is not a full server backup: it does not replace accounts, server configuration, saved credentials, the database, and the original server secret. Record the running image tag or digest with each backup so you can restore the matching version.
+
+## Update a Compose installation
+
+Read the [release notes](https://github.com/merran-app/merran/releases), make a backup, then run from the Compose directory:
+
+```bash
+docker compose pull
+docker compose up -d
+docker compose logs --tail 100 merran
+```
+
+Open Merran and check that your household, recipes, and plan are present. Merran applies database migrations during startup.
+
+## Restore
+
+Downgrades are not supported. To return to an earlier version, restore the complete backup made before the update and use the matching image version.
+
+Stop Merran before restoring files. Keep a copy of the current data, restore the saved data and configuration to their original paths, and start the matching version. For Postgres, restore its database backup as well.
+
+1. Stop Merran and preserve the failed installation's data and logs separately.
+2. Select a complete backup and the matching image version. Restore the complete app directory, including its `secret` file. If you supplied `MERRAN_SECRET` externally, restore that exact value instead.
+3. For Postgres, restore the corresponding database backup while Merran remains stopped. Check that configuration points to the restored database.
+4. Check volume mounts and file permissions. Set the intended image version in your deployment configuration, then run `docker compose up -d` for the supplied Compose setup.
+5. Review `docker compose logs --tail 100 merran`. Sign in and verify the expected household, recipes, images, plan, list, and pantry. Test a saved connection if you use one, and inspect **Settings → This server → Jobs** for interrupted work that resumes.
+
+**Expected result:** Merran opens the restored data, accounts can sign in, and saved credentials remain readable with the matching secret. If setup appears again or credentials are unreadable, stop and recheck the mount, database selection, and secret before making new data.
+
+Test a restore on an isolated installation before relying on the backup.
+
+Keep an isolated restore off public traffic and prevent it from making unwanted external requests or running household automation while testing. Restored settings and jobs can resume background work.
+
+## Next steps
+
+For failed startup or migrations, missing data, and job errors, follow [troubleshooting](../troubleshooting/). Check [configuration](../configuration/) and the [settings reference](../settings-reference/) when moving an installation to a new address or host.

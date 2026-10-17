@@ -1,0 +1,231 @@
+@import "./theme.css";
+
+:root,
+:root[data-theme="light"] {
+  --sl-font: var(--sans);
+  --sl-font-mono: var(--mono);
+  --sl-color-white: var(--foreground);
+  --sl-color-black: var(--background);
+  --sl-color-text: var(--foreground);
+  --sl-color-text-accent: var(--primary);
+  --sl-color-text-invert: var(--primary-foreground);
+  --sl-color-accent: var(--primary);
+  --sl-color-accent-high: var(--accent-foreground);
+  --sl-color-accent-low: var(--accent);
+  --sl-color-bg: var(--background);
+  --sl-color-bg-nav: var(--background);
+  --sl-color-bg-sidebar: var(--background);
+  --sl-color-bg-inline-code: var(--secondary);
+  --sl-color-bg-accent: var(--primary);
+  --sl-color-gray-1: var(--foreground);
+  --sl-color-gray-2: var(--muted-foreground);
+  --sl-color-gray-3: var(--muted-foreground);
+  --sl-color-gray-4: var(--input);
+  --sl-color-gray-5: var(--border);
+  --sl-color-gray-6: var(--muted);
+  --sl-color-hairline: var(--border);
+  --sl-color-hairline-light: var(--border);
+  --sl-color-hairline-shade: var(--border);
+  --sl-nav-height: 4.25rem;
+  --sl-sidebar-width: 16rem;
+  --sl-content-width: 48rem;
+  --sl-line-height: 1.7;
+  --sl-line-height-headings: 1.15;
+}
+body {
+  -webkit-font-smoothing: antialiased;
+}
+.header {
+  background: color-mix(in oklch, var(--background) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(14px);
+}
+.sidebar-pane {
+  border-color: var(--border);
+}
+.sidebar-content {
+  padding-top: 2.5rem;
+}
+.sidebar-content .top-level > li {
+  margin-bottom: 1.4rem;
+}
+.sidebar-content .large {
+  font: 600 0.72rem var(--sans);
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.sidebar-content a {
+  border-radius: 0.65rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+.sidebar-content a[aria-current="page"] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 600;
+}
+.sidebar-content summary {
+  padding: 0.3rem 0.5rem;
+}
+.sidebar-content ul ul {
+  border-inline-start-color: var(--border);
+}
+.content-panel {
+  border: 0;
+}
+.content-panel + .content-panel {
+  padding-top: 1.5rem;
+}
+.main-pane {
+  padding-bottom: 3rem;
+}
+.sl-markdown-content {
+  font-size: 1.05rem;
+}
+.sl-markdown-content h2,
+.sl-markdown-content h3,
+.sl-markdown-content h4 {
+  font-family: var(--serif);
+  font-weight: 560;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+}
+.sl-markdown-content h2 {
+  font-size: clamp(1.8rem, 2.8vw, 2.4rem);
+  margin-top: 2.75rem;
+}
+.sl-markdown-content h3 {
+  font-size: 1.55rem;
+}
+.sl-markdown-content > p:first-child {
+  font-size: 1.18rem;
+  line-height: 1.65;
+  color: var(--muted-foreground);
+}
+.sl-markdown-content a {
+  color: var(--primary);
+  text-underline-offset: 0.2em;
+}
+.sl-markdown-content :not(pre) > code {
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  padding: 0.12rem 0.35rem;
+}
+.sl-markdown-content table {
+  font-size: 0.92rem;
+  border-radius: 0.75rem;
+}
+.sl-markdown-content th {
+  background: var(--secondary);
+  font: 600 0.85rem var(--sans);
+}
+.sl-markdown-content th,
+.sl-markdown-content td {
+  border-color: var(--border);
+  padding: 0.85rem 1rem;
+}
+.expressive-code {
+  --ec-brdCol: var(--border);
+  --ec-brdRad: 1rem;
+  --ec-codeBg: var(--card);
+  --ec-codeFontSize: 0.85rem;
+  --ec-frm-trmBg: var(--secondary);
+  --ec-frm-trmTtbBg: var(--secondary);
+  --ec-frm-trmTtbBrdBtmCol: var(--border);
+}
+.expressive-code .frame {
+  box-shadow: var(--shadow);
+}
+site-search button[data-open-modal] {
+  border-radius: 999px;
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+  box-shadow: none;
+}
+site-search kbd {
+  border-radius: 0.3rem;
+  background: var(--muted);
+  box-shadow: none;
+}
+starlight-theme-select select {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  font-family: var(--sans);
+}
+.right-sidebar {
+  border: 0;
+}
+.right-sidebar h2 {
+  font: 600 0.72rem var(--sans);
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.right-sidebar a {
+  font-size: 0.85rem;
+  border-radius: 0.4rem;
+}
+.pagination-links a {
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--card);
+  box-shadow: none;
+}
+.pagination-links .link-title {
+  font-family: var(--serif);
+  font-weight: 500;
+}
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+@media (min-width: 50rem) {
+  .content-panel:first-child {
+    padding-top: 2.5rem;
+  }
+}
+@media (max-width: 50rem) {
+  .sl-markdown-content {
+    font-size: 1rem;
+  }
+  .sidebar-content {
+    padding-top: 1.5rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* The docs shell owns the header height; its contents fit inside the padded row. */
+.header {
+  display: flex;
+  align-items: center;
+}
+site-search button[data-open-modal] {
+  height: 2.4rem;
+  box-sizing: border-box;
+}
+starlight-theme-select {
+  display: flex;
+  align-items: center;
+}
+starlight-theme-select select {
+  height: 2.4rem;
+  box-sizing: border-box;
+  margin-inline: 0;
+  padding-block: 0;
+  padding-inline: 2rem 1.75rem;
+  line-height: 1.2;
+}
+starlight-theme-select .label-icon {
+  inset-inline-start: 0.65rem;
+}
+starlight-theme-select .caret {
+  inset-inline-end: 0.4rem;
+}

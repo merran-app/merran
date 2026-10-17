@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="title desc">
+  <title id="title">Merran — Dinner, planned.</title>
+  <desc id="desc">Recipes, plan, shop, cook. Your kitchen on your own server.</desc>
+  <rect width="1200" height="300" rx="24" fill="#f9f7ef"/>
+  <circle cx="1115" cy="35" r="200" fill="#e8edde"/>
+  <circle cx="1200" cy="280" r="170" fill="#f0e5d6"/>
+  <g transform="translate(70 64)" fill="none" stroke="#41734f" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 0v26a30 30 0 0 0 60 0V0"/>
+    <path d="M0 0l30 28L60 0" stroke="#b36b45"/>
+  </g>
+  <text x="153" y="119" font-family="Georgia,serif" font-size="78" letter-spacing="-3" fill="#322e28">merr<tspan fill="#41734f">a</tspan>n</text>
+  <text x="72" y="192" font-family="Georgia,serif" font-size="42" letter-spacing="-1" fill="#322e28">Dinner, planned.</text>
+  <text x="74" y="240" font-family="Arial,sans-serif" font-size="18" fill="#6e6b5f">Your recipes. Your kitchen. Your server.</text>
+  <g transform="translate(720 90)" font-family="Arial,sans-serif">
+    <rect width="366" height="120" rx="22" fill="#fffdf7" stroke="#dadbce"/>
+    <g fill="none" stroke="#41734f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M29 27h27v28H29zM35 34h15M35 41h12M35 48h8"/>
+      <path d="M112 28h28v27h-28zM112 36h28M119 24v8M133 24v8M119 42h3M130 42h3M119 49h3"/>
+      <path d="M195 35h29l-4 22h-21zM202 36v-6a7 7 0 0 1 14 0v6"/>
+      <path d="M283 27v11M289 27v11M295 27v11M283 38q6 9 12 0M289 46v13M309 27v32M309 27q-11 14 0 17"/>
+    </g>
+    <g fill="#4a5546" font-size="14" text-anchor="middle">
+      <text x="43" y="87">Recipes</text><text x="126" y="87">Plan</text><text x="210" y="87">Shop</text><text x="295" y="87">Cook</text>
+    </g>
+    <g fill="#a7b29c"><path d="m75 41 5 4-5 4z"/><path d="m159 41 5 4-5 4z"/><path d="m243 41 5 4-5 4z"/></g>
+  </g>
+</svg>

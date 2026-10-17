@@ -1,0 +1,3473 @@
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <p class="eyebrow" style="margin-bottom: 1.25rem">
+          Free and open source · Runs on your server
+        </p>
+        <h1>
+          <span class="line">Dinner, planned.</span
+          ><span class="line">The pantry, counted.</span
+          ><span class="line"><em>The list, sent.</em></span>
+        </h1>
+      </div>
+      <div class="hero-side">
+        <p class="lede">
+          Merran is a meal planner for your household that runs on your own
+          server, with an optional AI cooking assistant. Import recipes, plan
+          the week, track pantry amounts, and send shopping lists to supported
+          store carts when connected.
+        </p>
+        <div class="ctas">
+          <a class="btn btn-primary" href="__BASE__docs/get-started/install/"
+            >Install with Docker</a
+          >
+          <a class="btn btn-ghost" href="https://github.com/merran-app/merran"
+            ><i data-i="Github"></i>View on GitHub</a
+          >
+        </div>
+        <div class="facts">
+          <span><i data-i="SourceCode"></i>AGPL-3.0</span>
+          <span><i data-i="ServerStack01"></i>Docker Compose</span>
+          <span
+            ><i data-i="Key01"></i>Optional AI, your provider or endpoint</span
+          >
+          <span><i data-i="SmartPhone01"></i>Phone, iPad and desktop</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-bar">
+        <span class="hint"
+          ><span class="pulse"></span>Interactive preview · sample data</span
+        >
+        <span class="theme-label"
+          ><span id="pal-name">Sage &amp; Cream</span>
+          <span
+            class="theme-ctl"
+            role="group"
+            aria-label="Palette and light or dark"
+          >
+            <button
+              class="swatch"
+              data-pal="sage"
+              aria-pressed="true"
+              title="Sage &amp; Cream"
+            >
+              <span class="sw-sage"></span>
+            </button>
+            <button
+              class="swatch"
+              data-pal="paprika"
+              aria-pressed="false"
+              title="Paprika &amp; Linen"
+            >
+              <span class="sw-paprika"></span>
+            </button>
+            <button
+              class="swatch"
+              data-pal="castiron"
+              aria-pressed="false"
+              title="Cast Iron &amp; Saffron"
+            >
+              <span class="sw-castiron"></span>
+            </button>
+            <span class="theme-sep"></span>
+            <button
+              class="mode-btn"
+              data-mode
+              aria-label="Switch light or dark"
+            >
+              <i data-i="Moon02"></i>
+            </button>
+          </span>
+        </span>
+      </div>
+
+      <div class="stage-row">
+        <div class="win ui" id="app">
+          <div class="win-bar">
+            <span class="win-dots"><i></i><i></i><i></i></span>
+            <span class="win-url"
+              ><i data-i="Shield01"></i>192.168.1.20:3000</span
+            >
+            <span style="width: 2.5rem"></span>
+          </div>
+          <div class="win-body">
+            <aside class="sb">
+              <div class="sb-logo">
+                <span class="logo"
+                  ><svg
+                    class="mark"
+                    viewBox="0 0 48 48"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M9 11v13a15 15 0 0 0 30 0V11" />
+                    <path class="mark-mid" d="M9 11l15 14 15-14" /></svg
+                  ><span class="word logo-word">merr<span>a</span>n</span></span
+                >
+              </div>
+              <nav aria-label="App">
+                <button
+                  class="sb-item"
+                  aria-label="Today"
+                  data-go="today"
+                  aria-current="page"
+                >
+                  <i data-i="Home01"></i><span class="lbl">Today</span>
+                </button>
+                <button class="sb-item" aria-label="Recipes" data-go="recipes">
+                  <i data-i="CookBook"></i><span class="lbl">Recipes</span>
+                </button>
+                <button class="sb-item" aria-label="Plan" data-go="plan">
+                  <i data-i="Calendar03"></i><span class="lbl">Plan</span>
+                </button>
+                <button class="sb-item" aria-label="List" data-go="list">
+                  <i data-i="ShoppingBasket01"></i><span class="lbl">List</span>
+                </button>
+                <button class="sb-item" aria-label="Pantry" data-go="pantry">
+                  <i data-i="Fridge"></i><span class="lbl">Pantry</span>
+                </button>
+              </nav>
+              <div class="sb-foot">
+                <details class="demo-account sidebar-account">
+                  <summary aria-label="Account menu">
+                    <span class="avatar">SM</span
+                    ><span class="account-name"
+                      ><strong>Sam Morgan</strong
+                      ><small>Our kitchen</small></span
+                    ><span class="account-chevron" aria-hidden="true">⌃</span>
+                  </summary>
+                  <div class="account-popup">
+                    <strong>Sam Morgan</strong
+                    ><span class="t-xs mf">sam · sample account</span
+                    ><button class="b b-ghost" data-mode>
+                      <i data-i="Sun03"></i>Switch light or dark</button
+                    ><a href="__BASE__docs/get-started/setup/"
+                      >Settings guide →</a
+                    >
+                    <p class="t-xs mf">
+                      Preview only. Account changes and sign out are available
+                      in your own server.
+                    </p>
+                  </div>
+                </details>
+              </div>
+            </aside>
+            <div class="inset">
+              <div class="topbar">
+                <button
+                  class="b b-ghost b-ic b-sm tb-side"
+                  data-sidebar-toggle
+                  aria-label="Toggle sidebar"
+                  aria-expanded="true"
+                >
+                  <i data-i="SidebarLeft"></i>
+                </button>
+                <span class="tb-logo"
+                  ><span class="logo"
+                    ><svg
+                      class="mark"
+                      viewBox="0 0 48 48"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="3.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M9 11v13a15 15 0 0 0 30 0V11" />
+                      <path class="mark-mid" d="M9 11l15 14 15-14" /></svg
+                    ><span class="word logo-word"
+                      >merr<span>a</span>n</span
+                    ></span
+                  ></span
+                >
+                <div class="end">
+                  <span
+                    class="tchip"
+                    style="
+                      height: 2rem;
+                      padding: 0 0.625rem;
+                      font-size: 0.75rem;
+                    "
+                    ><i data-i="Timer02"></i
+                    ><span data-count="342">5:42</span></span
+                  >
+                  <button
+                    class="b b-ghost b-sm demo-assistant"
+                    aria-label="Try the assistant preview"
+                    data-jump="assistant"
+                    title="Optional AI · scripted preview"
+                  >
+                    <i data-i="Sparkles"></i><span>Assistant</span>
+                  </button>
+                  <details class="demo-account mobile-account">
+                    <summary aria-label="Account menu">
+                      <span class="avatar">SM</span>
+                    </summary>
+                    <div class="account-popup">
+                      <strong>Sam Morgan</strong
+                      ><span class="t-xs mf">sam · sample account</span
+                      ><button class="b b-ghost" data-mode>
+                        <i data-i="Sun03"></i>Switch light or dark</button
+                      ><a href="__BASE__docs/get-started/setup/"
+                        >Settings guide →</a
+                      >
+                      <p class="t-xs mf">
+                        Preview only. Account changes and sign out are available
+                        in your own server.
+                      </p>
+                    </div>
+                  </details>
+                </div>
+              </div>
+              <div class="main" id="app-main">
+                <!-- TODAY -->
+                <section class="scr" data-screen="today">
+                  <div class="grid" style="gap: 0.25rem">
+                    <h1 class="today-greeting">Good evening, Sam</h1>
+                    <p class="mf">Thursday, October 15</p>
+                  </div>
+                  <article class="card3 next">
+                    <div class="ph wide" data-dish="chicken">
+                      <span class="ai"><i data-i="Sparkles"></i>AI photo</span>
+                    </div>
+                    <div class="next-body">
+                      <div class="grid" style="gap: 0.75rem">
+                        <p class="when">Tonight · Dinner</p>
+                        <h3>Chicken + Rice<span> with Peanut Sauce</span></h3>
+                        <div class="wrap-row">
+                          <span class="fact">4 servings</span
+                          ><span class="fact">35 min</span
+                          ><span class="fact acc">On the list</span>
+                        </div>
+                        <p class="t-sm mf">Already home: rice and garlic.</p>
+                      </div>
+                      <div class="wrap-row" style="gap: 0.5rem">
+                        <button class="b b-pri b-xl" data-jump="cook">
+                          <i data-i="CookingPot"></i>Start cooking
+                        </button>
+                        <button class="b b-out b-xl" style="padding: 0 1.25rem">
+                          <i data-i="Tick02"></i>Mark cooked
+                        </button>
+                        <button class="b b-out b-ic b-xl" aria-label="More">
+                          <i data-i="MoreHorizontal"></i>
+                        </button>
+                      </div>
+                      <p class="todayline">
+                        Also today · Breakfast: Overnight Oats
+                        <span class="pri fw5">(done)</span>
+                      </p>
+                    </div>
+                  </article>
+                  <div class="glance">
+                    <div class="card3 tile">
+                      <p class="cap">This week</p>
+                      <p class="v">12 of 14 planned</p>
+                      <p class="d">Saturday's dinner is open</p>
+                    </div>
+                    <div class="card3 tile">
+                      <p class="cap">Shopping</p>
+                      <p class="v">14 to buy · about $79</p>
+                      <p class="d trunc">Chicken thighs, paneer and limes</p>
+                    </div>
+                    <div class="card3 tile warn">
+                      <p class="cap">Use soon</p>
+                      <p class="v">Spinach</p>
+                      <p class="d">Tomorrow, and 3 more</p>
+                    </div>
+                  </div>
+                  <div class="grid" style="gap: 0.75rem">
+                    <div class="sh">
+                      <h2>Coming up</h2>
+                      <span class="lnk">Plan<i data-i="ArrowRight01"></i></span>
+                    </div>
+                    <div class="days">
+                      <div class="card3 dayc">
+                        <p class="cap">Tomorrow</p>
+                        <p class="fw6">Saag Paneer</p>
+                        <p class="t-sm mf">Dinner · Meatless night</p>
+                      </div>
+                      <div class="card3 dayc">
+                        <p class="cap">Saturday</p>
+                        <p class="mf">Nothing planned</p>
+                        <p class="t-sm fw5 pri">Plan it</p>
+                      </div>
+                      <div class="card3 dayc">
+                        <p class="cap">Sunday</p>
+                        <p class="fw6">Lemon Ricotta Pancakes</p>
+                        <p class="t-sm mf">Breakfast</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="grid" style="gap: 0.75rem">
+                    <div class="sh"><h2>Cook again</h2></div>
+                    <div class="shelf">
+                      <div>
+                        <div class="ph" data-dish="salmon"></div>
+                        <p>Miso Salmon</p>
+                        <p class="t-xs mf" style="margin: 0">Made Sep 30</p>
+                      </div>
+                      <div>
+                        <div class="ph" data-dish="soup"></div>
+                        <p>Creamy Tomato Soup</p>
+                        <p class="t-xs mf" style="margin: 0">Made Sep 21</p>
+                      </div>
+                      <div>
+                        <div class="ph" data-dish="krapow"></div>
+                        <p>Thai Basil Chicken</p>
+                        <p class="t-xs mf" style="margin: 0">Made Sep 28</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- RECIPES -->
+                <section class="scr" data-screen="recipes" hidden>
+                  <div class="phdr">
+                    <div class="grid" style="gap: 0.25rem">
+                      <h1>Recipes</h1>
+                      <p>128 recipes, everything you cook in one place.</p>
+                    </div>
+                    <div class="wrap-row" style="gap: 0.5rem">
+                      <button class="b b-out">
+                        <i data-i="Compass01"></i>Find recipes</button
+                      ><button class="b b-out">Select</button
+                      ><button class="b b-pri">
+                        <i data-i="Add01"></i>Add recipe
+                      </button>
+                    </div>
+                  </div>
+                  <div class="fbar" style="margin-top: -1rem">
+                    <div class="wrap-row" style="gap: 0.5rem">
+                      <span class="input"
+                        ><i data-i="Search01"></i>Search recipes, ingredients or
+                        tags<span class="kbd">/</span></span
+                      >
+                      <button class="b b-out">
+                        Diet<i data-i="ArrowDown01" class="mf"></i>
+                      </button>
+                      <button class="b b-out">
+                        Tags<i data-i="ArrowDown01"></i>
+                      </button>
+                      <button class="b b-out">
+                        Time<i data-i="ArrowDown01"></i>
+                      </button>
+                      <button class="b b-ghost">
+                        <span class="mf">Sort:</span> Newest
+                      </button>
+                    </div>
+                    <div class="qtags">
+                      <button class="b b-pri b-sm">All <span>128</span></button>
+                      <button class="b b-out b-sm">New <span>23</span></button>
+                      <button class="b b-out b-sm">
+                        On sale <span>7</span>
+                      </button>
+                      <button class="b b-out b-sm">
+                        Dinner <span>54</span>
+                      </button>
+                      <button class="b b-out b-sm">
+                        Chicken <span>31</span>
+                      </button>
+                      <button class="b b-out b-sm">
+                        Vegetarian <span>22</span>
+                      </button>
+                      <button class="b b-out b-sm">
+                        Quick <span>19</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="rgrid">
+                    <div class="card2 rcard">
+                      <div class="ph" data-dish="chicken"></div>
+                      <div class="rcard-b">
+                        <h3>Chicken + Rice</h3>
+                        <div class="rmeta">
+                          <span><i data-i="Clock01"></i>35 min</span
+                          ><span class="stars" data-stars="5"></span
+                          ><span>~$1.55/serving</span>
+                        </div>
+                        <div class="bdgs">
+                          <span class="bdg bdg-acc">Made Oct 9</span
+                          ><span class="bdg bdg-sec">Dinner</span
+                          ><span class="bdg bdg-sec">Chicken</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="card2 rcard">
+                      <div class="ph" data-dish="saag"></div>
+                      <div class="rcard-b">
+                        <h3>Saag Paneer</h3>
+                        <div class="rmeta">
+                          <span><i data-i="Clock01"></i>40 min</span
+                          ><span>~$2.10/serving</span>
+                        </div>
+                        <div class="bdgs">
+                          <span class="bdg bdg-pri">New</span
+                          ><span class="bdg bdg-sec">Vegetarian</span
+                          ><span class="bdg bdg-sec">Indian</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="card2 rcard">
+                      <div class="ph" data-dish="krapow"></div>
+                      <div class="rcard-b">
+                        <h3>Thai Basil Chicken</h3>
+                        <div class="rmeta">
+                          <span><i data-i="Clock01"></i>20 min</span
+                          ><span class="stars" data-stars="4"></span
+                          ><span>~$1.65/serving</span>
+                        </div>
+                        <p class="sale">Chicken thighs on sale</p>
+                        <div class="bdgs">
+                          <span class="bdg bdg-acc">Made Sep 28</span
+                          ><span class="bdg bdg-sec">Quick</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="card2 rcard">
+                      <div class="ph" data-dish="rigatoni"></div>
+                      <div class="rcard-b">
+                        <h3>Spicy Rigatoni</h3>
+                        <div class="rmeta">
+                          <span><i data-i="Clock01"></i>25 min</span
+                          ><span class="stars" data-stars="4"></span
+                          ><span>~$1.80/serving</span>
+                        </div>
+                        <div class="bdgs">
+                          <span class="bdg bdg-acc">Made Oct 2</span
+                          ><span class="bdg bdg-sec">Pasta</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="card2 rcard">
+                      <div class="ph" data-dish="salmon"></div>
+                      <div class="rcard-b">
+                        <h3>Miso Salmon</h3>
+                        <div class="rmeta">
+                          <span><i data-i="Clock01"></i>20 min</span
+                          ><span class="stars" data-stars="5"></span
+                          ><span>~$3.40/serving</span>
+                        </div>
+                        <p class="sale">Salmon on sale</p>
+                        <div class="bdgs">
+                          <span class="bdg bdg-acc">Made Sep 30</span
+                          ><span class="bdg bdg-sec">Fish</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="card2 rcard">
+                      <div class="ph" data-dish="tacos"></div>
+                      <div class="rcard-b">
+                        <h3>Black Bean Tacos</h3>
+                        <div class="rmeta">
+                          <span><i data-i="Clock01"></i>25 min</span
+                          ><span class="stars" data-stars="4"></span
+                          ><span>~$0.95/serving</span>
+                        </div>
+                        <div class="bdgs">
+                          <span class="bdg bdg-acc">Made Oct 13</span
+                          ><span class="bdg bdg-sec">Tacos</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- PLAN -->
+                <section class="scr" data-screen="plan" hidden>
+                  <div class="phdr">
+                    <div class="grid" style="gap: 0.25rem">
+                      <h1>Plan</h1>
+                      <p>This week, Oct 11 – 17</p>
+                    </div>
+                    <div class="wrap-row" style="gap: 0.5rem">
+                      <button class="b b-out" data-jump="plan">
+                        <i data-i="Sparkles"></i>Fill the week</button
+                      ><button class="b b-pri">
+                        <i data-i="ShoppingBasket01"></i>Add to list</button
+                      ><button class="b b-out b-ic" aria-label="More">
+                        <i data-i="MoreHorizontal"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="weekrow" style="margin-top: -0.75rem">
+                    <div class="row">
+                      <button class="b b-out b-ic" aria-label="Last week">
+                        <i data-i="ArrowLeft01"></i></button
+                      ><span
+                        class="fw6"
+                        style="min-width: 7rem; text-align: center"
+                        >Oct 11 – 17</span
+                      ><button class="b b-out b-ic" aria-label="Next week">
+                        <i data-i="ArrowRight01"></i>
+                      </button>
+                    </div>
+                    <div class="wsum">
+                      <span><b>12</b> of 14 meals planned</span
+                      ><span class="act">2 not on the list yet</span
+                      ><span>≈ <b>1,850</b> cal a day</span
+                      ><span>≈ <b>$84</b> of your $120</span>
+                    </div>
+                  </div>
+                  <div class="folded">
+                    <span class="trunc"
+                      ><b>Sun – Wed</b> · 7 cooked: Tomato Soup, Gnocchi, Black
+                      Bean Tacos, Overnight Oats…</span
+                    ><span class="t-sm fw6 pri">Show</span>
+                  </div>
+                  <section class="card3 day today">
+                    <div class="day-h">
+                      <h2>Thursday</h2>
+                      <span class="t-sm mf">Oct 15</span
+                      ><span class="bdg bdg-pri">Today</span
+                      ><span class="cal">≈ 1,920 cal</span>
+                    </div>
+                    <div class="meals">
+                      <div class="meal">
+                        <div class="meal-h">
+                          <span class="cap">Breakfast</span>
+                        </div>
+                        <div class="entry">
+                          <div class="ph" data-dish="oats"></div>
+                          <div class="txt">
+                            <p class="meal-name">Overnight Oats</p>
+                            <p class="sub">
+                              <span class="ok"
+                                ><i data-i="Tick02"></i>Cooked</span
+                              >
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="meal">
+                        <div class="meal-h">
+                          <span class="cap">Dinner</span>
+                        </div>
+                        <div class="entry">
+                          <div class="ph" data-dish="chicken"></div>
+                          <div class="txt">
+                            <p class="meal-name">
+                              Chicken + Rice<span> with Peanut Sauce</span>
+                            </p>
+                            <p class="sub">On the list · 4 servings · 35 min</p>
+                          </div>
+                          <button class="b b-ghost b-ic b-sm" aria-label="More">
+                            <i data-i="MoreHorizontal"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                  <section class="card3 day">
+                    <div class="day-h">
+                      <h2>Friday</h2>
+                      <span class="t-sm mf">Oct 16</span
+                      ><span class="theme">Meatless night</span
+                      ><span class="cal">≈ 1,410 cal +</span>
+                    </div>
+                    <div class="meals">
+                      <div class="meal">
+                        <div class="meal-h">
+                          <span class="cap">Breakfast</span>
+                        </div>
+                        <div class="addmeal">
+                          <i data-i="Add01"></i>Add breakfast
+                        </div>
+                      </div>
+                      <div class="meal">
+                        <div class="meal-h">
+                          <span class="cap">Dinner</span>
+                        </div>
+                        <div class="entry">
+                          <div class="ph" data-dish="saag"></div>
+                          <div class="txt">
+                            <p class="meal-name">Saag Paneer</p>
+                            <p class="sub">On the list · 4 servings · 40 min</p>
+                          </div>
+                          <button class="b b-ghost b-ic b-sm" aria-label="More">
+                            <i data-i="MoreHorizontal"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                  <section class="card3 day">
+                    <div class="day-h">
+                      <h2>Saturday</h2>
+                      <span class="t-sm mf">Oct 17</span
+                      ><span class="theme">Pasta night</span>
+                    </div>
+                    <div class="meals">
+                      <div class="meal">
+                        <div class="meal-h">
+                          <span class="cap">Breakfast</span>
+                        </div>
+                        <div class="entry">
+                          <div class="ph" data-dish="pancakes"></div>
+                          <div class="txt">
+                            <p class="meal-name">Buttermilk Pancakes</p>
+                            <p class="sub">4 servings · 25 min</p>
+                          </div>
+                          <button class="b b-ghost b-ic b-sm" aria-label="More">
+                            <i data-i="MoreHorizontal"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="meal">
+                        <div class="meal-h">
+                          <span class="cap">Dinner</span>
+                        </div>
+                        <div class="addmeal">
+                          <i data-i="Add01"></i>Add dinner
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                </section>
+
+                <!-- LIST -->
+                <section class="scr" data-screen="list" hidden>
+                  <div class="phdr">
+                    <div class="grid" style="gap: 0.25rem">
+                      <h1>List</h1>
+                      <p>14 to get across 2 lists</p>
+                    </div>
+                    <div class="wrap-row" style="gap: 0.5rem">
+                      <button class="b b-pri">
+                        <i data-i="Calendar03"></i>Add from plan</button
+                      ><button class="b b-out b-ic" aria-label="More">
+                        <i data-i="MoreHorizontal"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <p class="together" style="margin-top: -0.75rem">
+                    <span class="faces"><i>SM</i><i>JA</i></span
+                    ><span
+                      ><b>Jamie</b> is on the list too. Changes show up as you
+                      go.</span
+                    ><span class="live"></span>
+                  </p>
+                  <div class="stores">
+                    <div class="card3 store picked">
+                      <div class="row">
+                        <h3>Fry's</h3>
+                        <span class="chip chip-acc">Linked</span>
+                      </div>
+                      <p class="t-sm mf">
+                        11 left · 2 in the cart ·
+                        <b class="fw5" style="color: var(--foreground)"
+                          >about $48.20</b
+                        >
+                      </p>
+                      <p class="t-sm fw5 pri">
+                        Saving about $6.40 with 3 sales
+                      </p>
+                      <div class="progress"><i style="width: 15%"></i></div>
+                      <span class="go"
+                        >Send to the Fry's cart<i data-i="ArrowRight01"></i
+                      ></span>
+                    </div>
+                    <div class="card3 store">
+                      <div class="row"><h3>Costco</h3></div>
+                      <p class="t-sm mf">
+                        3 left ·
+                        <b class="fw5" style="color: var(--foreground)"
+                          >about $31.00</b
+                        >
+                      </p>
+                      <p class="t-sm mf">Meat in bulk, and the soda</p>
+                      <div class="progress"><i style="width: 0%"></i></div>
+                      <span class="go"
+                        >Find each at Costco<i data-i="ArrowRight01"></i
+                      ></span>
+                    </div>
+                  </div>
+                  <span class="input"
+                    ><i data-i="Add01"></i>Add an item, like “2 lb potatoes” or
+                    “paper towels”</span
+                  >
+                  <section class="card3 aisle">
+                    <h2>Produce <span>4</span></h2>
+                    <ul>
+                      <li class="item">
+                        <button
+                          class="cb lg"
+                          role="checkbox"
+                          aria-checked="false"
+                          aria-label="Limes"
+                        >
+                          <i data-i="Tick02"></i></button
+                        ><span class="nm">Limes<span> · 3</span></span
+                        ><span class="price">$1.47</span
+                        ><span class="tags"
+                          ><span class="chip chip-acc"
+                            >For Chicken + Rice</span
+                          ></span
+                        >
+                      </li>
+                      <li class="item">
+                        <button
+                          class="cb lg"
+                          role="checkbox"
+                          aria-checked="false"
+                          aria-label="Cilantro"
+                        >
+                          <i data-i="Tick02"></i></button
+                        ><span class="nm">Cilantro<span> · 1 bunch</span></span
+                        ><span class="price">$0.99</span
+                        ><span class="tags"
+                          ><span class="chip chip-acc"
+                            >For Chicken + Rice</span
+                          ></span
+                        >
+                      </li>
+                      <li class="item">
+                        <button
+                          class="cb lg"
+                          role="checkbox"
+                          aria-checked="false"
+                          aria-label="Ginger"
+                        >
+                          <i data-i="Tick02"></i></button
+                        ><span class="nm">Ginger<span> · 1 piece</span></span
+                        ><span class="price">~$0.80</span
+                        ><span class="tags"
+                          ><span class="chip chip-acc"
+                            >For Saag Paneer</span
+                          ></span
+                        >
+                      </li>
+                      <li class="item">
+                        <button
+                          class="cb lg"
+                          role="checkbox"
+                          aria-checked="false"
+                          aria-label="Bananas"
+                        >
+                          <i data-i="Tick02"></i></button
+                        ><span class="nm">Bananas</span
+                        ><span class="price">$1.62</span
+                        ><span class="tags"
+                          ><span class="chip chip-sec">Every week</span></span
+                        >
+                      </li>
+                    </ul>
+                  </section>
+                  <section class="card3 aisle">
+                    <h2>Meat &amp; seafood <span>1</span></h2>
+                    <ul>
+                      <li class="item">
+                        <button
+                          class="cb lg"
+                          role="checkbox"
+                          aria-checked="false"
+                          aria-label="Chicken thighs"
+                        >
+                          <i data-i="Tick02"></i></button
+                        ><span class="nm"
+                          >Chicken thighs<span> · 2 lb</span></span
+                        ><span class="price sale">$6.49</span
+                        ><span class="tags"
+                          ><span class="chip chip-sale">Sale · save $4.00</span
+                          ><span class="chip chip-acc"
+                            >For Chicken + Rice</span
+                          ></span
+                        >
+                      </li>
+                    </ul>
+                  </section>
+                  <section class="card3 aisle">
+                    <h2>Dairy &amp; eggs <span>2</span></h2>
+                    <ul>
+                      <li class="item">
+                        <button
+                          class="cb lg"
+                          role="checkbox"
+                          aria-checked="false"
+                          aria-label="Paneer"
+                        >
+                          <i data-i="Tick02"></i></button
+                        ><span class="nm">Paneer<span> · 8 oz</span></span
+                        ><span class="price">$4.99</span
+                        ><span class="tags"
+                          ><span class="chip chip-acc"
+                            >For Saag Paneer</span
+                          ></span
+                        >
+                      </li>
+                      <li class="item">
+                        <button
+                          class="cb lg"
+                          role="checkbox"
+                          aria-checked="false"
+                          aria-label="Heavy cream"
+                        >
+                          <i data-i="Tick02"></i></button
+                        ><span class="nm">Heavy cream<span> · 1 pt</span></span
+                        ><span class="price">$3.29</span
+                        ><span class="tags"
+                          ><span class="chip chip-acc"
+                            >For Spicy Rigatoni</span
+                          ></span
+                        >
+                      </li>
+                    </ul>
+                  </section>
+                  <div class="cartrow">
+                    <span class="trunc"
+                      ><b>2 in the cart</b
+                      ><span class="mf">: milk, eggs</span></span
+                    ><button
+                      class="b b-out b-sm"
+                      style="background: var(--card)"
+                    >
+                      <i data-i="Fridge"></i>Put away
+                    </button>
+                  </div>
+                </section>
+
+                <!-- PANTRY -->
+                <section class="scr" data-screen="pantry" hidden>
+                  <div class="phdr">
+                    <div class="grid" style="gap: 0.25rem">
+                      <h1>Pantry</h1>
+                      <p>34 things at home, 4 to use soon</p>
+                    </div>
+                    <div class="wrap-row" style="gap: 0.5rem">
+                      <button class="b b-out">
+                        <i data-i="Invoice01"></i>Scan a receipt</button
+                      ><button class="b b-out b-ic" aria-label="More">
+                        <i data-i="MoreHorizontal"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <span class="input" style="margin-top: -0.75rem"
+                    ><i data-i="Add01"></i>Add something, like “2 cans black
+                    beans” or “rice”</span
+                  >
+                  <section class="soon">
+                    <div
+                      class="wrap-row"
+                      style="justify-content: space-between; gap: 0.75rem"
+                    >
+                      <div>
+                        <h2>Use soon</h2>
+                        <p class="t-sm mf">
+                          4 things to cook before they turn.
+                        </p>
+                      </div>
+                      <div class="wrap-row" style="gap: 0.5rem">
+                        <button class="b b-out" style="background: var(--card)">
+                          Toss the one past its date</button
+                        ><button class="b b-pri">
+                          <i data-i="BubbleChatSpark"></i>Ideas for these
+                        </button>
+                      </div>
+                    </div>
+                    <div class="soon-cards">
+                      <div class="soon-card">
+                        <span class="w urgent">Tomorrow</span><b>Spinach</b
+                        ><span>For Saag Paneer · Fri</span>
+                      </div>
+                      <div class="soon-card">
+                        <span class="w">Meal skipped</span><b>Salmon fillets</b
+                        ><span>Bought for Miso Salmon</span>
+                      </div>
+                      <div class="soon-card">
+                        <span class="w past">Past its date</span><b>Cilantro</b
+                        ><span>1 bunch · Produce</span>
+                      </div>
+                      <div class="soon-card">
+                        <span class="w">Sun</span><b>Heavy cream</b
+                        ><span>For Spicy Rigatoni · Sun</span>
+                      </div>
+                    </div>
+                  </section>
+                  <section class="card3 aisle">
+                    <h2>Produce <span>5</span></h2>
+                    <ul>
+                      <li class="prow">
+                        <span class="nm fw5"
+                          >Spinach<span class="mf" style="font-weight: 400">
+                            · 10 oz</span
+                          ></span
+                        ><span class="tags"
+                          ><span class="chip chip-acc"
+                            >For Saag Paneer · Fri</span
+                          ><span class="chip chip-soon"
+                            >Use by tomorrow</span
+                          ></span
+                        ><span class="acts"
+                          ><button class="b b-out b-sm">Used up</button></span
+                        >
+                      </li>
+                      <li class="prow">
+                        <span class="nm fw5"
+                          >Lemons<span class="mf" style="font-weight: 400">
+                            · 2</span
+                          ></span
+                        ><span class="tags"
+                          ><span class="chip chip-sec"
+                            >Use by Oct 22</span
+                          ></span
+                        ><span class="acts"
+                          ><button class="b b-out b-sm">Used up</button></span
+                        >
+                      </li>
+                      <li class="prow">
+                        <span class="nm fw5"
+                          >Onions<span class="mf" style="font-weight: 400">
+                            · 3</span
+                          ></span
+                        ><span class="acts"
+                          ><button class="b b-out b-sm">Used up</button></span
+                        >
+                      </li>
+                      <li class="prow">
+                        <span class="nm fw5"
+                          >Garlic<span class="mf" style="font-weight: 400">
+                            · 1 head</span
+                          ></span
+                        ><span class="acts"
+                          ><button class="b b-out b-sm">Used up</button></span
+                        >
+                      </li>
+                    </ul>
+                  </section>
+                  <section class="card3 aisle">
+                    <h2>Dairy &amp; eggs <span>3</span></h2>
+                    <ul>
+                      <li class="prow">
+                        <span class="nm fw5"
+                          >Whole milk<span class="mf" style="font-weight: 400">
+                            · 1 gal</span
+                          ></span
+                        ><span class="tags"
+                          ><span class="chip chip-sec"
+                            >Use by Oct 21</span
+                          ></span
+                        ><span class="acts"
+                          ><button class="b b-out b-sm">Used up</button></span
+                        >
+                      </li>
+                      <li class="prow">
+                        <span class="nm fw5"
+                          >Eggs<span class="mf" style="font-weight: 400">
+                            · 10</span
+                          ></span
+                        ><span class="acts"
+                          ><button class="b b-out b-sm">Used up</button></span
+                        >
+                      </li>
+                      <li class="prow">
+                        <span class="nm fw5"
+                          >Paneer<span class="mf" style="font-weight: 400">
+                            · half a pack</span
+                          ></span
+                        ><span class="tags"
+                          ><span class="chip chip-acc"
+                            >For Saag Paneer · Fri</span
+                          ></span
+                        ><span class="acts"
+                          ><button class="b b-out b-sm">Used up</button></span
+                        >
+                      </li>
+                    </ul>
+                  </section>
+                </section>
+              </div>
+              <p class="demo-note" role="status" data-demo-note></p>
+              <nav class="bnav" aria-label="App tabs">
+                <button data-go="today" aria-current="page">
+                  <span><i data-i="Home01"></i></span>Today
+                </button>
+                <button data-go="recipes">
+                  <span><i data-i="CookBook"></i></span>Recipes
+                </button>
+                <button data-go="plan">
+                  <span><i data-i="Calendar03"></i></span>Plan
+                </button>
+                <button data-go="list">
+                  <span><i data-i="ShoppingBasket01"></i></span>List
+                </button>
+                <button data-go="pantry">
+                  <span><i data-i="Fridge"></i></span>Pantry
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="why">
+  <div class="wrap why-grid">
+    <div>
+      <h2>Bring the weekly routine together</h2>
+      <p>
+        Keep recipes, plans and shopping connected, with optional AI when you
+        want a hand.
+      </p>
+    </div>
+    <ul class="why-list">
+      <li>
+        <span class="lead">Work with your own recipe library.</span
+        ><span class="detail"
+          >The optional assistant can read household records and propose kitchen
+          changes for you to approve.</span
+        >
+      </li>
+      <li>
+        <span class="lead">Keep track of what is already home.</span
+        ><span class="detail"
+          >Record amounts, use-by dates and food reserved for a planned meal.
+          Comparable quantities can be deducted.</span
+        >
+      </li>
+      <li>
+        <span class="lead">Review products before sending a list.</span
+        ><span class="detail"
+          >Connect an eligible Kroger-family account to add products to its
+          cart. Checkout stays with the retailer.</span
+        >
+      </li>
+      <li>
+        <span class="lead">Make use of available nutrition data.</span
+        ><span class="detail"
+          >Keep imported nutrition, calculate with a USDA key, or use optional
+          AI estimates. Coverage varies by ingredient.</span
+        >
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="loop">
+  <div class="wrap loop-grid">
+    <div>
+      <p class="eyebrow" style="margin-bottom: 1rem">How it fits together</p>
+      <h2>One loop, every week. AI when you want it.</h2>
+      <p class="lede">
+        Choose meals, add their ingredients to the list, and account for pantry
+        stock. Put purchases away, then mark planned meals cooked to deduct
+        their recorded stock. Optional AI can help along the way.
+      </p>
+    </div>
+    <svg
+      class="loop-svg"
+      viewBox="0 0 400 400"
+      role="img"
+      aria-labelledby="loop-t"
+    >
+      <title id="loop-t">
+        Recipes, then Plan, then Shop, then Cook, around the assistant
+      </title>
+      <defs>
+        <marker
+          id="arr"
+          viewBox="0 0 10 10"
+          refX="7"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L8 5 L1 9"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            style="color: var(--primary)"
+          />
+        </marker>
+      </defs>
+      <circle
+        class="ring"
+        cx="200"
+        cy="200"
+        r="150"
+        fill="none"
+        stroke-width="1.5"
+      />
+      <g fill="none" stroke-width="2.5" stroke-linecap="round" class="arc">
+        <path
+          class="arc"
+          d="M246.4 57.3 A150 150 0 0 1 342.7 153.6"
+          marker-end="url(#arr)"
+        />
+        <path
+          class="arc"
+          d="M342.7 246.4 A150 150 0 0 1 246.4 342.7"
+          marker-end="url(#arr)"
+        />
+        <path
+          class="arc"
+          d="M153.6 342.7 A150 150 0 0 1 57.3 246.4"
+          marker-end="url(#arr)"
+        />
+        <path
+          class="arc"
+          d="M57.3 153.6 A150 150 0 0 1 153.6 57.3"
+          marker-end="url(#arr)"
+        />
+      </g>
+      <g stroke-width="1.5" class="spoke">
+        <line class="spoke" x1="200" y1="138" x2="200" y2="96" />
+        <line class="spoke" x1="262" y1="200" x2="304" y2="200" />
+        <line class="spoke" x1="200" y1="262" x2="200" y2="304" />
+        <line class="spoke" x1="138" y1="200" x2="96" y2="200" />
+      </g>
+      <a href="#recipes" class="node" tabindex="0">
+        <circle cx="200" cy="50" r="46" stroke-width="1.5" />
+        <text class="n" x="200" y="40" text-anchor="middle">1</text>
+        <text x="200" y="60" text-anchor="middle">Recipes</text>
+      </a>
+      <a href="#plan" class="node" tabindex="0">
+        <circle cx="350" cy="200" r="46" stroke-width="1.5" />
+        <text class="n" x="350" y="190" text-anchor="middle">2</text>
+        <text x="350" y="210" text-anchor="middle">Plan</text>
+      </a>
+      <a href="#shop" class="node" tabindex="0">
+        <circle cx="200" cy="350" r="46" stroke-width="1.5" />
+        <text class="n" x="200" y="340" text-anchor="middle">3</text>
+        <text x="200" y="360" text-anchor="middle">Shop</text>
+      </a>
+      <a href="#cook" class="node" tabindex="0">
+        <circle cx="50" cy="200" r="46" stroke-width="1.5" />
+        <text class="n" x="50" y="190" text-anchor="middle">4</text>
+        <text x="50" y="210" text-anchor="middle">Cook</text>
+      </a>
+      <a href="#assistant" class="hub" tabindex="0">
+        <circle cx="200" cy="200" r="62" />
+        <text x="200" y="198" text-anchor="middle">Assistant</text>
+        <text class="sub" x="200" y="217" text-anchor="middle">
+          sees all of it
+        </text>
+      </a>
+    </svg>
+  </div>
+</section>
+
+<!-- 1 · RECIPES -->
+<section class="chapter" id="recipes">
+  <div class="wrap">
+    <div class="ch-head">
+      <div>
+        <p class="ch-kicker eyebrow">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle class="hub" cx="12" cy="12" r="3" />
+            <circle class="on" cx="12" cy="3.5" r="2.5" />
+            <circle cx="20.5" cy="12" r="2.5" />
+            <circle cx="12" cy="20.5" r="2.5" />
+            <circle cx="3.5" cy="12" r="2.5" /></svg
+          >1 · Recipes
+        </p>
+        <h2>Recipes from the places you find them</h2>
+      </div>
+      <p>
+        Import a recipe page or type one in. Optional AI reads pasted text,
+        photos and PDFs; video imports also need the video module. Review the
+        result before planning dinner.
+        <a href="__BASE__docs/use/recipes/">Read the Recipes guide →</a>
+      </p>
+    </div>
+    <div class="feat" data-tabs>
+      <div>
+        <div class="tabs" role="tablist" aria-label="Recipe features">
+          <button
+            class="tab"
+            role="tab"
+            id="t-r1"
+            aria-controls="p-r1"
+            aria-selected="true"
+          >
+            <b>Several import methods</b
+            ><span
+              >Links, videos, photos, pasted text, a dozen links at once, or
+              your whole Mealie library.</span
+            >
+          </button>
+          <button
+            class="tab"
+            role="tab"
+            id="t-r2"
+            aria-controls="p-r2"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            <b>Swap what you're out of</b
+            ><span
+              >With AI enabled, review ingredient substitutions and any
+              suggested changes to the steps.</span
+            >
+          </button>
+          <button
+            class="tab"
+            role="tab"
+            id="t-r3"
+            aria-controls="p-r3"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            <b>Scale it, or weigh it</b
+            ><span
+              >Scale recognized amounts and switch between as-written, Metric
+              and US units. Weight conversion depends on the food.</span
+            >
+          </button>
+          <button
+            class="tab"
+            role="tab"
+            id="t-r4"
+            aria-controls="p-r4"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            <b>Labels, nutrition, cost</b
+            ><span
+              >Diet labels use recognized ingredients. Nutrition and cost
+              estimates depend on available data and configured services.</span
+            >
+          </button>
+          <button
+            class="tab"
+            role="tab"
+            id="t-r5"
+            aria-controls="p-r5"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            <b>New ones come to you</b
+            ><span
+              >Follow your favorite sites, or ask AI for “cozy fall soups” and
+              review the recipes it finds before importing.</span
+            >
+          </button>
+        </div>
+        <p class="tab-note"></p>
+      </div>
+      <div class="panelwrap">
+        <div class="panel" role="tabpanel" id="p-r1" aria-labelledby="t-r1">
+          <div class="ui vq">
+            <div class="r1grid">
+              <div class="dialog menu" aria-hidden="true">
+                <div class="mi">
+                  <i data-i="Link01"></i>From a link or video
+                </div>
+                <div class="mi on">
+                  <i data-i="LinkSquare02"></i>Several links at once
+                </div>
+                <div class="mi"><i data-i="Note01"></i>Paste text</div>
+                <div class="mi"><i data-i="Camera01"></i>From a photo</div>
+                <div class="mi"><i data-i="PencilEdit01"></i>Type it in</div>
+                <hr />
+                <div class="mi">
+                  <i data-i="Compass01"></i>Browse collections
+                </div>
+                <div class="mi"><i data-i="Globe02"></i>Find one online</div>
+              </div>
+              <div class="dialog">
+                <div class="row" style="justify-content: space-between">
+                  <h3>Importing recipes</h3>
+                  <span class="t-sm mf">6 of 10</span>
+                </div>
+                <div class="progress" style="height: 0.6rem">
+                  <i style="width: 60%"></i>
+                </div>
+                <div>
+                  <div class="bstat">
+                    <span class="dot ok"><i data-i="Tick02"></i></span
+                    ><span class="fw5 trunc">Birria Tacos</span
+                    ><span class="src">tiktok.com · read from the captions</span
+                    ><span class="st pri">Added</span>
+                  </div>
+                  <div class="bstat">
+                    <span class="dot ok"><i data-i="Tick02"></i></span
+                    ><span class="fw5 trunc">Miso-Glazed Salmon</span
+                    ><span class="src">bonappetit.com</span
+                    ><span class="st pri">Added</span>
+                  </div>
+                  <div class="bstat">
+                    <span class="dot ok"><i data-i="Tick02"></i></span
+                    ><span class="fw5 trunc">Lemon Ricotta Pancakes</span
+                    ><span class="src">youtube.com · read from the video</span
+                    ><span class="st pri">Added</span>
+                  </div>
+                  <div class="bstat">
+                    <span class="dot"><span class="spin"></span></span
+                    ><span class="fw5 trunc">Reading the video…</span
+                    ><span class="src">instagram.com/reel/C9xQ…</span
+                    ><span class="st mf">Importing</span>
+                  </div>
+                  <div class="bstat">
+                    <span class="dot"><i data-i="CookBook"></i></span
+                    ><span class="fw5 trunc">Black Bean Tacos</span
+                    ><span class="src">budgetbytes.com</span
+                    ><span class="st mf">Already had</span>
+                  </div>
+                  <div class="bstat">
+                    <span class="dot"><i data-i="Clock01"></i></span
+                    ><span class="fw5 trunc mf">Waiting</span
+                    ><span class="src">smittenkitchen.com/2024/10/…</span
+                    ><span class="st mf">Waiting</span>
+                  </div>
+                </div>
+                <p class="t-sm mf">
+                  A batch imports one link at a time in a server job. It carries
+                  on after you close the page; individual links can fail or be
+                  skipped.
+                </p>
+              </div>
+            </div>
+          </div>
+          <p class="panel-cap">
+            Moving from Mealie? Import a backup or export under Settings →
+            Import and export → From another app. Direct connection also
+            requires server-admin access.
+            <a href="__BASE__docs/use/recipes/#move-recipes-from-mealie"
+              >Read the migration guide →</a
+            >
+          </p>
+        </div>
+
+        <div
+          class="panel"
+          role="tabpanel"
+          id="p-r2"
+          aria-labelledby="t-r2"
+          hidden
+        >
+          <div class="ui vq">
+            <div class="r2grid" id="swapdemo">
+              <div class="card2" style="padding: 1.25rem 0.75rem">
+                <div
+                  class="row"
+                  style="
+                    justify-content: space-between;
+                    padding: 0 0.5rem 0.75rem;
+                  "
+                >
+                  <h3 style="font-size: 1.25rem">Ingredients</h3>
+                  <span class="t-sm fw5">4 servings</span>
+                </div>
+                <ul class="ilist">
+                  <li>
+                    <span class="cb"></span><span><b>1 lb</b> rigatoni</span
+                    ><span class="swapb"
+                      ><i data-i="ArrowDataTransferHorizontal"></i
+                    ></span>
+                  </li>
+                  <li>
+                    <span class="cb"></span><span><b>2 tbsp</b> olive oil</span
+                    ><span class="swapb"
+                      ><i data-i="ArrowDataTransferHorizontal"></i
+                    ></span>
+                  </li>
+                  <li>
+                    <span class="cb"></span><span><b>1</b> shallot, minced</span
+                    ><span class="swapb"
+                      ><i data-i="ArrowDataTransferHorizontal"></i
+                    ></span>
+                  </li>
+                  <li>
+                    <span class="cb"></span><span><b>2 cloves</b> garlic</span
+                    ><span class="swapb"
+                      ><i data-i="ArrowDataTransferHorizontal"></i
+                    ></span>
+                  </li>
+                  <li data-swapline>
+                    <span class="cb"></span
+                    ><span data-swaptext><b>2 tbsp</b> tomato paste</span
+                    ><button
+                      class="swapb"
+                      aria-expanded="true"
+                      data-swapopen
+                      aria-label="Swap the tomato paste"
+                    >
+                      <i data-i="ArrowDataTransferHorizontal"></i>
+                    </button>
+                  </li>
+                  <li>
+                    <span class="cb"></span
+                    ><span><b>½ tsp</b> red pepper flakes</span
+                    ><span class="swapb"
+                      ><i data-i="ArrowDataTransferHorizontal"></i
+                    ></span>
+                  </li>
+                  <li>
+                    <span class="cb"></span><span><b>¾ cup</b> heavy cream</span
+                    ><span class="swapb"
+                      ><i data-i="ArrowDataTransferHorizontal"></i
+                    ></span>
+                  </li>
+                  <li>
+                    <span class="cb"></span
+                    ><span><b>½ cup</b> grated parmesan</span
+                    ><span class="swapb"
+                      ><i data-i="ArrowDataTransferHorizontal"></i
+                    ></span>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <div class="dialog" data-swapdlg>
+                  <div class="grid" style="gap: 0.25rem">
+                    <h3>Instead of 2 tbsp tomato paste</h3>
+                    <p class="t-sm mf">
+                      Swaps that work in this recipe, with what you have first.
+                    </p>
+                  </div>
+                  <div class="sug">
+                    <div
+                      class="row"
+                      style="
+                        justify-content: space-between;
+                        align-items: flex-start;
+                      "
+                    >
+                      <p><b>½ cup</b> tomato sauce<br /><b>1 pinch</b> sugar</p>
+                      <span class="bdg bdg-sec">In your pantry</span>
+                    </div>
+                    <p class="t-sm mf">
+                      Simmered down so it thickens. A little brighter than
+                      paste.
+                    </p>
+                    <div class="chg">
+                      <p class="fw5">Changes a step</p>
+                      <p class="mf">
+                        <span class="fw5" style="color: var(--foreground)"
+                          >Step 2: </span
+                        >Stir in the tomato sauce, sugar and red pepper flakes,
+                        and simmer 12 to 15 minutes, until thick.
+                      </p>
+                    </div>
+                    <div class="row">
+                      <button class="b b-pri b-sm" data-swapuse>
+                        Use this time</button
+                      ><button class="b b-ghost b-sm">Save to recipe</button>
+                    </div>
+                  </div>
+                  <div class="sug">
+                    <div
+                      class="row"
+                      style="
+                        justify-content: space-between;
+                        align-items: flex-start;
+                      "
+                    >
+                      <p><b>2 tbsp</b> ketchup</p>
+                    </div>
+                    <p class="t-sm mf">
+                      Sweeter and tangier. Leave out any sugar.
+                    </p>
+                  </div>
+                </div>
+                <div data-swapsteps hidden>
+                  <h3 style="font-size: 1.5rem; margin-bottom: 1rem">Steps</h3>
+                  <ol class="steps">
+                    <li>
+                      <span class="n">1</span>
+                      <p>
+                        Soften the shallot and garlic in the olive oil, about 3
+                        minutes.
+                      </p>
+                    </li>
+                    <li>
+                      <span class="n">2</span>
+                      <div class="grid" style="gap: 0.4rem">
+                        <p data-step2>
+                          Stir in the <span class="swapped">tomato sauce</span>,
+                          sugar and red pepper flakes, and simmer 12 to 15
+                          minutes, until thick.
+                        </p>
+                        <div class="row t-xs" style="flex-wrap: wrap">
+                          <span class="chip chip-acc">Changed for the swap</span
+                          ><button class="b b-link b-xs" data-showorig>
+                            Show the original
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                    <li>
+                      <span class="n">3</span>
+                      <p>
+                        Add the cream, then the rigatoni and parmesan, loosening
+                        it with pasta water.
+                      </p>
+                    </li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="panel-cap">
+            Try it: press <b>Use this time</b>. The swap lasts for this cook and
+            carries into the cook view; <b>Save to recipe</b> keeps it, with the
+            old version under Versions.
+          </p>
+        </div>
+
+        <div
+          class="panel"
+          role="tabpanel"
+          id="p-r3"
+          aria-labelledby="t-r3"
+          hidden
+        >
+          <div class="ui vq" style="display: grid; justify-items: center">
+            <div
+              class="card2 vcard"
+              style="padding: 1.25rem 0.75rem 1rem; max-width: 30rem"
+              id="scaledemo"
+            >
+              <div
+                class="row"
+                style="
+                  gap: 0.75rem;
+                  padding: 0 0.5rem 0.9rem;
+                  border-bottom: 1px solid var(--border);
+                  margin-bottom: 0.9rem;
+                "
+              >
+                <div
+                  class="ph"
+                  data-dish="pancakes"
+                  style="
+                    width: 3rem;
+                    height: 3rem;
+                    border-radius: 1rem;
+                    flex: none;
+                  "
+                ></div>
+                <div>
+                  <p
+                    class="fw6"
+                    style="font-family: var(--serif); font-size: 1.15rem"
+                  >
+                    Buttermilk Pancakes
+                  </p>
+                  <p class="t-xs mf">25 min · Breakfast</p>
+                </div>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  align-items: center;
+                  justify-content: space-between;
+                  gap: 0.75rem;
+                  padding: 0 0.5rem;
+                "
+              >
+                <h3 style="font-size: 1.25rem">Ingredients</h3>
+                <div class="row">
+                  <button
+                    class="b b-out b-ic b-sm"
+                    data-scale="-1"
+                    aria-label="Fewer servings"
+                  >
+                    <i data-i="MinusSign"></i></button
+                  ><span
+                    class="t-sm fw5"
+                    style="min-width: 5.5rem; text-align: center"
+                    data-serv
+                    aria-live="polite"
+                    >4 servings</span
+                  ><button
+                    class="b b-out b-ic b-sm"
+                    data-scale="1"
+                    aria-label="More servings"
+                  >
+                    <i data-i="PlusSign"></i>
+                  </button>
+                </div>
+                <div class="seg" style="width: 100%">
+                  <button aria-pressed="true" data-unit="as">As written</button
+                  ><button aria-pressed="false" data-unit="g">Metric</button>
+                </div>
+              </div>
+              <ul class="ilist" data-ings style="margin-top: 0.75rem"></ul>
+            </div>
+          </div>
+          <p class="panel-cap">
+            Try the sample servings and Metric controls. This example converts
+            flour at 120 g per cup; real conversions depend on recognized foods
+            and units.
+          </p>
+        </div>
+
+        <div
+          class="panel"
+          role="tabpanel"
+          id="p-r4"
+          aria-labelledby="t-r4"
+          hidden
+        >
+          <div class="ui vq">
+            <div class="r4grid">
+              <div
+                class="card2"
+                style="padding: 1.5rem; display: grid; gap: 1.1rem"
+              >
+                <div class="row" style="gap: 1rem; align-items: center">
+                  <div
+                    class="ph"
+                    data-dish="saag"
+                    style="
+                      width: 4.5rem;
+                      height: 4.5rem;
+                      border-radius: 1.2rem;
+                      flex: none;
+                    "
+                  ></div>
+                  <div>
+                    <h3 style="font-size: 1.6rem">Saag Paneer</h3>
+                    <p class="t-sm mf">
+                      Spinach simmered with ginger and garam masala, with golden
+                      paneer.
+                    </p>
+                  </div>
+                </div>
+                <dl class="facts-dl">
+                  <div>
+                    <dt>Prep</dt>
+                    <dd>15 min</dd>
+                  </div>
+                  <div>
+                    <dt>Cook</dt>
+                    <dd>25 min</dd>
+                  </div>
+                  <div>
+                    <dt>Total</dt>
+                    <dd>40 min</dd>
+                  </div>
+                  <div>
+                    <dt>Cost</dt>
+                    <dd>
+                      <span
+                        style="
+                          text-decoration: underline dotted;
+                          text-underline-offset: 4px;
+                        "
+                        >About $8.40</span
+                      ><span class="mf" style="font-weight: 400">
+                        · $2.10 a serving</span
+                      >
+                    </dd>
+                  </div>
+                </dl>
+                <div class="wrap-row">
+                  <i data-i="Leaf" class="pri"></i
+                  ><span class="bdg bdg-out">Vegetarian</span
+                  ><span class="bdg bdg-out">Gluten-free</span
+                  ><span class="bdg bdg-out">Egg-free</span
+                  ><span class="bdg bdg-out">Nut-free</span
+                  ><span class="t-xs mf" style="margin-left: 0.25rem"
+                    >Not right?</span
+                  >
+                </div>
+                <div class="chg">
+                  <p class="fw5">Not dairy-free or vegan</p>
+                  <p class="mf">
+                    Ruled out by
+                    <b style="color: var(--foreground)">8 oz</b> paneer and
+                    <b style="color: var(--foreground)">½ cup</b> heavy cream.
+                  </p>
+                </div>
+                <div>
+                  <div
+                    class="row"
+                    style="
+                      justify-content: space-between;
+                      flex-wrap: wrap;
+                      margin-bottom: 0.6rem;
+                    "
+                  >
+                    <h3 style="font-size: 1.15rem">Nutrition</h3>
+                    <span class="t-xs mf"
+                      >Per serving · Calculated from the ingredients</span
+                    >
+                  </div>
+                  <dl class="kv">
+                    <div>
+                      <dt>Calories</dt>
+                      <dd>410</dd>
+                    </div>
+                    <div>
+                      <dt>Protein</dt>
+                      <dd>19<small> g</small></dd>
+                    </div>
+                    <div>
+                      <dt>Carbs</dt>
+                      <dd>14<small> g</small></dd>
+                    </div>
+                    <div>
+                      <dt>Fat</dt>
+                      <dd>31<small> g</small></dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+              <div class="pop">
+                <p class="fw6" style="font-size: 0.95rem">How it adds up</p>
+                <div class="ln">
+                  <span>Paneer, 8 oz</span><span>~$3.33</span>
+                </div>
+                <div class="ln">
+                  <span>Spinach, 10 oz</span><span>~$2.49</span>
+                </div>
+                <div class="ln">
+                  <span>Onion, garlic, ginger</span><span>~$1.06</span>
+                </div>
+                <div class="ln">
+                  <span>Heavy cream, ½ cup</span><span>~$0.82</span>
+                </div>
+                <div class="ln">
+                  <span>Garam masala, 2 tsp</span><span>~$0.70</span>
+                </div>
+                <div class="ln">
+                  <span>Salt and oil</span><span>on hand</span>
+                </div>
+                <p
+                  class="t-xs mf"
+                  style="
+                    border-top: 1px solid var(--border);
+                    padding-top: 0.5rem;
+                  "
+                >
+                  Illustrative Fry's prices, for example products you might buy
+                  there.
+                </p>
+              </div>
+            </div>
+          </div>
+          <p class="panel-cap">
+            Labels depend on recognized ingredients and are not allergy
+            guarantees. Nutrition needs available data or configured USDA/AI
+            access; costs appear when product prices are available. Figures
+            shown here are illustrative.
+          </p>
+        </div>
+
+        <div
+          class="panel"
+          role="tabpanel"
+          id="p-r5"
+          aria-labelledby="t-r5"
+          hidden
+        >
+          <div class="ui vq">
+            <div class="stack-v">
+              <div class="sh">
+                <h2 style="font-size: 1.5rem">From your sites</h2>
+                <span class="lnk">All 6 new<i data-i="ArrowRight01"></i></span>
+              </div>
+              <article class="card3 spot">
+                <div class="ph" data-dish="birria"></div>
+                <div
+                  style="
+                    padding: 1.25rem;
+                    display: grid;
+                    gap: 0.75rem;
+                    align-content: center;
+                  "
+                >
+                  <p
+                    class="t-xs fw6 pri"
+                    style="letter-spacing: 0.025em; text-transform: uppercase"
+                  >
+                    RecipeTin Eats · 2 days ago
+                  </p>
+                  <h3 style="font-size: 1.5rem">Birria Tacos</h3>
+                  <p class="mf">
+                    Beef braised in a chile broth, crisped in tortillas and
+                    dunked in the consommé. · 3 hr 30 min
+                  </p>
+                  <div class="row">
+                    <button class="b b-pri">Import</button
+                    ><button class="b b-out">Open the page</button>
+                  </div>
+                  <div class="row" style="gap: 0.75rem">
+                    <span class="b b-out b-ic b-sm"
+                      ><i data-i="ArrowLeft01"></i></span
+                    ><span class="dots"
+                      ><i class="on"></i><i></i><i></i><i></i></span
+                    ><span class="b b-out b-ic b-sm"
+                      ><i data-i="ArrowRight01"></i
+                    ></span>
+                  </div>
+                </div>
+              </article>
+              <div
+                class="card3"
+                style="padding: 1.25rem; display: grid; gap: 0.75rem"
+              >
+                <div class="wrap-row" style="gap: 0.5rem">
+                  <i data-i="Sparkles" class="pri"></i><b>Discover with AI</b
+                  ><span class="t-sm mf"
+                    >AI suggestions to review; results and timing vary</span
+                  >
+                </div>
+                <span
+                  class="input"
+                  style="height: 2.75rem; color: var(--foreground)"
+                  >cozy fall soups</span
+                >
+                <div class="wrap-row">
+                  <span class="b b-out b-sm">A new pasta</span
+                  ><span class="b b-out b-sm">Something with chickpeas</span
+                  ><span class="b b-out b-sm">Weeknight fish</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="panel-cap">
+            With recipe-site feeds enabled, Merran periodically looks for recipe
+            entries. Results depend on each feed; review what you import.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 · PLAN -->
+<section class="chapter" id="plan">
+  <div class="wrap">
+    <div class="ch-head">
+      <div>
+        <p class="ch-kicker eyebrow">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle class="hub" cx="12" cy="12" r="3" />
+            <circle cx="12" cy="3.5" r="2.5" />
+            <circle class="on" cx="20.5" cy="12" r="2.5" />
+            <circle cx="12" cy="20.5" r="2.5" />
+            <circle cx="3.5" cy="12" r="2.5" /></svg
+          >2 · Plan
+        </p>
+        <h2>A week that fills itself, if you want it to</h2>
+      </div>
+      <p>
+        Fill the week suggests meals from your library without AI. Tastes,
+        recent meals and time limits shape the choices; pantry stock and
+        available price data can influence them. Review before adding. Keep
+        flexible meals in the week's Any day pool, or repeat last week into
+        empty slots.
+        <a href="__BASE__docs/use/planning/">Read the Planning guide →</a>
+      </p>
+    </div>
+    <div class="feat" data-tabs>
+      <div>
+        <div class="tabs" role="tablist" aria-label="Planning features">
+          <button
+            class="tab"
+            role="tab"
+            id="t-p1"
+            aria-controls="p-p1"
+            aria-selected="true"
+          >
+            <b>Fill the week</b
+            ><span
+              >Suggestions for eligible open meals, with reasons. Re-roll when
+              another option fits.</span
+            >
+          </button>
+          <button
+            class="tab"
+            role="tab"
+            id="t-p2"
+            aria-controls="p-p2"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            <b>Theme nights</b
+            ><span
+              >Prefer taco Tuesday or meatless Monday. If no eligible recipe
+              fits, Merran can suggest another dinner and explain why.</span
+            >
+          </button>
+          <button
+            class="tab"
+            role="tab"
+            id="t-p3"
+            aria-controls="p-p3"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            <b>On autopilot</b
+            ><span
+              >Enable a weekly schedule in household settings. Choose when it
+              plans and whether it adds ingredients to the list.</span
+            >
+          </button>
+        </div>
+        <p class="tab-note"></p>
+      </div>
+      <div class="panelwrap">
+        <div class="panel" role="tabpanel" id="p-p1" aria-labelledby="t-p1">
+          <div class="ui vq" style="display: grid; justify-items: center">
+            <div class="dialog vcard wide" id="filldemo">
+              <div class="grid" style="gap: 0.25rem">
+                <h3 style="font-size: 1.35rem">Fill the week</h3>
+                <p class="t-sm mf">
+                  Next week, Oct 18 – 24 · ideas for the 4 open dinners
+                </p>
+              </div>
+              <ul class="grid" style="gap: 0.5rem" data-fill-rows></ul>
+              <div class="row" style="flex-wrap: wrap; gap: 0.5rem">
+                <span class="t-sm mf" style="margin-right: auto" data-fill-note
+                  >Sample suggestions; recent meals influence real
+                  results.</span
+                ><button class="b b-ghost" data-fill-undo hidden>Undo</button
+                ><button class="b b-pri" data-fill-add>
+                  Add 4 to the plan
+                </button>
+              </div>
+            </div>
+          </div>
+          <p class="panel-cap">
+            Try the sample re-roll and add controls. Real suggestions prefer
+            matching themes and available pantry stock; neither is guaranteed.
+          </p>
+        </div>
+        <div
+          class="panel"
+          role="tabpanel"
+          id="p-p2"
+          aria-labelledby="t-p2"
+          hidden
+        >
+          <div class="ui vq">
+            <div class="r2grid">
+              <div class="dialog">
+                <div class="grid" style="gap: 0.25rem">
+                  <h3>Theme nights</h3>
+                  <p class="t-sm mf">
+                    Settings → Household → Theme nights. Matching dinners are
+                    preferred; another eligible meal can be suggested if none
+                    fit.
+                  </p>
+                </div>
+                <div>
+                  <div class="setrow">
+                    <span>Sunday</span
+                    ><span class="sel"
+                      >Something new<i data-i="ArrowDown01"></i
+                    ></span>
+                  </div>
+                  <div class="setrow">
+                    <span>Monday</span
+                    ><span class="sel"
+                      >Meatless<i data-i="ArrowDown01"></i
+                    ></span>
+                  </div>
+                  <div class="setrow">
+                    <span>Tuesday</span
+                    ><span class="sel">Tacos<i data-i="ArrowDown01"></i></span>
+                  </div>
+                  <div class="setrow">
+                    <span>Wednesday</span
+                    ><span class="sel">Fish<i data-i="ArrowDown01"></i></span>
+                  </div>
+                  <div class="setrow">
+                    <span>Thursday</span
+                    ><span class="sel mf"
+                      >No theme<i data-i="ArrowDown01"></i
+                    ></span>
+                  </div>
+                  <div class="setrow">
+                    <span>Friday</span
+                    ><span class="sel"
+                      >Leftovers<i data-i="ArrowDown01"></i
+                    ></span>
+                  </div>
+                  <div class="setrow">
+                    <span>Saturday</span
+                    ><span class="sel">Pasta<i data-i="ArrowDown01"></i></span>
+                  </div>
+                </div>
+              </div>
+              <div class="stack-v" style="align-content: start">
+                <section class="card3 day">
+                  <div class="day-h">
+                    <h2>Tuesday</h2>
+                    <span class="t-sm mf">Oct 20</span
+                    ><span class="theme">Taco night</span>
+                  </div>
+                  <div class="entry">
+                    <div class="ph" data-dish="fish-tacos"></div>
+                    <div class="txt">
+                      <p class="meal-name">
+                        Fish Tacos<span> with Lime Crema</span>
+                      </p>
+                      <p class="sub">4 servings · 25 min</p>
+                    </div>
+                  </div>
+                </section>
+                <section class="card3 day">
+                  <div class="day-h">
+                    <h2>Wednesday</h2>
+                    <span class="t-sm mf">Oct 21</span
+                    ><span class="theme">Fish night</span>
+                  </div>
+                  <div class="entry">
+                    <div class="ph" data-dish="salmon"></div>
+                    <div class="txt">
+                      <p class="meal-name">Miso Salmon</p>
+                      <p class="sub">4 servings · 20 min</p>
+                    </div>
+                  </div>
+                </section>
+                <section class="card3 day">
+                  <div class="day-h">
+                    <h2>Friday</h2>
+                    <span class="t-sm mf">Oct 23</span
+                    ><span class="theme">Leftovers</span>
+                  </div>
+                  <p class="t-sm mf">Left empty on purpose.</p>
+                </section>
+              </div>
+            </div>
+          </div>
+          <p class="panel-cap">
+            Themes can be tacos, pasta, pizza, soup, stir-fry, meatless, fish,
+            something new, something quick, any tag of your own, or leftovers
+            and eating out.
+          </p>
+        </div>
+        <div
+          class="panel"
+          role="tabpanel"
+          id="p-p3"
+          aria-labelledby="t-p3"
+          hidden
+        >
+          <div class="ui vq" style="display: grid; justify-items: center">
+            <div class="stack-v vcard">
+              <div class="banner">
+                <i data-i="Sparkles"></i
+                ><span style="flex: 1; min-width: 12rem"
+                  ><b>Merran planned Oct 18 – 24 for you:</b> 9 meals, and 23
+                  things went on the list.</span
+                ><span class="row"
+                  ><span class="b b-pri b-sm">See the plan</span
+                  ><span class="b b-ghost b-sm">Got it</span></span
+                >
+              </div>
+              <div class="dialog">
+                <div
+                  class="row"
+                  style="
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    gap: 1rem;
+                  "
+                >
+                  <div class="grid" style="gap: 0.25rem">
+                    <h3>Plan each week</h3>
+                    <p class="t-sm mf">
+                      Fills the week ahead's empty meals by your tastes and
+                      rules. Anything already planned is left alone.
+                    </p>
+                  </div>
+                  <button
+                    class="switch"
+                    role="switch"
+                    aria-checked="true"
+                    aria-label="Plan each week"
+                    data-switch
+                  ></button>
+                </div>
+                <div>
+                  <div class="setrow">
+                    <span>Every</span
+                    ><span class="row"
+                      ><span class="sel"
+                        >Saturday<i data-i="ArrowDown01"></i></span
+                      ><span class="mf">at</span
+                      ><span class="sel"
+                        >9:00 AM<i data-i="ArrowDown01"></i></span
+                    ></span>
+                  </div>
+                  <div class="setrow">
+                    <span>Put the meals on the list too</span
+                    ><button
+                      class="cb lg"
+                      role="checkbox"
+                      aria-checked="true"
+                      aria-label="Put the meals on the list too"
+                      data-check
+                    >
+                      <i data-i="Tick02"></i>
+                    </button>
+                  </div>
+                  <div class="setrow">
+                    <span>Weekly budget</span><span class="sel">$120</span>
+                  </div>
+                </div>
+                <span class="b b-out" style="justify-self: start"
+                  >Plan the week ahead now</span
+                >
+              </div>
+            </div>
+          </div>
+          <p class="panel-cap">
+            A missed run can fill remaining days after a restart; a week already
+            past is skipped. Adding to a shopping list does not send it to a
+            store.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 · SHOP -->
+<section class="chapter" id="shop">
+  <div class="wrap">
+    <div class="ch-head">
+      <div>
+        <p class="ch-kicker eyebrow">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle class="hub" cx="12" cy="12" r="3" />
+            <circle cx="12" cy="3.5" r="2.5" />
+            <circle cx="20.5" cy="12" r="2.5" />
+            <circle class="on" cx="12" cy="20.5" r="2.5" />
+            <circle cx="3.5" cy="12" r="2.5" /></svg
+          >3 · Shop
+        </p>
+        <h2>Shop for what you don't have. Then put it away.</h2>
+      </div>
+      <p>
+        Combine recognized quantities, account for pantry stock, and check
+        purchases off together. Put away checked food to update the pantry.
+        Store connections are optional; checkout stays with the retailer.
+        <a href="__BASE__docs/use/shopping-and-pantry/"
+          >Read the Shopping and pantry guide →</a
+        >
+      </p>
+    </div>
+    <div class="feat" data-tabs>
+      <div>
+        <div
+          class="tabs"
+          role="tablist"
+          aria-label="Shopping and pantry features"
+        >
+          <button
+            class="tab"
+            role="tab"
+            id="t-s1"
+            aria-controls="p-s1"
+            aria-selected="true"
+          >
+            <b>From the plan</b
+            ><span
+              >Amounts add up across recipes, and what's in the pantry comes
+              off.</span
+            >
+          </button>
+          <button
+            class="tab"
+            role="tab"
+            id="t-s2"
+            aria-controls="p-s2"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            <b>Into the cart</b
+            ><span
+              >Connect a supported Kroger-family store to review products and
+              send them to its cart. Prices and availability can change.</span
+            >
+          </button>
+          <button
+            class="tab"
+            role="tab"
+            id="t-s3"
+            aria-controls="p-s3"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            <b>Scan the receipt</b
+            ><span
+              >Optional AI reads a photo, screenshot or PDF. Review names and
+              amounts before adding purchases to the pantry.</span
+            >
+          </button>
+          <button
+            class="tab"
+            role="tab"
+            id="t-s4"
+            aria-controls="p-s4"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            <b>A pantry that counts</b
+            ><span
+              >Marking a planned meal cooked deducts its recorded pantry stock.
+              Skipped meals leave their food available to use.</span
+            >
+          </button>
+        </div>
+        <p class="tab-note"></p>
+      </div>
+      <div class="panelwrap">
+        <div class="panel" role="tabpanel" id="p-s1" aria-labelledby="t-s1">
+          <div class="ui vq" style="display: grid; justify-items: center">
+            <div class="dialog vcard">
+              <div class="grid" style="gap: 0.25rem">
+                <h3 style="font-size: 1.35rem">Add from the plan</h3>
+                <p class="t-sm mf">
+                  Oct 18 – 24 · 5 meals aren't on the list yet
+                </p>
+              </div>
+              <ul class="grid" style="gap: 0.4rem">
+                <li class="row">
+                  <span class="cb" aria-checked="true"
+                    ><i data-i="Tick02"></i></span
+                  ><span class="fw5">Beef Stew</span
+                  ><span class="t-sm mf">Sun · 6 servings</span>
+                </li>
+                <li class="row">
+                  <span class="cb" aria-checked="true"
+                    ><i data-i="Tick02"></i></span
+                  ><span class="fw5">Creamy Tomato Soup</span
+                  ><span class="t-sm mf">Mon · 4 servings</span>
+                </li>
+                <li class="row">
+                  <span class="cb" aria-checked="true"
+                    ><i data-i="Tick02"></i></span
+                  ><span class="fw5">Fish Tacos</span
+                  ><span class="t-sm mf">Tue · 4 servings</span>
+                </li>
+                <li class="row">
+                  <span class="cb" aria-checked="true"
+                    ><i data-i="Tick02"></i></span
+                  ><span class="fw5">Miso Salmon</span
+                  ><span class="t-sm mf">Wed · 4 servings</span>
+                </li>
+                <li class="row">
+                  <span class="cb" aria-checked="true"
+                    ><i data-i="Tick02"></i></span
+                  ><span class="fw5">Spicy Rigatoni</span
+                  ><span class="t-sm mf">Sat · 6 servings</span>
+                </li>
+              </ul>
+              <div class="chg">
+                <p class="fw5">18 things go on the list</p>
+                <p class="mf">
+                  Amounts add up across recipes:
+                  <b style="color: var(--foreground)">1 onion</b> +
+                  <b style="color: var(--foreground)">2 onions</b> is 3 onions.
+                </p>
+              </div>
+              <div class="grid" style="gap: 0.4rem">
+                <p class="t-sm fw5">Left off, because you have them</p>
+                <div class="wrap-row">
+                  <span class="chip chip-sec">Rice · 2 lb</span
+                  ><span class="chip chip-sec">Garlic</span
+                  ><span class="chip chip-sec">Soy sauce</span
+                  ><span class="chip chip-sec">Limes · 2</span
+                  ><span class="chip chip-sec">Parmesan · half a block</span>
+                </div>
+              </div>
+              <div class="grid" style="gap: 0.4rem">
+                <p class="t-sm fw5">Always on hand</p>
+                <div class="wrap-row">
+                  <span class="chip chip-sec">Salt</span
+                  ><span class="chip chip-sec">Pepper</span
+                  ><span class="chip chip-sec">Olive oil</span>
+                </div>
+              </div>
+              <div class="row" style="justify-content: flex-end; gap: 0.5rem">
+                <span class="b b-ghost">Cancel</span
+                ><span class="b b-pri">Add 18 things</span>
+              </div>
+            </div>
+          </div>
+          <p class="panel-cap">
+            Grouped by aisle, with configured weekly items included. Assign
+            items to stores yourself; the example split is not an automatic
+            retailer decision.
+          </p>
+        </div>
+        <div
+          class="panel"
+          role="tabpanel"
+          id="p-s2"
+          aria-labelledby="t-s2"
+          hidden
+        >
+          <div class="ui vq" style="display: grid; justify-items: center">
+            <div class="dialog vcard wide" id="frysdemo">
+              <div
+                class="row"
+                style="
+                  justify-content: space-between;
+                  flex-wrap: wrap;
+                  gap: 0.5rem;
+                  align-items: flex-start;
+                "
+              >
+                <div class="grid" style="gap: 0.25rem">
+                  <h3 style="font-size: 1.35rem">Send to Fry's</h3>
+                  <p class="t-sm mf">Fry's, Ray Rd · prices for today</p>
+                </div>
+                <span class="chip chip-sale" style="font-size: 0.8rem"
+                  >Saving $5.20 with 2 sales</span
+                >
+              </div>
+              <div>
+                <div class="frysline">
+                  <span class="cb" aria-checked="true"
+                    ><i data-i="Tick02"></i></span
+                  ><span class="pk"><i data-i="ShoppingBasket01"></i></span>
+                  <div style="min-width: 0">
+                    <p class="fw5">Chicken thighs · 2 lb</p>
+                    <p class="sub">
+                      Kroger Boneless Skinless Chicken Thighs, 2.5 lb · Aisle 14
+                    </p>
+                  </div>
+                  <span class="pr" data-pr
+                    >$6.49<small>Sale · save $4.00</small></span
+                  >
+                </div>
+                <div class="frysline">
+                  <span class="cb" aria-checked="true"
+                    ><i data-i="Tick02"></i></span
+                  ><span class="pk"><i data-i="ShoppingBasket01"></i></span>
+                  <div style="min-width: 0">
+                    <p class="fw5">Paneer · 8 oz</p>
+                    <p class="sub">Nanak Paneer, 12 oz · Aisle 9</p>
+                  </div>
+                  <span class="pr" data-pr>$4.99</span>
+                </div>
+                <div class="frysline">
+                  <span class="cb" aria-checked="true"
+                    ><i data-i="Tick02"></i></span
+                  ><span class="pk"><i data-i="ShoppingBasket01"></i></span>
+                  <div style="min-width: 0">
+                    <p class="fw5">Heavy cream · 1 pt</p>
+                    <p class="sub">Kroger Heavy Whipping Cream, 1 pt · Dairy</p>
+                  </div>
+                  <span class="pr" data-pr
+                    >$3.29<small>Sale · save $1.20</small></span
+                  >
+                </div>
+                <div class="frysline">
+                  <span class="cb" aria-checked="true"
+                    ><i data-i="Tick02"></i></span
+                  ><span class="pk"><i data-i="ShoppingBasket01"></i></span>
+                  <div style="min-width: 0">
+                    <p class="fw5">Limes · 3</p>
+                    <p class="sub">Limes, each × 3 · Produce</p>
+                  </div>
+                  <span class="pr" data-pr>$1.47</span>
+                </div>
+                <div class="frysline">
+                  <span class="cb" aria-checked="true"
+                    ><i data-i="Tick02"></i></span
+                  ><span class="pk"><i data-i="ShoppingBasket01"></i></span>
+                  <div style="min-width: 0">
+                    <p class="fw5">Ginger · 1 piece</p>
+                    <p class="sub">
+                      Ginger root, sold by the pound ·
+                      <span class="pri fw5">Check how many</span>
+                    </p>
+                  </div>
+                  <span class="pr" data-pr>~$0.80</span>
+                </div>
+              </div>
+              <div
+                class="row"
+                style="
+                  justify-content: space-between;
+                  flex-wrap: wrap;
+                  gap: 0.75rem;
+                  border-top: 1px solid var(--border);
+                  padding-top: 1rem;
+                "
+              >
+                <span data-frys-total
+                  ><span class="mf">5 items ·</span> <b>about $17.04</b></span
+                ><button class="b b-pri b-lg" data-frys>
+                  Preview adding 5 to Fry's cart
+                </button>
+              </div>
+            </div>
+          </div>
+          <p class="panel-cap">
+            This sample does not contact a store. Costco uses search links;
+            Walmart cart filling is experimental and requires the extension.
+            Real Kroger sends cannot be undone from Merran; review or remove
+            products at the retailer.
+          </p>
+        </div>
+        <div
+          class="panel"
+          role="tabpanel"
+          id="p-s3"
+          aria-labelledby="t-s3"
+          hidden
+        >
+          <div class="ui vq">
+            <div class="r3grid">
+              <div class="receipt" aria-hidden="true">
+                10/14/26&nbsp;&nbsp;6:12 PM<br /><br />GV WHL MLK
+                1GAL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.48<br />CHKN THGH
+                BNLS&nbsp;&nbsp;&nbsp;&nbsp;10.49<br />LIMES @
+                3/1.00&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.00<br />SPINACH
+                10OZ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.49<br />BOUNTY
+                PT 6RL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;12.99<br />&nbsp;<br />TOTAL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;30.45
+              </div>
+              <div class="dialog">
+                <div class="grid" style="gap: 0.25rem">
+                  <h3>Look these over</h3>
+                  <p class="t-sm mf">
+                    Food is ticked. Household things aren't.
+                  </p>
+                </div>
+                <div>
+                  <div class="rline">
+                    <span class="cb" aria-checked="true"
+                      ><i data-i="Tick02"></i
+                    ></span>
+                    <p class="fw5">Whole milk · 1 gal</p>
+                    <span class="chip chip-acc">On your list</span
+                    ><span class="raw">GV WHL MLK 1GAL</span>
+                  </div>
+                  <div class="rline">
+                    <span class="cb" aria-checked="true"
+                      ><i data-i="Tick02"></i
+                    ></span>
+                    <p class="fw5">Chicken thighs · 2.5 lb</p>
+                    <span></span><span class="raw">CHKN THGH BNLS</span>
+                  </div>
+                  <div class="rline">
+                    <span class="cb" aria-checked="true"
+                      ><i data-i="Tick02"></i
+                    ></span>
+                    <p class="fw5">Limes · 3</p>
+                    <span class="chip chip-acc">On your list</span
+                    ><span class="raw">LIMES @ 3/1.00</span>
+                  </div>
+                  <div class="rline">
+                    <span class="cb" aria-checked="true"
+                      ><i data-i="Tick02"></i
+                    ></span>
+                    <p class="fw5">Spinach · 10 oz</p>
+                    <span></span><span class="raw">SPINACH 10OZ</span>
+                  </div>
+                  <div class="rline">
+                    <span class="cb" aria-checked="false"
+                      ><i data-i="Tick02"></i
+                    ></span>
+                    <p class="fw5 mf">Paper towels</p>
+                    <span></span><span class="raw">BOUNTY PT 6RL</span>
+                  </div>
+                </div>
+                <div class="row" style="flex-wrap: wrap">
+                  <span class="b b-pri">Add 4 to the pantry</span
+                  ><span class="t-xs mf">and take 2 off the list</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="panel-cap">
+            Suggested use-by dates are editable estimates. Check the package,
+            storage conditions and actual food; a receipt scan cannot determine
+            freshness.
+          </p>
+        </div>
+        <div
+          class="panel"
+          role="tabpanel"
+          id="p-s4"
+          aria-labelledby="t-s4"
+          hidden
+        >
+          <div class="ui vq" style="display: grid; justify-items: center">
+            <div class="stack-v vcard" id="countdemo">
+              <div class="card3 entry" style="background: var(--card)">
+                <div class="ph" data-dish="chicken"></div>
+                <div class="txt">
+                  <p class="meal-name">
+                    Chicken + Rice<span> with Peanut Sauce</span>
+                  </p>
+                  <p class="sub">Tonight · 4 servings</p>
+                </div>
+                <button class="b b-pri" data-cookbtn>Mark cooked</button>
+              </div>
+              <section class="card3 aisle">
+                <h2>In the pantry</h2>
+                <ul>
+                  <li class="prow" data-row="chicken">
+                    <span class="nm fw5"
+                      >Chicken thighs<span
+                        class="mf"
+                        style="font-weight: 400"
+                        data-amt
+                      >
+                        · 2 lb</span
+                      ></span
+                    ><span class="tags"
+                      ><span class="chip chip-acc"
+                        >For Chicken + Rice · Tonight</span
+                      ></span
+                    >
+                  </li>
+                  <li class="prow" data-row="rice">
+                    <span class="nm fw5"
+                      >Jasmine rice<span
+                        class="mf"
+                        style="font-weight: 400"
+                        data-amt
+                      >
+                        · 2 cups</span
+                      ></span
+                    >
+                  </li>
+                  <li class="prow" data-row="limes">
+                    <span class="nm fw5"
+                      >Lime juice<span
+                        class="mf"
+                        style="font-weight: 400"
+                        data-amt
+                      >
+                        · 3 tbsp</span
+                      ></span
+                    ><span class="tags"
+                      ><span class="chip chip-sec">Use by Oct 22</span></span
+                    >
+                  </li>
+                  <li class="prow" data-row="cilantro">
+                    <span class="nm fw5"
+                      >Cilantro<span
+                        class="mf"
+                        style="font-weight: 400"
+                        data-amt
+                      >
+                        · 1 bunch</span
+                      ></span
+                    ><span class="tags"
+                      ><span class="chip chip-acc"
+                        >For Chicken + Rice · Tonight</span
+                      ></span
+                    >
+                  </li>
+                  <li class="prow" data-row="pb">
+                    <span class="nm fw5"
+                      >Peanut butter<span
+                        class="mf"
+                        style="font-weight: 400"
+                        data-amt
+                      >
+                        · have it</span
+                      ></span
+                    >
+                  </li>
+                </ul>
+              </section>
+              <p class="t-sm mf" data-countnote style="text-align: center">
+                Marking it cooked takes out what it used, scaled to the servings
+                planned.
+              </p>
+            </div>
+          </div>
+          <p class="panel-cap">
+            Try the sample deduction. Comparable amounts are subtracted;
+            unmeasured food reserved for this meal can be used up. Back to
+            planned restores recorded deductions.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · COOK -->
+<section class="chapter" id="cook">
+  <div class="wrap">
+    <div class="ch-head">
+      <div>
+        <p class="ch-kicker eyebrow">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle class="hub" cx="12" cy="12" r="3" />
+            <circle cx="12" cy="3.5" r="2.5" />
+            <circle cx="20.5" cy="12" r="2.5" />
+            <circle cx="12" cy="20.5" r="2.5" />
+            <circle class="on" cx="3.5" cy="12" r="2.5" /></svg
+          >4 · Cook
+        </p>
+        <h2>Made for a phone propped on the counter</h2>
+      </div>
+      <p>
+        Big steps, ingredient checklists, and timers from recognized durations.
+        Screen wake lock and hands-free commands depend on your browser.
+        <a href="__BASE__docs/use/cooking/">Read the Cooking guide →</a>
+      </p>
+    </div>
+    <div class="feat" data-tabs data-cook-tabs>
+      <div>
+        <div class="tabs" role="tablist" aria-label="Cook view features">
+          <button
+            class="tab"
+            role="tab"
+            id="t-c1"
+            aria-controls="p-c"
+            aria-selected="false"
+            tabindex="-1"
+            data-mode="ready"
+          >
+            <b>Get ready</b
+            ><span
+              >Everything to gather as a checklist, with what you said last
+              time.</span
+            >
+          </button>
+          <button
+            class="tab"
+            role="tab"
+            id="t-c2"
+            aria-controls="p-c"
+            aria-selected="true"
+            data-mode="step"
+          >
+            <b>One step at a time</b
+            ><span
+              >Each step shows what it uses. “Sear 6 minutes” is a timer, and
+              timers keep running anywhere in the app.</span
+            >
+          </button>
+          <button
+            class="tab"
+            role="tab"
+            id="t-c3"
+            aria-controls="p-c"
+            aria-selected="false"
+            tabindex="-1"
+            data-mode="hands"
+          >
+            <b>Hands-free</b
+            ><span
+              >Read aloud in a natural voice. Say “next”, “back”, “timer for 10
+              minutes” or “how much garlic?”</span
+            >
+          </button>
+          <button
+            class="tab"
+            role="tab"
+            id="t-c4"
+            aria-controls="p-c"
+            aria-selected="false"
+            tabindex="-1"
+            data-mode="done"
+          >
+            <b>How did it go?</b
+            ><span
+              >Keep stars and a note for next time. Optional AI can turn the
+              note into a proposed change for you to review.</span
+            >
+          </button>
+        </div>
+        <p class="tab-note"></p>
+      </div>
+      <div class="panelwrap">
+        <div class="panel" role="tabpanel" id="p-c" aria-labelledby="t-c2">
+          <div class="phone" style="width: min(20rem, 100%)">
+            <div class="phone-screen" style="height: 38rem">
+              <span class="notch"></span>
+              <div class="ui" data-cook="chapter"></div>
+            </div>
+          </div>
+          <p class="panel-cap">
+            Try the sample steps, timers and checklists. Voice commands and
+            saved notes are simulated here; no microphone or AI provider is
+            used.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ASSISTANT -->
+<section class="assistant" id="assistant">
+  <div class="wrap as-grid">
+    <div>
+      <p class="ch-kicker eyebrow">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle class="on" cx="12" cy="12" r="3.5" />
+          <circle cx="12" cy="3.5" r="2.5" />
+          <circle cx="20.5" cy="12" r="2.5" />
+          <circle cx="12" cy="20.5" r="2.5" />
+          <circle cx="3.5" cy="12" r="2.5" /></svg
+        >In the middle · Assistant
+      </p>
+      <h2>An assistant that knows your kitchen</h2>
+      <p class="cmp-note">
+        Scripted conversations, not live AI responses. Example approvals only
+        change this preview.
+      </p>
+      <p>
+        <a href="__BASE__docs/run/ai-setup/">Set up optional AI →</a>
+        ·
+        <a href="__BASE__docs/project/ai-privacy/">What leaves your server →</a>
+      </p>
+      <p class="lede">
+        It's available throughout the signed-in app, and it can see your
+        recipes, plan, pantry and list. It starts with your library, searches
+        the web when you ask when the model supports it, and offers cards for
+        you to approve proposed kitchen changes.
+        <a href="__BASE__docs/use/assistant/">How proposals work →</a>
+      </p>
+      <div
+        class="prompts"
+        role="group"
+        aria-label="Choose a scripted conversation"
+      >
+        <button class="prompt" data-convo="tonight" aria-pressed="true">
+          Saturday's open. What can I make?
+        </button>
+        <button class="prompt" data-convo="lunches" aria-pressed="false">
+          Plan easy lunches for next week
+        </button>
+        <button class="prompt" data-convo="birria" aria-pressed="false">
+          Find me a good birria recipe
+        </button>
+        <button class="prompt" data-convo="buttermilk" aria-pressed="false">
+          No buttermilk. What can I use?
+        </button>
+        <button class="prompt" data-convo="mushrooms" aria-pressed="false">
+          Jamie can't stand mushrooms
+        </button>
+      </div>
+      <ul class="as-points">
+        <li>
+          <i data-i="Tick02"></i
+          ><span
+            ><b>Review proposed changes.</b> Apply or dismiss kitchen changes
+            from the assistant. Requests and background features have their own
+            processing and saving steps.</span
+          >
+        </li>
+        <li>
+          <i data-i="Tick02"></i
+          ><span
+            ><b>Anthropic, OpenAI, Google, or a compatible endpoint,</b> with
+            household or shared server keys and model choices per task.</span
+          >
+        </li>
+        <li>
+          <i data-i="Tick02"></i
+          ><span
+            ><b>Conversations are kept,</b> so you can pick one up again on
+            another device.</span
+          >
+        </li>
+      </ul>
+    </div>
+    <div class="ui" style="display: grid; justify-items: center">
+      <div class="chat" aria-live="polite">
+        <div class="chat-h">
+          <b>Assistant</b
+          ><span class="b b-ghost b-ic b-sm"
+            ><i data-i="MessageMultiple01"></i></span
+          ><span class="b b-ghost b-ic b-sm"><i data-i="Add01"></i></span
+          ><span class="b b-ghost b-ic b-sm"><i data-i="Cancel01"></i></span>
+        </div>
+        <div class="chat-msgs" data-msgs></div>
+        <div class="chat-c">
+          <span class="ctx" data-ctx hidden></span>
+          <div class="composer">
+            <span>Ask anything about cooking</span
+            ><span class="b b-pri b-ic b-sm"><i data-i="ArrowUp02"></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SMALL THINGS -->
+<section class="smalls">
+  <div class="wrap">
+    <p class="eyebrow" style="margin-bottom: 1rem">And the rest</p>
+    <h2>The small things that add up</h2>
+    <p class="smalls-intro">
+      Useful details, grouped by where they fit. Open a collection to explore.
+    </p>
+    <div class="small-groups">
+      <details class="small-group">
+        <summary>
+          <span class="small-number">01</span
+          ><span class="small-heading"
+            ><strong>Your cookbook</strong
+            ><span
+              >Labels, units, pairings and a little room to change your
+              mind.</span
+            ></span
+          ><span class="small-count">6 details</span
+          ><span class="small-toggle" aria-hidden="true">+</span>
+        </summary>
+        <div class="sgrid">
+          <div class="sitem">
+            <i data-i="Leaf"></i>
+            <h3>Diet labels, worked out</h3>
+            <p>
+              Ingredient-based labels with explanations and corrections. Check
+              ingredients yourself; labels are not allergy guarantees.
+              <a href="__BASE__docs/use/recipes/">Recipe labels →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="WeightScale"></i>
+            <h3>Grams for baking</h3>
+            <p>
+              Convert recognized foods and quantities to metric or US units,
+              using food-specific weights when available.
+              <a href="__BASE__docs/use/recipes/">Scaling and units →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="Link01"></i>
+            <h3>Goes with</h3>
+            <p>
+              Mix and match sauces and sides, so “chicken + rice” isn't saved a
+              hundred times over.
+              <a href="__BASE__docs/use/recipes/">Recipe pairings →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="CheckList"></i>
+            <h3>Select, then act</h3>
+            <p>
+              Select recipes, meals or list items for supported bulk actions.
+              Undo is available for supported changes, not every operation.
+              <a href="__BASE__docs/use/recipes/">Organize recipes →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="Delete02"></i>
+            <h3>Recently deleted</h3>
+            <p>
+              Recipes can be restored from Recently deleted before cleanup after
+              30 days. Restoring a recipe does not promise to recreate removed
+              plan entries.
+              <a href="__BASE__docs/use/recipes/">Recipe recovery →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="Refresh"></i>
+            <h3>Recipe versions</h3>
+            <p>
+              Inspect earlier saved versions and go back to one while keeping
+              the current version in history.
+              <a href="__BASE__docs/use/recipes/">Editing recipes →</a>
+            </p>
+          </div>
+        </div>
+      </details>
+      <details class="small-group">
+        <summary>
+          <span class="small-number">02</span
+          ><span class="small-heading"
+            ><strong>Your everyday kitchen</strong
+            ><span>Nutrition, costs and the people you cook with.</span></span
+          ><span class="small-count">6 details</span
+          ><span class="small-toggle" aria-hidden="true">+</span>
+        </summary>
+        <div class="sgrid">
+          <div class="sitem">
+            <i data-i="Apple01"></i>
+            <h3>Nutrition with sources</h3>
+            <p>
+              Imported values, USDA calculations with a key, or optional AI
+              estimates. Daily plan totals depend on recipe coverage and
+              servings.
+              <a href="__BASE__docs/run/ai-setup/">Nutrition requirements →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="Tag01"></i>
+            <h3>What it costs</h3>
+            <p>
+              Estimated recipe costs from known product prices. A weekly budget
+              influences suggestions; it is not a spending cap.
+              <a href="__BASE__docs/use/shopping-and-pantry/"
+                >Prices and budgets →</a
+              >
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="UserGroup"></i>
+            <h3>Several households</h3>
+            <p>
+              Yours and your parents', each with its own recipes, plan and list,
+              on one server.
+              <a href="__BASE__docs/run/household-roles/">Household roles →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="VolumeHigh"></i>
+            <h3>A voice like a person</h3>
+            <p>
+              Use device speech, run optional Kokoro on your infrastructure, or
+              configure paid OpenAI speech. Browser support and voice
+              availability vary.
+              <a href="__BASE__docs/use/cooking/">Voice setup →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="PaintBoard"></i>
+            <h3>Three palettes</h3>
+            <p>
+              Sage &amp; Cream, Paprika &amp; Linen, or Cast Iron &amp; Saffron,
+              in light or dark. Try them up top.
+              <a href="__BASE__docs/get-started/setup/">First-run setup →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="UserGroup"></i>
+            <h3>Shop together</h3>
+            <p>
+              Connected household devices refresh when the list or plan changes,
+              with presence indicators on those pages.
+              <a href="__BASE__docs/use/shopping-and-pantry/"
+                >Shared shopping →</a
+              >
+            </p>
+          </div>
+        </div>
+      </details>
+      <details class="small-group">
+        <summary>
+          <span class="small-number">03</span
+          ><span class="small-heading"
+            ><strong>Make it your own</strong
+            ><span
+              >Import, connect and add optional AI when it helps.</span
+            ></span
+          ><span class="small-count">6 details</span
+          ><span class="small-toggle" aria-hidden="true">+</span>
+        </summary>
+        <div class="sgrid">
+          <div class="sitem">
+            <i data-i="Puzzle"></i>
+            <h3>Browser extension</h3>
+            <p>
+              Import readable content from the page you have open. Requires
+              extension setup and site access; experimental Walmart cart filling
+              is optional.
+              <a href="__BASE__docs/use/recipes/">Import methods →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="Share08"></i>
+            <h3>Share to Merran</h3>
+            <p>
+              Use a supported Android share sheet or set up an iPhone Shortcut.
+              AI and video requirements still apply; receipts wait for review
+              before pantry changes.
+              <a href="__BASE__docs/use/recipes/">Share and import →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="ArrowDataTransferHorizontal"></i>
+            <h3>Bring recipes with you</h3>
+            <p>
+              Import supported Mealie or Paprika files, and export a Merran
+              household archive for portability. Keep a separate full-server
+              backup.
+              <a href="__BASE__docs/run/updating-and-backups/"
+                >Backups and recovery →</a
+              >
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="SourceCode"></i>
+            <h3>An API for your tools</h3>
+            <p>
+              Create scoped API keys and use the generated endpoint reference to
+              build integrations.
+              <a href="__BASE__docs/api/">API quickstart →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="Sparkles"></i>
+            <h3>Review recipe improvements</h3>
+            <p>
+              Optional AI Tidy up proposes changes for you to inspect and apply.
+              <a href="__BASE__docs/use/assistant/">Review and approvals →</a>
+            </p>
+          </div>
+          <div class="sitem">
+            <i data-i="Sparkles"></i>
+            <h3>Optional recipe photos</h3>
+            <p>
+              Generate images for recipes without a photo in a household style.
+              Off by default; eligible OpenAI or Google access and provider
+              charges apply.
+              <a href="__BASE__docs/run/ai-setup/">AI requirements →</a>
+            </p>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section class="compare" id="compare">
+  <div class="wrap cmp-grid">
+    <div>
+      <p class="eyebrow" style="margin-bottom: 1rem">Coming from Mealie?</p>
+      <h2>Compare the workflows, then try a migration</h2>
+      <p class="lede">
+        Both projects cover recipes, planning and shopping. Merran connects
+        those with measured pantry stock, optional store carts and an assistant
+        that proposes changes. Mealie also has AI imports and a broad
+        integration system; those are not unique to Merran.
+      </p>
+      <div class="move-card ui">
+        <div class="row">
+          <i data-i="ArrowDataTransferHorizontal" class="pri"></i>Move recipes
+          from Mealie
+        </div>
+        <p class="t-sm mf">
+          Settings → Import and export → From another app. Household admins can
+          import supported files; a direct connection also requires server-admin
+          access.
+        </p>
+        <p class="t-sm">
+          Photos and recipe metadata depend on the source export. Review the
+          import summary and sample recipes; this is a migration, not ongoing
+          synchronization.
+        </p>
+        <a href="__BASE__docs/use/recipes/#move-recipes-from-mealie"
+          >Migration steps →</a
+        >
+      </div>
+    </div>
+    <div>
+      <div class="tscroll">
+        <table class="cmp">
+          <caption>
+            Selected workflows · documentation reviewed October 17, 2026
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Workflow</th>
+              <th scope="col">Mealie documentation</th>
+              <th scope="col" class="us">Merran implementation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Recipe entry</th>
+              <td>
+                Website and manual entry; AI imports from URLs, videos, images
+                and text
+              </td>
+              <td class="us">
+                Website and manual entry; optional AI for text/photos/PDFs and
+                video extraction
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Meal planning</th>
+              <td>Calendar, per-meal servings, notes and planner rules</td>
+              <td class="us">
+                Per-meal servings, theme preferences, Fill the week and optional
+                scheduled planning without AI
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Shopping</th>
+              <td>Recipe-linked lists, editable quantities and labels</td>
+              <td class="us">
+                Combined quantities, pantry deductions, purchase put-away and
+                optional supported store connections
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Households</th>
+              <td>Isolated groups; households within a group share recipes</td>
+              <td class="us">
+                Separate household recipes, plans, lists and pantry;
+                owner/admin/member roles
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Integrations</th>
+              <td>API, notifiers, webhooks and recipe actions</td>
+              <td class="us">
+                Scoped API keys, generated API docs, share intake and browser
+                extension
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Backups</th>
+              <td>Built-in system backup management</td>
+              <td class="us">
+                Household export for portability; server backup and restore
+                managed by the operator
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cmp-note">
+        Sources:
+        <a href="https://mealie.io/documentation/getting-started/features/"
+          >Mealie's official feature guide</a
+        >
+        and
+        <a
+          href="https://mealie.io/documentation/getting-started/installation/ai-providers/"
+          >AI setup</a
+        >; <a href="__BASE__docs/">Merran's implementation-audited guides</a>.
+        This is a selected comparison, not a complete feature inventory or a
+        claim about a particular released version. Merran release verification
+        is still pending.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- SELF-HOST -->
+<section class="host" id="self-host">
+  <div class="wrap host-grid">
+    <div>
+      <p class="eyebrow" style="margin-bottom: 1rem">Self-hosted</p>
+      <h2>One file and a <code>docker&nbsp;compose&nbsp;up</code></h2>
+      <p class="lede">
+        The build targets Linux AMD64 and ARM64 Docker hosts. The default app
+        container uses SQLite; Postgres is supported as a separate database
+        service. Application data is stored on your server; optional external
+        services receive the content they process. Saved provider keys are not
+        returned to the browser.
+        <a href="__BASE__docs/project/ai-privacy/">Read about data flow →</a>
+      </p>
+      <ul class="stack">
+        <li>
+          <i data-i="ServerStack01"></i>
+          <div>
+            <b>Merran</b
+            ><span
+              >The web app, API and SQLite support in one image, listening on
+              port 3000 by default.</span
+            >
+          </div>
+        </li>
+        <li>
+          <i data-i="Database01"></i>
+          <div>
+            <b>SQLite, or Postgres</b
+            ><span
+              >Back up the app data and secret; Postgres also needs a consistent
+              database backup. Migrations run on startup.</span
+            >
+          </div>
+        </li>
+        <li>
+          <i data-i="VolumeHigh"></i>
+          <div>
+            <b>Kokoro<span class="opt">Optional</span></b
+            ><span
+              >Self-hosted speech for cook mode. Enable
+              <code>--profile voice</code> and configure the Kokoro address in
+              Settings.</span
+            >
+          </div>
+        </li>
+        <li>
+          <i data-i="Cloud"></i>
+          <div>
+            <b>Cloudflare Tunnel<span class="opt">Optional</span></b
+            ><span
+              >Optional remote access without inbound port forwarding. Configure
+              a tunnel, hostname and token, then enable
+              <code>--profile tunnel</code>.</span
+            >
+          </div>
+        </li>
+        <li>
+          <i data-i="Notification01"></i>
+          <div>
+            <b>Updates</b
+            ><span
+              >An Update badge in Settings when a new release is out, with its
+              notes and the commands for your setup.</span
+            >
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div>
+      <div class="term">
+        <div class="term-tabs">
+          <div class="term-tablist" role="tablist" aria-label="Install with">
+            <button
+              class="term-tab"
+              role="tab"
+              aria-selected="true"
+              aria-controls="term-cli"
+              id="tt-cli"
+            >
+              Compose
+            </button>
+            <button
+              class="term-tab"
+              role="tab"
+              aria-selected="false"
+              aria-controls="term-run"
+              id="tt-run"
+              tabindex="-1"
+            >
+              Docker run
+            </button>
+            <button
+              class="term-tab"
+              role="tab"
+              aria-selected="false"
+              aria-controls="term-dockge"
+              id="tt-dockge"
+              tabindex="-1"
+            >
+              Dockge or Portainer
+            </button>
+          </div>
+          <button class="term-copy" data-copy>
+            <i data-i="Copy01"></i><span>Copy</span>
+          </button>
+        </div>
+        <pre
+          id="term-cli"
+          role="tabpanel"
+          aria-labelledby="tt-cli"
+        ><span class="c"># On your server</span>
+<span class="p">$ </span>mkdir merran &amp;&amp; cd merran
+<span class="p">$ </span>curl -fsSLO https://raw.githubusercontent.com/merran-app/merran/main/compose.yaml
+<span class="p">$ </span>docker compose up -d
+<span class="c"># Open http://&lt;your-server&gt;:3000. The setup code is in the log:</span>
+<span class="p">$ </span>docker compose logs merran</pre>
+        <pre
+          id="term-run"
+          role="tabpanel"
+          aria-labelledby="tt-run"
+          hidden
+        ><span class="c"># One container on SQLite, nothing to fill in</span>
+<span class="p">$ </span>mkdir data
+<span class="p">$ </span>docker run -d --name merran --restart unless-stopped -p 3000:3000 \
+    -v ./data:/data ghcr.io/merran-app/merran:next
+<span class="c"># Open http://&lt;your-server&gt;:3000. The setup code is in the log:</span>
+<span class="p">$ </span>docker logs merran</pre>
+        <ol id="term-dockge" role="tabpanel" aria-labelledby="tt-dockge" hidden>
+          <li>Create a new stack called <code>merran</code>.</li>
+          <li>
+            Paste <code>compose.yaml</code> into the compose editor. The .env
+            can stay empty.
+          </li>
+          <li>Deploy. It pulls one image, with nothing to build.</li>
+          <li>
+            Open <code>http://&lt;your-server&gt;:3000</code> and enter the
+            setup code from the logs.
+          </li>
+        </ol>
+      </div>
+      <p class="cmp-note">
+        These commands follow the development configuration. Confirm an
+        available release tag before installing; a fresh-release installation
+        has not yet been verified.
+        <a href="__BASE__docs/get-started/install/">Installation details →</a> ·
+        <a href="__BASE__docs/run/updating-and-backups/"
+          >Backups and recovery →</a
+        >
+      </p>
+      <div class="costs">
+        <h3>What the AI costs</h3>
+        <p>
+          Your provider or endpoint determines the bill. Merran shows estimated
+          usage, not a live invoice; limits are not a guaranteed billing cap.
+          Manual recipes, structured page imports, planning, lists and pantry
+          tracking work without AI.
+          <a href="__BASE__docs/run/ai-setup/#understand-limits-and-costs"
+            >Understand costs and limits →</a
+          >
+        </p>
+        <table>
+          <tr>
+            <td>Make a photo for a recipe that has none</td>
+            <td>Provider image charges</td>
+          </tr>
+          <tr>
+            <td>Find a recipe online with the assistant</td>
+            <td>Model usage and search charges</td>
+          </tr>
+          <tr>
+            <td>Discover with AI</td>
+            <td>Depends on searches and reading</td>
+          </tr>
+          <tr>
+            <td>Read a whole recipe aloud in OpenAI's voice</td>
+            <td>Depends on text and provider pricing</td>
+          </tr>
+          <tr>
+            <td>Read it aloud with Kokoro</td>
+            <td>Your hosting costs; no OpenAI reading charge</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OPEN SOURCE + FAQ -->
+<section class="oss" id="faq">
+  <div class="wrap oss-grid">
+    <div>
+      <p class="eyebrow" style="margin-bottom: 1rem">Open source</p>
+      <h2>Open source and self-hosted.</h2>
+      <p class="lede">
+        Merran is free software under the GNU AGPL v3. You run the application
+        and create accounts on your own server. Hosting and optional external
+        services can have their own costs.
+      </p>
+      <div class="promise">
+        <div>
+          <i data-i="SourceCode"></i
+          ><span
+            >Read the repository license for the terms governing use,
+            modification and sharing.</span
+          >
+        </div>
+        <div>
+          <i data-i="Database01"></i
+          ><span
+            >With supplied Compose, app files and SQLite live in
+            <code>./data/app</code>. Postgres may be local or external; back up
+            its database too.</span
+          >
+        </div>
+        <div>
+          <i data-i="Github"></i
+          ><span
+            >Built in the open. Issues, ideas and pull requests are
+            welcome.</span
+          >
+        </div>
+      </div>
+    </div>
+    <div class="faq">
+      <details open>
+        <summary>Do I need an AI key?</summary>
+        <p>
+          AI features need an eligible provider key or compatible endpoint. Core
+          recipes, planning, lists and pantry tracking work without AI; media
+          features can have additional provider requirements.
+          <a href="__BASE__docs/run/ai-setup/#which-features-need-ai"
+            >See the feature requirements →</a
+          >
+        </p>
+      </details>
+      <details>
+        <summary>What does it run on?</summary>
+        <p>
+          The container build targets Linux AMD64 and ARM64. Verify the image
+          and requirements for your chosen release. Memory needs depend on
+          workload and optional services; no measured minimum is published here.
+        </p>
+      </details>
+      <details>
+        <summary>Is there a phone app?</summary>
+        <p>
+          Merran is a web app. Supported browsers can install it on the home
+          screen over HTTPS. Android sharing depends on browser support; iPhone
+          sharing requires a Shortcut you configure in Settings. This does not
+          promise offline operation.
+        </p>
+      </details>
+      <details>
+        <summary>Can my whole family use it?</summary>
+        <p>
+          Yes. Invite each person with a link and they make their own account.
+          One server can host several households too, each kept separate.
+          Households can use their own AI credentials when policy permits, or
+          eligible shared server keys. Recorded-usage limits are not hard
+          billing caps.
+          <a href="__BASE__docs/run/household-roles/"
+            >Roles and permissions →</a
+          >
+        </p>
+      </details>
+      <details>
+        <summary>Which stores can it send the list to?</summary>
+        <p>
+          Eligible Kroger-family stores use a configured developer app and
+          linked household account. Other stores, including Costco, use search
+          links. Walmart cart filling is an opt-in extension experiment.
+          Availability varies; checkout happens at the retailer.
+        </p>
+      </details>
+      <details>
+        <summary>How do I move from Mealie?</summary>
+        <p>
+          Open Settings → Import and export → From another app. Household admins
+          can import a backup or recipe export; a server admin who also
+          administers the destination household can connect with Mealie's
+          address and an API token. Re-import skips known recipes rather than
+          syncing edits.
+          <a href="__BASE__docs/use/recipes/#move-recipes-from-mealie"
+            >Follow the migration guide →</a
+          >
+        </p>
+      </details>
+      <details>
+        <summary>Can I reach it away from home?</summary>
+        <p>
+          Configure a tunnel, VPN or HTTPS reverse proxy, then set the public
+          URL and trusted proxies for your deployment. Household data requires
+          authorization, but setup, sign-in and some public endpoints are
+          accessible before login.
+          <a href="__BASE__docs/run/configuration/"
+            >Follow the configuration guide</a
+          >
+          before exposing the server.
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <div class="final-card">
+      <h2>Cook something good <em>tonight.</em></h2>
+      <p>
+        Set it up this afternoon, move your recipes over, and let it plan next
+        week.
+      </p>
+      <div class="ctas">
+        <a class="btn btn-light" href="__BASE__docs/get-started/install/"
+          >Read the install guide</a
+        ><a class="btn btn-outline" href="https://github.com/merran-app/merran"
+          ><i data-i="Star"></i>Star it on GitHub</a
+        >
+      </div>
+    </div>
+  </div>
+</section>

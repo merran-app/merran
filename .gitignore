@@ -35,3 +35,6 @@ npm-debug.log*
 *.sw?
 .tanstack
 .local
+
+# Astro's generated content and type metadata
+apps/docs/.astro/

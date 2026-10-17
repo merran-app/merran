@@ -155,7 +155,8 @@ export async function buildOpenApiDocument(
       summary: endpoint.summary,
       description: endpoint.description,
       tags: ["Sign-in"],
-      ...(signedIn ? { security: [{ session: [] }] } : {}),
+      // Public sign-in routes must not inherit Better Auth's bearer scheme.
+      security: signedIn ? [{ session: [] }] : [],
     }
     document.paths[`${AUTH_BASE}${path}`] = {
       ...document.paths[`${AUTH_BASE}${path}`],
