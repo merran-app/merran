@@ -59,13 +59,23 @@ For AI, follow [AI setup and costs](../ai-setup/) to connect providers, select m
 
 ### Email transport (not released yet)
 
-In **Settings → This server → Email**, enter **SMTP host**, **SMTP port**, **SMTP username**, **SMTP password or API key**, and **Sender email address**. Save with **Save**, turn on **Enable email**, then choose **Send test email**. Tests go to your account's email address. Check your inbox and spam folder; provider acceptance does not guarantee inbox delivery. Household email invitations are supported in this unreleased change. Password recovery by email is still planned; continue using operator password recovery.
+In **Settings → This server → Email**, enter **SMTP host**, **SMTP port**, **SMTP username**, **SMTP password or API key**, and **Sender email address**. Save with **Save**, turn on **Enable email**, then choose **Send test email**. Tests go to your account's email address. Check your inbox and spam folder; provider acceptance does not guarantee inbox delivery. Household invitations and password recovery by email are supported in these unreleased changes. Operator password recovery remains available without SMTP.
 
 For [Resend](https://resend.com/docs/send-with-smtp), verify a domain you own, use host `smtp.resend.com`, port `465`, turn on **Use TLS from the start**, set username `resend`, and use a sending API key as the password. The sender address must be allowed by your provider. Other services use the same fields with their own SMTP credentials.
 
 For port `587`, leave **Use TLS from the start** off: Merran requires STARTTLS. Both modes require encryption and valid certificates. A trusted relay can omit both username and password. Use **Remove saved SMTP credentials** to clear both; environment-locked fields must be changed in the server environment.
 
 The equivalent environment variables are `MERRAN_EMAIL_ENABLED`, `MERRAN_SMTP_HOST`, `MERRAN_SMTP_PORT`, `MERRAN_SMTP_SECURITY` (`tls` or `starttls`), `MERRAN_SMTP_USERNAME`, `MERRAN_SMTP_PASSWORD`, and `MERRAN_EMAIL_FROM`. Setting them locks those fields in the app. Email defaults to off. Email invitations additionally require `MERRAN_PUBLIC_URL` set to an HTTP(S) origin recipients can reach, such as `https://meals.example.com`, without a path, query, fragment or credentials. A working test message alone does not enable invitations without that address. See [household invitations](../household-roles/#email-an-invitation-not-released-yet).
+
+### Password recovery (not released yet)
+
+With Email and `MERRAN_PUBLIC_URL` configured, the sign-in page's **Forgot your password?** link opens a recovery form. Enter the account's **Email** and choose **Send reset link**. **Check your email** gives the same response whether or not an account exists. Check spam too. For privacy, unknown addresses and unavailable email do not produce an account-specific error.
+
+Open **Reset password** in the message. The link expires 30 minutes after requesting and works once. Enter **Password** and **Confirm password**, then choose **Reset password**. Passwords must have 10–128 characters. After **Password reset**, choose **Back to sign in** and use the new password. All existing sessions are signed out; opening the email or link alone does not change credentials. A password changed from account settings or by the operator invalidates older delivered reset links. Resetting does not mark an email verified or change household roles or API keys.
+
+Each client address can request five resets or try ten completions per 15-minute window. A recipient receives at most three queued reset emails per window; further requests get the same generic response. Temporary SMTP errors retry automatically. **Request a new reset link** is available for expired or used links. The token is in the link's fragment, not a server URL parameter, and the form removes it from the address bar. If you refresh before finishing, reopen the email link.
+
+If recovery email is unavailable, ask the operator to run `docker compose exec -it merran merran reset-password YOUR-USERNAME`; no SMTP connection is required. Account email verification is skipped for the intended self-hosted use. Provider sending-domain verification, such as Resend's domain setup, is still required by that provider.
 
 Merran generates a secret in its data directory when no explicit secret is supplied. Keep it with your backups: it protects saved credentials. Do not replace it casually.
 

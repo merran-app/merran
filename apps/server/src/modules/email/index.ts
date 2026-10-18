@@ -9,7 +9,7 @@ export const email: Module = {
   async capabilities({ config }) {
     try {
       invitationOrigin(config.publicUrl)
-      return ["email.invites"]
+      return ["email.invites", "email.passwordReset"]
     } catch {
       return []
     }

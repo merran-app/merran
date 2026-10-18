@@ -15475,6 +15475,159 @@
         }
       }
     },
+    "/api/auth/password-reset/request": {
+      "post": {
+        "operationId": "requestPasswordReset",
+        "tags": [
+          "Sign-in"
+        ],
+        "summary": "Request a password-reset email",
+        "description": "Public. Always returns the same success for existing and unknown addresses, disabled SMTP and suppressed per-address requests. Queues mail without signing in or looking up the account. Five requests per client address and three emails per recipient per 15-minute window. Tokens last 30 minutes; no token is returned.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254
+                  }
+                },
+                "required": [
+                  "email"
+                ],
+                "example": {
+                  "email": "sam@example.com"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "If email recovery is available for that account, a link will be sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requested": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requested"
+                  ],
+                  "example": {
+                    "requested": true
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many recovery requests from this client address.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/password-reset/complete": {
+      "post": {
+        "operationId": "completePasswordReset",
+        "tags": [
+          "Sign-in"
+        ],
+        "summary": "Set a new password with a reset token",
+        "description": "Public. Accepts a single-use token from the reset email and a 10–128 character password. Revokes every session and invalidates all older reset links for the account. Does not sign in or verify the account email. Ten attempts per client address per 15-minute window. Tokens go in the body, never the request URL.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_-]{43}$"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "token",
+                  "password"
+                ],
+                "example": {
+                  "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "password": "correct horse battery staple"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed. Sign in with the new password.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reset": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "reset"
+                  ],
+                  "example": {
+                    "reset": true
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid, expired, used or superseded token, or invalid password.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many reset attempts from this client address.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/capabilities": {
       "get": {
         "operationId": "getCapabilities",

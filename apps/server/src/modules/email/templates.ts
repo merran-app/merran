@@ -128,3 +128,37 @@ export function testEmail() {
     }),
   }
 }
+
+export function passwordResetEmail(options: { link: string; expiresAt: Date }) {
+  const url = new URL(options.link)
+  if (
+    !["http:", "https:"].includes(url.protocol) ||
+    url.username ||
+    url.password
+  )
+    throw new Error("Use an HTTP(S) reset link without credentials")
+  const link = escapeHtml(url.href)
+  const expiry =
+    new Intl.DateTimeFormat("en", {
+      dateStyle: "long",
+      timeStyle: "short",
+      timeZone: "UTC",
+    }).format(options.expiresAt) + " UTC"
+  return {
+    subject: "Reset your Merran password",
+    text: `A password reset was requested for your Merran account.\n\nChoose a new password: ${options.link}\n\nThis link works once and expires ${expiry}. Changing your password signs out all existing sessions. If you didn't request this, ignore this email; your password has not changed.`,
+    html: layout({
+      preview:
+        "Choose a new password for your Merran account. This link expires in 30 minutes.",
+      eyebrow: "Account recovery",
+      title: "Back to your kitchen.",
+      body: `<p style="${paragraph}">A password reset was requested for your Merran account. Choose a new password to get back to your recipes and plans.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;"><tr><td bgcolor="#315c3c" style="border:1px solid #315c3c;border-radius:7px;mso-padding-alt:15px 24px;"><a href="${link}" style="display:inline-block;padding:15px 24px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:22px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:7px;">Reset password&nbsp; &rarr;</a></td></tr></table>
+          <p style="${paragraph}font-size:14px;line-height:23px;">This link works once and expires ${escapeHtml(expiry)}. Resetting your password signs out all your devices.</p>
+          <p style="${paragraph}font-size:14px;line-height:23px;">Didn&rsquo;t ask for this? You can ignore this email. Your password hasn&rsquo;t changed.</p>
+          <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:20px;word-break:break-all;">Button not working? Copy this link:<br><a href="${link}" style="color:#315c3c;">${link}</a></p>`,
+      footer:
+        "Sent by your self-hosted Merran server. Never share this link or your password.",
+    }),
+  }
+}

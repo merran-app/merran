@@ -11,6 +11,12 @@ These checks apply to the SMTP development branch, not the published image below
 
 Real inbox rendering in mail clients, provider delivery and spam placement remain to verify. A browser preview or SMTP acceptance does not establish those results. See [email setup](../../run/configuration/#email-transport-not-released-yet) and [household invitations](../../run/household-roles/#email-an-invitation-not-released-yet).
 
+## Password-recovery follow-up — October 18, 2026 (not released yet)
+
+The separate password-reset branch adds request/complete screens and styled recovery mail. Focused SQLite and Postgres tests cover generic known/unknown-account responses, sealed queued payloads, expiry, single-use and concurrent consumption, persistent request limits, session revocation, invalidation after operator/account password changes, and SMTP retry/cleanup behavior. SMTP is mocked; live provider and inbox acceptance remain separate. A disposable browser preview confirmed the request form, generic confirmation and password/confirmation fields, and that the fragment token is removed from the address bar. No real email or real-account password change was performed by that preview. Account email verification is explicitly skipped by operator decision; provider sending-domain verification remains required where applicable.
+
+The full server regression passed 3,038 checks across SQLite and Postgres with two workers. Workspace typechecks, the web build, formatting, and the documentation build/link check passed. The initial unrestricted parallel test run exceeded existing five-second test timeouts under local load; no test timeout was increased.
+
 ## Tested on the published image
 
 Tests used `ghcr.io/merran-app/merran:0.1.0-alpha.1`, digest `sha256:bd4d97da003d5b8ffbc7d55ca764e40809bebfec391a614069db0a19e1ea64ae`, on Docker Desktop's Linux AMD64 engine. They used fresh, separate data directories and synthetic accounts/recipes. No live provider keys, purchases, or household data were used.
