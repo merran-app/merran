@@ -21,6 +21,7 @@ import {
 } from "./basket.ts"
 import { connectionOf, type StoreDeps } from "./connections.ts"
 import { judgeSales } from "./history.ts"
+import { sentDetails } from "./sent.ts"
 
 // Walmart, through Merran's browser extension (docs/platform.md, Stores):
 // the extension searches Walmart and fills the cart in the person's own
@@ -257,6 +258,8 @@ export async function walmartSent(
     ).map((item) => [item.id, item])
   )
   const kept = await keptFor(em, [...items.values()].map(foodOf))
+  const connection = await connectionOf(em, householdId, WALMART)
+  const details = { ...connection.lastSent?.details }
   const sent: Record<string, number> = {}
   const seen: Product[] = []
   for (const line of lines) {
@@ -270,11 +273,14 @@ export async function walmartSent(
     }
     row.chosen = true
     sent[line.itemId] = line.packages
+    details[item.id] = sentDetails(item, row.product, amountOf(item))
   }
-  const connection = await connectionOf(em, householdId, WALMART)
   const stillOn = new Set((await itemsLeft(em)).map((item) => item.id))
   connection.lastSent = {
     at: new Date().toISOString(),
+    details: Object.fromEntries(
+      Object.entries(details).filter(([id]) => stillOn.has(id))
+    ),
     items: {
       ...Object.fromEntries(
         Object.entries(connection.lastSent?.items ?? {}).filter(([id]) =>

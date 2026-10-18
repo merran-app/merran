@@ -4,6 +4,7 @@ import {
   guessUseBy,
   onHandTest,
   foodKey,
+  formatAmount,
   sizeAmount,
   type AisleKey,
 } from "@merran/shared"
@@ -48,7 +49,8 @@ export async function putAway(
     )
     const today = await householdToday(tx, householdId)
     // What went to the Kroger cart, and in what packs.
-    const sent = (await krogerConnection(tx))?.lastSent?.items ?? {}
+    const lastSent = (await krogerConnection(tx))?.lastSent
+    const sent = lastSent?.items ?? {}
     const packs = new Map(
       (await tx.find(StoreProduct, { store: KROGER })).map((row) => [
         row.food,
@@ -57,7 +59,19 @@ export async function putAway(
     )
     let stored = 0
     for (const item of checked) {
-      const bought = boughtAmount(item, sent[item.id], packs)
+      const detail = lastSent?.details?.[item.id]
+      const amount =
+        item.amountText ??
+        formatAmount(toNumber(item.quantity), item.unit ?? null)
+      // An explicit correction after sending describes what actually arrived.
+      const corrected =
+        detail && (detail.name !== item.name || detail.amount !== amount)
+      const bought = boughtAmount(
+        item,
+        corrected ? undefined : sent[item.id],
+        packs,
+        detail?.size
+      )
       const quantity = bought.quantity
       tx.create(Purchase, {
         household: householdId,
@@ -99,11 +113,14 @@ export async function putAway(
 function boughtAmount(
   item: ShoppingItem,
   packages: number | undefined,
-  packs: Map<string, StoreProduct["product"]>
+  packs: Map<string, StoreProduct["product"]>,
+  sentSize?: string | null
 ) {
   const listed = { quantity: toNumber(item.quantity), unit: item.unit ?? null }
   if (!packages || item.amountText || !item.foodKey) return listed
-  const pack = sizeAmount(packs.get(item.foodKey)?.size)
+  const pack = sizeAmount(
+    sentSize === undefined ? packs.get(item.foodKey)?.size : sentSize
+  )
   if (!pack?.quantity) return listed
   return { quantity: pack.quantity * packages, unit: pack.unit }
 }

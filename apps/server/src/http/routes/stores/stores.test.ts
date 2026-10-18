@@ -625,10 +625,116 @@ describe("Kroger", () => {
     expect(line(milk)).toMatchObject({ sent: true, packages: 2 })
     expect(line(beef).sent).toBe(false)
 
+    const { lists } = await (await kyle.get("/api/list")).json()
+    const progress = async () => {
+      const response = await kyle.get(
+        `/api/stores/send-plan?list=${lists[0].id}`
+      )
+      expect(response.status).toBe(200)
+      return (await response.json()).items.find(
+        (item: { itemId: string }) => item.itemId === milk
+      )
+    }
+    const before = await progress()
+    expect(before).toMatchObject({
+      sent: ["kroger"],
+      deliveries: [
+        {
+          store: "kroger",
+          packages: 2,
+          product: "Kroger 2% Reduced Fat Milk",
+          changed: false,
+        },
+      ],
+    })
+    expect(
+      (await kyle.patch(`/api/list/items/${milk}`, { amount: "3 gallon" }))
+        .status
+    ).toBe(200)
+    expect(await progress()).toMatchObject({
+      deliveries: [{ packages: 2, changed: true }],
+    })
+    // Returning to the original amount makes the original send current again.
+    await kyle.patch(`/api/list/items/${milk}`, { amount: before.amount })
+    expect(await progress()).toMatchObject({ deliveries: [{ changed: false }] })
+
+    // Completing a purchase removes it from outstanding progress; Undo restores it.
+    const checked = await jamie.post("/api/list/items/bulk", {
+      ids: [milk],
+      action: "check",
+    })
+    expect(checked.status).toBe(200)
+    expect(await progress()).toBeUndefined()
+    const snapshots = (await checked.json()).before
+    expect(
+      (await jamie.post("/api/list/restore", { items: snapshots })).status
+    ).toBe(200)
+    expect(await progress()).toMatchObject({ deliveries: [{ changed: false }] })
+
     const nothing = await kyle.post("/api/stores/kroger/send", {
       lines: [{ itemId: saffron, packages: 1 }],
     })
     expect(nothing.status).toBe(400)
+    expect(await progress()).toMatchObject({
+      deliveries: [{ packages: 2, changed: false }],
+    })
+  })
+
+  test("keeps original products, flags changed or legacy sends, and retains checked pack history", async () => {
+    const { lists } = await (await kyle.get("/api/list")).json()
+    const progress = async (id: string) => {
+      const response = await kyle.get(
+        `/api/stores/send-plan?list=${lists[0].id}`
+      )
+      return (await response.json()).items.find(
+        (item: { itemId: string }) => item.itemId === id
+      )
+    }
+    await kyle.put(`/api/stores/kroger/products/${eggs}`, {
+      productId: "eggs2",
+    })
+    expect(await progress(eggs)).toMatchObject({
+      deliveries: [{ product: "Kroger Large Eggs 18 Count", changed: true }],
+    })
+    await kyle.put(`/api/stores/kroger/products/${eggs}`, {
+      productId: "eggs3",
+    })
+    expect(await progress(eggs)).toMatchObject({
+      deliveries: [{ changed: false }],
+    })
+
+    const em = database.em.fork()
+    const connection = await em.findOneOrFail(
+      StoreConnection,
+      { store: "kroger" },
+      ACROSS_HOUSEHOLDS
+    )
+    const original = structuredClone(connection.lastSent!)
+    connection.lastSent = { at: original.at, items: original.items }
+    await em.flush()
+    expect(await progress(milk)).toMatchObject({
+      sent: ["kroger"],
+      deliveries: [{ product: null, changed: true }],
+    })
+    connection.lastSent = original
+    await em.flush()
+
+    const checked = await kyle.post("/api/list/items/bulk", {
+      ids: [milk],
+      action: "check",
+    })
+    const snapshots = (await checked.json()).before
+    expect(
+      (
+        await kyle.post("/api/stores/kroger/send", {
+          lines: [{ itemId: beef, packages: 2 }],
+        })
+      ).status
+    ).toBe(200)
+    await kyle.post("/api/list/restore", { items: snapshots })
+    expect(await progress(milk)).toMatchObject({
+      deliveries: [{ packages: 2, changed: false }],
+    })
   })
 
   test("refreshes the account's token, and asks for a new link when Kroger won't", async () => {
@@ -985,5 +1091,19 @@ describe("buying by the package, costs and a budget", () => {
       quantity: 2,
       unit: "gallon",
     })
+  })
+
+  test("an amount corrected after sending takes precedence at put-away", async () => {
+    const { items } = await (await kyle.get("/api/list")).json()
+    const eggs = items.find((item: { name: string }) => item.name === "eggs")
+    await kyle.patch(`/api/list/items/${eggs.id}`, {
+      amount: "6",
+      checked: true,
+    })
+    expect((await kyle.post("/api/list/put-away", {})).status).toBe(200)
+    const pantry = await (await kyle.get("/api/pantry")).json()
+    expect(
+      pantry.items.find((item: { name: string }) => item.name === "eggs")
+    ).toMatchObject({ quantity: 6 })
   })
 })

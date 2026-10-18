@@ -1,6 +1,7 @@
-import { Search01Icon } from "@hugeicons/core-free-icons"
+import { Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
@@ -8,9 +9,15 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+} from "@/components/ui/drawer"
+import { Button } from "@/components/ui/button"
 import {
   InputGroup,
   InputGroupAddon,
@@ -20,9 +27,12 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { ExtensionError } from "@/features/extension/bridge"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { cn } from "@/lib/utils"
 
 import { ProductSummary } from "./product-summary"
 import type { BasketLine, StoreProduct } from "./queries"
+import { ReviewFinderContext } from "./review-finder"
 
 /** The thing a product's picked for: one on the list, by id. */
 export type PickFor = Pick<BasketLine, "itemId" | "name">
@@ -75,6 +85,29 @@ export function ProductSearchDialog({
   hint?: string
 }) {
   const { t } = useTranslation()
+  const phone = useIsMobile()
+  const reviewFinder = React.useContext(ReviewFinderContext)
+  const inline = !phone && Boolean(reviewFinder?.target)
+  const title = t("stores.basket.pickTitle", { name: line?.name })
+  const description = hint ?? t("stores.basket.pickHint", { store })
+  const close = React.useRef(onOpenChange)
+  close.current = onOpenChange
+  const back = React.useCallback(() => close.current(false), [])
+  React.useEffect(() => {
+    if (!inline || !line) return
+    reviewFinder!.show({
+      title,
+      description,
+      back,
+      returnFocus:
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null,
+    })
+    return () => reviewFinder!.show(null)
+  }, [inline, reviewFinder, line?.itemId, title, description, back])
+  const Title = phone ? DrawerTitle : DialogTitle
+  const Description = phone ? DrawerDescription : DialogDescription
   const [term, setTerm] = React.useState("")
   const [found, setFound] = React.useState<StoreProduct[] | null>(null)
   const [busy, setBusy] = React.useState<string | null>(null)
@@ -164,70 +197,116 @@ export function ProductSearchDialog({
     }
   }
 
-  return (
-    <Dialog open={line !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
-            {t("stores.basket.pickTitle", { name: line?.name })}
-          </DialogTitle>
-          <DialogDescription>
-            {hint ?? t("stores.basket.pickHint", { store })}
-          </DialogDescription>
-        </DialogHeader>
-        <form
-          noValidate
-          onSubmit={(event) => {
-            event.preventDefault()
-            void search(term)
-          }}
-        >
-          <InputGroup>
-            <InputGroupInput
-              aria-label={t("stores.basket.search")}
-              value={term}
-              onChange={(event) => setTerm(event.target.value)}
-            />
-            <InputGroupAddon align="inline-end">
-              <InputGroupButton
-                type="submit"
-                size="icon-xs"
-                disabled={busy !== null || term.trim().length < 2}
-                aria-label={t("stores.basket.search")}
-              >
-                {busy === "search" ? (
-                  <Spinner />
-                ) : (
-                  <HugeiconsIcon icon={Search01Icon} strokeWidth={2} />
-                )}
-              </InputGroupButton>
-            </InputGroupAddon>
-          </InputGroup>
-        </form>
-        <div className="-mx-2 max-h-[60vh] overflow-y-auto px-2">
-          {found && found.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              {t("stores.basket.nothingFound", { store })}
-            </p>
+  const body = (
+    <>
+      {!inline && (
+        <div
+          className={cn(
+            "flex shrink-0 items-start gap-3",
+            phone && "px-4 pt-3"
           )}
-          {found && found.length > 0 && (
-            <ul className="grid gap-1">
-              {found.map((product) => (
-                <li key={product.id}>
-                  <button
-                    type="button"
-                    disabled={busy !== null}
-                    onClick={() => void pick(product)}
-                    className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-muted disabled:opacity-60"
-                  >
-                    <ProductSummary product={product} today={today} />
-                    {busy === product.id && <Spinner />}
-                  </button>
-                </li>
-              ))}
-            </ul>
+        >
+          <div className="min-w-0 flex-1 space-y-1">
+            <Title className="break-words">
+              {t("stores.basket.pickTitle", { name: line?.name })}
+            </Title>
+            <Description>
+              {hint ?? t("stores.basket.pickHint", { store })}
+            </Description>
+          </div>
+          {phone && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t("stores.basket.closePicker")}
+              onClick={() => onOpenChange(false)}
+            >
+              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+            </Button>
           )}
         </div>
+      )}
+      {inline && (
+        <p className="shrink-0 text-sm text-muted-foreground">{description}</p>
+      )}
+      <form
+        className={cn("shrink-0", phone && "border-b px-4 py-3")}
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault()
+          void search(term)
+        }}
+      >
+        <InputGroup>
+          <InputGroupInput
+            aria-label={t("stores.basket.search")}
+            value={term}
+            onChange={(event) => setTerm(event.target.value)}
+          />
+          <InputGroupAddon align="inline-end">
+            <InputGroupButton
+              type="submit"
+              size="icon-xs"
+              disabled={busy !== null || term.trim().length < 2}
+              aria-label={t("stores.basket.search")}
+            >
+              {busy === "search" ? (
+                <Spinner />
+              ) : (
+                <HugeiconsIcon icon={Search01Icon} strokeWidth={2} />
+              )}
+            </InputGroupButton>
+          </InputGroupAddon>
+        </InputGroup>
+      </form>
+      <div
+        className={cn(
+          "min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain",
+          phone
+            ? "flex-1 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+            : inline
+              ? "-mx-2 flex-1 px-2"
+              : "-mx-2 max-h-[60vh] px-2"
+        )}
+      >
+        {found && found.length === 0 && (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            {t("stores.basket.nothingFound", { store })}
+          </p>
+        )}
+        {found && found.length > 0 && (
+          <ul className="grid gap-1">
+            {found.map((product) => (
+              <li key={product.id}>
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => void pick(product)}
+                  className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-muted disabled:opacity-60"
+                >
+                  <ProductSummary product={product} today={today} />
+                  {busy === product.id && <Spinner />}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
+  )
+  if (inline) return line ? createPortal(body, reviewFinder!.target!) : null
+  if (phone)
+    return (
+      <Drawer open={line !== null} onOpenChange={onOpenChange}>
+        <DrawerContent className="h-[92svh] min-h-0 overflow-hidden">
+          {body}
+        </DrawerContent>
+      </Drawer>
+    )
+  return (
+    <Dialog open={line !== null} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[90dvh] min-h-0 flex-col gap-4 sm:max-w-lg">
+        {body}
       </DialogContent>
     </Dialog>
   )

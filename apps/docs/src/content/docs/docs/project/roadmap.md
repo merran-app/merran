@@ -28,6 +28,8 @@ Start with [the guides](../../) and [integration setup](../../integrations/brows
 
 ## Up next
 
+**Built since alpha.1, not released yet:** shopping progress on **List**, including per-store sent/ready/attention counts, selected products, review over the list, cart links, and marking sent purchases bought. Changed quantities or products prompt a retailer-cart review. Sending remains separate from buying and pantry put-away.
+
 Our immediate focus is checking the released workflows in real use before choosing the next feature to build.
 
 - **Everyday workflow verification:** exercise the full first-week walkthrough, real recipe imports, and interrupted jobs so households can follow the guides with confidence.

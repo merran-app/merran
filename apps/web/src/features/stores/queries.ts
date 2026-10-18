@@ -78,7 +78,7 @@ export const yourStoresQuery = queryOptions({
 /** Send's plan for a list: which stores each thing on it is picked at. */
 export const sendPlanQuery = (list: string) =>
   queryOptions({
-    queryKey: ["stores", "send-plan", list],
+    queryKey: ["list", "send-plan", list],
     queryFn: () =>
       unwrap(api.GET("/api/stores/send-plan", { params: { query: { list } } })),
   })

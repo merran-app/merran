@@ -5,6 +5,7 @@ import patch from "./patch.ts"
 import apartRoutes from "./apart/index.ts"
 import namesRoutes from "./names/index.ts"
 import sameAsRoutes from "./same-as/index.ts"
+import detailsRoutes from "./details/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
   patch(router, deps)
@@ -12,4 +13,5 @@ export default (router: Router, deps: AppDeps) => {
   apartRoutes(router, deps)
   namesRoutes(router, deps)
   sameAsRoutes(router, deps)
+  detailsRoutes(router, deps)
 }

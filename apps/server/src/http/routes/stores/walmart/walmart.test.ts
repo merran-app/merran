@@ -234,10 +234,20 @@ describe("Walmart", () => {
       items: { name: string; picked: string[]; sent: string[] }[]
     }
     // No Kroger store here, so Walmart only.
-    expect(plan.stores).toEqual([{ key: "walmart", name: "Walmart" }])
+    expect(plan.stores).toEqual([
+      {
+        key: "walmart",
+        name: "Walmart",
+        cartUrl: "https://www.walmart.com/cart",
+      },
+    ])
     const of = (name: string) => plan.items.find((one) => one.name === name)!
     // A person picked the milk at Walmart, and it was sent there.
-    expect(of("milk")).toMatchObject({ picked: ["walmart"], sent: ["walmart"] })
+    expect(of("milk")).toMatchObject({
+      picked: ["walmart"],
+      sent: ["walmart"],
+      deliveries: [{ store: "walmart", changed: false, packages: 3 }],
+    })
     // Nothing picked for salt: Send puts it with the rest.
     expect(of("Pinch of salt")).toMatchObject({ picked: [], sent: [] })
     const missing = await kyle.get(

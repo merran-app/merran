@@ -21,7 +21,15 @@ export function useListActions() {
   const queryClient = useQueryClient()
 
   const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: listQuery.queryKey })
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: listQuery.queryKey }),
+      queryClient.invalidateQueries({
+        queryKey: ["stores", "kroger", "basket"],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["stores", "walmart", "basket"],
+      }),
+    ])
 
   async function run<T>(work: () => Promise<T>): Promise<T | null> {
     try {
