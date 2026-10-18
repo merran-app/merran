@@ -52,6 +52,8 @@ Cook mode can use device speech, self-hosted Kokoro, or OpenAI speech. Speech pl
 
 ### Kokoro with Compose
 
+For complete Postgres + Kokoro examples and TrueNAS/Dockge/Portainer downloads, start with [Optional services with Compose](../../get-started/install/#optional-services-with-compose). The profile command below applies to the full project `compose.yaml`; it does not add a missing service to a minimal SQLite stack.
+
 1. From your existing installation directory, start the optional service:
 
    ```bash
@@ -62,6 +64,8 @@ Cook mode can use device speech, self-hosted Kokoro, or OpenAI speech. Speech pl
 3. Pick a voice and use **Hear …** to preview it. Open a recipe's cook view and try reading a step.
 
 **Expected result:** Merran sends step text to Kokoro and plays the returned audio. Audio is cached; a failed server voice can fall back to device speech. The Compose service publishes no Kokoro port. A remote Kokoro URL receives the text at that address, so “self-hosted” does not necessarily mean the same machine.
+
+To keep Kokoro included in later Compose commands, save `COMPOSE_PROFILES=voice` in `.env`, or add `voice` to its existing comma-separated list (for example `postgres,voice`). Wait for Kokoro's server/model startup before previewing a voice.
 
 ### Device or OpenAI speech
 

@@ -18,6 +18,7 @@ Use Docker Compose, a new installation directory, and a backup location. For an 
 
    ```dotenv
    MERRAN_IMAGE=ghcr.io/merran-app/merran:0.1.0-alpha.1
+   COMPOSE_PROFILES=postgres
    POSTGRES_PASSWORD=REPLACE_WITH_A_LONG_RANDOM_URL_SAFE_PASSWORD
    DATABASE_URL=postgres://merran:REPLACE_WITH_THE_SAME_PASSWORD@db:5432/merran
    ```
@@ -36,6 +37,8 @@ Use Docker Compose, a new installation directory, and a backup location. For an 
 5. Complete [account setup](../../get-started/setup/) using the setup code in the log. After signing in, **Settings → This server** should identify Postgres.
 
 **Expected result:** Merran stores relational data in Postgres and keeps app files and its secret in `./data/app`. The supplied Postgres 18 service stores its files under `./data/postgres`, mounted at `/var/lib/postgresql`. Keep this version-specific mount; older Postgres examples often use a different directory. The database has no host port published by this Compose file.
+
+`COMPOSE_PROFILES=postgres` keeps the database included in later Compose commands without repeating `--profile postgres`. To include Kokoro too, use `COMPOSE_PROFILES=postgres,voice` and the voice settings in [the installation guide](../../get-started/install/#optional-services-with-compose). For TrueNAS, Dockge or Portainer, that guide includes complete stacks without profile flags or an external `.env` file.
 
 ## Use an existing database service
 

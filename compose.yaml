@@ -7,6 +7,8 @@
 #
 # Add --profile voice for Kokoro, a voice for the cook view, and --profile
 # tunnel for a Cloudflare Tunnel; more than one profile works too.
+# Or save COMPOSE_PROFILES=postgres,voice in .env to keep those services
+# included in later commands. See the installation guide for complete setup.
 #
 # Everything Merran keeps is in ./data, next to this file. Back that up.
 
