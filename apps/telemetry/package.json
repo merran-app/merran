@@ -1,0 +1,23 @@
+{
+  "name": "@merran/telemetry",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "description": "The Merran project's telemetry receiver: takes the daily summaries servers opt in to, and keeps the totals.",
+  "scripts": {
+    "worker": "wrangler d1 migrations apply merran-telemetry --local && wrangler dev",
+    "deploy": "wrangler d1 migrations apply merran-telemetry --remote && wrangler deploy",
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@merran/shared": "workspace:*",
+    "hono": "^4.13.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "vitest": "^5.0.4",
+    "wrangler": "4.150.0"
+  }
+}

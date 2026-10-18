@@ -56,18 +56,18 @@ Built in, worked out from the database, never sent anywhere. Settings → This s
 
 Knowing roughly how many servers run Merran, on which versions, and which modules people use helps decide what to build and when an old version can stop being supported. It must be something a self-hoster can trust.
 
-- **Off unless the server admin says yes.** The setup screen asks once ("Help improve Merran by sending an anonymous summary once a day?"), with a link to exactly what's sent. Settings → This server → Telemetry can change it any time.
-- `MERRAN_TELEMETRY=off` turns it off for good and hides the question, for people deploying many copies.
+- **Off unless the server admin says yes.** The first time the server admin opens Merran after setup, a dialog asks once ("Help improve Merran?"), with Yes and No and where to see exactly what's sent; decided October 17, 2026, instead of a box on the setup screen. Settings → This server → Telemetry can change it any time. Until the receiver is live, neither is shown and nothing is sent ([telemetry.md](telemetry.md#until-its-live)).
+- `MERRAN_TELEMETRY=off` turns it off for good and skips the question, for people deploying many copies.
 - **See what's sent.** Settings shows the exact JSON of the next report.
 - **What's sent, once a day:**
   - a random install id (not derived from anything; **Reset** makes a new one)
   - Merran version, install method (Docker image, source), CPU architecture, the database (SQLite, or Postgres and its major version)
   - which modules are on (yes or no each)
-  - which kinds of AI provider are set up (Anthropic, OpenAI, OpenAI-compatible, none), not models or keys
+  - which kinds of AI provider have a key anywhere on the server (Anthropic, OpenAI, Google, OpenAI-compatible, none), not models or keys
   - counts in ranges: households (1, 2–5, 6–20, more), people, recipes (under 100, 100–500...)
-  - the server's language and country settings
+  - not the server's language or country: Merran has no such settings (decided October 17, 2026; [telemetry.md](telemetry.md#what-a-report-holds))
 - **Never sent:** names, usernames, emails, recipes, addresses, keys, IP addresses (the receiver doesn't store them), anything a person typed.
-- **Where it goes:** a small receiver the project runs (`telemetry.merran.app`), with its code in this repo (`apps/telemetry`), so anyone can read what's kept. A public page shows the totals (like Home Assistant's analytics page): installs by version, modules in use.
+- **Where it goes:** a small receiver the project runs (`telemetry.merran.app`), with its code in this repo (`apps/telemetry`), so anyone can read what's kept. A public page shows the totals (like Home Assistant's analytics page): installs by version, modules in use. It's built, on Cloudflare Workers with D1, and **not live yet**: [telemetry.md](telemetry.md) has what it keeps and for how long, how it checks reports, its API, where it runs and the page, and [apps/telemetry/README.md](../apps/telemetry/README.md#deploying) the one-time setup.
 - **Nothing in the web app tracks clicks or pages.** No PostHog, no Google Analytics inside Merran, not even opt-in. That's the line between "an anonymous daily count" and tracking people in their own kitchen.
 
 ### 3. The project's own websites

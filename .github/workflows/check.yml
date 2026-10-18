@@ -53,6 +53,8 @@ jobs:
       - run: pnpm --filter @merran/server test:all
       # The ingredient parser, units and scaling the server and web app share.
       - run: pnpm --filter @merran/shared test
+      # The telemetry receiver (apps/telemetry), on Node's SQLite.
+      - run: pnpm --filter @merran/telemetry test
       # The browser extension, for Chrome and Edge, and for Firefox.
       - run: pnpm --filter @merran/extension build
       - run: pnpm --filter @merran/extension build:firefox

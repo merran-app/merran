@@ -1,3 +1,9 @@
 packages:
   - apps/*
   - packages/*
+
+# Install scripts that never run. Wrangler, for the telemetry receiver, works
+# without them: esbuild and workerd come prebuilt for each platform.
+allowBuilds:
+  esbuild: false
+  workerd: false

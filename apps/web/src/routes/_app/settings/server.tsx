@@ -18,6 +18,7 @@ import { VoiceCard } from "@/features/server/voice-card"
 import {
   serverSettingsQuery,
   telemetryReportQuery,
+  telemetryStatusQuery,
 } from "@/features/server/queries"
 import { TelemetryCard } from "@/features/server/telemetry-card"
 import { VideoCard } from "@/features/server/video-card"
@@ -32,6 +33,7 @@ export const Route = createFileRoute("/_app/settings/server")({
     Promise.all([
       queryClient.ensureQueryData(serverSettingsQuery),
       queryClient.ensureQueryData(telemetryReportQuery),
+      queryClient.ensureQueryData(telemetryStatusQuery),
       queryClient.ensureQueryData(serverJobsQuery),
       queryClient.ensureQueryData(serverAiQuery),
     ]),

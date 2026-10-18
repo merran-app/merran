@@ -1,0 +1,333 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro"
+
+// The totals from every Merran server whose admin turned telemetry on
+// (docs/telemetry.md, "The public page"). Read from the receiver in the
+// browser, so it's current without rebuilding the site.
+const base = import.meta.env.BASE_URL
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Telemetry totals",
+    description:
+      "How many servers run Merran, on which versions, and which parts get used: from every server whose admin turned telemetry on.",
+    tableOfContents: false,
+  }}
+>
+  <p>
+    Each Merran server whose admin turns telemetry on sends one anonymous
+    summary a day. These are the totals, worked out each night. Most admins
+    leave it off, so read them as a floor, not a count of everyone.
+  </p>
+  <p class="telemetry-note">
+    Not released yet: servers send summaries from the release after
+    0.1.0-alpha.1. Anything fewer than five servers report is shown as “Other”. <a
+      href={`${base}docs/run/telemetry/`}>What's sent and what's kept</a
+    >, and <a
+      href="https://github.com/merran-app/merran/tree/main/apps/telemetry"
+      >the receiver's code</a
+    >.
+  </p>
+
+  <div id="telemetry" aria-live="polite">
+    <p class="telemetry-empty" data-state>Loading the totals…</p>
+  </div>
+</StarlightPage>
+
+<script>
+  const RECEIVER = "https://telemetry.merran.app"
+
+  /** The app's names for its modules and AI providers. */
+  const NAMES: Record<string, string> = {
+    ai: "AI",
+    video: "Video import",
+    nutrition: "Nutrition",
+    sites: "Recipe sites",
+    photos: "Photos",
+    voice: "Voice",
+    stores: "Stores",
+    errorTracking: "Error tracking",
+    telemetry: "Telemetry",
+    updates: "Update check",
+    anthropic: "Anthropic",
+    openai: "OpenAI",
+    google: "Google",
+    "openai-compatible": "OpenAI-compatible address",
+    none: "None",
+    docker: "Docker image",
+    source: "From source",
+    sqlite: "SQLite",
+  }
+
+  type Counts = Record<string, number>
+  type Totals = {
+    day: string
+    servers: number
+    new: number
+    flagged: boolean
+    versions: Counts
+    install: Counts
+    arch: Counts
+    database: Counts
+    modules: Counts
+    aiReported: number
+    aiProviders: Counts
+    households: Counts
+    people: Counts
+    recipes: Counts
+  }
+  type Day = { day: string; servers: number; versions: Counts }
+
+  const root = document.getElementById("telemetry")!
+  const svgNs = "http://www.w3.org/2000/svg"
+
+  function el<K extends keyof HTMLElementTagNameMap>(
+    tag: K,
+    text?: string,
+    className?: string
+  ) {
+    const node = document.createElement(tag)
+    if (text !== undefined) node.textContent = text
+    if (className) node.className = className
+    return node
+  }
+
+  function svg(tag: string, attributes: Record<string, string | number>) {
+    const node = document.createElementNS(svgNs, tag)
+    for (const [name, value] of Object.entries(attributes)) {
+      node.setAttribute(name, String(value))
+    }
+    return node
+  }
+
+  const formatDay = (day: string) =>
+    new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeZone: "UTC",
+    }).format(new Date(`${day}T00:00:00Z`))
+
+  const percent = (part: number, whole: number) =>
+    whole === 0 ? "0%" : `${Math.round((part / whole) * 100)}%`
+
+  /** A section of bars: each one a share of `whole`. */
+  function bars(title: string, counts: Counts, whole: number, note?: string) {
+    const section = el("section", undefined, "telemetry-section")
+    section.append(el("h2", title))
+    if (note) section.append(el("p", note, "telemetry-hint"))
+    const entries = Object.entries(counts)
+    if (entries.length === 0) {
+      section.append(el("p", "Not enough servers yet.", "telemetry-hint"))
+      return section
+    }
+    const list = el("dl", undefined, "telemetry-bars")
+    for (const [name, servers] of entries) {
+      const row = el("div", undefined, "telemetry-bar")
+      row.append(el("dt", NAMES[name] ?? name))
+      const value = el("dd")
+      const track = el("span", undefined, "telemetry-track")
+      const fill = el("span", undefined, "telemetry-fill")
+      fill.style.width = whole === 0 ? "0" : `${(servers / whole) * 100}%`
+      track.append(fill)
+      value.append(track, el("span", `${percent(servers, whole)} · ${servers}`))
+      row.append(value)
+      list.append(row)
+    }
+    section.append(list)
+    return section
+  }
+
+  /** Servers reporting, night by night. */
+  function serversOverTime(days: Day[]) {
+    const section = el("section", undefined, "telemetry-section")
+    section.append(el("h2", "Servers over time"))
+    if (days.length < 2) {
+      section.append(
+        el("p", "A line appears after the second night.", "telemetry-hint")
+      )
+      return section
+    }
+    const width = 640
+    const height = 160
+    const most = Math.max(...days.map((d) => d.servers), 1)
+    const x = (i: number) => (i / (days.length - 1)) * width
+    const y = (servers: number) => height - (servers / most) * (height - 8) - 4
+    const chart = svg("svg", {
+      viewBox: `0 0 ${width} ${height}`,
+      role: "img",
+      "aria-label": `Servers reporting, from ${days[0]!.servers} on ${formatDay(days[0]!.day)} to ${days.at(-1)!.servers} on ${formatDay(days.at(-1)!.day)}`,
+      class: "telemetry-line",
+      preserveAspectRatio: "none",
+    })
+    chart.append(
+      svg("polyline", {
+        points: days.map((d, i) => `${x(i)},${y(d.servers)}`).join(" "),
+        fill: "none",
+        "vector-effect": "non-scaling-stroke",
+      })
+    )
+    const range = el(
+      "p",
+      `${formatDay(days[0]!.day)} – ${formatDay(days.at(-1)!.day)} · at most ${most}`,
+      "telemetry-hint"
+    )
+    section.append(chart, range)
+    return section
+  }
+
+  function show(totals: Totals, days: Day[]) {
+    root.replaceChildren()
+    const head = el("section", undefined, "telemetry-head")
+    head.append(
+      el("p", String(totals.servers), "telemetry-number"),
+      el(
+        "p",
+        `servers reported in the week to ${formatDay(totals.day)}, ${totals.new} of them for the first time that day.`
+      )
+    )
+    if (totals.flagged) {
+      head.append(
+        el(
+          "p",
+          "That day had far more new servers than usual, so some of them may be made up.",
+          "telemetry-note"
+        )
+      )
+    }
+    const all = totals.servers
+    root.append(
+      head,
+      serversOverTime(days),
+      bars(
+        "Versions",
+        totals.versions,
+        all,
+        "Releases by name; edge builds and others apart."
+      ),
+      bars("How it's installed", totals.install, all),
+      bars("CPU", totals.arch, all),
+      bars("Database", totals.database, all),
+      bars("Modules on", totals.modules, all),
+      bars(
+        "AI providers with a key",
+        totals.aiProviders,
+        totals.aiReported,
+        `Of the ${totals.aiReported} servers that say; a server can have more than one.`
+      ),
+      bars("Households", totals.households, all),
+      bars("People", totals.people, all),
+      bars("Recipes", totals.recipes, all)
+    )
+  }
+
+  async function load() {
+    try {
+      const [totals, history] = await Promise.all([
+        fetch(`${RECEIVER}/v1/totals`),
+        fetch(`${RECEIVER}/v1/history`),
+      ])
+      if (totals.status === 404) {
+        root.replaceChildren(
+          el(
+            "p",
+            "No totals yet: they're worked out each night.",
+            "telemetry-empty"
+          )
+        )
+        return
+      }
+      if (!totals.ok || !history.ok) throw new Error(String(totals.status))
+      show((await totals.json()) as Totals, (await history.json()) as Day[])
+    } catch {
+      root.replaceChildren(
+        el(
+          "p",
+          "The totals couldn't be loaded. Try again later.",
+          "telemetry-empty"
+        )
+      )
+    }
+  }
+
+  void load()
+</script>
+
+<style is:global>
+  .telemetry-note {
+    color: var(--muted-foreground);
+    font-size: var(--sl-text-sm);
+  }
+  .telemetry-empty,
+  .telemetry-hint {
+    color: var(--muted-foreground);
+  }
+  .telemetry-hint {
+    font-size: var(--sl-text-sm);
+    margin-top: 0.25rem;
+  }
+  .telemetry-head {
+    margin-top: 2rem;
+  }
+  .telemetry-number {
+    font: 600 3rem/1 var(--serif);
+    color: var(--primary);
+  }
+  .telemetry-section {
+    margin-top: 2.5rem;
+  }
+  .telemetry-bars {
+    margin-top: 0.75rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .telemetry-bar {
+    display: grid;
+    grid-template-columns: minmax(7rem, 14rem) 1fr;
+    gap: 0.75rem;
+    align-items: center;
+    margin: 0;
+  }
+  .telemetry-bar dt,
+  .telemetry-bar dd {
+    margin: 0;
+    font-size: var(--sl-text-sm);
+  }
+  .telemetry-bar dd {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .telemetry-track {
+    flex: 1;
+    height: 0.6rem;
+    border-radius: 999px;
+    background: var(--muted);
+    overflow: hidden;
+  }
+  .telemetry-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--primary);
+  }
+  .telemetry-line {
+    display: block;
+    width: 100%;
+    height: 10rem;
+    margin-top: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .telemetry-line polyline {
+    stroke: var(--primary);
+    stroke-width: 2.5;
+  }
+  @media (max-width: 40rem) {
+    .telemetry-bar {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+    }
+  }
+</style>

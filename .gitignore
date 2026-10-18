@@ -6,6 +6,8 @@ dist-ssr
 apps/extension/release
 apps/extension/.output
 apps/extension/.wxt
+# Wrangler's local database and build for the telemetry receiver
+apps/telemetry/.wrangler
 coverage
 *.tsbuildinfo
 

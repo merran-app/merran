@@ -5,11 +5,16 @@
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./releases": "./src/releases/versions.ts",
+    "./telemetry": "./src/telemetry/report.ts"
   },
   "scripts": {
     "typecheck": "tsc",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "vitest": "^5.0.4"

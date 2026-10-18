@@ -1,5 +1,10 @@
+import { TelemetryReportSchema } from "@merran/shared/telemetry"
 import { afterAll, beforeAll, expect, test } from "vitest"
 import type { App } from "../../../app.ts"
+import { Job } from "../../../database/entities/index.ts"
+import type { Database } from "../../../database/orm.ts"
+import { enqueue } from "../../../services/jobs/jobs.ts"
+import type { JobRunner } from "../../../services/jobs/runner.ts"
 import { testDatabaseKind } from "../../../test/database.ts"
 import {
   account,
@@ -12,12 +17,20 @@ import {
 
 let app: App
 let close: () => Promise<void>
+let database: Database
+let jobs: JobRunner
+const fetched: string[] = []
 let kyle: TestClient
 let jamie: TestClient
 
 beforeAll(async () => {
-  const test = await createTestApp()
-  ;({ app, close } = test)
+  const test = await createTestApp({
+    fetcher: async (url) => {
+      fetched.push(url)
+      throw new Error("Nothing should be fetched")
+    },
+  })
+  ;({ app, close, database, jobs } = test)
   kyle = await setUpServer(app, test.setupCode)
   jamie = await join(app, await inviteToken(kyle), account("jamie", "Jamie"))
 })
@@ -52,12 +65,32 @@ test("the next summary can be seen before saying yes to it", async () => {
       telemetry: false,
       updates: true,
     },
+    aiProviders: [],
     households: "1",
     people: "2-5",
     recipes: "0",
   })
   // Nothing about anyone.
   expect(JSON.stringify(report)).not.toMatch(/kyle|jamie|Home/i)
+  // And just what the project's receiver takes.
+  expect(TelemetryReportSchema.parse(report)).toEqual(report)
+})
+
+test("nothing's offered or sent until the project's receiver is live", async () => {
+  expect(await (await kyle.get("/api/telemetry/status")).json()).toEqual({
+    receiving: false,
+    ask: false,
+    last: null,
+    totals: "https://merran.app/telemetry",
+  })
+
+  await kyle.patch("/api/settings/server", { "telemetry.enabled": true })
+  const job = await enqueue(database.em.fork(), { kind: "telemetry.send" })
+  await jobs.drain()
+  const done = await database.em.fork().findOneOrFail(Job, { id: job.id })
+  expect(done.result).toEqual({ sent: false })
+  expect(fetched).toEqual([])
+  await kyle.patch("/api/settings/server", { "telemetry.enabled": false })
 })
 
 test("the install id stays the same until a new one is made", async () => {
@@ -79,6 +112,10 @@ test("the install id stays the same until a new one is made", async () => {
 test("only the server admin sees it", async () => {
   expect((await jamie.get("/api/telemetry/report")).status).toBe(403)
   expect((await jamie.post("/api/telemetry/install-id")).status).toBe(403)
+  expect((await jamie.get("/api/telemetry/status")).status).toBe(403)
+  expect(
+    (await jamie.post("/api/telemetry/answer", { send: true })).status
+  ).toBe(403)
   expect((await new TestClient(app).get("/api/telemetry/report")).status).toBe(
     401
   )

@@ -478,7 +478,19 @@
         "show": "See exactly what's sent",
         "installIdHint": "The install id is random. A new one means later summaries can't be linked to earlier ones.",
         "newId": "Make a new id",
-        "newIdMade": "Made a new install id."
+        "newIdMade": "Made a new install id.",
+        "lastSent": "Last sent {{day}}.",
+        "lastUnreachable": "Couldn't reach the Merran project on {{day}}. Merran tries again tomorrow.",
+        "lastRefused": "The Merran project turned down the summary on {{day}}: {{detail}}",
+        "lastRetired": "The Merran project no longer collects summaries from this version. Update Merran to send them again.",
+        "totals": "See the totals from every server",
+        "question": {
+          "title": "Help improve Merran?",
+          "description": "Merran can send the Merran project an anonymous summary once a day: how many servers run it, on which versions, and which parts get used. Never names, recipes, keys, or anything anyone typed.",
+          "settings": "You can see exactly what’s sent, and change your mind, any time in Settings → This server.",
+          "yes": "Yes, send it",
+          "no": "No thanks"
+        }
       },
       "jobs": {
         "title": "Jobs",

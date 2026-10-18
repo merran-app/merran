@@ -5,6 +5,7 @@ import { api, unwrap, type Schemas } from "@/lib/api/client"
 
 export type ServerSettings = Schemas["ServerSettings"]
 export type TelemetryReport = Schemas["TelemetryReport"]
+export type TelemetryStatus = Schemas["TelemetryStatus"]
 
 export const serverSettingsQuery = queryOptions({
   queryKey: ["settings", "server"],
@@ -14,6 +15,11 @@ export const serverSettingsQuery = queryOptions({
 export const telemetryReportQuery = queryOptions({
   queryKey: ["telemetry", "report"],
   queryFn: () => unwrap(api.GET("/api/telemetry/report")),
+})
+
+export const telemetryStatusQuery = queryOptions({
+  queryKey: ["telemetry", "status"],
+  queryFn: () => unwrap(api.GET("/api/telemetry/status")),
 })
 
 /** Saves server settings, then refreshes everything they change. */

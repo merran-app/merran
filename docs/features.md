@@ -28,8 +28,8 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Everything beyond the basics is an optional module | Key | Built | Off until set up; the app says what's missing instead of breaking |
 | Health checks for Docker and uptime monitors | Detail | Built | |
 | Error tracking to your own Sentry, GlitchTip or Bugsink | Detail | Built | Off unless a DSN is set |
-| Opt-in telemetry that shows exactly what it sends | Key | Built | Nothing leaves the server unless the admin turns it on |
-| The telemetry receiver and public totals page | Detail | Planned | |
+| Opt-in telemetry that shows exactly what it sends | Key | Built | Nothing leaves the server unless the admin turns it on; hidden, and nothing sent, until the receiver is live |
+| The telemetry receiver and public totals page | Detail | Built | Not live yet: waits for its Cloudflare setup ([telemetry.md](telemetry.md)) |
 | Background jobs that survive restarts, with a jobs page | Detail | Built | |
 | Problems page for the server admin | Detail | Planned | |
 | Update badge when a new release is out | Detail | Built | GitHub's releases every 6 hours (pre-releases for a server on one), a badge for the server admin in the sidebar and account menu, the notes and update commands in Settings, This server |

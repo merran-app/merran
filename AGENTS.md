@@ -10,6 +10,7 @@ How to work on Merran, for AI coding agents (Codex, Claude Code, Copilot and the
 | `apps/web` | The app: React, TanStack Router and Query, shadcn/ui on Base UI |
 | `apps/extension` | The browser extension (WXT), for Chrome, Edge and Firefox |
 | `apps/docs` | The public site and its documentation: Astro and Starlight |
+| `apps/telemetry` | The project's telemetry receiver at `telemetry.merran.app`: a Cloudflare Worker with D1, deployed from main |
 | `packages/shared` | What the server and the apps share: the ingredient parser, units, foods, planning, versions |
 | `docs/` | Plans and decision records, for the people building Merran, not the public docs. `docs/features.md` is the feature list |
 
@@ -19,7 +20,7 @@ Node 24 and pnpm, through corepack (`corepack enable`), from the repo's root:
 
 - `pnpm install`, then `pnpm dev`: the web app on http://localhost:5173 and the API on :3000, on SQLite in `apps/server/data`. The setup code prints in the same terminal. If a dev server is running already, use it rather than starting another.
 - `pnpm typecheck`, and `pnpm format:check` (`pnpm format` to fix). Prettier covers `apps` and `packages`: run it from the root or on named folders, never on `docs/`, which is written by hand.
-- `pnpm --filter @merran/server test` runs the server's tests on SQLite, and `test:all` on SQLite and Postgres (`pnpm --filter @merran/server db:test-postgres` starts a throwaway Postgres in Docker). `pnpm --filter @merran/shared test` for the shared code.
+- `pnpm --filter @merran/server test` runs the server's tests on SQLite, and `test:all` on SQLite and Postgres (`pnpm --filter @merran/server db:test-postgres` starts a throwaway Postgres in Docker). `pnpm --filter @merran/shared test` for the shared code, and `pnpm --filter @merran/telemetry test` for the telemetry receiver.
 - `pnpm --filter @merran/web check:contrast` after changing colors.
 - `pnpm --filter @merran/extension build`, and `build:firefox`.
 - `pnpm docs:dev` and `pnpm docs:build` for the public site. The build checks every link.
@@ -48,6 +49,7 @@ A change isn't done until everything that describes it says the same, in the sam
 | A setting or environment variable | `pnpm --filter @merran/docs settings:generate` (the site's typecheck fails until it's current), `.env.example` if people set it there, and the site's `run/configuration.md` if it's one people need |
 | Running or installing it: the Dockerfile, `compose.yaml`, ports, the data folder | `README.md` ("Run it"), the site's `get-started/install.md` and `run/updating-and-backups.md`, `.env.example`, and `docs/operations.md` |
 | The browser extension | `apps/extension/README.md`, and its guide on the site |
+| The telemetry summary (`packages/shared/src/telemetry/`) | The receiver takes it first: `apps/telemetry` deploys from main, before the release that sends a new field. Its README, the site's `run/telemetry.md`, and the totals page (`apps/docs/src/pages/telemetry.astro`) if the totals change |
 | Something the homepage says (`apps/docs/src/components/landing/`) | Check it's still true when the feature it's about changes |
 | A decision | The doc in `docs/` it belongs to, with the date it was decided |
 
