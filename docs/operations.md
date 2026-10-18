@@ -11,6 +11,8 @@ Running Merran: logs, error tracking, analytics, what leaves the server, how it'
 
 ## Host-manager installation examples — October 17, 2026
 
+Follow-up: the installation page also contains complete Postgres + Kokoro stacks for each manager and a combined inline example. They preserve each minimal example's Merran mount, add a separate Postgres 18 mount at /var/lib/postgresql, explicitly set DATABASE_URL and Kokoro settings, and contain no profiles or external env_file dependency. They are for fresh Postgres installations, not SQLite migration. The full project Compose path documents COMPOSE_PROFILES in .env so later update commands keep selected services enabled; optional tunnel setup and settings-only modules are described there too. Actual fresh database/voice/provider/host-manager acceptance is separate from Compose configuration validation.
+
 The public installation guide includes complete SQLite stacks and downloadable YAML for TrueNAS Docker-based Apps (dedicated /mnt/POOL/... dataset), Dockge (a stack-relative data directory), and Portainer Docker Standalone (absolute endpoint directory). All mount only Merran's data at /data and keep the image's entrypoint/PUID/PGID ownership setup. The NAS examples describe a local dataset, not an SQLite database on an SMB/NFS mount. They are Compose examples, not catalog templates or certification of those host UIs. See site-platform-install-audit.md for source and validation details. Preserve the actual mounted directory and configuration when updating; stop before a consistent SQLite backup or dataset snapshot. Root compose.yaml and its ./data/app layout are unchanged.
 
 ## Health

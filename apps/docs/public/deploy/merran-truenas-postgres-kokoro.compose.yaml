@@ -1,0 +1,52 @@
+# Fresh Postgres installation with local Kokoro speech.
+# Replace BOTH password placeholders before deploying.
+# Create two dedicated datasets; replace tank with your pool and set ACLs.
+services:
+  merran:
+    image: ghcr.io/merran-app/merran:next
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: UTC
+      PUID: "568"
+      PGID: "568"
+      DATABASE_URL: postgres://merran:REPLACE_WITH_A_LONG_RANDOM_HEX_PASSWORD@db:5432/merran
+      MERRAN_VOICE: kokoro
+      MERRAN_KOKORO_URL: http://kokoro:8880
+      # MERRAN_PUBLIC_URL: https://food.example.com
+    volumes:
+      - type: bind
+        source: /mnt/tank/apps/merran
+        target: /data
+        bind:
+          create_host_path: false
+    depends_on:
+      db:
+        condition: service_healthy
+      kokoro:
+        condition: service_started
+
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: merran
+      POSTGRES_DB: merran
+      POSTGRES_PASSWORD: REPLACE_WITH_A_LONG_RANDOM_HEX_PASSWORD
+    volumes:
+      - type: bind
+        source: /mnt/tank/apps/merran-postgres
+        target: /var/lib/postgresql
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U merran -d merran"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kokoro:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
+    restart: unless-stopped
+    # Internal port 8880 only; no GPU or host port required for this example.
