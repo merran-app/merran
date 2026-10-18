@@ -11,6 +11,13 @@ import { createdAt, id } from "./base.ts"
 
 /** Planning settings a household reads and saves as a whole. */
 export type HouseholdSettings = {
+  onboarding?: {
+    reviewed?: boolean
+    recipe?: boolean
+    plan?: boolean
+    list?: boolean
+    cook?: boolean
+  }
   /** The meals filled for it: every meal until it opts out of some. Any can be planned by hand. */
   meals?: Meal[]
   alwaysOnHand?: string[]

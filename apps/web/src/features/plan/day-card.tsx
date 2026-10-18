@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { MEALS, themeLabel, type NightTheme } from "@merran/shared"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
+import { TermHelp } from "@/features/onboarding/term-help"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -195,6 +196,7 @@ export function PoolCard({
       <header className="grid gap-0.5">
         <h2 id={id} className="text-xl font-semibold tracking-tight">
           {t("plan.pool")}
+          <TermHelp term="pool" />
         </h2>
         <p className="text-sm text-muted-foreground">{t("plan.poolHint")}</p>
       </header>

@@ -15,6 +15,7 @@ export function BottomNav() {
 
   return (
     <nav
+      data-tour="navigation"
       aria-label={t("nav.main")}
       className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >

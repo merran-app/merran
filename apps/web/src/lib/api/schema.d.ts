@@ -224,6 +224,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/me/onboarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your tours and the household's first-meal progress */
+        get: operations["getOnboarding"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Remember tours and onboarding choices
+         * @description Personal choices belong to the signed-in person. Only household owners/admins can mark household preferences reviewed. Progress is derived from household data, never accepted from the client.
+         */
+        patch: operations["updateOnboarding"];
+        trace?: never;
+    };
     "/api/auth/me/export": {
         parameters: {
             query?: never;
@@ -4219,6 +4240,60 @@ export interface components {
             email: string;
             username: string;
             password: string;
+        };
+        /**
+         * @example {
+         *       "tours": {
+         *         "today": 1
+         *       },
+         *       "toursDisabled": false,
+         *       "dismissed": false,
+         *       "reviewed": true,
+         *       "progress": {
+         *         "recipe": true,
+         *         "plan": false,
+         *         "list": false,
+         *         "cook": false
+         *       }
+         *     }
+         */
+        Onboarding: {
+            tours: {
+                [key: string]: number;
+            };
+            toursDisabled: boolean;
+            dismissed: boolean;
+            reviewed: boolean;
+            progress: {
+                recipe: boolean;
+                plan: boolean;
+                list: boolean;
+                cook: boolean;
+            };
+        };
+        /**
+         * @example {
+         *       "tour": {
+         *         "id": "today",
+         *         "version": 1
+         *       },
+         *       "dismissed": false
+         *     }
+         */
+        OnboardingChanges: {
+            dismissed?: boolean;
+            toursDisabled?: boolean;
+            /** @enum {boolean} */
+            resetTours?: true;
+            tour?: {
+                /** @enum {string} */
+                id: "today" | "recipes" | "plan" | "list" | "pantry" | "recipe" | "settings" | "assistant";
+                version: number;
+            };
+            /** @enum {boolean} */
+            reviewed?: true;
+            /** @enum {boolean} */
+            recordProgress?: true;
         };
         /**
          * @example {
@@ -11513,6 +11588,86 @@ export interface operations {
             };
             /** @description Not signed in. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getOnboarding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Onboarding progress. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Onboarding"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateOnboarding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingChanges"];
+            };
+        };
+        responses: {
+            /** @description Remembered. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Onboarding"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

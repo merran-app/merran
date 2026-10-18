@@ -71,23 +71,42 @@
       "usernameHint": "3 to 30 letters, numbers, dots or underscores.",
       "usernameOrEmail": "Username or email",
       "password": "Password",
-      "passwordHint": "At least 10 characters."
+      "passwordHint": "At least 10 characters.",
+      "confirmPassword": "Confirm password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "show": "Show",
+      "hide": "Hide",
+      "passwordMismatch": "Passwords do not match.",
+      "passwordMax": "Use at most 128 characters.",
+      "required": "Fill in this field."
     },
     "login": {
       "title": "Sign in",
       "description": "Welcome back to Merran.",
       "submit": "Sign in",
       "wrong": "That username or password isn't right.",
-      "tooMany": "Too many tries. Wait a minute, then try again."
+      "tooMany": "Too many tries. Wait a minute, then try again.",
+      "recovery": "Forgot your password? Ask the server operator to run merran reset-password with your username. Email recovery is not available yet.",
+      "recoveryTitle": "Forgot your password?"
     },
     "setup": {
       "title": "Set up Merran",
+      "accountHeading": "Account and household",
       "description": "Make the first account. It runs this server and starts your household.",
       "code": "Setup code",
       "codeHint": "It's in the server's log, printed when Merran started.",
       "household": "Household name",
       "householdHint": "Like “The Carters”. You can change it later.",
-      "submit": "Set up Merran"
+      "submit": "Set up Merran",
+      "findCode": "Where is my setup code?",
+      "codeHelp": "Read the active code directly from the Merran container:",
+      "codeLogs": "Or open the Merran container logs and search for MERRAN SETUP CODE. Postgres and Kokoro logs do not contain it.",
+      "codeRestart": "Restarting Merran changes the code. After 20 wrong attempts, wait 15 minutes before trying again.",
+      "guide": "First-run setup guide",
+      "signIn": "Account already created? Sign in",
+      "partialFailure": "Setup could not finish. Try signing in with the account details you entered. If no account was created, return here and retry.",
+      "connectionFailure": "The connection was interrupted. Try signing in before submitting setup again."
     },
     "join": {
       "title": "Join {{household}}",
@@ -489,7 +508,10 @@
           "description": "Merran can send the Merran project an anonymous summary once a day: how many servers run it, on which versions, and which parts get used. Never names, recipes, keys, or anything anyone typed.",
           "settings": "You can see exactly what’s sent, and change your mind, any time in Settings → This server.",
           "yes": "Yes, send it",
-          "no": "No thanks"
+          "no": "No thanks",
+          "preview": "See exactly what would be sent",
+          "previewFailed": "The preview could not load. You can retry or decide later in Settings → This server → Telemetry.",
+          "statusFailed": "The telemetry choice could not load. Nothing is enabled by this message. Retry, or check Settings → This server → Telemetry."
         }
       },
       "jobs": {
@@ -2688,5 +2710,170 @@
         "on": "Check it's turned on, and allowed on this site, in your browser's extensions page."
       }
     }
+  },
+  "onboarding": {
+    "title": "Your first meal",
+    "description": "Start with one meal. Recipes, planning, shopping and cooking work without AI or a store connection.",
+    "review": "Review household preferences",
+    "reviewHint": "These choices apply to everyone in this household. You can change them in Settings → Household.",
+    "zoneHint": "Suggested from this browser on first review. Check it so Today and your meals use the right local day. UTC is the fallback.",
+    "unitsHint": "Week start and planned meals belong to the household. Recipe display units are a choice on each device.",
+    "later": "Do this later",
+    "loadFailed": "Getting-started progress could not load. Your recipes and other pages are still available.",
+    "saveFailed": "Could not save onboarding progress. Try again.",
+    "retry": "Try again",
+    "complete": "Done",
+    "progress": "{{count}} of {{total}} complete",
+    "upNext": "Up next",
+    "step": "Step {{number}}",
+    "allComplete": "You've added a recipe, planned a meal, built a list, and cooked. You're ready for your next meal.",
+    "next": "To do",
+    "dismiss": "Hide getting started",
+    "optional": "Optional connections and server care",
+    "optionalHint": "Make Merran your own when you're ready. None of these connections are needed for your first meal.",
+    "householdSettings": "Household settings",
+    "serverSettings": "Server settings",
+    "adminHint": "You administer this server. Invite people from Settings → Household; server and household keys have separate access rules.",
+    "migrate": "Import recipes from another app",
+    "backups": "Backups and recovery",
+    "ai": "AI setup",
+    "https": "Use Merran on your phone",
+    "resources": {
+      "household": "For your household",
+      "householdHint": "Preferences, people, stores and AI keys.",
+      "importHint": "Bring your recipe collection with you.",
+      "aiHint": "Choose a provider and understand whose key pays.",
+      "httpsHint": "Set up HTTPS, remote access and installation.",
+      "server": "For your server",
+      "serverHint": "Modules, AI policy, jobs and updates.",
+      "backupsHint": "Keep your data safe and know how to restore it."
+    },
+    "steps": {
+      "recipe": {
+        "title": "Add a recipe",
+        "description": "Import a recipe link, write one, or bring recipes from another app. Review imported amounts and steps."
+      },
+      "plan": {
+        "title": "Plan a meal",
+        "description": "Choose a day and meal in Plan, add your recipe, and check the servings."
+      },
+      "list": {
+        "title": "Build your shopping list",
+        "description": "In List, add ingredients from the plan and review what your pantry already covers."
+      },
+      "cook": {
+        "title": "Cook and mark it made",
+        "description": "Open your recipe, choose Start cooking, and follow the steps. Mark it made when you finish."
+      }
+    },
+    "connections": {
+      "ai": "AI",
+      "stores": "Stores",
+      "nutrition": "Nutrition",
+      "voice": "Voice",
+      "video": "Video imports",
+      "enabled": "Enabled",
+      "off": "Off",
+      "hint": "Configuration status only. Test connections in Settings; provider tests may use paid credit."
+    }
+  },
+  "help": {
+    "title": "Help",
+    "description": "Revisit a tour, read the guide, or see what's new.",
+    "replay": "Show me around this page",
+    "restore": "Show getting started and tours again",
+    "docs": "Your first week guide",
+    "glossary": "Glossary",
+    "skip": "Skip this tour",
+    "disable": "Don't show tours",
+    "next": "Next",
+    "previous": "Previous",
+    "done": "Done",
+    "closeDialog": "Close the open dialog before starting a tour.",
+    "terms": {
+      "everyWeek": {
+        "title": "Every week",
+        "description": "Things you buy each week regardless of the meals planned, like bananas. They join the list when you add the week’s plan."
+      },
+      "alwaysOnHand": {
+        "title": "Always on hand",
+        "description": "Staples you assume are available, such as salt. Merran leaves them off the shopping list."
+      },
+      "useSoon": {
+        "title": "Use soon",
+        "description": "Pantry food approaching its best-before date. Check the food itself before cooking."
+      },
+      "pool": {
+        "title": "The week’s pool",
+        "description": "Meals picked for this week without a particular day yet. Move them onto a day when you decide."
+      },
+      "themeNights": {
+        "title": "Theme nights",
+        "description": "A theme for each dinner, such as taco night. Fill the week uses these themes when suggesting recipes."
+      },
+      "goesWith": {
+        "title": "Goes with",
+        "description": "Recipes you pair together, such as a main dish and a side."
+      },
+      "proposals": {
+        "title": "Proposals and Review",
+        "description": "Changes suggested by the assistant are proposals. Review them and choose what to apply."
+      },
+      "keys": {
+        "title": "Whose AI key pays?",
+        "description": "Households can use their own provider keys. Server keys are shared only under the administrator’s policy; provider charges go to the key’s account."
+      }
+    },
+    "tours": {
+      "shared": {
+        "navigation": "Move between Today, Recipes, Plan, List and Pantry here. On a phone these sections are in the bottom tabs.",
+        "help": "Come back to Help to replay this tour, restore getting started, or look up a Merran term.",
+        "assistant": "The assistant is optional. It can suggest changes for you to review; its AI calls use an eligible provider key.",
+        "server-settings": "This server is for administrators: enable modules, decide AI access, and check jobs and updates. Household preferences live separately."
+      },
+      "today": {
+        "title": "Today",
+        "overview": "Today brings together your next meal, the week and what is at home. Your first meal keeps the next steps visible until you hide it.",
+        "action": "Use the checklist to add a recipe, plan a meal, build a shopping list and cook. Review the household time zone before relying on its dates."
+      },
+      "recipes": {
+        "title": "Recipes",
+        "overview": "Keep your household’s recipes here. Import a link or write one by hand; neither requires AI when the source has recipe data.",
+        "action": "Add a recipe here, then review its servings, ingredients and steps before putting it on the plan."
+      },
+      "plan": {
+        "title": "Plan",
+        "overview": "Pick a day and meal, then choose a recipe and servings. The week’s pool holds meals before you choose a day.",
+        "action": "Fill the week uses your recipes and preferences. Add planned meals to the shopping list when you are ready."
+      },
+      "list": {
+        "title": "List",
+        "overview": "The household’s shopping list combines ingredients and accounts for food at home. You can also type an item directly.",
+        "action": "Add ingredients from the plan, review the quantities, and check off purchases. A store connection is optional."
+      },
+      "pantry": {
+        "title": "Pantry",
+        "overview": "Track food in the fridge, freezer and cupboard. Amounts and dates help with shopping and using food in time.",
+        "action": "Add what is at home, including amounts where possible. Always on hand is for staples you assume you have."
+      },
+      "recipe": {
+        "title": "Your recipe",
+        "overview": "Review the ingredients, servings and steps here. Display units can be changed without rewriting the original recipe.",
+        "action": "Choose Plan it to plan this recipe, or Start cooking for the step-by-step view. Cooking guidance is offered here so a tour never interrupts you at the counter."
+      },
+      "settings": {
+        "title": "Settings",
+        "overview": "You contains personal choices. Household contains shared preferences. Administrators also have This server for server-wide configuration.",
+        "action": "Review your household’s time zone, week start and planned meals. Invite links bring people into this household; they do not need the server setup code."
+      },
+      "assistant": {
+        "title": "Assistant",
+        "overview": "Ask for ideas about your kitchen when AI is configured.",
+        "action": "Review proposed changes before applying them."
+      }
+    },
+    "explain": "Explain {{term}}",
+    "assistantTour": "Show me how the assistant works",
+    "whatsNew": "What's new"
   }
 }

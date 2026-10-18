@@ -1,7 +1,35 @@
 import { describe, expect, test } from "vitest"
 import { loadConfig } from "./config.ts"
+import { rmSync } from "node:fs"
 
 describe("settings", () => {
+  test("development setup uses new temporary SQLite storage, ignoring the real database", () => {
+    const a = loadConfig({
+      MERRAN_DEV_SETUP: "on",
+      DATABASE_URL: "postgres://localhost/real",
+    })
+    const b = loadConfig({ MERRAN_DEV_SETUP: "on" })
+    try {
+      expect(a.database.kind).toBe("sqlite")
+      expect(a.dataDir).not.toBe(b.dataDir)
+      expect(a.secret).toBeUndefined()
+      expect(loadConfig({}).devSetup).toBe(false)
+    } finally {
+      for (const path of [a.dataDir, b.dataDir]) {
+        if (!/[\\/]merran-setup-[^\\/]+$/.test(path))
+          throw new Error("Unexpected temporary path")
+        rmSync(path, { recursive: true, force: true })
+      }
+    }
+  })
+  test("development setup is rejected in production and Docker", () => {
+    expect(() =>
+      loadConfig({ MERRAN_DEV_SETUP: "on", NODE_ENV: "production" })
+    ).toThrow("only available")
+    expect(() =>
+      loadConfig({ MERRAN_DEV_SETUP: "on", MERRAN_INSTALL_METHOD: "docker" })
+    ).toThrow("only available")
+  })
   test("nothing needs setting", () => {
     const config = loadConfig({})
 

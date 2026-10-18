@@ -341,7 +341,11 @@ Carried over from the REFERENCE app, plus what a public project needs:
 
 ## Help and guided tours
 
+Implementation status, October 17, 2026: [Setup and first-use experience](onboarding.md). Core-page tours, assistant orientation, Help replay, a shared glossary and contextual explanations are implemented but not released. Real-device acceptance and the optional What's new tour system below remain planned. The same record covers implemented password confirmation, operator recovery, atomic claiming, household review and first-meal progress.
+
 New people get a short tour of each page the first time they open it, and every Merran word that needs explaining has an explanation a tap away. The tours use driver.js (decided October 15, 2026; see [stack.md](stack.md#driverjs-for-guided-tours)).
+
+October 18, 2026: core-page tours start automatically after loading and open dialogs finish. The top-right close button skips the tour, Don't show tours is a small link at the top, and Previous/Next remain at the bottom. Help can replay a tour or reset the person's tour history.
 
 - **A tour for each main page:** Today, Recipes, a recipe, the cook view, Plan, List, Pantry, the assistant and Settings. Three to six steps each, pointing at the real thing on screen and saying what it is and why you'd use it, in plain words: "Every week: things you buy every week whatever's planned, like bananas. They go on the list with each week's plan."
 - **The right tour for each person:**
@@ -353,7 +357,7 @@ New people get a short tour of each page the first time they open it, and every 
 - **Phone and desktop:** the same tour points at the bottom tabs on a phone and the sidebar on a computer. Steps find their element by a `data-tour` name, not by where it sits, and a Playwright check fails if a step's element isn't on its page.
 - **Never in the way:** one tour at a time, with Skip and **Don't show tours** on every step. Never while cooking, never over a dialog, keyboard friendly (arrows and Escape), and still for people who've asked their device for less motion. The highlight and popovers use the palette's colors, light and dark.
 - **Words explained:** Merran's own terms (Every week, Always on hand, Use soon, the week's pool, theme nights, Goes with, proposals and Review, whose key pays...) get a small ⓘ beside them that opens a two-line explanation. The same text makes the **Glossary** in Help and on the docs site, so each explanation is written once.
-- **A Help menu** (the ? in the top bar, and in the account menu): Show me around this page, the glossary, what's new, and the docs.
+- **A Help menu** (the ? in the top bar, and in the account menu): Show me around this page, restore getting started and tours, what's new, and the docs. October 18, 2026: keep this dialog compact; glossary definitions stay in contextual explanations and the public guide.
 - **What's new:** a release can include a short tour of a new feature, shown once, after the update, to the people it's for.
 - **Remembered per person** in the database (which tours, at which version), so a tour seen on the phone isn't shown again on the iPad. A tour that changes a lot gets a new version and can be offered again.
 - **Translated** like everything else, through i18next.

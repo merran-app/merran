@@ -5,12 +5,13 @@
   "type": "module",
   "license": "AGPL-3.0-or-later",
   "scripts": {
-    "dev": "node scripts/settings-reference.mjs && astro dev --host 127.0.0.1",
-    "build": "node scripts/settings-reference.mjs && astro build && node scripts/check-links.mjs",
+    "dev": "node scripts/glossary.mjs && node scripts/settings-reference.mjs && astro dev --host 127.0.0.1",
+    "build": "node scripts/glossary.mjs && node scripts/settings-reference.mjs && astro build && node scripts/check-links.mjs",
     "preview": "astro preview --host 127.0.0.1",
-    "typecheck": "node scripts/settings-reference.mjs --check && astro check",
+    "typecheck": "node scripts/glossary.mjs --check && node scripts/settings-reference.mjs --check && astro check",
     "settings:generate": "node scripts/settings-reference.mjs",
-    "test": "node --test scripts/settings-reference.test.mjs"
+    "test": "node --test scripts/settings-reference.test.mjs",
+    "glossary:generate": "node scripts/glossary.mjs"
   },
   "dependencies": {
     "@astrojs/starlight": "0.42.6",

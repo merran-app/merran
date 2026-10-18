@@ -45,7 +45,12 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 |---|---|---|---|
 | Several households on one server, kept fully apart | Headline | Built | Proved by tests generated from the schema |
 | Belonging to more than one household, with a switcher | Key | Built | |
-| First-run setup with a code from the log | Detail | Built | |
+| First-run setup with a code from the log | Detail | Built | Grouped readiness banner, retrieval and recovery guidance; new improvements not released yet ([onboarding.md](onboarding.md)) |
+| Clear setup-code retrieval and recovery from interrupted setup | Detail | Built | Not released yet: operator setup-code command; atomic claiming, concurrent-submission guard and retry/sign-in guidance |
+| New-password confirmation and visibility controls | Detail | Built | Not released yet: setup, invitation registration and password changes; inline visibility controls, and a compact responsive setup layout |
+| Operator password reset without email | Detail | Built | Not released yet: hidden interactive prompts and session revocation |
+| Household setup review and resumable first-meal checklist | Key | Built | Not released yet: time zone, week start, planned meals and household-derived milestones beyond the first recipe; numbered step cards, completed checkmarks, progress count and the next unfinished step highlighted; optional module status tiles and grouped household/server resources |
+| Repeatable setup testing in an isolated development database | Detail | Built | Not released yet: MERRAN_DEV_SETUP uses fresh temporary SQLite storage each start; refused in production and Docker |
 | Invite links, roles, open sign-up (off by default) | Key | Built | |
 | Export your own account's data | Detail | Built | |
 | Passkeys | Key | Planned | |
@@ -180,7 +185,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Settings for the server, the household and you, kept apart | Detail | Built | |
 | Notifications and prep reminders: thaw the chicken, start the marinade | Key | Planned | Module |
 | Works offline: recipes you've opened, this week's plan, the list | Key | Planned | |
-| Guided tours, ⓘ explanations, a glossary and a Help menu | Key | Planned | |
+| Guided tours, ⓘ explanations, a glossary and a Help menu | Key | Building | Not released yet: core-page Driver.js tours start on first visit with remembered skip/disable choices; assistant orientation, Help replay and contextual explanations share the public glossary; real-device acceptance remains ([onboarding.md](onboarding.md#3-driverjs-and-help)) |
 | Translations, with units, aisles, stores and currency by country | Key | Planned | |
 
 ## For developers and integrations

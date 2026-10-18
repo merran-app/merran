@@ -120,26 +120,28 @@ function JoinWithAccount({ token, title }: { token: string; title: string }) {
   const form = useForm<AccountForm>({ defaultValues: EMPTY_ACCOUNT })
   const { errors, isSubmitting } = form.formState
 
-  const onSubmit = form.handleSubmit(async (account) => {
-    try {
-      const me = await unwrap(
-        api.POST("/api/auth/join/{token}", {
-          params: { path: { token } },
-          body: { account },
-        })
-      )
-      queryClient.setQueryData(meQuery.queryKey, me)
-      await navigate({ to: "/" })
-    } catch (error) {
-      const rename = {
-        "account.name": "name",
-        "account.email": "email",
-        "account.username": "username",
-        "account.password": "password",
-      } as const
-      if (!showFormError(form.setError, error, rename)) throw error
+  const onSubmit = form.handleSubmit(
+    async ({ confirmPassword: _confirmation, ...account }) => {
+      try {
+        const me = await unwrap(
+          api.POST("/api/auth/join/{token}", {
+            params: { path: { token } },
+            body: { account },
+          })
+        )
+        queryClient.setQueryData(meQuery.queryKey, me)
+        await navigate({ to: "/" })
+      } catch (error) {
+        const rename = {
+          "account.name": "name",
+          "account.email": "email",
+          "account.username": "username",
+          "account.password": "password",
+        } as const
+        if (!showFormError(form.setError, error, rename)) throw error
+      }
     }
-  })
+  )
 
   return (
     <AuthLayout

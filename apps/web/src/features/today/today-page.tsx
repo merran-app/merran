@@ -26,6 +26,8 @@ import { recentRecipesQuery } from "./queries"
 import { Shelves } from "./shelves"
 import { TonightIdea } from "./tonight-idea"
 import { Welcome } from "./welcome"
+import { FirstMealChecklist } from "@/features/onboarding/checklist"
+import { useOnboarding } from "@/features/onboarding/onboarding-context"
 
 /** In a day's order: by meal, then as placed. */
 const inOrder = (a: PlanEntry, b: PlanEntry) =>
@@ -50,6 +52,7 @@ function useMinute() {
 export function TodayPage() {
   const { t, i18n } = useTranslation()
   const me = useMe()
+  const { data: onboarding } = useOnboarding()
   useMinute()
   const clock = useHouseholdClock()
   const plan = useQuery(planQuery(clock.thisWeek, addDays(clock.today, 7)))
@@ -101,9 +104,12 @@ export function TodayPage() {
       <AutoplanNote />
       <AiLimitNote />
       <InstallBanner />
+      <FirstMealChecklist />
 
       {recent.data?.total === 0 ? (
-        <Welcome />
+        onboarding?.dismissed ? (
+          <Welcome />
+        ) : null
       ) : (
         <>
           <section aria-label={t("today.title")} className="grid gap-3">

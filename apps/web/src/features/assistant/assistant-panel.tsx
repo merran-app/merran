@@ -52,6 +52,7 @@ export function AssistantButton() {
       size="sm"
       onClick={() => setOpen(true)}
       aria-label={t("assistant.open")}
+      data-tour="assistant"
     >
       <HugeiconsIcon
         icon={AiMagicIcon}

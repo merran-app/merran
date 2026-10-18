@@ -44,6 +44,7 @@ export default defineConfig({
           label: "Use Merran",
           items: [
             { label: "Recipes", slug: "docs/use/recipes" },
+            { label: "Glossary", slug: "docs/use/glossary" },
             { label: "Planning", slug: "docs/use/planning" },
             {
               label: "Shopping and pantry",

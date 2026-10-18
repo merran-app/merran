@@ -31,6 +31,10 @@ try {
 }
 
 const logger = createLogger(config)
+if (config.devSetup)
+  logger.warn(
+    `Development setup: fresh temporary SQLite at ${config.dataDir}. Normal data is untouched.`
+  )
 
 let database: Database
 try {
@@ -63,11 +67,10 @@ await startModules(MODULES, { config, logger, database, settings, video })
 
 // A fresh server is claimed with a code from this log, so a stranger who
 // finds the page first can't take it.
-const setupCode = new SetupCode()
+const setupCode = new SetupCode(join(config.dataDir, "setup-code"))
+setupCode.retire()
 if ((await database.em.fork().count(User)) === 0) {
-  logger.info(
-    `Set up Merran in the browser with this code: ${setupCode.issue()}`
-  )
+  setupCode.issue()
 }
 
 const files = new LocalFileStore(join(config.dataDir, "files"))
@@ -115,6 +118,13 @@ const app = createApp({
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   logger.info(`Merran ${config.version} is listening on port ${info.port}`)
+  if (setupCode.active) {
+    // Keep a searchable marker in both JSON and pretty logs. The CLI also
+    // works when the operator has suppressed info-level startup output.
+    logger.info(
+      `========== MERRAN SETUP CODE: ${setupCode.formatted} ==========\nOpen Merran to create your account. Retrieve this code with: merran setup-code`
+    )
+  }
 })
 await jobs.start()
 // Food keys made a new way: the ones kept are made again, once.
@@ -123,6 +133,7 @@ await rekeyFoodsSoon(database.em.fork())
 await checkUpdatesSoon(database.em.fork())
 
 function shutDown(signal: NodeJS.Signals) {
+  setupCode.retire()
   logger.info(`${signal}: shutting down`)
   // Live pages reconnect to the next server.
   events.closeAll()

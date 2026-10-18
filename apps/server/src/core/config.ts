@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs"
+import { mkdtempSync, readFileSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { z } from "zod"
@@ -9,6 +10,7 @@ import {
   numberSetting,
   readEnvironment,
   secretSetting,
+  switchSetting,
   textSetting,
   type AnySetting,
   type ValueOf,
@@ -29,6 +31,14 @@ const LOG_LEVELS = [
  * the environment. Modules' settings are in their own folders.
  */
 export const BOOT_SETTINGS = {
+  devSetup: switchSetting({
+    key: "server.devSetup",
+    env: "MERRAN_DEV_SETUP",
+    envOnly: true,
+    description:
+      "Development only: use a fresh temporary SQLite database on every start. Existing data is untouched. Rejected in production and Docker installs.",
+    default: false,
+  }),
   port: numberSetting({
     key: "server.port",
     env: "PORT",
@@ -125,6 +135,7 @@ export type DatabaseConfig =
   { kind: "sqlite"; file: string } | { kind: "postgres"; url: string }
 
 export type Config = {
+  devSetup: boolean
   version: string
   installMethod: "source" | "docker"
   port: number
@@ -174,11 +185,25 @@ export function loadConfig(
       : setting.default) as ValueOf<S>
 
   const dataDir = resolve(read(BOOT_SETTINGS.dataDir))
+  const devSetup = read(BOOT_SETTINGS.devSetup)
+  if (
+    devSetup &&
+    (env.NODE_ENV === "production" ||
+      read(BOOT_SETTINGS.installMethod) === "docker")
+  ) {
+    throw new Error(
+      "MERRAN_DEV_SETUP is only available in source development, never in production or Docker."
+    )
+  }
+  const activeDataDir = devSetup
+    ? mkdtempSync(resolve(tmpdir(), "merran-setup-"))
+    : dataDir
   const databaseUrl = read(BOOT_SETTINGS.databaseUrl)
   const logFormat = read(BOOT_SETTINGS.logFormat)
   const bootKeys = new Set(boot.map((setting) => setting.key))
 
   return {
+    devSetup,
     version: read(BOOT_SETTINGS.version) ?? packageJson.version,
     installMethod: read(BOOT_SETTINGS.installMethod),
     port: read(BOOT_SETTINGS.port),
@@ -189,11 +214,12 @@ export function loadConfig(
           ? "pretty"
           : "json"
         : logFormat,
-    dataDir,
-    database: databaseUrl
-      ? { kind: "postgres", url: databaseUrl }
-      : { kind: "sqlite", file: resolve(dataDir, "merran.db") },
-    secret: read(BOOT_SETTINGS.secret) ?? undefined,
+    dataDir: activeDataDir,
+    database:
+      databaseUrl && !devSetup
+        ? { kind: "postgres", url: databaseUrl }
+        : { kind: "sqlite", file: resolve(activeDataDir, "merran.db") },
+    secret: devSetup ? undefined : (read(BOOT_SETTINGS.secret) ?? undefined),
     publicUrl: read(BOOT_SETTINGS.publicUrl)?.replace(/\/$/, ""),
     trustedProxies: read(BOOT_SETTINGS.trustedProxies),
     webDir: WEB_DIR,

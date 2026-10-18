@@ -6,11 +6,22 @@
 import { foodsFdc } from "./foods-fdc.ts"
 import { foodsCoverage } from "./foods.ts"
 import { rotateSecret } from "./rotate-secret.ts"
+import { showSetupCode } from "./setup-code.ts"
+import { resetAccountPassword } from "./reset-password.ts"
 
 const COMMANDS: Record<
   string,
   { description: string; run: (args: string[]) => Promise<number> }
 > = {
+  "setup-code": {
+    description: "Show the running server's active first-run code.",
+    run: () => showSetupCode(),
+  },
+  "reset-password": {
+    description:
+      "Reset an account password interactively and sign out its devices.",
+    run: resetAccountPassword,
+  },
   "rotate-secret": {
     description:
       "Change the server's secret, sealing every saved key again with the new one.",

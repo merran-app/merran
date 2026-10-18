@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
+import { TermHelp } from "@/features/onboarding/term-help"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -472,7 +473,9 @@ export function EveryWeekDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("list.weekly.title")}</DialogTitle>
+          <DialogTitle>
+            {t("list.weekly.title")} <TermHelp term="everyWeek" />
+          </DialogTitle>
           <DialogDescription>{t("list.weekly.description")}</DialogDescription>
         </DialogHeader>
         {!data ? (
@@ -607,7 +610,9 @@ export function OnHandDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("list.onHandDialog.title")}</DialogTitle>
+          <DialogTitle>
+            {t("list.onHandDialog.title")} <TermHelp term="alwaysOnHand" />
+          </DialogTitle>
           <DialogDescription>
             {t("list.onHandDialog.description")}
           </DialogDescription>

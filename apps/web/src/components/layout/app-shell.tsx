@@ -6,6 +6,9 @@ import { AssistantPanel } from "@/features/assistant/assistant-panel"
 import { InstallGuide } from "@/features/install/install-ui"
 import { LiveUpdates } from "@/features/live/live-updates"
 import { TelemetryQuestion } from "@/features/server/telemetry-question"
+import { OnboardingProvider } from "@/features/onboarding/onboarding-context"
+import { TourProvider } from "@/features/onboarding/tour-context"
+import { AutomaticTour } from "@/features/onboarding/automatic-tour"
 
 import { AppSidebar } from "./app-sidebar"
 import { BottomNav } from "./bottom-nav"
@@ -13,23 +16,31 @@ import { TopBar } from "./top-bar"
 
 export function AppShell() {
   return (
-    <AssistantProvider>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <TopBar />
-          {/* Bottom padding keeps content clear of the phone's tab bar. */}
-          <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 md:px-8 md:pb-12">
-            <LiveUpdates>
-              <Outlet />
-            </LiveUpdates>
-          </main>
-        </SidebarInset>
-        <BottomNav />
-        <InstallGuide />
-        <TelemetryQuestion />
-        <AssistantPanel />
-      </SidebarProvider>
-    </AssistantProvider>
+    <OnboardingProvider>
+      <TourProvider>
+        <AssistantProvider>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <TopBar />
+              {/* Bottom padding keeps content clear of the phone's tab bar. */}
+              <main
+                data-tour="page"
+                className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 md:px-8 md:pb-12"
+              >
+                <AutomaticTour />
+                <LiveUpdates>
+                  <Outlet />
+                </LiveUpdates>
+              </main>
+            </SidebarInset>
+            <BottomNav />
+            <InstallGuide />
+            <TelemetryQuestion />
+            <AssistantPanel />
+          </SidebarProvider>
+        </AssistantProvider>
+      </TourProvider>
+    </OnboardingProvider>
   )
 }

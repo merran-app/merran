@@ -95,6 +95,14 @@ function LoginPage() {
             {isSubmitting && <Spinner />}
             {t("auth.login.submit")}
           </Button>
+          <details className="text-sm">
+            <summary className="cursor-pointer">
+              {t("auth.login.recoveryTitle")}
+            </summary>
+            <p className="pt-2 text-muted-foreground">
+              {t("auth.login.recovery")}
+            </p>
+          </details>
         </FieldGroup>
       </form>
     </AuthLayout>

@@ -7,6 +7,10 @@ Merran runs as one container, with SQLite included. You need Docker, disk space 
 
 AI keys and a separate database are optional. The Docker commands below use a shell on the Docker host; the TrueNAS, Dockge, and Portainer examples use their management interfaces.
 
+:::note[Setup improvements not released yet]
+New builds show a searchable **MERRAN SETUP CODE** banner after listening. If it is buried, run `docker compose exec merran merran setup-code` (or `docker exec merran merran setup-code` for a standalone container). Older images require the original log line. Follow [first-run setup](../setup/) for passwords, household preferences and recovery.
+:::
+
 Fresh SQLite and Postgres Compose installations of **0.1.0-alpha.1** were smoke-tested on Linux AMD64 containers under Docker Desktop. See [release verification](../../project/release-verification/) for the exact scope; this does not verify every device, provider, or optional integration. To reproduce that version, download Compose and `.env.example` from the `v0.1.0-alpha.1` tag and set `MERRAN_IMAGE=ghcr.io/merran-app/merran:0.1.0-alpha.1` in `.env`. The commands below follow `main` and the moving `next` image tag.
 
 ## Choose your installation

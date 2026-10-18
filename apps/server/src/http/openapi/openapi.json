@@ -725,6 +725,134 @@
           "password": "correct horse battery staple"
         }
       },
+      "Onboarding": {
+        "type": "object",
+        "properties": {
+          "tours": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "toursDisabled": {
+            "type": "boolean"
+          },
+          "dismissed": {
+            "type": "boolean"
+          },
+          "reviewed": {
+            "type": "boolean"
+          },
+          "progress": {
+            "type": "object",
+            "properties": {
+              "recipe": {
+                "type": "boolean"
+              },
+              "plan": {
+                "type": "boolean"
+              },
+              "list": {
+                "type": "boolean"
+              },
+              "cook": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "recipe",
+              "plan",
+              "list",
+              "cook"
+            ]
+          }
+        },
+        "required": [
+          "tours",
+          "toursDisabled",
+          "dismissed",
+          "reviewed",
+          "progress"
+        ],
+        "example": {
+          "tours": {
+            "today": 1
+          },
+          "toursDisabled": false,
+          "dismissed": false,
+          "reviewed": true,
+          "progress": {
+            "recipe": true,
+            "plan": false,
+            "list": false,
+            "cook": false
+          }
+        }
+      },
+      "OnboardingChanges": {
+        "type": "object",
+        "properties": {
+          "dismissed": {
+            "type": "boolean"
+          },
+          "toursDisabled": {
+            "type": "boolean"
+          },
+          "resetTours": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "tour": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "enum": [
+                  "today",
+                  "recipes",
+                  "plan",
+                  "list",
+                  "pantry",
+                  "recipe",
+                  "settings",
+                  "assistant"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000
+              }
+            },
+            "required": [
+              "id",
+              "version"
+            ]
+          },
+          "reviewed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "recordProgress": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "example": {
+          "tour": {
+            "id": "today",
+            "version": 1
+          },
+          "dismissed": false
+        }
+      },
       "MyData": {
         "type": "object",
         "properties": {
@@ -15079,6 +15207,107 @@
           },
           "401": {
             "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me/onboarding": {
+      "get": {
+        "operationId": "getOnboarding",
+        "tags": [
+          "Sign-in"
+        ],
+        "summary": "Your tours and the household's first-meal progress",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Onboarding progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Onboarding"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateOnboarding",
+        "tags": [
+          "Sign-in"
+        ],
+        "summary": "Remember tours and onboarding choices",
+        "description": "Personal choices belong to the signed-in person. Only household owners/admins can mark household preferences reviewed. Progress is derived from household data, never accepted from the client.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingChanges"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Remembered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Onboarding"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
             "content": {
               "application/json": {
                 "schema": {

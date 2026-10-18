@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
 import * as React from "react"
 import { Trans, useTranslation } from "react-i18next"
+import { TermHelp } from "@/features/onboarding/term-help"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -109,6 +110,7 @@ export function GoesWith({
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="mr-1 text-sm text-muted-foreground">
             {t("recipes.pairing.goesWith")}
+            <TermHelp term="goesWith" />
           </span>
           {options.map((option) => {
             const on = option.slug === selected

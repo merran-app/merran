@@ -47,7 +47,7 @@ These are features we intend to build. Their order here does not indicate priori
 - **MCP support:** let compatible external AI tools work with your household's recipes, plan, and list, with proposed changes reviewed before they are applied.
 - **Translations:** make the interface available beyond English, including the planned option to translate recipes as they are imported. Measurement conversion already works.
 - **Email delivery:** send invitations and password-reset messages through an operator-configured SMTP server. Invitation links already work.
-- **Guided onboarding:** add in-app tours, explanations, and a glossary alongside the existing website guides.
+- **Guided onboarding (in progress, not released):** clearer setup-code retrieval, password confirmation and operator recovery, household review, a persistent first-meal checklist, Help and Driver.js tours. Expand contextual explanations and complete device/host-manager acceptance. See [first-run setup](../../get-started/setup/).
 - **After-cooking pantry checks:** offer a checklist of ingredients that ran out, with an option to put them on the shopping list. Existing planned-meal deductions remain available.
 - **Server administration:** add automatic backups before migrations, a consolidated Problems page, an audit log, and a guided SQLite-to-Postgres transfer. Manual restore smoke tests and secret rotation already exist; they do not implement these additions.
 - **Distribution and project services:** add an Unraid template, a hosted app demo, and a telemetry receiver with public aggregate totals. The published documentation site and scripted homepage previews are already available.
