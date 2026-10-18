@@ -1,0 +1,19 @@
+# TrueNAS Docker-based Apps: create this dedicated dataset before deployment.
+# Replace tank and the user/group IDs with your own pool and permitted identity.
+services:
+  merran:
+    image: ghcr.io/merran-app/merran:next
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: UTC
+      PUID: "568"
+      PGID: "568"
+      # MERRAN_PUBLIC_URL: https://food.example.com
+    volumes:
+      - type: bind
+        source: /mnt/tank/apps/merran
+        target: /data
+        bind:
+          create_host_path: false

@@ -63,6 +63,12 @@ Feature overview, credits/release policy, architecture and contributor recipes c
 
 ## Validation and publication policy
 
+### Host-manager installation examples — October 17, 2026
+
+The installation page now includes copyable and downloadable SQLite Compose examples for TrueNAS Docker-based Apps, Dockge and Portainer Docker Standalone. Each makes the host storage path, numeric ownership, port mapping and first-run log access explicit. TrueNAS uses a dedicated local dataset, Dockge saves its stack before its data directory is created, and Portainer uses an absolute endpoint path. Downloads live under apps/docs/public/deploy; inline YAML must remain semantically identical to each file. These examples do not change root compose.yaml, image defaults or existing installations.
+
+Platform instructions were compared with official TrueNAS Apps, Dockge and Portainer documentation. Compose parsing and site checks are recorded in site-platform-install-audit.md. Actual UI deployment, NAS ACL behavior and host-manager image updates still require acceptance testing; documentation does not claim that they passed.
+
 Run docs typecheck, docs tests, Prettier on apps/docs (not internal docs), and the production build/link checker. Review new navigation and narrow layouts. Public guides describe the release, label newer behavior, and defer to the running server's schema when versions differ.
 
 The Pages workflow still deploys only on manual dispatch with deploy=true on main. Keep that unchanged. Publication and remaining acceptance testing are separate statuses.

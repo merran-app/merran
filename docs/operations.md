@@ -9,6 +9,10 @@ Running Merran: logs, error tracking, analytics, what leaves the server, how it'
 - **Each request gets an id,** in the log lines it causes and the `X-Request-Id` response header, so a person's error message can be matched to the logs.
 - **Redacted automatically:** cookies, `Authorization` headers, API keys, AI keys, passwords and tokens. Recipe text, chat messages and pantry contents are never logged at `info`.
 
+## Host-manager installation examples — October 17, 2026
+
+The public installation guide includes complete SQLite stacks and downloadable YAML for TrueNAS Docker-based Apps (dedicated /mnt/POOL/... dataset), Dockge (a stack-relative data directory), and Portainer Docker Standalone (absolute endpoint directory). All mount only Merran's data at /data and keep the image's entrypoint/PUID/PGID ownership setup. The NAS examples describe a local dataset, not an SQLite database on an SMB/NFS mount. They are Compose examples, not catalog templates or certification of those host UIs. See site-platform-install-audit.md for source and validation details. Preserve the actual mounted directory and configuration when updating; stop before a consistent SQLite backup or dataset snapshot. Root compose.yaml and its ./data/app layout are unchanged.
+
 ## Health
 
 - `GET /api/health`: is the process up (Docker's health check).

@@ -1,0 +1,19 @@
+# With Dockge's default /opt/stacks layout, this is /opt/stacks/merran/data.
+# Create the data directory on the Docker host before deploying.
+services:
+  merran:
+    image: ghcr.io/merran-app/merran:next
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: UTC
+      PUID: "1000"
+      PGID: "1000"
+      # MERRAN_PUBLIC_URL: https://food.example.com
+    volumes:
+      - type: bind
+        source: ./data
+        target: /data
+        bind:
+          create_host_path: false

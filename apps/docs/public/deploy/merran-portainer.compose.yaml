@@ -1,0 +1,19 @@
+# Docker Standalone: create this dedicated directory on the selected endpoint.
+# Replace the host path and user/group IDs for that endpoint.
+services:
+  merran:
+    image: ghcr.io/merran-app/merran:next
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: UTC
+      PUID: "1000"
+      PGID: "1000"
+      # MERRAN_PUBLIC_URL: https://food.example.com
+    volumes:
+      - type: bind
+        source: /srv/merran/data
+        target: /data
+        bind:
+          create_host_path: false
