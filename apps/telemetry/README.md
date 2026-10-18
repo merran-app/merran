@@ -52,4 +52,4 @@ The Telemetry receiver workflow (`.github/workflows/telemetry.yml`) tests and de
 3. In GitHub, make an environment called `telemetry` with two secrets, `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, and set the repository variable `TELEMETRY_DEPLOY` to `true`.
 4. Run the Telemetry receiver workflow from the Actions tab, or deploy from your own machine with `pnpm --filter @merran/telemetry run deploy`.
 
-The first deploy makes `telemetry.merran.app`'s DNS record and certificate. Then turn on `RECEIVER_LIVE` in `apps/server/src/modules/telemetry/receiver.ts`, so the next release offers telemetry and sends to it.
+The first deploy makes `telemetry.merran.app`'s DNS record and certificate. Then turn on `RECEIVER_LIVE` in `apps/server/src/modules/telemetry/receiver.ts`, so the next release offers telemetry and sends to it. For Merran's own receiver, all of this was done on October 18, 2026.
