@@ -23,6 +23,10 @@ Tests used `ghcr.io/merran-app/merran:0.1.0-alpha.1`, digest `sha256:bd4d97da003
 
 These are smoke tests, not a complete UI acceptance suite or a backup guarantee for every installation. The core workflow was exercised through the API, not by clicking every step in the public guides. Operators should test their own backups with representative data.
 
+## Runtime dependency hotfix — October 18, 2026
+
+Not released yet. A local Linux amd64 image built with the shared-package dependency fix passed the final-image imports. Removing the shared package's dependency links inside a disposable container reproduced the exact `ERR_MODULE_NOT_FOUND` error for `zod` in shared telemetry. The corrected image started against isolated fresh SQLite and Postgres 18 databases; `/api/health/ready` returned HTTP 200 with the matching database kind for both. Tests used temporary storage, with no existing household data mounted. ARM64 and published-release verification remain separate.
+
 ## Installation-guide follow-up — October 18, 2026
 
 The tabbed install guide was checked with a new app directory on Docker Desktop's Linux engine using the same **0.1.0-alpha.1** image. Readiness, the original setup-code log line, first-account/household creation, and saving a recipe passed. The account/session, recipe and original secret survived stop/start and container recreation with the same mount. The temporary container and network were removed afterward. This was an isolated fresh-data test, not a new physical machine, a different-version upgrade, or acceptance of the TrueNAS/Dockge/Portainer interfaces.

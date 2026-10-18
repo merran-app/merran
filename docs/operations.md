@@ -111,6 +111,8 @@ Every outside call Merran can make, when, and how to stop it. This table also go
 
 ### Images
 
+Runtime dependency fix, October 18, 2026: shared telemetry imports zod at runtime. The image previously copied only root and server node_modules, omitting the shared package's pnpm dependency links. Production and web installs now select workspace dependencies explicitly with the trailing ... filter, and the runtime copies packages/shared/node_modules. A final-image import check loads the shared entry point and telemetry schema during every CI/release build so this packaging failure blocks publication. This changes no settings or storage layout; recover by installing a corrected image while preserving app files, database and server secret.
+
 - **Prebuilt images on GitHub's registry:** `ghcr.io/merran-app/merran`, for `amd64` and `arm64` (so a Raspberry Pi 4 or 5 works).
 - **Tags:** the version itself (`0.1.0-alpha.1`, `1.4.2`), which never moves; `next` (the newest release, pre-releases included); for a release that isn't a pre-release, `1.4`, `1` (from 1.0 on) and `latest`; and `edge` (every commit to main, for testers). The compose file uses `next` while Merran is in alpha.
 - **Signed and described:** each image is signed with cosign and carries an SBOM and build provenance, so anyone can check it came from this repo's CI.

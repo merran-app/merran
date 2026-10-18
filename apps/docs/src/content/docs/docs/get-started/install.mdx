@@ -424,6 +424,7 @@ See [published releases](https://github.com/merran-app/merran/releases) for avai
 
 Check that the container is running with Docker's container list, then inspect its logs. Confirm that port 3000 is available and your firewall permits access from your device. If you change `MERRAN_PORT` in the Compose environment file, use that port in the browser.
 
+- **`ERR_MODULE_NOT_FOUND` for `zod` in shared telemetry:** the image is missing a runtime dependency. Install a corrected image using the [update instructions](../../run/updating-and-backups/); preserve your database and data mount. Changing database permissions does not fix this packaging error.
 - **Bind source path does not exist:** create the directory on the selected Docker host or correct the YAML path. A path on your laptop is not a path on a remote NAS.
 - **Permission denied / operation not permitted:** confirm dataset ACLs, parent traversal, and matching `PUID`/`PGID`. A read-only dataset or ACL that prevents startup ownership changes needs host-side correction; avoid granting access to the whole pool.
 - **Address already in use:** change only the published host port, then recreate the container and use that port in your URL.
