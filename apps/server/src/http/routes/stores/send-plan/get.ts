@@ -17,7 +17,7 @@ const route = createRoute({
   tags: ["Stores"],
   summary: "Where each thing on a list can go",
   description:
-    "For Send: the stores Merran can send to, and each thing left on the list with the stores the household picked a product at for it, newest first, which is where it goes (asking when there's more than one), and where it's been sent already. Each store's part is then reviewed and sent with its basket's `items`.",
+    "Shopping progress for one list: connected stores and cart links, selected products, and successful transfers with their original pack counts, products and times. Changed items/products and older transfers without snapshots require cart review. Sending does not mark an item bought or confirm checkout. Each store's part can be reviewed and sent with its basket's `items`.",
   ...openToKeys("list", "read"),
   request: { query: SendPlanQuery },
   responses: {

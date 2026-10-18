@@ -4966,6 +4966,119 @@
           "item": "0199e8b0-5a10-7a01-8b00-00000000001e"
         }
       },
+      "ListItemDetails": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ListItemSource"
+          },
+          "unavailableMeals": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "meals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "example": "2026-10-15"
+                },
+                "anyDay": {
+                  "type": "boolean"
+                },
+                "listedAmounts": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Recorded outstanding meal contributions after pantry deductions; may differ from a manually edited list amount."
+                },
+                "lines": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "recipe": {
+                        "type": "string"
+                      },
+                      "original": {
+                        "type": "string"
+                      },
+                      "planned": {
+                        "type": "string"
+                      },
+                      "factor": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "recipe",
+                      "original",
+                      "planned",
+                      "factor"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "date",
+                "anyDay",
+                "listedAmounts",
+                "lines"
+              ]
+            }
+          }
+        },
+        "required": [
+          "name",
+          "amount",
+          "source",
+          "unavailableMeals",
+          "meals"
+        ],
+        "example": {
+          "name": "chicken thighs",
+          "amount": "3 lb",
+          "source": "plan",
+          "unavailableMeals": 0,
+          "meals": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+              "name": "Lemon Chicken",
+              "date": "2026-10-15",
+              "anyDay": false,
+              "listedAmounts": [
+                "3 lb"
+              ],
+              "lines": [
+                {
+                  "recipe": "Lemon Chicken",
+                  "original": "2 lb chicken thighs",
+                  "planned": "3 lb chicken thighs",
+                  "factor": 1.5
+                }
+              ]
+            }
+          ]
+        }
+      },
       "Lists": {
         "type": "object",
         "properties": {
@@ -12951,11 +13064,16 @@
                 },
                 "name": {
                   "type": "string"
+                },
+                "cartUrl": {
+                  "type": "string",
+                  "format": "uri"
                 }
               },
               "required": [
                 "key",
-                "name"
+                "name",
+                "cartUrl"
               ]
             },
             "description": "The stores Merran can send to."
@@ -12990,6 +13108,76 @@
                     "type": "string"
                   },
                   "description": "The stores it's been sent to while it's on the list."
+                },
+                "products": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "store": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "size": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "inStock": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "store",
+                      "name",
+                      "size",
+                      "inStock"
+                    ]
+                  }
+                },
+                "deliveries": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "store": {
+                        "type": "string"
+                      },
+                      "packages": {
+                        "type": "number"
+                      },
+                      "product": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "size": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "at": {
+                        "type": "string"
+                      },
+                      "changed": {
+                        "type": "boolean",
+                        "description": "The item or chosen product changed since sending, or an older send has no snapshot. Review the retailer cart before sending again."
+                      }
+                    },
+                    "required": [
+                      "store",
+                      "packages",
+                      "product",
+                      "size",
+                      "at",
+                      "changed"
+                    ]
+                  }
                 }
               },
               "required": [
@@ -12997,7 +13185,9 @@
                 "name",
                 "amount",
                 "picked",
-                "sent"
+                "sent",
+                "products",
+                "deliveries"
               ]
             }
           }
@@ -13010,11 +13200,13 @@
           "stores": [
             {
               "key": "kroger",
-              "name": "Fry's"
+              "name": "Fry's",
+              "cartUrl": "https://www.frysfood.com/cart"
             },
             {
               "key": "walmart",
-              "name": "Walmart"
+              "name": "Walmart",
+              "cartUrl": "https://www.walmart.com/cart"
             }
           ],
           "items": [
@@ -13026,14 +13218,18 @@
                 "walmart",
                 "kroger"
               ],
-              "sent": []
+              "sent": [],
+              "products": [],
+              "deliveries": []
             },
             {
               "itemId": "0199e8b0-5a10-7a01-8b00-00000000001e",
               "name": "eggs",
               "amount": "12",
               "picked": [],
-              "sent": []
+              "sent": [],
+              "products": [],
+              "deliveries": []
             }
           ]
         }
@@ -19607,6 +19803,78 @@
           },
           "404": {
             "description": "Not on the list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/list/items/{itemId}/details": {
+      "get": {
+        "operationId": "listItemDetails",
+        "tags": [
+          "List"
+        ],
+        "summary": "Recipe ingredient lines behind a shopping item",
+        "description": "Current recipe lines for the item's linked planned meals and sides, using the list's food matching and compatible-unit rules. Includes original wording, serving-scaled wording and recorded outstanding meal contributions after pantry deductions. These are current recipe details, not historical snapshots or proof of retailer purchases. Missing or changed recipe details are counted explicitly. With an API key, it needs the `list: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000001d"
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The item's recipe lines.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListItemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "That isn't on the list.",
             "content": {
               "application/json": {
                 "schema": {
@@ -28462,7 +28730,7 @@
           "Stores"
         ],
         "summary": "Where each thing on a list can go",
-        "description": "For Send: the stores Merran can send to, and each thing left on the list with the stores the household picked a product at for it, newest first, which is where it goes (asking when there's more than one), and where it's been sent already. Each store's part is then reviewed and sent with its basket's `items`. With an API key, it needs the `list: read` permission.",
+        "description": "Shopping progress for one list: connected stores and cart links, selected products, and successful transfers with their original pack counts, products and times. Changed items/products and older transfers without snapshots require cart review. Sending does not mark an item bought or confirm checkout. Each store's part can be reviewed and sent with its basket's `items`. With an API key, it needs the `list: read` permission.",
         "security": [
           {
             "session": []

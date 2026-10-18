@@ -81,6 +81,59 @@ const AisleSchema = z
   .object({ id: z.string(), name: z.string(), position: z.number().int() })
   .openapi("Aisle")
 
+export const ListItemDetailsSchema = z
+  .object({
+    name: z.string(),
+    amount: z.string(),
+    source: SourceSchema,
+    unavailableMeals: z.number().int().nonnegative(),
+    meals: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        date: Day,
+        anyDay: z.boolean(),
+        listedAmounts: z.array(z.string()).openapi({
+          description:
+            "Recorded outstanding meal contributions after pantry deductions; may differ from a manually edited list amount.",
+        }),
+        lines: z.array(
+          z.object({
+            recipe: z.string(),
+            original: z.string(),
+            planned: z.string(),
+            factor: z.number(),
+          })
+        ),
+      })
+    ),
+  })
+  .openapi("ListItemDetails", {
+    example: {
+      name: "chicken thighs",
+      amount: "3 lb",
+      source: "plan",
+      unavailableMeals: 0,
+      meals: [
+        {
+          id: IDS.planEntry,
+          name: "Lemon Chicken",
+          date: "2026-10-15",
+          anyDay: false,
+          listedAmounts: ["3 lb"],
+          lines: [
+            {
+              recipe: "Lemon Chicken",
+              original: "2 lb chicken thighs",
+              planned: "3 lb chicken thighs",
+              factor: 1.5,
+            },
+          ],
+        },
+      ],
+    },
+  })
+
 const LISTS = [
   {
     id: IDS.shoppingList,

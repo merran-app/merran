@@ -39,38 +39,43 @@ import {
 export function KrogerBasketPage({
   items,
   list,
+  embedded = false,
 }: {
   /** The things Send has going to Kroger; without them, everything left. */
   items?: string[]
   /** The list Send was for, to go back to. */
   list?: string
+  embedded?: boolean
 }) {
   const { t } = useTranslation()
   const basket = useQuery(krogerBasketQuery(items))
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="mt-2 -ml-3 self-start md:mt-4"
-        render={
-          list ? (
-            <Link to="/list/send" search={{ list }} />
-          ) : (
-            <Link to="/list" />
-          )
-        }
-      >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
-        {list ? t("list.send") : t("nav.list")}
-      </Button>
+      {!embedded && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-2 -ml-3 self-start md:mt-4"
+          render={
+            list ? (
+              <Link to="/list/send" search={{ list }} />
+            ) : (
+              <Link to="/list" />
+            )
+          }
+        >
+          <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+          {list ? t("list.send") : t("nav.list")}
+        </Button>
+      )}
       {basket.data ? (
         // Afresh after each send: what went is left out next time.
         <Review
           key={basket.data.sentAt ?? ""}
           basket={basket.data}
           items={items}
+          embedded={embedded}
         />
       ) : basket.isPending ? (
         <>
@@ -103,7 +108,15 @@ export function KrogerBasketPage({
   )
 }
 
-function Review({ basket, items }: { basket: Basket; items?: string[] }) {
+function Review({
+  basket,
+  items,
+  embedded = false,
+}: {
+  basket: Basket
+  items?: string[]
+  embedded?: boolean
+}) {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const { today } = useHouseholdClock()
@@ -121,6 +134,7 @@ function Review({ basket, items }: { basket: Basket; items?: string[] }) {
   const [counts, setCounts] = React.useState<Record<string, number>>({})
   const [picking, setPicking] = React.useState<BasketLine | null>(null)
   const [sending, setSending] = React.useState(false)
+  const [sendError, setSendError] = React.useState<string | null>(null)
 
   const packagesOf = (line: BasketLine) => counts[line.itemId] ?? line.packages
   const going = basket.lines.filter(
@@ -165,6 +179,7 @@ function Review({ basket, items }: { basket: Basket; items?: string[] }) {
 
   async function send() {
     setSending(true)
+    setSendError(null)
     try {
       const sent = await unwrap(
         api.POST("/api/stores/kroger/send", {
@@ -187,11 +202,13 @@ function Review({ basket, items }: { basket: Basket; items?: string[] }) {
         }
       )
       await queryClient.invalidateQueries({
-        queryKey: krogerBasketQuery(items).queryKey,
+        queryKey: ["stores", "kroger", "basket"],
       })
+      await queryClient.invalidateQueries({ queryKey: ["list"] })
     } catch (err) {
       if (!(err instanceof ApiError)) throw err
       toast.error(err.message)
+      setSendError(err.message)
     } finally {
       setSending(false)
     }
@@ -224,7 +241,12 @@ function Review({ basket, items }: { basket: Basket; items?: string[] }) {
         }
       />
 
-      <div className="grid gap-4 pb-24">
+      <div className={embedded ? "grid min-w-0 gap-4" : "grid gap-4 pb-24"}>
+        {sendError && (
+          <p role="alert" className="rounded-2xl border p-4">
+            {sendError}
+          </p>
+        )}
         {!basket.linked && (
           <Alert>
             <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} />

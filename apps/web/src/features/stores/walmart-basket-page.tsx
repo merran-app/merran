@@ -42,34 +42,38 @@ type WalmartBasket = Schemas["WalmartBasket"]
 export function WalmartBasketPage({
   items,
   list,
+  embedded = false,
 }: {
   /** The things Send has going to Walmart; without them, everything left. */
   items?: string[]
   /** The list Send was for, to go back to. */
   list?: string
+  embedded?: boolean
 }) {
   const { t } = useTranslation()
   const basket = useQuery(walmartBasketQuery(items))
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="mt-2 -ml-3 self-start md:mt-4"
-        render={
-          list ? (
-            <Link to="/list/send" search={{ list }} />
-          ) : (
-            <Link to="/list" />
-          )
-        }
-      >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
-        {list ? t("list.send") : t("nav.list")}
-      </Button>
+      {!embedded && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-2 -ml-3 self-start md:mt-4"
+          render={
+            list ? (
+              <Link to="/list/send" search={{ list }} />
+            ) : (
+              <Link to="/list" />
+            )
+          }
+        >
+          <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+          {list ? t("list.send") : t("nav.list")}
+        </Button>
+      )}
       {basket.data ? (
-        <Walmart basket={basket.data} items={items} />
+        <Walmart basket={basket.data} items={items} embedded={embedded} />
       ) : basket.isPending ? (
         <>
           <PageHeader title={t("stores.walmart.title")} />
@@ -101,10 +105,12 @@ export function WalmartBasketPage({
 function Walmart({
   basket,
   items,
+  embedded = false,
 }: {
   basket: WalmartBasket
   /** The things Send has going to Walmart, which are all that's sent. */
   items?: string[]
+  embedded?: boolean
 }) {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
@@ -123,6 +129,7 @@ function Walmart({
   const moved = job ? `${job.kind} ${job.state} ${job.done}` : ""
   React.useEffect(() => {
     if (moved) {
+      void queryClient.invalidateQueries({ queryKey: ["list"] })
       void queryClient.invalidateQueries({
         queryKey: walmartBasketQuery(items).queryKey,
       })
@@ -233,7 +240,7 @@ function Walmart({
         }
       />
 
-      <div className="grid gap-4 pb-24">
+      <div className={embedded ? "grid min-w-0 gap-4" : "grid gap-4 pb-24"}>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline">{t("stores.walmart.experimental")}</Badge>
           {basket.sentAt && (

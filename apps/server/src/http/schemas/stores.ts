@@ -510,7 +510,13 @@ export const SendPlanQuery = z.object({
 export const SendPlanSchema = z
   .object({
     stores: z
-      .array(z.object({ key: z.string(), name: z.string() }))
+      .array(
+        z.object({
+          key: z.string(),
+          name: z.string(),
+          cartUrl: z.string().url(),
+        })
+      )
       .openapi({ description: "The stores Merran can send to." }),
     items: z.array(
       z.object({
@@ -524,14 +530,43 @@ export const SendPlanSchema = z
         sent: z.array(z.string()).openapi({
           description: "The stores it's been sent to while it's on the list.",
         }),
+        products: z.array(
+          z.object({
+            store: z.string(),
+            name: z.string(),
+            size: z.string().nullable(),
+            inStock: z.boolean(),
+          })
+        ),
+        deliveries: z.array(
+          z.object({
+            store: z.string(),
+            packages: z.number(),
+            product: z.string().nullable(),
+            size: z.string().nullable(),
+            at: z.string(),
+            changed: z.boolean().openapi({
+              description:
+                "The item or chosen product changed since sending, or an older send has no snapshot. Review the retailer cart before sending again.",
+            }),
+          })
+        ),
       })
     ),
   })
   .openapi("SendPlan", {
     example: {
       stores: [
-        { key: "kroger", name: "Fry's" },
-        { key: "walmart", name: "Walmart" },
+        {
+          key: "kroger",
+          name: "Fry's",
+          cartUrl: "https://www.frysfood.com/cart",
+        },
+        {
+          key: "walmart",
+          name: "Walmart",
+          cartUrl: "https://www.walmart.com/cart",
+        },
       ],
       items: [
         {
@@ -540,6 +575,8 @@ export const SendPlanSchema = z
           amount: "1 gallon",
           picked: ["walmart", "kroger"],
           sent: [],
+          products: [],
+          deliveries: [],
         },
         {
           itemId: IDS.listItems[1]!,
@@ -547,6 +584,8 @@ export const SendPlanSchema = z
           amount: "12",
           picked: [],
           sent: [],
+          products: [],
+          deliveries: [],
         },
       ],
     },

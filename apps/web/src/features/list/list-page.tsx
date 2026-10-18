@@ -15,7 +15,6 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import { storeSearch } from "@merran/shared"
 import { useQuery } from "@tanstack/react-query"
-import { Link } from "@tanstack/react-router"
 import * as React from "react"
 import { Trans, useTranslation } from "react-i18next"
 
@@ -59,10 +58,18 @@ import {
 } from "@/features/stores/find-product-dialog"
 import {
   formatPrice,
+  sendPlanQuery,
   useListPrices,
   yourStoresQuery,
   type ItemPrice,
 } from "@/features/stores/queries"
+import {
+  ShoppingProgress,
+  ShoppingStatus,
+  needsAttention,
+  useShoppingStores,
+  type ShoppingFilter,
+} from "@/features/stores/shopping-progress"
 import { initials } from "@/lib/initials"
 import { cn } from "@/lib/utils"
 
@@ -113,6 +120,7 @@ export function ListPage() {
   const [choosingList, setChoosingList] = React.useState(false)
   const [showCart, setShowCart] = React.useState(false)
   const [chosen, setChosen] = React.useState(readChosenList)
+  const selection = useSelection()
 
   const { data: household } = useQuery(householdQuery)
   const { data: yours = [] } = useQuery(yourStoresQuery)
@@ -138,13 +146,44 @@ export function ListPage() {
   const all = list.data?.items ?? []
   const split = lists.length > 1
   const current = lists.find((option) => option.id === chosen) ?? lists[0]
+  const [filter, setFilter] = React.useState<ShoppingFilter>("all")
+  const [review, setReview] = React.useState<{
+    store: string
+    items: string[]
+  } | null>(null)
+  const progress = useQuery({
+    ...sendPlanQuery(current?.id ?? ""),
+    enabled: Boolean(current && yours.some((store) => store.connected)),
+  })
+  const shoppingStores = useShoppingStores(current?.id ?? "", progress.data)
+  const progressOf = new Map(
+    progress.data?.items.map((item) => [item.itemId, item])
+  )
+  const matchesFilter = (item: ListItem) => {
+    if (selection.selecting || filter === "all" || !progress.data) return true
+    const state = progressOf.get(item.id)
+    if (!state) return true
+    return filter === "sent"
+      ? state.sent.length > 0
+      : needsAttention(state, shoppingStores.whereOf(state))
+  }
   // With several lists, the one chosen; else everything.
   const items = split ? all.filter((item) => item.list === current?.id) : all
   const toGet = items.filter((item) => !item.checked)
   const got = items.filter((item) => item.checked)
   const totalLeft = all.filter((item) => !item.checked).length
   const prices = useListPrices()
-  const priceOf = (item: ListItem) => prices.items.get(item.id) ?? null
+  const priceOf = (item: ListItem) => {
+    const cost = prices.items.get(item.id) ?? null
+    const state = progressOf.get(item.id)
+    if (!state) return cost
+    const key = state.sent[0] ?? shoppingStores.whereOf(state)
+    const store = progress.data?.stores.find((store) => store.key === key)
+    // Don't attach another store's estimate to the product being reviewed.
+    if (key === "out" || state.deliveries.some((sent) => sent.changed))
+      return null
+    return store && cost?.store !== store.name ? null : cost
+  }
   // A column of prices when anything left on the list showing has one.
   const rowPrices: RowPrices | null = toGet.some(priceOf)
     ? { of: priceOf, currency: prices.currency }
@@ -157,19 +196,27 @@ export function ListPage() {
     ...aisles.map((aisle) => ({
       id: aisle.id,
       name: aisle.name,
-      items: sorted(toGet.filter((item) => item.aisle === aisle.id)),
+      items: sorted(
+        toGet.filter((item) => item.aisle === aisle.id && matchesFilter(item))
+      ),
     })),
     {
       id: "none",
       name: t("list.noAisle"),
       items: sorted(
-        toGet.filter((item) => !aisles.some((aisle) => aisle.id === item.aisle))
+        toGet.filter(
+          (item) =>
+            !aisles.some((aisle) => aisle.id === item.aisle) &&
+            matchesFilter(item)
+        )
       ),
     },
   ].filter((aisle) => aisle.items.length > 0)
 
   function choose(id: string) {
     setChosen(id)
+    setFilter("all")
+    setReview(null)
     try {
       localStorage.setItem(CHOSEN_LIST, id)
     } catch {
@@ -177,13 +224,39 @@ export function ListPage() {
     }
   }
 
-  const selection = useSelection()
   const selectable = [...toGet, ...(showCart ? got : [])].map((item) => item.id)
   useSelectionKeepOnly(selection, selectable)
   const picked = selectable.filter((id) => selection.isPicked(id))
   const elsewhere = lists.filter((option) => option.id !== current?.id)
   // Send, for the list showing: each thing to the store it's picked at.
-  const canSend = yours.some((store) => store.connected) && toGet.length > 0
+  const canSend =
+    yours.some((store) => store.connected) &&
+    toGet.length > 0 &&
+    (!progress.data ||
+      progress.data.items.some(
+        (item) => item.sent.length || shoppingStores.whereOf(item) !== "out"
+      ))
+  function reviewStore(store: string) {
+    const items =
+      progress.data?.items
+        .filter(
+          (item) =>
+            item.sent.includes(store) ||
+            (!item.sent.length && shoppingStores.whereOf(item) === store)
+        )
+        .map((item) => item.itemId) ?? []
+    // An empty item filter means every list to the older basket endpoints.
+    if (items.length) setReview({ store, items })
+  }
+  function send() {
+    const store =
+      progress.data?.stores.length === 1 ? progress.data.stores[0] : null
+    if (store) reviewStore(store.key)
+    else
+      document
+        .getElementById("shopping-progress")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
   /** The list showing, when there's more than one. */
   const listShowing = split ? current?.id : undefined
 
@@ -227,9 +300,8 @@ export function ListPage() {
               {canSend && current && (
                 <Button
                   variant="outline"
-                  render={
-                    <Link to="/list/send" search={{ list: current.id }} />
-                  }
+                  disabled={!progress.data || progress.isError}
+                  onClick={send}
                 >
                   <HugeiconsIcon
                     icon={ShoppingCart01Icon}
@@ -326,6 +398,34 @@ export function ListPage() {
         )}
 
         <QuickAdd list={split ? current : undefined} />
+        {progress.data &&
+          progress.data.stores.length > 0 &&
+          !selection.selecting && (
+            <div id="shopping-progress">
+              <ShoppingProgress
+                plan={progress.data}
+                whereOf={shoppingStores.whereOf}
+                rest={shoppingStores.rest}
+                onRest={shoppingStores.chooseRest}
+                filter={filter}
+                onFilter={setFilter}
+                review={review}
+                onReview={setReview}
+              />
+            </div>
+          )}
+        {progress.isError && (
+          <p role="alert" className="text-sm text-muted-foreground">
+            {t("list.shopping.failed")}{" "}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void progress.refetch()}
+            >
+              {t("stores.basket.again")}
+            </Button>
+          </p>
+        )}
         {!selection.selecting && <UsualBuys />}
 
         {list.isPending ? (
@@ -359,6 +459,14 @@ export function ListPage() {
           </Empty>
         ) : (
           <>
+            {byAisle.length === 0 && toGet.length > 0 && (
+              <p
+                role="status"
+                className="py-4 text-center text-muted-foreground"
+              >
+                {t("list.shopping.noMatches")}
+              </p>
+            )}
             {byAisle.map((aisle) => (
               <section
                 key={aisle.id}
@@ -383,6 +491,26 @@ export function ListPage() {
                       onEdit={() => setEditing(item)}
                       find={find}
                       prices={rowPrices}
+                      shopping={
+                        progress.data &&
+                        progressOf.get(item.id) && (
+                          <ShoppingStatus
+                            item={progressOf.get(item.id)!}
+                            store={shoppingStores.whereOf(
+                              progressOf.get(item.id)!
+                            )}
+                            plan={progress.data}
+                            onReview={(store) =>
+                              setReview({ store, items: [item.id] })
+                            }
+                            onStore={(store) =>
+                              shoppingStores.move(item.id, store)
+                            }
+                            findStores={find.stores}
+                            onFind={(store) => find.onFind(item, store)}
+                          />
+                        )
+                      }
                     />
                   ))}
                 </ul>
@@ -641,7 +769,7 @@ function StoreCards({
     <div
       role={split ? "tablist" : undefined}
       aria-label={t("list.cards.label")}
-      className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3"
+      className="-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:scroll-px-0 sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3"
     >
       {lists.map((list) => {
         const own = split

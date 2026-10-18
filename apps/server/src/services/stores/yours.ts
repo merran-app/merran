@@ -112,16 +112,20 @@ export async function sendPlan(
           { orderBy: { updatedAt: "desc" } }
         )
       : []
-  const sent = new Map(
+  const connections = new Map(
     (await em.find(StoreConnection, { store: { $in: keys } })).map(
-      (connection) => [
-        connection.store,
-        new Set(Object.keys(connection.lastSent?.items ?? {})),
-      ]
+      (connection) => [connection.store, connection]
     )
   )
   return {
-    stores: stores.map(({ key, name }) => ({ key, name })),
+    stores: stores.map(({ key, name }) => ({
+      key,
+      name,
+      cartUrl:
+        key === KROGER && connections.get(key)?.location
+          ? `https://www.${connections.get(key)!.location!.domain}/cart`
+          : "https://www.walmart.com/cart",
+    })),
     items: items.map((item) => ({
       itemId: item.id,
       name: item.name,
@@ -129,7 +133,41 @@ export async function sendPlan(
       picked: picks
         .filter((pick) => pick.food === foodOf(item))
         .map((pick) => pick.store),
-      sent: keys.filter((key) => sent.get(key)?.has(item.id)),
+      sent: keys.filter((key) =>
+        Boolean(connections.get(key)?.lastSent?.items[item.id])
+      ),
+      products: picks
+        .filter((pick) => pick.food === foodOf(item))
+        .map((pick) => ({
+          store: pick.store,
+          name: pick.product.name,
+          size: pick.product.size,
+          inStock: pick.product.inStock,
+        })),
+      deliveries: keys.flatMap((store) => {
+        const last = connections.get(store)?.lastSent
+        const packages = last?.items[item.id]
+        if (!packages) return []
+        const detail = last?.details?.[item.id]
+        const current = picks.find(
+          (pick) => pick.food === foodOf(item) && pick.store === store
+        )
+        return [
+          {
+            store,
+            packages,
+            product: detail?.product ?? null,
+            size: detail?.size ?? null,
+            at: detail?.at ?? last!.at,
+            changed:
+              !detail ||
+              detail.name !== item.name ||
+              detail.amount !== amountOf(item) ||
+              detail.productId !== current?.product.id ||
+              detail.size !== current?.product.size,
+          },
+        ]
+      }),
     })),
   }
 }

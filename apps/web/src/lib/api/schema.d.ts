@@ -1341,6 +1341,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/list/items/{itemId}/details": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recipe ingredient lines behind a shopping item
+         * @description Current recipe lines for the item's linked planned meals and sides, using the list's food matching and compatible-unit rules. Includes original wording, serving-scaled wording and recorded outstanding meal contributions after pantry deductions. These are current recipe details, not historical snapshots or proof of retailer purchases. Missing or changed recipe details are counted explicitly. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["listItemDetails"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/list/lists": {
         parameters: {
             query?: never;
@@ -3418,7 +3438,7 @@ export interface paths {
         };
         /**
          * Where each thing on a list can go
-         * @description For Send: the stores Merran can send to, and each thing left on the list with the stores the household picked a product at for it, newest first, which is where it goes (asking when there's more than one), and where it's been sent already. Each store's part is then reviewed and sent with its basket's `items`. With an API key, it needs the `list: read` permission.
+         * @description Shopping progress for one list: connected stores and cart links, selected products, and successful transfers with their original pack counts, products and times. Changed items/products and older transfers without snapshots require cart review. Sending does not mark an item bought or confirm checkout. Each store's part can be reviewed and sent with its basket's `items`. With an API key, it needs the `list: read` permission.
          */
         get: operations["sendPlan"];
         put?: never;
@@ -6238,6 +6258,54 @@ export interface components {
              * @example 0199e8b0-5a10-7a01-8b00-00000000001e
              */
             item: string;
+        };
+        /**
+         * @example {
+         *       "name": "chicken thighs",
+         *       "amount": "3 lb",
+         *       "source": "plan",
+         *       "unavailableMeals": 0,
+         *       "meals": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "name": "Lemon Chicken",
+         *           "date": "2026-10-15",
+         *           "anyDay": false,
+         *           "listedAmounts": [
+         *             "3 lb"
+         *           ],
+         *           "lines": [
+         *             {
+         *               "recipe": "Lemon Chicken",
+         *               "original": "2 lb chicken thighs",
+         *               "planned": "3 lb chicken thighs",
+         *               "factor": 1.5
+         *             }
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        ListItemDetails: {
+            name: string;
+            amount: string;
+            source: components["schemas"]["ListItemSource"];
+            unavailableMeals: number;
+            meals: {
+                id: string;
+                name: string;
+                /** @example 2026-10-15 */
+                date: string;
+                anyDay: boolean;
+                /** @description Recorded outstanding meal contributions after pantry deductions; may differ from a manually edited list amount. */
+                listedAmounts: string[];
+                lines: {
+                    recipe: string;
+                    original: string;
+                    planned: string;
+                    factor: number;
+                }[];
+            }[];
         };
         /**
          * @example {
@@ -10342,11 +10410,13 @@ export interface components {
          *       "stores": [
          *         {
          *           "key": "kroger",
-         *           "name": "Fry's"
+         *           "name": "Fry's",
+         *           "cartUrl": "https://www.frysfood.com/cart"
          *         },
          *         {
          *           "key": "walmart",
-         *           "name": "Walmart"
+         *           "name": "Walmart",
+         *           "cartUrl": "https://www.walmart.com/cart"
          *         }
          *       ],
          *       "items": [
@@ -10358,14 +10428,18 @@ export interface components {
          *             "walmart",
          *             "kroger"
          *           ],
-         *           "sent": []
+         *           "sent": [],
+         *           "products": [],
+         *           "deliveries": []
          *         },
          *         {
          *           "itemId": "0199e8b0-5a10-7a01-8b00-00000000001e",
          *           "name": "eggs",
          *           "amount": "12",
          *           "picked": [],
-         *           "sent": []
+         *           "sent": [],
+         *           "products": [],
+         *           "deliveries": []
          *         }
          *       ]
          *     }
@@ -10375,6 +10449,8 @@ export interface components {
             stores: {
                 key: string;
                 name: string;
+                /** Format: uri */
+                cartUrl: string;
             }[];
             items: {
                 itemId: string;
@@ -10384,6 +10460,21 @@ export interface components {
                 picked: string[];
                 /** @description The stores it's been sent to while it's on the list. */
                 sent: string[];
+                products: {
+                    store: string;
+                    name: string;
+                    size: string | null;
+                    inStock: boolean;
+                }[];
+                deliveries: {
+                    store: string;
+                    packages: number;
+                    product: string | null;
+                    size: string | null;
+                    at: string;
+                    /** @description The item or chosen product changed since sending, or an older send has no snapshot. Review the retailer cart before sending again. */
+                    changed: boolean;
+                }[];
             }[];
         };
         /**
@@ -14846,6 +14937,55 @@ export interface operations {
                 };
             };
             /** @description Not on the list. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listItemDetails: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item's recipe lines. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListItemDetails"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description That isn't on the list. */
             404: {
                 headers: {
                     [name: string]: unknown;

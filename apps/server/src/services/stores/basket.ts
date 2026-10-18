@@ -22,6 +22,7 @@ import { useAi } from "../ai/run.ts"
 import { resolveTask } from "../ai/status.ts"
 import { householdToday } from "../pantry/pantry.ts"
 import { judgeSales } from "./history.ts"
+import { sentDetails } from "./sent.ts"
 import {
   accountToken,
   KROGER,
@@ -87,9 +88,9 @@ export async function itemsToGet(
   )
 }
 
-/** Everything left to get, on every list: what was sent is remembered while it's here. */
+/** Keep sent packs until put-away, including purchases already checked off. */
 export async function itemsLeft(em: EntityManager) {
-  return em.find(ShoppingItem, { checked: false }, { fields: ["id"] })
+  return em.find(ShoppingItem, {}, { fields: ["id"] })
 }
 
 /** Keeps the prices seen today, the latest of the day winning. */
@@ -435,6 +436,7 @@ export async function sendKrogerBasket(
   )
   const byUpc = new Map<string, number>()
   const sent: Record<string, number> = {}
+  const details = { ...connection.lastSent?.details }
   for (const line of lines) {
     const food = foods.get(line.itemId)
     const row = food ? kept.get(food) : undefined
@@ -442,6 +444,8 @@ export async function sendKrogerBasket(
     if (!row || !upc) continue
     byUpc.set(upc, (byUpc.get(upc) ?? 0) + line.packages)
     sent[line.itemId] = line.packages
+    const item = items.find((item) => item.id === line.itemId)!
+    details[item.id] = sentDetails(item, row.product, amountOf(item))
     row.chosen = true
   }
   if (byUpc.size === 0) {
@@ -465,6 +469,9 @@ export async function sendKrogerBasket(
   const stillOn = new Set((await itemsLeft(em)).map((item) => item.id))
   connection.lastSent = {
     at: new Date().toISOString(),
+    details: Object.fromEntries(
+      Object.entries(details).filter(([id]) => stillOn.has(id))
+    ),
     items: {
       ...Object.fromEntries(
         Object.entries(connection.lastSent?.items ?? {}).filter(([id]) =>
