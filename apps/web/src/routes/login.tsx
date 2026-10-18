@@ -1,5 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query"
-import { createFileRoute, redirect, useRouter } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  Link,
+  redirect,
+  useRouter,
+} from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 
@@ -10,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { FieldGroup } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { meQuery } from "@/features/auth/queries"
+import { useCapability } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 export const Route = createFileRoute("/login")({
@@ -32,6 +38,7 @@ type Form = { identifier: string; password: string }
 
 function LoginPage() {
   const { t } = useTranslation()
+  const emailRecovery = useCapability("email.passwordReset")
   const { redirect: back } = Route.useSearch()
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -95,14 +102,24 @@ function LoginPage() {
             {isSubmitting && <Spinner />}
             {t("auth.login.submit")}
           </Button>
-          <details className="text-sm">
-            <summary className="cursor-pointer">
+          {emailRecovery && (
+            <Link
+              to="/forgot-password"
+              className="text-sm text-primary hover:underline"
+            >
               {t("auth.login.recoveryTitle")}
-            </summary>
-            <p className="pt-2 text-muted-foreground">
-              {t("auth.login.recovery")}
-            </p>
-          </details>
+            </Link>
+          )}
+          {!emailRecovery && (
+            <details className="text-sm">
+              <summary className="cursor-pointer">
+                {t("auth.login.recoveryTitle")}
+              </summary>
+              <p className="pt-2 text-muted-foreground">
+                {t("auth.login.recovery")}
+              </p>
+            </details>
+          )}
         </FieldGroup>
       </form>
     </AuthLayout>

@@ -13,7 +13,9 @@ The feature baseline is [v0.1.0-alpha.1](https://github.com/merran-app/merran/re
 
 ## In progress (not released yet)
 
-- **Email delivery:** SMTP settings, administrator tests and address-bound household invitations with queued delivery, retry, resend and cancellation are implemented on the development branch. Invitations and test messages have styled HTML with a plain-text alternative. Start with [email setup](../../run/configuration/#email-transport-not-released-yet) and [household invitations](../../run/household-roles/#email-an-invitation-not-released-yet). Password recovery and email verification remain planned. Copyable invite links continue to work without email.
+- **Email delivery and recovery:** SMTP settings, administrator tests, address-bound household invitations and self-service password resets are implemented on development branches. Messages have styled HTML with plain-text alternatives. Reset links expire after 30 minutes and sign out existing sessions when used. Start with [email setup](../../run/configuration/#email-transport-not-released-yet), [household invitations](../../run/household-roles/#email-an-invitation-not-released-yet) and [password recovery](../../run/configuration/#password-recovery-not-released-yet). Copyable invite links and operator recovery remain available without SMTP.
+
+**Skipped, October 18, 2026:** account email verification is excluded from the self-hosted scope. Accounts do not need a verification email to sign in. Sending-domain verification required by an SMTP provider is separate.
 
 ## Available now
 

@@ -47,7 +47,7 @@ The **Account and household** section uses paired columns on desktop and stacks 
 
 If the connection drops after submitting, use **Account already created? Sign in** before repeating setup. Account, credentials and household creation commit together; sign-in can still fail afterward. A completed claim cannot be repeated with the code.
 
-An email address identifies your account; it does not enable email recovery. If you lose access, the operator can run `docker compose exec -it merran merran reset-password YOUR-USERNAME`. The command prompts privately for the new password twice and signs out every device for that account. It also accepts an email address. Never put a password in the command line.
+An email address identifies your account; entering one alone does not configure recovery. In the unreleased password-reset update, configured SMTP and the server's public address enable **Forgot your password?** on sign-in; see [password recovery](../../run/configuration/#password-recovery-not-released-yet). Otherwise, the operator can run `docker compose exec -it merran merran reset-password YOUR-USERNAME`. The command prompts privately for the new password twice and signs out every device for that account. It also accepts an email address. Never put a password in the command line. Account email verification is skipped for self-hosted use.
 
 Your household holds the shared recipes, plan, pantry, and shopping lists. Merran can host multiple households, and a person can belong to more than one.
 
@@ -67,7 +67,7 @@ Invite household members from **Settings → Household**. They use the invite li
 
 Copyable invite links work without any email service. For email invitations, the server administrator first configures **Settings → This server → Email**, sends a test message, and sets `MERRAN_PUBLIC_URL` to the address recipients use to reach this server. A successful test email alone does not enable invitations without that address.
 
-Household owners and admins then choose **Settings → Household → Invitations → Invite by email**. The recipient opens **Join the household** in the email and signs in or registers with the invited address. Invitations last seven days and work once. See [email setup](../../run/configuration/#email-transport-not-released-yet) for Resend and other SMTP services, and [household invitations](../../run/household-roles/#email-an-invitation-not-released-yet) for delivery status, resend and cancellation. Password recovery by email is still planned.
+Household owners and admins then choose **Settings → Household → Invitations → Invite by email**. The recipient opens **Join the household** in the email and signs in or registers with the invited address. Invitations last seven days and work once. See [email setup](../../run/configuration/#email-transport-not-released-yet) for Resend and other SMTP services, and [household invitations](../../run/household-roles/#email-an-invitation-not-released-yet) for delivery status, resend and cancellation. The separate [password-recovery update](../../run/configuration/#password-recovery-not-released-yet) uses the same SMTP settings.
 
 For a source checkout using `pnpm dev`, the server does not automatically load `.env`; set environment variables in the terminal that starts it. See [source development settings](../../run/configuration/#source-development-environment). `localhost` is suitable for testing on the same computer; use a reachable hostname or LAN address for invitations opened on other devices.
 

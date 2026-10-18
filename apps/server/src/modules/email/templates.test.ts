@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { invitationEmail, testEmail } from "./templates.ts"
+import { invitationEmail, passwordResetEmail, testEmail } from "./templates.ts"
 
 const invite = {
   household: "The Parkers",
@@ -8,6 +8,23 @@ const invite = {
   link: "https://meals.example.com/join/sample-token",
   expiresAt: new Date("2026-10-25T18:30:00Z"),
 }
+
+test("password-reset mail has a clear action and the same expiring fragment link in both formats", () => {
+  const link = "https://meals.example.com/reset-password#sample-token"
+  const message = passwordResetEmail({ link, expiresAt: invite.expiresAt })
+  for (const content of [message.html, message.text]) {
+    expect(content).toContain(link)
+    expect(content).toContain("October 25, 2026")
+  }
+  expect(message.html).toContain("Reset password")
+  expect(message.text).toContain("signs out all existing sessions")
+  expect(() =>
+    passwordResetEmail({
+      link: "javascript:alert(1)",
+      expiresAt: invite.expiresAt,
+    })
+  ).toThrow()
+})
 
 test("HTML and text invitations contain the same action, recipient, role and expiry", () => {
   const message = invitationEmail(invite)

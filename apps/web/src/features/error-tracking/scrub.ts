@@ -16,7 +16,9 @@ const KEYS = [
 const INVITE = /\/join\/[^/?#\s"']+/g
 
 export function scrubText(text: string): string {
-  let scrubbed = text.replace(INVITE, "/join/[token]")
+  let scrubbed = text
+    .replace(INVITE, "/join/[token]")
+    .replace(/\/reset-password#[^\s"'<>]+/g, "/reset-password#[token]")
   for (const pattern of KEYS) {
     scrubbed = scrubbed.replace(pattern, "[redacted]")
   }

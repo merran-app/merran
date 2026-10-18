@@ -100,6 +100,8 @@ An environment override takes priority and locks the corresponding app setting. 
 
 :::note[Not released yet]
 For a buried setup code, use `docker compose exec merran merran setup-code`, or **Where is my setup code?** on the setup page. For a forgotten password, `docker compose exec -it merran merran reset-password YOUR-USERNAME` prompts privately and revokes that account's sessions; SMTP is not required. These commands are in development and unavailable on older images. See [first-run setup](../../get-started/setup/) for version differences and interrupted-setup recovery.
+
+The separate password-recovery update adds **Forgot your password?** on sign-in when Email and the public address are ready. Follow [password recovery](../configuration/#password-recovery-not-released-yet). A generic confirmation deliberately does not reveal whether an account exists. Check spam, provider status and **Settings → This server → Jobs** with the operator if mail does not arrive. Invalid/expired/used links require a fresh request; if you refreshed the reset form, reopen the email link because the token is cleared from the address bar. SMTP acceptance does not guarantee delivery. Account email verification is skipped; provider sending-domain verification still applies.
 :::
 
 Use [updating, backups, and recovery](../updating-and-backups/) for a failed update, lost data, or a restore test. A household export is useful for portability but is not a complete server backup.

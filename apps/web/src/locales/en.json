@@ -87,7 +87,7 @@
       "submit": "Sign in",
       "wrong": "That username or password isn't right.",
       "tooMany": "Too many tries. Wait a minute, then try again.",
-      "recovery": "Forgot your password? Ask the server operator to run merran reset-password with your username. Email recovery is not available yet.",
+      "recovery": "Ask the server operator to run merran reset-password with your username. Email recovery needs the server's Email settings and public address configured.",
       "recoveryTitle": "Forgot your password?"
     },
     "setup": {
@@ -107,6 +107,24 @@
       "signIn": "Account already created? Sign in",
       "partialFailure": "Setup could not finish. Try signing in with the account details you entered. If no account was created, return here and retry.",
       "connectionFailure": "The connection was interrupted. Try signing in before submitting setup again."
+    },
+    "reset": {
+      "forgotTitle": "Forgot your password?",
+      "forgotDescription": "Enter your account email address to request a reset link.",
+      "checkEmail": "Check your email",
+      "requested": "If an account with that address can receive recovery emails, a reset link will arrive shortly. Check your spam folder too. The link expires 30 minutes after the request.",
+      "emailInvalid": "Enter a valid email address.",
+      "sendLink": "Send reset link",
+      "operatorHelp": "If email is unavailable, ask the server operator to reset your password with the merran reset-password command.",
+      "backToLogin": "Back to sign in",
+      "title": "Choose a new password",
+      "description": "Resetting your password signs out all your devices. Sign in again with your new password.",
+      "submit": "Reset password",
+      "doneTitle": "Password reset",
+      "doneDescription": "Your password has changed and existing sessions have been signed out. You can now sign in with your new password.",
+      "invalid": "This reset link is invalid, has expired, or has already been used. Request a new one.",
+      "tooMany": "Too many reset attempts. Try again in 15 minutes.",
+      "requestAnother": "Request a new reset link"
     },
     "join": {
       "invitedEmail": "This invitation is for {{email}}.",
@@ -493,7 +511,7 @@
       },
       "email": {
         "title": "Email",
-        "description": "Connect your SMTP provider for household invitations. Password recovery by email is still being built.",
+        "description": "Connect your SMTP provider for household invitations and password recovery.",
         "enabled": "Enable email",
         "enabledHint": "Off by default. Complete and save the SMTP settings before sending a test.",
         "host": "SMTP host",

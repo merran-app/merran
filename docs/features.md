@@ -16,6 +16,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 - **Building:** started in the rewrite, not finished.
 - **Planned:** coming in 0.1, not started.
 - **Later:** after 0.1.
+- **Skipped:** deliberately excluded from the current scope.
 
 ## Running it
 
@@ -59,7 +60,8 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Two-step sign-in | Detail | Planned | |
 | Single sign-on (OIDC) | Key | Planned | |
 | Household invitations by email (SMTP) | Detail | Built | Not released yet: optional SMTP settings and test, address-bound seven-day invitations, queued delivery with retries, resend/cancel and provider-acceptance status; styled HTML with plain-text fallback; requires MERRAN_PUBLIC_URL |
-| Password reset and email verification by email | Detail | Planned | SMTP transport is built; recovery and verification flows remain to build |
+| Password reset by email | Detail | Built | Not released yet: optional SMTP recovery with styled, single-use 30-minute links, durable delivery, rate limits, password confirmation and session revocation; operator recovery remains available |
+| Account email verification | Detail | Skipped | Decided October 18, 2026: unnecessary for the intended self-hosted deployment; no verification email or verified-email sign-in requirement. Provider sending-domain verification is separate |
 | Encrypted saved secrets and secret rotation | Detail | Built | SecretBox storage and the merran rotate-secret command ship in alpha.1 |
 | Audit log | Detail | Planned | Secret encryption and rotation are not an audit trail |
 | A limited role for kids | Detail | Later | |

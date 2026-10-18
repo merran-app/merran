@@ -1,5 +1,6 @@
 import { Job } from "../../database/entities/index.ts"
 import { clearExpiredInvitationTokens } from "../../modules/email/invitations.ts"
+import { cleanUpPasswordResets } from "../../modules/email/password-resets.ts"
 import { clearOldUploads } from "../transfer/read-export.ts"
 import type { JobHandler } from "./runner.ts"
 
@@ -14,6 +15,7 @@ export const cleanUpJobsJob: JobHandler = {
   kind: "jobs.cleanUp",
   async run({ em, deps }) {
     await clearExpiredInvitationTokens(em)
+    await cleanUpPasswordResets(em)
     const uploads = await clearOldUploads(deps.config.dataDir)
     const removed = await em.nativeDelete(Job, {
       status: { $in: ["done", "failed", "cancelled"] },

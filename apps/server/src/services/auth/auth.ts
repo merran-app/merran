@@ -72,6 +72,8 @@ export function createAuth({ config, database, secret, logger }: AuthOptions) {
     },
     emailAndPassword: {
       enabled: true,
+      // Account email verification is outside the self-hosted scope.
+      requireEmailVerification: false,
       // Accounts are made by setup, invite links and household admins, not
       // by anyone who finds the sign-up endpoint.
       disableSignUp: true,
