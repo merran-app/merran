@@ -49,6 +49,8 @@ docker compose logs --tail 100 merran
 
 Open Merran and check that your household, recipes, and plan are present. Merran applies database migrations during startup.
 
+If startup reports `ERR_MODULE_NOT_FOUND` for `zod` imported from shared telemetry, the image has a packaging defect. Update to a release containing the runtime dependency fix; pulling an unchanged defective image will not repair it. Keep the database, app files and original secret. You do not need to delete data or install packages inside the container.
+
 ## Restore
 
 Downgrades are not supported. To return to an earlier version, restore the complete backup made before the update and use the matching image version.

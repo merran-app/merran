@@ -20,7 +20,7 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/server/package.json apps/server/
 COPY packages/shared/package.json packages/shared/
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --prod --filter @merran/server
+    pnpm install --frozen-lockfile --prod --filter @merran/server...
 
 # ---- The web app: static files, so it's built once, on the build machine ----
 FROM --platform=$BUILDPLATFORM node:24-slim AS web
@@ -32,7 +32,7 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --filter @merran/web
+    pnpm install --frozen-lockfile --filter @merran/web...
 COPY packages/shared/src packages/shared/src
 COPY apps/web apps/web
 RUN pnpm --filter @merran/web build
@@ -85,6 +85,7 @@ ENV MERRAN_VERSION=$MERRAN_VERSION
 WORKDIR /app
 COPY --from=deps /app/node_modules node_modules
 COPY --from=deps /app/apps/server/node_modules apps/server/node_modules
+COPY --from=deps /app/packages/shared/node_modules packages/shared/node_modules
 COPY packages/shared/package.json packages/shared/
 COPY packages/shared/src packages/shared/src
 COPY apps/server/package.json apps/server/
@@ -92,6 +93,9 @@ COPY apps/server/src apps/server/src
 COPY --from=web /app/apps/web/dist apps/web/dist
 COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/merran-entrypoint
 COPY --chmod=755 docker/merran.sh /usr/local/bin/merran
+# Resolve shared runtime dependencies in the final image, before publishing it.
+# Workspace installs on developer machines can hide a missing package-local link.
+RUN node --input-type=module -e "await import('./packages/shared/src/index.ts'); await import('./packages/shared/src/telemetry/report.ts')"
 RUN mkdir -p /data
 
 EXPOSE 3000
