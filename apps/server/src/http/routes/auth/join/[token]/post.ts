@@ -8,6 +8,7 @@ import {
 import {
   acceptInvite,
   findUsableInvite,
+  checkInviteEmail,
 } from "../../../../../services/auth/invites.ts"
 import { AppError } from "../../../../../core/errors.ts"
 import type { Router } from "../../../../router.ts"
@@ -47,6 +48,7 @@ const route = createRoute({
     201: jsonResponse(MeSchema, "Joined, with a new account, and signed in."),
     400: errorResponse("Signed out, and no account was sent."),
     404: errorResponse("No invite has that link."),
+    403: errorResponse("Use the invited email address."),
     409: errorResponse("Already in the household, or the account exists."),
     410: errorResponse("The link has been used, or has expired."),
   },
@@ -77,6 +79,7 @@ export default (router: Router, { auth }: AppDeps) => {
       )
     }
 
+    checkInviteEmail(invite, account.email)
     const user = await createAccount(auth, c.var.em, account)
     await acceptInvite(c.var.em, invite, user.id)
     for (const cookie of await signInCookies(auth, account, c.req.raw)) {

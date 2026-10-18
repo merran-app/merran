@@ -64,18 +64,41 @@ function JoinPage() {
 
   const title = t("auth.join.title", { household: invite.household.name })
   return me ? (
-    <JoinSignedIn token={token} title={title} />
+    <JoinSignedIn
+      key={token}
+      token={token}
+      title={title}
+      email={invite.email}
+      signedInEmail={me.email}
+    />
   ) : (
-    <JoinWithAccount token={token} title={title} />
+    <JoinWithAccount
+      key={token}
+      token={token}
+      title={title}
+      email={invite.email}
+    />
   )
 }
 
-function JoinSignedIn({ token, title }: { token: string; title: string }) {
+function JoinSignedIn({
+  token,
+  title,
+  email,
+  signedInEmail,
+}: {
+  token: string
+  title: string
+  email?: string
+  signedInEmail: string
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const form = useForm()
   const { errors, isSubmitting } = form.formState
+  const wrongAddress =
+    email && email.toLowerCase() !== signedInEmail.toLowerCase()
 
   const onSubmit = form.handleSubmit(async () => {
     try {
@@ -96,6 +119,18 @@ function JoinSignedIn({ token, title }: { token: string; title: string }) {
     <AuthLayout title={title} description={t("auth.join.signedIn")}>
       <form onSubmit={onSubmit}>
         <FieldGroup>
+          {email && (
+            <p className="text-sm break-all">
+              {t("auth.join.invitedEmail", { email })}
+            </p>
+          )}
+          {wrongAddress && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                {t("auth.join.wrongEmail", { email })}
+              </AlertDescription>
+            </Alert>
+          )}
           {errors.root && (
             <Alert variant="destructive">
               <AlertDescription>
@@ -103,21 +138,54 @@ function JoinSignedIn({ token, title }: { token: string; title: string }) {
               </AlertDescription>
             </Alert>
           )}
-          <Button type="submit" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            disabled={isSubmitting || Boolean(wrongAddress)}
+          >
             {isSubmitting && <Spinner />}
             {t("auth.join.submit")}
           </Button>
+          {wrongAddress && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await unwrap(api.POST("/api/auth/sign-out", { body: {} }))
+                  queryClient.clear()
+                  await navigate({
+                    to: "/login",
+                    search: { redirect: `/join/${token}` },
+                  })
+                } catch (error) {
+                  if (!showFormError(form.setError, error)) throw error
+                }
+              }}
+            >
+              {t("auth.join.switchAccount")}
+            </Button>
+          )}
         </FieldGroup>
       </form>
     </AuthLayout>
   )
 }
 
-function JoinWithAccount({ token, title }: { token: string; title: string }) {
+function JoinWithAccount({
+  token,
+  title,
+  email,
+}: {
+  token: string
+  title: string
+  email?: string
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const form = useForm<AccountForm>({ defaultValues: EMPTY_ACCOUNT })
+  const form = useForm<AccountForm>({
+    defaultValues: { ...EMPTY_ACCOUNT, email: email ?? "" },
+  })
   const { errors, isSubmitting } = form.formState
 
   const onSubmit = form.handleSubmit(
@@ -169,7 +237,16 @@ function JoinWithAccount({ token, title }: { token: string; title: string }) {
               <AlertDescription>{errors.root.message}</AlertDescription>
             </Alert>
           )}
-          <AccountFields register={form.register} errors={errors} />
+          {email && (
+            <p className="text-sm break-all">
+              {t("auth.join.invitedEmail", { email })}
+            </p>
+          )}
+          <AccountFields
+            register={form.register}
+            errors={errors}
+            emailReadOnly={Boolean(email)}
+          />
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && <Spinner />}
             {t("auth.join.submitNew")}

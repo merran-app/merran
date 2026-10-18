@@ -213,6 +213,10 @@ For **Docker Compose**, save this as `.env` beside `compose.yaml`, then run `doc
 
 For **TrueNAS, Dockge and Portainer**, edit the inline `environment` block in your tab's YAML instead. The published host port is the **left** side of `"3000:3000"`; the image version is the `image` line. Keep the right-hand container port `3000`.
 
+:::note[Email invitations — not released yet]
+The SMTP update also requires `MERRAN_PUBLIC_URL` for **Invite by email**, even when Merran is only reachable on your LAN. Use the HTTP(S) origin recipients open, without a path, query or credentials. Configure the email provider separately in **Settings → This server → Email**; [email setup](../../run/configuration/#email-transport-not-released-yet) covers Resend and other SMTP services. Copyable invite links still work without email.
+:::
+
 AI, nutrition and most optional modules can be configured later in **Settings → This server** or **Settings → Household**. Environment-supplied module values override and lock those controls, so leave them unset if you want to manage them in the app. Keep `.env` private if you add keys, passwords or tokens.
 
 ## Finish setup

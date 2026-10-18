@@ -3,6 +3,11 @@ import { describe, expect, test } from "vitest"
 import { scrubEvent, scrubText } from "./scrub.ts"
 
 describe("error reports", () => {
+  test("lose password-reset fragments in errors and request URLs", () => {
+    expect(
+      scrubText("https://merran.test/reset-password#private-reset-token")
+    ).toBe("https://merran.test/reset-password#[token]")
+  })
   test("lose anything that looks like a key", () => {
     expect(
       scrubText(

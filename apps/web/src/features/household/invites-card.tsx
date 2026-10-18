@@ -39,11 +39,21 @@ import { api, ApiError, unwrap } from "@/lib/api/client"
 import { formatDate } from "@/lib/format"
 
 import { invitesQuery, type InviteLink } from "./queries"
+import { EmailInviteDialog } from "./email-invite-dialog"
 
 /** Links that let someone join the household. Admins only. */
 export function InvitesCard() {
   const { t } = useTranslation()
-  const { data: invites } = useSuspenseQuery(invitesQuery)
+  const { data: invites } = useSuspenseQuery({
+    ...invitesQuery,
+    refetchInterval: (query) =>
+      query.state.data?.some(
+        (invite) =>
+          invite.delivery === "queued" || invite.delivery === "sending"
+      )
+        ? 2000
+        : false,
+  })
 
   return (
     <Card>
@@ -53,7 +63,10 @@ export function InvitesCard() {
           {t("settings.household.invites.description")}
         </CardDescription>
         <CardAction>
-          <NewInviteDialog />
+          <div className="flex flex-wrap gap-2">
+            <EmailInviteDialog />
+            <NewInviteDialog />
+          </div>
         </CardAction>
       </CardHeader>
       <CardContent>
@@ -86,6 +99,24 @@ function InviteRow({ invite }: { invite: InviteLink }) {
   const queryClient = useQueryClient()
   const [busy, setBusy] = React.useState(false)
 
+  async function resend() {
+    setBusy(true)
+    try {
+      await unwrap(
+        api.POST("/api/households/current/invites/{inviteId}/resend", {
+          params: { path: { inviteId: invite.id } },
+        })
+      )
+      await queryClient.invalidateQueries({ queryKey: invitesQuery.queryKey })
+      toast.success(t("settings.household.invites.emailQueued"))
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error
+      toast.error(error.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function cancel() {
     setBusy(true)
     try {
@@ -105,11 +136,19 @@ function InviteRow({ invite }: { invite: InviteLink }) {
   }
 
   return (
-    <li className="flex items-center gap-3 p-4">
+    <li className="flex flex-wrap items-center gap-3 p-4">
       <div className="min-w-0 flex-1 space-y-1">
+        {invite.email && (
+          <p className="text-sm font-medium break-all">{invite.email}</p>
+        )}
         <Badge variant="secondary">
           {t(`settings.household.roles.${invite.role}`)}
         </Badge>
+        {invite.delivery && (
+          <Badge variant="outline">
+            {t(`settings.household.invites.delivery.${invite.delivery}`)}
+          </Badge>
+        )}
         <p className="text-sm text-muted-foreground">
           {[
             t("settings.household.invites.made", {
@@ -121,6 +160,20 @@ function InviteRow({ invite }: { invite: InviteLink }) {
           ].join(" · ")}
         </p>
       </div>
+      {invite.email && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={resend}
+          disabled={
+            busy ||
+            invite.delivery === "queued" ||
+            invite.delivery === "sending"
+          }
+        >
+          {t("settings.household.invites.resend")}
+        </Button>
+      )}
       <Button variant="outline" size="sm" onClick={cancel} disabled={busy}>
         {busy ? (
           <Spinner />

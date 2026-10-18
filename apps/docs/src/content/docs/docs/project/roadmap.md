@@ -9,7 +9,13 @@ Merran is in alpha. This roadmap describes our direction, not a delivery schedul
 
 The feature baseline is [v0.1.0-alpha.1](https://github.com/merran-app/merran/releases/tag/v0.1.0-alpha.1). See the [release verification record](../release-verification/) for what we have tested and what still needs checking.
 
-**Last reviewed:** October 18, 2026. Features move to Planned when we choose to build them; In progress will be used only when implementation starts.
+**Last reviewed:** October 18, 2026. Features move to Planned when we choose to build them; In progress means implementation has started.
+
+## In progress (not released yet)
+
+- **Email delivery and recovery:** SMTP settings, administrator tests, address-bound household invitations and self-service password resets are implemented on development branches. Messages have styled HTML with plain-text alternatives. Reset links expire after 30 minutes and sign out existing sessions when used. Start with [email setup](../../run/configuration/#email-transport-not-released-yet), [household invitations](../../run/household-roles/#email-an-invitation-not-released-yet) and [password recovery](../../run/configuration/#password-recovery-not-released-yet). Copyable invite links and operator recovery remain available without SMTP.
+
+**Skipped, October 18, 2026:** account email verification is excluded from the self-hosted scope. Accounts do not need a verification email to sign in. Sending-domain verification required by an SMTP provider is separate.
 
 ## Available now
 
@@ -49,7 +55,6 @@ These are features we intend to build. Their order here does not indicate priori
 - **Webhooks:** let tools such as Home Assistant and n8n react when recipes, plans, lists, or pantry items change.
 - **MCP support:** let compatible external AI tools work with your household's recipes, plan, and list, with proposed changes reviewed before they are applied.
 - **Translations:** make the interface available beyond English, including the planned option to translate recipes as they are imported. Measurement conversion already works.
-- **Email delivery:** send invitations and password-reset messages through an operator-configured SMTP server. Invitation links already work.
 - **Guided onboarding (in progress, not released):** clearer setup-code retrieval, password confirmation and operator recovery, household review, a persistent first-meal checklist, Help and Driver.js tours. Expand contextual explanations and complete device/host-manager acceptance. See [first-run setup](../../get-started/setup/).
 - **After-cooking pantry checks:** offer a checklist of ingredients that ran out, with an option to put them on the shopping list. Existing planned-meal deductions remain available.
 - **Server administration:** add automatic backups before migrations, a consolidated Problems page, an audit log, and a guided SQLite-to-Postgres transfer. Manual restore smoke tests and secret rotation already exist; they do not implement these additions.

@@ -19,6 +19,7 @@ import { HouseholdMember } from "./household_members.ts"
 import { HouseholdSetting } from "./household_settings.ts"
 import { Household } from "./households.ts"
 import { InviteLink } from "./invite_links.ts"
+import { PasswordReset } from "./password_resets.ts"
 import { Job } from "./jobs.ts"
 import { PantryItem } from "./pantry_items.ts"
 import { PlanEntry } from "./plan_entries.ts"
@@ -66,6 +67,7 @@ export * from "./household_members.ts"
 export * from "./household_settings.ts"
 export * from "./households.ts"
 export * from "./invite_links.ts"
+export * from "./password_resets.ts"
 export * from "./jobs.ts"
 export * from "./pantry_items.ts"
 export * from "./plan_entries.ts"
@@ -115,6 +117,7 @@ export const entities = [
   HouseholdMember,
   HouseholdSetting,
   InviteLink,
+  PasswordReset,
   Job,
   PantryItem,
   PlanEntry,
@@ -154,6 +157,7 @@ export const SHARED_TABLES = [
   // The runner sees every household's; the job services check the household.
   "jobs",
   "rate_limits",
+  "password_resets",
   // The server's own keys and each household's, found by whose they are.
   "ai_keys",
   // About food, not anyone's recipes: USDA's foods and which one each

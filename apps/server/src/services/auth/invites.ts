@@ -3,6 +3,8 @@ import type { EntityManager } from "@mikro-orm/sql"
 import {
   HouseholdMember,
   InviteLink,
+  User,
+  Secret,
   type INVITE_ROLES,
 } from "../../database/entities/index.ts"
 import { ACROSS_HOUSEHOLDS } from "../../database/scope.ts"
@@ -79,11 +81,18 @@ export async function acceptInvite(
   invite: InviteLink,
   userId: string
 ) {
+  const user = await em.findOneOrFail(User, userId)
+  checkInviteEmail(invite, user.email)
   const householdId = invite.household.id
   await em.transactional(async (tx) => {
     const claimed = await tx.nativeUpdate(
       InviteLink,
-      { id: invite.id, household: householdId, usedAt: null },
+      {
+        id: invite.id,
+        household: householdId,
+        usedAt: null,
+        expiresAt: { $gt: new Date() },
+      },
       { usedAt: new Date(), usedBy: userId },
       ACROSS_HOUSEHOLDS
     )
@@ -111,5 +120,28 @@ export async function acceptInvite(
       user: userId,
       role: invite.role,
     })
+    if (invite.deliveryToken) {
+      await tx.nativeUpdate(
+        InviteLink,
+        { id: invite.id },
+        { deliveryToken: null },
+        ACROSS_HOUSEHOLDS
+      )
+      await tx.nativeDelete(Secret, { id: invite.deliveryToken.id })
+    }
   })
+}
+
+/** Check before account creation too, so a wrong address cannot create an account. */
+export function checkInviteEmail(
+  invite: Pick<InviteLink, "email">,
+  email: string
+) {
+  if (invite.email && invite.email !== email.trim().toLowerCase()) {
+    throw new AppError(
+      "forbidden",
+      "invite_email_mismatch",
+      "Sign in or register with the email address this invitation was sent to."
+    )
+  }
 }

@@ -32,11 +32,13 @@ export function AccountFields<T extends FieldValues & AccountForm>({
   errors,
   columns = false,
   children,
+  emailReadOnly = false,
 }: {
   register: UseFormRegister<T>
   errors: FieldErrors<T>
   columns?: boolean
   children?: ReactNode
+  emailReadOnly?: boolean
 }) {
   const { t } = useTranslation()
   const field = (name: keyof AccountForm) => ({
@@ -89,6 +91,7 @@ export function AccountFields<T extends FieldValues & AccountForm>({
         label={t("auth.fields.email")}
         type="email"
         autoComplete="email"
+        readOnly={emailReadOnly}
         autoCapitalize="none"
         {...field("email")}
       />
