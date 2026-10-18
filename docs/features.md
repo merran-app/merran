@@ -134,6 +134,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Select meals, repeat last week, clear the rest | Detail | Built | |
 | Leaning on sales | Key | Built | Module (stores): Fill the week and the weekly autoplan pick recipes with real deals at the household's Kroger store more, as much as its Lean on sales says (off, a little, a lot), and say so; Recipes has an On sale filter |
 | Deals worth having: a sale judged against price history | Key | Built | Module (stores): prices checked each morning and kept by day; each sale is the lowest in a while, a normal sale, or barely off what it usually costs, and only real deals count |
+| Quickly move or swap planned meals between days | Key | Planned | October 18 usage feedback: rearrange meals after automatic planning, explore drag-and-drop with a touch/keyboard alternative; preserve meal details and review shopping-list effects ([plan](shopping-and-planning-feedback.md#rearrange-meals-after-automatic-planning)) |
 | AI-ranked suggestions | Detail | Later | |
 
 ## Shopping and the pantry
@@ -146,6 +147,8 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | A list for each place you shop | Key | Built | Lists are names and aisles, however the household sorts what it buys; the store is chosen for each thing (the two rows below) |
 | Find any thing at any of your stores | Key | Built | Find on every thing on every list opens a menu of the household's stores (picked once in Settings, Household, Your stores): Fry's or Walmart's product picker, kept for that food there, or any other store's search; the extension's side panel has a Find at picker of them |
 | One Send that splits the list across your stores | Key | Built | Module (stores): each thing goes to the store it's mapped to, asks when it's mapped to more than one, and the rest go to one store; then Fry's and Walmart each review and send their part |
+| Complete list items after a successful store send | Key | Planned | October 18 usage feedback: offer a prompt or optional automatic completion for successfully sent items at Fry's and other supported stores; partial failures stay open, and cart send is not purchase confirmation ([plan](shopping-and-planning-feedback.md#complete-list-items-after-sending-to-a-store)) |
+| Ingredient purpose and contextual swaps while shopping | Key | Planned | October 18 usage feedback: make contributing meals easy to find and ask for a suitable replacement from the list item, with dietary context and review before applying ([plan](shopping-and-planning-feedback.md#ingredient-purpose-and-substitutions-while-shopping)) |
 | Shopping together: the list updates live on every phone | Headline | Built | |
 | Usual buys: "Milk? You last got some Oct 9" | Key | Built | |
 | A pantry: amounts, use soon, leftovers, cooking uses it up | Headline | Built | |
