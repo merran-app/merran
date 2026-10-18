@@ -2,7 +2,7 @@
 
 The small service that takes in the opt-in daily summaries Merran servers send (see [operations.md](operations.md#2-telemetry-for-the-merran-project-opt-in)), keeps as little as it can, and shows the totals on a public page, like Home Assistant's analytics.
 
-Status: built, not live yet (October 17, 2026). The receiver is `apps/telemetry`, tested on Node's SQLite and run under workerd on a local D1; the sender's changes, the question after setup, the totals page and the site's guide are built, behind `RECEIVER_LIVE` in `apps/server/src/modules/telemetry/receiver.ts`, which is off. Left to do, once, by hand: the Cloudflare setup in [apps/telemetry/README.md](../apps/telemetry/README.md#deploying), then turning `RECEIVER_LIVE` on for the next release. The [decisions](#decisions) were made as recommended on October 17, 2026.
+Status: live since October 18, 2026. The receiver is `apps/telemetry`, deployed to `telemetry.merran.app` by its workflow on each change to main. `RECEIVER_LIVE` in `apps/server/src/modules/telemetry/receiver.ts` is on, so 0.1.0-alpha.2 offers telemetry, asks after setup and sends. The [decisions](#decisions) were made as recommended on October 17, 2026.
 
 ## Why now
 
@@ -215,7 +215,7 @@ Not planned: a setting for the receiver's address. Tests post the sender's own o
    *Built,* and checked locally under workerd: a summary taken, a bad one turned down, the night's totals and history read back, releases read from GitHub. Not deployed: that waits for the Cloudflare setup.
 3. **The sender, finished:** failing quietly, the last result on the card, `410`, forgetting the old id, the spread, the link, the question after setup; the constant flipped.
    *Done when:* the dev server's report arrives, the card says when, and an unreachable receiver leaves no failed job.
-   *Built,* with `RECEIVER_LIVE` off until the receiver is deployed; the server's tests turn it on.
+   *Built;* `RECEIVER_LIVE` on since October 18, 2026, once the receiver answered.
 4. **The public page,** and the site's telemetry guide (what's sent, what's kept, turning it off, the totals), quoting the app's labels.
    *Done when:* `merran.app/telemetry` shows the dev server among the totals, and the site's build passes.
    *Built:* the page says there are no totals until the receiver has some.

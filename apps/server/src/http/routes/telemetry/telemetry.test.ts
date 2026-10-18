@@ -1,5 +1,5 @@
 import { TelemetryReportSchema } from "@merran/shared/telemetry"
-import { afterAll, beforeAll, expect, test } from "vitest"
+import { afterAll, beforeAll, expect, test, vi } from "vitest"
 import type { App } from "../../../app.ts"
 import { Job } from "../../../database/entities/index.ts"
 import type { Database } from "../../../database/orm.ts"
@@ -14,6 +14,13 @@ import {
   setUpServer,
   TestClient,
 } from "../../../test/app.ts"
+
+// With the receiver turned off, as when it isn't answering. Sending to it,
+// once it's on, is in modules/telemetry/send.test.ts.
+vi.mock(import("../../../modules/telemetry/receiver.ts"), async (original) => ({
+  ...(await original()),
+  RECEIVER_LIVE: false,
+}))
 
 let app: App
 let close: () => Promise<void>
@@ -76,7 +83,7 @@ test("the next summary can be seen before saying yes to it", async () => {
   expect(TelemetryReportSchema.parse(report)).toEqual(report)
 })
 
-test("nothing's offered or sent until the project's receiver is live", async () => {
+test("nothing's offered or sent while the receiver is turned off", async () => {
   expect(await (await kyle.get("/api/telemetry/status")).json()).toEqual({
     receiving: false,
     ask: false,

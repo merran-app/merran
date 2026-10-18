@@ -5,8 +5,8 @@ sidebar:
   order: 10
 ---
 
-:::note[Not released yet]
-Telemetry is offered from the release after 0.1.0-alpha.1. In 0.1.0-alpha.1 the switch exists, but the Merran project wasn't collecting yet, so a server with it on shows a failed **Sending the daily summary** job each day. Turning it off stops that.
+:::note[From 0.1.0-alpha.2]
+Telemetry is offered from 0.1.0-alpha.2. In 0.1.0-alpha.1 the switch exists, but the Merran project wasn't collecting until October 18, 2026, so a server with it on showed a failed **Sending the daily summary** job each day until then. Its summaries arrive now.
 :::
 
 Telemetry is off unless the server admin turns it on. When it's on, Merran sends the Merran project one anonymous summary a day, which helps the project see how many servers run Merran, on which versions, and which parts get used. The totals from every server are on the [telemetry totals](../../../telemetry/) page.
