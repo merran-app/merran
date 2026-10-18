@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
+import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../app.ts"
 import { AppError } from "../../core/errors.ts"
 import { Job } from "../../database/entities/index.ts"
@@ -11,12 +11,6 @@ import { enqueue } from "../../services/jobs/jobs.ts"
 import type { JobRunner } from "../../services/jobs/runner.ts"
 import { createTestApp, setUpServer, TestClient } from "../../test/app.ts"
 import { RECEIVER_URL, TELEMETRY_URL } from "./receiver.ts"
-
-// As it will be once telemetry.merran.app is live.
-vi.mock(import("./receiver.ts"), async (original) => ({
-  ...(await original()),
-  RECEIVER_LIVE: true,
-}))
 
 let app: App
 let close: () => Promise<void>

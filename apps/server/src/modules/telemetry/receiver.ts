@@ -2,12 +2,13 @@
 // is apps/telemetry.
 
 /**
- * Whether the receiver is answering yet. Until it is, Settings doesn't offer
+ * Whether the receiver is answering. When it isn't, Settings doesn't offer
  * telemetry, setup doesn't ask, and nothing is sent: 0.1.0-alpha.1 sent to
- * an address that didn't answer. Turned on in the first release after
- * telemetry.merran.app is live.
+ * an address that didn't answer yet. On since October 18, 2026, when
+ * telemetry.merran.app went live; turn it off again if the receiver ever
+ * has to go.
  */
-export const RECEIVER_LIVE: boolean = false
+export const RECEIVER_LIVE: boolean = true
 
 export const RECEIVER_URL = "https://telemetry.merran.app"
 
