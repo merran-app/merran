@@ -9,7 +9,7 @@ Merran is in alpha. This roadmap describes our direction, not a delivery schedul
 
 The feature baseline is [v0.1.0-alpha.1](https://github.com/merran-app/merran/releases/tag/v0.1.0-alpha.1). See the [release verification record](../release-verification/) for what we have tested and what still needs checking.
 
-**Last reviewed:** October 17, 2026. Features move to Planned when we choose to build them; In progress will be used only when implementation starts.
+**Last reviewed:** October 18, 2026. Features move to Planned when we choose to build them; In progress will be used only when implementation starts.
 
 ## Available now
 
@@ -40,6 +40,9 @@ Fresh SQLite and Postgres installation and isolated backup/restore smoke tests h
 
 These are features we intend to build. Their order here does not indicate priority, and none has a promised release date.
 
+- **Complete items after sending to a store:** offer to check off successfully sent items after sending them to Fry's or another supported store. A prompt or optional automatic completion is still to be designed; failed or unsent items should stay open. Sending to a cart does not confirm a purchase.
+- **Shopping context and substitutions:** make it easier to see which meals need each ingredient and ask what could replace it directly from the shopping list, with recipe and dietary context carried through for review.
+- **Rearrange planned meals:** quickly move meals between days or swap them after automatic planning, potentially by dragging, with a touch and keyboard alternative. Preserve meal details and account for any existing shopping list.
 - **Offline recipes, plans, and shopping lists:** keep previously opened recipes, the week's plan, and shopping lists useful without a connection, with list check-offs syncing when you reconnect.
 - **Prep reminders:** help you remember to thaw ingredients, start a marinade, or begin cooking before dinner is due.
 - **More sign-in options:** add passkeys, authenticator-based two-step sign-in, and OIDC single sign-on so you can choose a sign-in method that fits your household or server.
