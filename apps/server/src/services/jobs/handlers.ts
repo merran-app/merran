@@ -1,4 +1,5 @@
 import { sendTelemetryJob } from "../../modules/telemetry/send.ts"
+import { invitationEmailJob } from "../../modules/email/invitations.ts"
 import { checkUpdatesJob } from "../../modules/updates/check.ts"
 import { aiPhotoRunJob } from "../ai-photos/runs.ts"
 import { appImportJob } from "../importers/job.ts"
@@ -20,6 +21,7 @@ import type { JobHandler, JobSchedule } from "./runner.ts"
 // here, or the runner fails it as unknown.
 
 export const JOB_HANDLERS: readonly JobHandler[] = [
+  invitationEmailJob,
   purgeDeletedJob,
   cleanUpJobsJob,
   sendTelemetryJob,

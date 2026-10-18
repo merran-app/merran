@@ -9,6 +9,7 @@ import {
 import { serverAiQuery } from "@/features/ai/queries"
 import { AboutCard } from "@/features/server/about-card"
 import { ErrorTrackingCard } from "@/features/server/error-tracking-card"
+import { EmailCard } from "@/features/server/email-card"
 import { JobsCard, serverJobsQuery } from "@/features/server/jobs-card"
 import { KrogerCard } from "@/features/server/kroger-card"
 import { NutritionCard } from "@/features/server/nutrition-card"
@@ -55,6 +56,7 @@ function ServerSettings() {
       <KrogerCard />
       <WalmartCard />
       <ErrorTrackingCard />
+      <EmailCard />
       <TelemetryCard />
       <JobsCard />
     </>

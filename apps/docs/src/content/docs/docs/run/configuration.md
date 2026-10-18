@@ -32,6 +32,19 @@ docker compose up -d
 
 MERRAN_PORT is a Compose setting for the published port; Merran's internal server port is PORT. Keep the supplied container mapping unless you intentionally change both.
 
+## Source development environment
+
+When running from source with `pnpm dev`, the API reads the environment of the process that starts it. It does not automatically load a root or server `.env` file. The Compose instructions above apply to Docker; a file read by Vite does not configure the API.
+
+Stop the existing dev process, then set the public address and restart from the repository root. For the default local web app in PowerShell:
+
+```powershell
+$env:MERRAN_PUBLIC_URL = 'http://localhost:5173'
+pnpm dev
+```
+
+On a Unix shell, use `MERRAN_PUBLIC_URL=http://localhost:5173 pnpm dev`. Use the address where you open the web app, without a path such as `/settings`. For invitations opened on another device, use a hostname or LAN address that device can reach. `localhost` always refers to the device opening the link. Restart the API after changing a process environment value, then reload the browser to refresh capabilities. SMTP credentials can still be saved in **Settings → This server → Email**; they do not need to be entered in the terminal.
+
 ## Optional modules
 
 Open **Settings → This server** to configure modules such as AI, stores, nutrition, or voice. Values supplied through the environment can lock the corresponding settings in the app.
@@ -43,6 +56,16 @@ See [household roles and permissions](../household-roles/) for who can change ea
 For AI, follow [AI setup and costs](../ai-setup/) to connect providers, select models, manage shared and household keys, and troubleshoot requests. Read [AI privacy and data flow](../../project/ai-privacy/) before enabling external processing.
 
 ## Secrets and data
+
+### Email transport (not released yet)
+
+In **Settings → This server → Email**, enter **SMTP host**, **SMTP port**, **SMTP username**, **SMTP password or API key**, and **Sender email address**. Save with **Save**, turn on **Enable email**, then choose **Send test email**. Tests go to your account's email address. Check your inbox and spam folder; provider acceptance does not guarantee inbox delivery. Household email invitations are supported in this unreleased change. Password recovery by email is still planned; continue using operator password recovery.
+
+For [Resend](https://resend.com/docs/send-with-smtp), verify a domain you own, use host `smtp.resend.com`, port `465`, turn on **Use TLS from the start**, set username `resend`, and use a sending API key as the password. The sender address must be allowed by your provider. Other services use the same fields with their own SMTP credentials.
+
+For port `587`, leave **Use TLS from the start** off: Merran requires STARTTLS. Both modes require encryption and valid certificates. A trusted relay can omit both username and password. Use **Remove saved SMTP credentials** to clear both; environment-locked fields must be changed in the server environment.
+
+The equivalent environment variables are `MERRAN_EMAIL_ENABLED`, `MERRAN_SMTP_HOST`, `MERRAN_SMTP_PORT`, `MERRAN_SMTP_SECURITY` (`tls` or `starttls`), `MERRAN_SMTP_USERNAME`, `MERRAN_SMTP_PASSWORD`, and `MERRAN_EMAIL_FROM`. Setting them locks those fields in the app. Email defaults to off. Email invitations additionally require `MERRAN_PUBLIC_URL` set to an HTTP(S) origin recipients can reach, such as `https://meals.example.com`, without a path, query, fragment or credentials. A working test message alone does not enable invitations without that address. See [household invitations](../household-roles/#email-an-invitation-not-released-yet).
 
 Merran generates a secret in its data directory when no explicit secret is supplied. Keep it with your backups: it protects saved credentials. Do not replace it casually.
 

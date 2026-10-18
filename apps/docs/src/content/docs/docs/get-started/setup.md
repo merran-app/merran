@@ -63,6 +63,14 @@ Invite household members from **Settings → Household**. They use the invite li
 
 **Help** keeps the tour controls, **Your first week guide**, and **What's new** together. **What's new** opens the latest release on GitHub. Definitions are available in the [glossary](../../use/glossary/) and beside the features they explain.
 
+## Invite people by email (not released yet)
+
+Copyable invite links work without any email service. For email invitations, the server administrator first configures **Settings → This server → Email**, sends a test message, and sets `MERRAN_PUBLIC_URL` to the address recipients use to reach this server. A successful test email alone does not enable invitations without that address.
+
+Household owners and admins then choose **Settings → Household → Invitations → Invite by email**. The recipient opens **Join the household** in the email and signs in or registers with the invited address. Invitations last seven days and work once. See [email setup](../../run/configuration/#email-transport-not-released-yet) for Resend and other SMTP services, and [household invitations](../../run/household-roles/#email-an-invitation-not-released-yet) for delivery status, resend and cancellation. Password recovery by email is still planned.
+
+For a source checkout using `pnpm dev`, the server does not automatically load `.env`; set environment variables in the terminal that starts it. See [source development settings](../../run/configuration/#source-development-environment). `localhost` is suitable for testing on the same computer; use a reachable hostname or LAN address for invitations opened on other devices.
+
 ## Find the right settings
 
 - **This server** controls server-wide configuration and optional modules.

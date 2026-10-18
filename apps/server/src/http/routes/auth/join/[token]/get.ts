@@ -28,6 +28,7 @@ export default (router: Router, _deps: AppDeps) => {
         household: { name: invite.household.getEntity().name },
         role: invite.role,
         expiresAt: invite.expiresAt.toISOString(),
+        ...(invite.email ? { email: invite.email } : {}),
       },
       200
     )

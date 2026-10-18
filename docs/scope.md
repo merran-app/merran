@@ -237,6 +237,8 @@ The phase lists above describe intended scope, not a record that every listed ta
 
 Already implemented: pantry storage locations, home-screen installation, measurement conversion, secret encryption/rotation, scoped API keys and SSE. Public docs are published, and PR #8 records manual release installation/restore smoke tests. These must not remain grouped with unfinished work. Offline data/sync, prep notifications, passkeys/2FA/OIDC, SMTP, webhooks/MCP, non-English UI, tours, automatic pre-migration backups, audit logging and the database-copy command still need implementation at this baseline. Real-device/provider acceptance work is tracked separately from missing features. Uncommitted telemetry work in another checkout was excluded from the released baseline.
 
+Email follow-up, October 18, 2026 (not released yet): SMTP settings and test messages, address-bound household invitations, durable delivery/retries, resend/cancel and styled HTML/plain-text messages are now built. Password-reset and email-verification flows remain planned. This supersedes the SMTP implementation gap in the audit baseline above; provider/inbox acceptance remains separate. See [platform.md](platform.md#accounts-and-households) for the final invitation design and [features.md](features.md) for current status.
+
 ## Research candidates — October 17, 2026
 
 Saved menus, prepared-meal/freezer portions, iCalendar subscriptions, minimum-stock reminders, recipe-only share links and print/cookbook views were added to public Exploring after comparing official documentation from similar apps with Merran's source. These are not added to the 0.1 commitments or build order. See [roadmap-research.md](roadmap-research.md) for evidence, suggested first slices and tradeoffs.

@@ -1,4 +1,5 @@
 import { ai } from "./ai/index.ts"
+import { email } from "./email/index.ts"
 import { errorTracking } from "./error-tracking/index.ts"
 import { nutrition } from "./nutrition/index.ts"
 import { sites } from "./sites/index.ts"
@@ -19,6 +20,7 @@ export const MODULES: readonly Module[] = [
   photos,
   voice,
   stores,
+  email,
   errorTracking,
   telemetry,
   updates,

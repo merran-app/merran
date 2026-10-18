@@ -567,6 +567,10 @@
               "name"
             ]
           },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
           "role": {
             "type": "string",
             "enum": [
@@ -3620,6 +3624,20 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "delivery": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "sending",
+              "accepted",
+              "failed",
+              "cancelled"
+            ]
           }
         },
         "required": [
@@ -15148,6 +15166,16 @@
               }
             }
           },
+          "403": {
+            "description": "Use the invited email address.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
           "404": {
             "description": "No invite has that link.",
             "content": {
@@ -17251,6 +17279,212 @@
           },
           "404": {
             "description": "No such invite.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/invites/{inviteId}/resend": {
+      "post": {
+        "operationId": "resendInvite",
+        "tags": [
+          "Households"
+        ],
+        "summary": "Resend an email invitation",
+        "description": "Household admins only. Queues the same link without extending its seven-day expiry. Wait at least one minute between sends; invitations already queued or sending cannot be resent. Counts toward the household's 20-per-hour limit.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "inviteId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Queued for delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteLink"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email or the public URL is not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No pending email invitation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already queued or sending.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Wait before resending, or the hourly limit was reached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/invites/email": {
+      "post": {
+        "operationId": "emailInvite",
+        "tags": [
+          "Households"
+        ],
+        "summary": "Email a household invitation",
+        "description": "Household admins only. Queues a single-use, seven-day invitation bound to the recipient address. Requires configured SMTP and MERRAN_PUBLIC_URL. Limited to 20 email invitations or resends per household per hour. No link or token is returned.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "format": "email"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "member"
+                    ],
+                    "default": "member"
+                  }
+                },
+                "required": [
+                  "email"
+                ],
+                "example": {
+                  "email": "jamie@example.com",
+                  "role": "member"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Queued for delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteLink"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email or the public URL is not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already a member, or an invitation is pending.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This household has reached its hourly invitation limit.",
             "content": {
               "application/json": {
                 "schema": {
@@ -26264,6 +26498,87 @@
           },
           "403": {
             "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/server/email/test": {
+      "post": {
+        "operationId": "sendTestEmail",
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Send a test email",
+        "description": "Server admins only. Sends a fixed test message to the signed-in administrator's account email using saved SMTP settings. Acceptance by the provider does not confirm inbox delivery.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted by the mail service.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accepted": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "accepted"
+                  ],
+                  "example": {
+                    "accepted": true
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email is disabled or incomplete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The mail service did not accept the email.",
             "content": {
               "application/json": {
                 "schema": {

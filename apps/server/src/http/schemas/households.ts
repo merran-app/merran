@@ -83,6 +83,10 @@ export const InviteLinkSchema = z
     role: z.enum(INVITE_ROLES),
     expiresAt: z.iso.datetime(),
     createdAt: z.iso.datetime(),
+    email: z.email().optional(),
+    delivery: z
+      .enum(["queued", "sending", "accepted", "failed", "cancelled"])
+      .optional(),
   })
   .openapi("InviteLink", { example: INVITE_LINK })
 
@@ -131,10 +135,25 @@ export function describeMember(member: HouseholdMember) {
 }
 
 export function describeInviteLink(invite: InviteLink) {
+  const job = invite.deliveryJob?.getEntity()
   return {
     id: invite.id,
     role: invite.role,
     expiresAt: invite.expiresAt.toISOString(),
     createdAt: invite.createdAt.toISOString(),
+    ...(invite.email
+      ? {
+          email: invite.email,
+          delivery: invite.sentAt
+            ? ("accepted" as const)
+            : job?.status === "running"
+              ? ("sending" as const)
+              : job?.status === "queued"
+                ? ("queued" as const)
+                : job?.status === "cancelled"
+                  ? ("cancelled" as const)
+                  : ("failed" as const),
+        }
+      : {}),
   }
 }

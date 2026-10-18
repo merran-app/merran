@@ -177,6 +177,84 @@ A Gemini key for the server, for the households the AI policy covers. Keys can a
 
 [Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/ai/settings.ts)
 
+## email.enabled
+
+Allow Merran to send email through the server administrator's SMTP service. Off by default.
+
+- **Scope:** server
+- **Type:** switch
+- **Default:** `false`
+- **Environment:** `MERRAN_EMAIL_ENABLED`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/email/settings.ts)
+
+## email.host
+
+SMTP hostname, such as smtp.resend.com. Private mail relays are allowed; only the server administrator can configure this.
+
+- **Scope:** server
+- **Type:** text
+- **Default:** Unset
+- **Environment:** `MERRAN_SMTP_HOST`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/email/settings.ts)
+
+## email.port
+
+SMTP port: usually 587 with STARTTLS or 465 with TLS.
+
+- **Scope:** server
+- **Type:** number
+- **Default:** `587`
+- **Environment:** `MERRAN_SMTP_PORT`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/email/settings.ts)
+
+## email.security
+
+Require STARTTLS (usually port 587), or TLS from the start (usually port 465). Certificates are always checked.
+
+- **Scope:** server
+- **Type:** choice
+- **Default:** `starttls`
+- **Environment:** `MERRAN_SMTP_SECURITY`
+- **Choices:** `starttls`, `tls`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/email/settings.ts)
+
+## email.username
+
+SMTP username. Leave both username and password unset for a trusted relay without authentication.
+
+- **Scope:** server
+- **Type:** text
+- **Default:** Unset
+- **Environment:** `MERRAN_SMTP_USERNAME`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/email/settings.ts)
+
+## email.password
+
+SMTP password or provider API key. Stored encrypted and never returned by the API.
+
+- **Scope:** server
+- **Type:** secret
+- **Default:** Unset
+- **Environment:** `MERRAN_SMTP_PASSWORD`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/email/settings.ts)
+
+## email.from
+
+Sender email address allowed by the SMTP provider, such as invites@example.com. Messages use Merran as the sender name.
+
+- **Scope:** server
+- **Type:** text
+- **Default:** Unset
+- **Environment:** `MERRAN_EMAIL_FROM`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/email/settings.ts)
+
 ## video.enabled
 
 Import recipes from TikTok, YouTube, Instagram and Facebook links. Needs yt-dlp and ffmpeg, which come with the Docker image, and AI.

@@ -1,6 +1,9 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../../core/context.ts"
-import { InviteLink } from "../../../../../../database/entities/index.ts"
+import {
+  InviteLink,
+  Secret,
+} from "../../../../../../database/entities/index.ts"
 import { AppError } from "../../../../../../core/errors.ts"
 import { asHouseholdAdmin } from "../../../../../middleware/auth.ts"
 import type { Router } from "../../../../../router.ts"
@@ -30,9 +33,19 @@ const route = createRoute({
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em } = asHouseholdAdmin(c)
-    const removed = await em.nativeDelete(InviteLink, {
-      id: c.req.valid("param").inviteId,
-      usedAt: null,
+    const removed = await em.transactional(async (tx) => {
+      const invite = await tx.findOne(InviteLink, {
+        id: c.req.valid("param").inviteId,
+        usedAt: null,
+      })
+      if (!invite) return 0
+      const secretId = invite.deliveryToken?.id
+      const count = await tx.nativeDelete(InviteLink, {
+        id: invite.id,
+        usedAt: null,
+      })
+      if (count && secretId) await tx.nativeDelete(Secret, { id: secretId })
+      return count
     })
     if (removed === 0) {
       throw new AppError(

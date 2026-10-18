@@ -81,6 +81,17 @@ A queued scheduled job cannot be stopped from this screen. Stopping a scheduled 
 
 If due jobs remain waiting with no progress, look for “The job runner couldn't check for work” and database errors in the server logs. A job saying Merran does not know its kind may reflect a version mismatch; record the kind and image version before retrying or seeking help.
 
+## Email invitations are unavailable (not released yet)
+
+If **Invite by email** says to ask the server administrator to configure Email and the public address, check both prerequisites:
+
+- In **Settings → This server → Email**, turn on **Enable email**, save the SMTP host, port, security, sender and matching credential pair, and use **Send test email**. Resend uses `smtp.resend.com`, port `465`, **Use TLS from the start**, username `resend`, and an API key as the password. Use a sender on a verified domain.
+- Set `MERRAN_PUBLIC_URL` to the HTTP(S) address recipients use to open Merran, without a path, query, fragment or embedded credentials. A successful SMTP test does not replace this setting. Check **Address** in **Settings → This server** to see the running server's configured address.
+
+For the repository's Compose file, put the variable in `.env` beside `compose.yaml` and recreate the container with `docker compose up -d`. For self-contained host-manager stacks, put it in Merran's `environment` block and redeploy. For `pnpm dev`, `.env` is not automatically loaded by the API: [set the process environment and restart](../configuration/#source-development-environment). Reload the browser afterward. A localhost address works only on the computer opening that link.
+
+If an invitation is **Accepted by mail service** but missing from the inbox, check spam and the provider's dashboard. This status records SMTP acceptance, not final delivery. Temporary failures retry automatically; **Sending failed** allows **Resend email** after correcting the settings. Copyable invite links remain available without email. See [household invitations](../household-roles/#email-an-invitation-not-released-yet) for expiry, resend limits and cancellation.
+
 ## A setting will not save
 
 An environment override takes priority and locks the corresponding app setting. Remove or correct the override, then recreate the container. Removing it may reveal a previously saved value. Environment-only settings are never editable through the settings API. Other validation errors indicate a rejected value or the wrong scope; use the [generated reference](../settings-reference/) and [configuration guide](../configuration/).
