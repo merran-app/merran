@@ -152,6 +152,7 @@ test("delivery runs as a durable job, uses the configured origin, and records pr
     expect.objectContaining({
       to: { address: "jamie@example.com", name: "" },
       text: expect.stringContaining(`http://merran.test/join/${token}`),
+      html: expect.stringContaining(`href="http://merran.test/join/${token}"`),
     })
   )
   const listed = await (

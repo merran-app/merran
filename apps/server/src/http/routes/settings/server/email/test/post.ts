@@ -1,6 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../../core/context.ts"
 import { sendEmail } from "../../../../../../modules/email/sender.ts"
+import { testEmail } from "../../../../../../modules/email/templates.ts"
 import { serverAdmin } from "../../../../../middleware/auth.ts"
 import type { Router } from "../../../../../router.ts"
 import {
@@ -37,8 +38,7 @@ export default (router: Router, { settings }: AppDeps) => {
     const { user } = serverAdmin(c)
     await sendEmail(settings, {
       to: user.email,
-      subject: "Merran test email",
-      text: "Your Merran server can send email with these SMTP settings. This is a test message; no action is needed.",
+      ...testEmail(),
     })
     return c.json({ accepted: true as const }, 200)
   })

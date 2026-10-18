@@ -17,6 +17,7 @@ import {
 import { enqueue } from "../../services/jobs/jobs.ts"
 import type { JobHandler } from "../../services/jobs/runner.ts"
 import { emailConfiguration, sendEmail } from "./sender.ts"
+import { invitationEmail } from "./templates.ts"
 
 /** Account links must use an operator-selected origin, never request headers. */
 export function invitationOrigin(publicUrl: string | undefined) {
@@ -197,8 +198,13 @@ export const invitationEmailJob: JobHandler = {
     const name = invite.household.getEntity().name.replace(/[\r\n]/g, " ")
     await sendEmail(deps.settings, {
       to: invite.email,
-      subject: `Join ${name} on Merran`,
-      text: `You've been invited to join ${name} on Merran with the ${invite.role} role.\n\nJoin the household: ${link}\n\nUse the email address this invitation was sent to. This single-use link expires at ${invite.expiresAt.toISOString()}. If you weren't expecting this invitation, you can ignore it.`,
+      ...invitationEmail({
+        household: name,
+        role: invite.role,
+        email: invite.email,
+        link,
+        expiresAt: invite.expiresAt,
+      }),
     })
     await em.nativeUpdate(
       InviteLink,

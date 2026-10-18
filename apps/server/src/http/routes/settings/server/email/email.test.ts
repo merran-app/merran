@@ -105,6 +105,7 @@ test("test email uses saved Resend SMTP settings and the administrator's own add
       from: { name: "Merran", address: "invites@example.com" },
       to: { address: "kyle@example.com", name: "" },
       subject: "Merran test email",
+      html: expect.stringContaining("You’ve got good mail."),
     })
   )
   expect(smtp.close).toHaveBeenCalledOnce()
