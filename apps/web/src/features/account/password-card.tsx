@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
-import { TextField } from "@/components/form/text-field"
+import { PasswordField } from "@/components/form/password-field"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,9 +17,17 @@ import { FieldGroup } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
-type Form = { currentPassword: string; newPassword: string }
+type Form = {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}
 
-const EMPTY: Form = { currentPassword: "", newPassword: "" }
+const EMPTY: Form = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+}
 
 /** Changing your password signs you out everywhere else. */
 export function PasswordCard() {
@@ -31,7 +39,11 @@ export function PasswordCard() {
     try {
       await unwrap(
         api.POST("/api/auth/change-password", {
-          body: { ...values, revokeOtherSessions: true },
+          body: {
+            currentPassword: values.currentPassword,
+            newPassword: values.newPassword,
+            revokeOtherSessions: true,
+          },
         })
       )
       form.reset(EMPTY)
@@ -66,7 +78,7 @@ export function PasswordCard() {
                 <AlertDescription>{errors.root.message}</AlertDescription>
               </Alert>
             )}
-            <TextField
+            <PasswordField
               label={t("settings.you.password.current")}
               type="password"
               autoComplete="current-password"
@@ -75,7 +87,7 @@ export function PasswordCard() {
                 required: t("settings.you.password.currentNeeded"),
               })}
             />
-            <TextField
+            <PasswordField
               label={t("settings.you.password.new")}
               description={t("auth.fields.passwordHint")}
               type="password"
@@ -87,6 +99,22 @@ export function PasswordCard() {
                   message: t("auth.fields.passwordHint"),
                 },
                 required: t("auth.fields.passwordHint"),
+                maxLength: {
+                  value: 128,
+                  message: t("auth.fields.passwordMax"),
+                },
+                deps: ["confirmPassword"],
+              })}
+            />
+            <PasswordField
+              label={t("auth.fields.confirmPassword")}
+              autoComplete="new-password"
+              error={errors.confirmPassword?.message}
+              {...form.register("confirmPassword", {
+                required: t("auth.fields.required"),
+                validate: (value, values) =>
+                  value === values.newPassword ||
+                  t("auth.fields.passwordMismatch"),
               })}
             />
           </FieldGroup>

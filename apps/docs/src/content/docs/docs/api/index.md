@@ -5,6 +5,10 @@ description: Connect a script using a household-scoped Merran API key.
 
 The web app, browser extension, and external integrations use the same API. The endpoint reference is generated from the server's committed OpenAPI schema.
 
+:::note[Not released yet]
+Initial claiming now commits the account, password credentials and household together. If sign-in or the connection fails afterward, try signing in before retrying setup. `GET/PATCH /api/auth/me/onboarding` use browser sessions to remember personal tour choices and household progress; only household owners/admins can mark household preferences reviewed. These changes are in development. Password confirmation is a web-form check and is not an additional API field.
+:::
+
 ## Create a key
 
 Sign in to Merran and open your personal API key settings. Create a key for the intended household and grant only the permissions your integration needs. Store the returned secret securely.

@@ -20,6 +20,17 @@ This reference is generated from the checked-out server's boot settings and regi
 
 Compose variables such as MERRAN_PORT, MERRAN_IMAGE, and TZ are deployment controls, not entries in this server registry. See [configuration](../configuration/). Enabling a module does not supply its dependencies or credentials. Read [AI privacy](../../project/ai-privacy/) before enabling external processing.
 
+## server.devSetup
+
+Development only: use a fresh temporary SQLite database on every start. Existing data is untouched. Rejected in production and Docker installs.
+
+- **Scope:** server (environment only)
+- **Type:** switch
+- **Default:** `false`
+- **Environment:** `MERRAN_DEV_SETUP`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/core/config.ts)
+
 ## server.port
 
 The port Merran listens on.

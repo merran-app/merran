@@ -7,6 +7,7 @@ import { AssistantButton } from "@/features/assistant/assistant-panel"
 import { TimerBadges } from "@/features/cook/timers"
 
 import { UserMenu } from "./user-menu"
+import { HelpButton } from "@/features/onboarding/help"
 
 export function TopBar() {
   const { t } = useTranslation()
@@ -20,6 +21,7 @@ export function TopBar() {
         <div className="ml-auto flex items-center gap-2">
           {/* Kitchen timers still counting, while cooking elsewhere. */}
           <TimerBadges />
+          <HelpButton />
           <AssistantButton />
           {/* iPad and desktop have the account menu at the foot of the sidebar. */}
           <div className="md:hidden">

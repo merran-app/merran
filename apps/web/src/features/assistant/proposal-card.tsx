@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
+import { TermHelp } from "@/features/onboarding/term-help"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -136,6 +137,7 @@ export function ProposalCard({ proposal: first }: { proposal: Proposal }) {
       )}
       <CardBody proposal={proposal} payload={payload} />
       <div className="flex flex-wrap items-center justify-end gap-2">
+        <TermHelp term="proposals" />
         {proposal.status === "pending" ? (
           <>
             <Button

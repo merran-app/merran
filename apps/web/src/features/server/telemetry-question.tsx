@@ -15,9 +15,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { useMe } from "@/features/auth/use-me"
+import { useTour } from "@/features/onboarding/tour-context"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
-import { serverSettingsQuery, telemetryStatusQuery } from "./queries"
+import {
+  serverSettingsQuery,
+  telemetryStatusQuery,
+  telemetryReportQuery,
+} from "./queries"
 
 /**
  * Asks the server admin once, the first time they open Merran after setup,
@@ -31,10 +36,29 @@ export function TelemetryQuestion() {
 function Question() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const { data } = useQuery(telemetryStatusQuery)
+  const { data, isError, refetch } = useQuery(telemetryStatusQuery)
+  const { active } = useTour()
+  const [preview, setPreview] = React.useState(false)
+  const report = useQuery({
+    ...telemetryReportQuery,
+    enabled: preview && data?.ask === true,
+  })
+  const [blocked, setBlocked] = React.useState(true)
   const [answering, setAnswering] = React.useState<boolean | null>(null)
   // Closed without an answer: asked again next time Merran opens.
   const [later, setLater] = React.useState(false)
+  React.useEffect(() => {
+    const check = () =>
+      setBlocked(
+        [
+          ...document.querySelectorAll('[role="dialog"], [role="alertdialog"]'),
+        ].some((element) => !element.hasAttribute("data-onboarding-prompt"))
+      )
+    check()
+    const observer = new MutationObserver(check)
+    observer.observe(document.body, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
 
   async function answer(send: boolean) {
     setAnswering(send)
@@ -55,12 +79,27 @@ function Question() {
     }
   }
 
+  if (isError)
+    return (
+      <aside className="fixed right-4 bottom-24 z-40 max-w-sm rounded-2xl border bg-card p-4 text-card-foreground">
+        <p className="text-sm">
+          {t("settings.server.telemetry.question.statusFailed")}
+        </p>
+        <Button variant="outline" onClick={() => void refetch()}>
+          {t("onboarding.retry")}
+        </Button>
+      </aside>
+    )
+
   return (
     <AlertDialog
-      open={data?.ask === true && !later}
+      open={data?.ask === true && !later && !active && !blocked}
       onOpenChange={(open) => !open && setLater(true)}
     >
-      <AlertDialogContent>
+      <AlertDialogContent
+        data-onboarding-prompt
+        className="max-h-[90svh] overflow-y-auto"
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>
             {t("settings.server.telemetry.question.title")}
@@ -72,6 +111,26 @@ function Question() {
         <p className="text-sm text-muted-foreground">
           {t("settings.server.telemetry.question.settings")}
         </p>
+        <Button variant="outline" onClick={() => setPreview(!preview)}>
+          {t("settings.server.telemetry.question.preview")}
+        </Button>
+        {preview &&
+          (report.isError ? (
+            <div>
+              <p role="alert">
+                {t("settings.server.telemetry.question.previewFailed")}
+              </p>
+              <Button variant="outline" onClick={() => void report.refetch()}>
+                {t("onboarding.retry")}
+              </Button>
+            </div>
+          ) : report.data ? (
+            <pre className="max-h-48 overflow-auto rounded-xl bg-muted p-3 text-xs">
+              {JSON.stringify(report.data, null, 2)}
+            </pre>
+          ) : (
+            <Spinner />
+          ))}
         <AlertDialogFooter>
           <Button
             variant="outline"

@@ -87,6 +87,10 @@ An environment override takes priority and locks the corresponding app setting. 
 
 ## Recovery and further help
 
+:::note[Not released yet]
+For a buried setup code, use `docker compose exec merran merran setup-code`, or **Where is my setup code?** on the setup page. For a forgotten password, `docker compose exec -it merran merran reset-password YOUR-USERNAME` prompts privately and revokes that account's sessions; SMTP is not required. These commands are in development and unavailable on older images. See [first-run setup](../../get-started/setup/) for version differences and interrupted-setup recovery.
+:::
+
 Use [updating, backups, and recovery](../updating-and-backups/) for a failed update, lost data, or a restore test. A household export is useful for portability but is not a complete server backup.
 
 If the problem persists, [open an issue](https://github.com/merran-app/merran/issues) with the version/image tag, installation method, database backend, reproduction steps, expected and actual results, and a short redacted error excerpt. Include a job kind/status when relevant. Never attach provider keys, session cookies, invitation links, `.env`, a database, or a full household export to a public issue.

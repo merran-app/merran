@@ -1,11 +1,8 @@
 import { createRoute, z } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
 import { User } from "../../../../database/entities/index.ts"
-import {
-  createAccount,
-  signInCookies,
-} from "../../../../services/auth/accounts.ts"
-import { createHousehold } from "../../../../services/households.ts"
+import { signInCookies } from "../../../../services/auth/accounts.ts"
+import { claimServer } from "../../../../services/auth/claim-server.ts"
 import { AppError } from "../../../../core/errors.ts"
 import type { Router } from "../../../router.ts"
 import {
@@ -68,10 +65,11 @@ export default (router: Router, { auth, setupCode }: AppDeps) => {
       )
     }
     if (setupCode.locked) {
+      c.header("Retry-After", String(setupCode.retryAfter))
       throw new AppError(
         "rate_limited",
         "too_many_tries",
-        "Too many wrong codes. Try again in a few minutes."
+        `Too many wrong codes. Try again in ${Math.ceil(setupCode.retryAfter / 60)} minutes.`
       )
     }
     if (!setupCode.check(body.code)) {
@@ -85,14 +83,24 @@ export default (router: Router, { auth, setupCode }: AppDeps) => {
       )
     }
 
-    const user = await createAccount(auth, c.var.em, body, {
-      serverAdmin: true,
-    })
-    const household = await createHousehold(c.var.em, {
-      name: body.household,
-      ownerId: user.id,
-    })
-    setupCode.retire()
+    let result
+    try {
+      result = await setupCode.claim(async () => {
+        const claimed = await claimServer(c.var.em, auth, body)
+        setupCode.retire()
+        return claimed
+      })
+    } catch (error) {
+      if (error instanceof Error && error.message === "setup_in_progress") {
+        throw new AppError(
+          "conflict",
+          "setup_in_progress",
+          "Setup is already being submitted. Wait, then sign in or try again."
+        )
+      }
+      throw error
+    }
+    const { user, household } = result
     c.var.logger.info("The server is set up")
 
     for (const cookie of await signInCookies(auth, body, c.req.raw)) {

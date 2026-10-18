@@ -4,6 +4,8 @@ Running Merran: logs, error tracking, analytics, what leaves the server, how it'
 
 ## Logs
 
+Setup improvements, October 17, 2026 (not released yet): readiness logs use MERRAN SETUP CODE and a grouped code. The operator can retrieve it with `merran setup-code` even when info logs are suppressed. A mode-0600 file in the data directory holds the active code and is removed after claiming or normal shutdown; restrict data-directory access on hosts where Unix modes do not apply. `merran reset-password <username-or-email>` uses hidden prompts and revokes sessions. `MERRAN_DEV_SETUP=on` uses a new temporary SQLite database/secret each start and is refused in production and Docker. It never resets existing accounts. See [onboarding.md](onboarding.md) for implementation, acceptance and remaining checks.
+
 - **pino:** JSON lines in production (for Loki, Dozzle or `docker logs`), readable colored lines in development.
 - `MERRAN_LOG_LEVEL`: `info` by default; `debug` for troubleshooting.
 - **Each request gets an id,** in the log lines it causes and the `X-Request-Id` response header, so a person's error message can be matched to the logs.

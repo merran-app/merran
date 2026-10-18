@@ -7,6 +7,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
+import { TermHelp } from "@/features/onboarding/term-help"
 import { toast } from "sonner"
 
 import {
@@ -86,7 +87,9 @@ export function ThemeNightsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("settings.household.themes.title")}</CardTitle>
+        <CardTitle>
+          {t("settings.household.themes.title")} <TermHelp term="themeNights" />
+        </CardTitle>
         <CardDescription>
           {t("settings.household.themes.description")}
         </CardDescription>

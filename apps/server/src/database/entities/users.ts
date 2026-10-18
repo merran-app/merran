@@ -8,6 +8,7 @@ export type UserPreferences = {
   units?: "as-written" | "us" | "metric"
   /** Guided tours seen, by tour id, at the version seen. */
   tours?: Record<string, number>
+  onboarding?: { dismissed?: boolean; toursDisabled?: boolean }
 }
 
 /**

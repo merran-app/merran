@@ -21,6 +21,10 @@ Once it's on, the card says when the last summary was sent, or why it wasn't. If
 
 ## What's sent
 
+:::note[Not released yet]
+The question's **See exactly what would be sent** preview and retry guidance are in development. A failed status request offers **Try again**; it does not enable telemetry. The offer waits while another dialog or a guided tour is open. Receiver availability in the build controls whether telemetry is offered; a temporary network outage alone does not hide the question.
+:::
+
 - A random install id, made by your server and not taken from anything. **Make a new id** starts afresh: later summaries can't be linked to earlier ones.
 - The Merran version, how it's installed (the Docker image, or from source), the CPU architecture, and the database (SQLite, or Postgres and its major version).
 - Which modules are on, each yes or no.

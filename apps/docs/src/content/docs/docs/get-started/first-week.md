@@ -5,6 +5,14 @@ description: Take a recipe through the plan, shopping list, pantry, and cook vie
 
 Start with one meal. You can try the core workflow without configuring AI or connecting a store.
 
+:::note[Not released yet]
+The **Your first meal** checklist and **Help** tours are in development. The checklist stays after the first recipe and remembers progress across devices. Tours start automatically on your first visit to each main page; you can skip them or turn them off. **Help → Show getting started and tours again** restores hidden guidance. See [first-run setup](../setup/) and the [glossary](../../use/glossary/).
+:::
+
+On **Today**, **Your first meal** shows four numbered step cards and a progress bar. Finished steps show a checkmark and **Done**; **Up next** highlights the first unfinished step. You can open any step in any order. Progress is shared by your household and stays remembered as you use Merran.
+
+Expand **Optional connections and server care** for module status and setup links. **Enabled** and **Off** describe configuration; they do not confirm that a provider connection works. **For your household** groups **Household settings**, recipe imports, **AI setup**, and **Use Merran on your phone**. Server administrators also see **For your server**, with **Server settings** and **Backups and recovery**.
+
 ## 1. Add a recipe
 
 Open **Recipes** and add a recipe manually or import a recipe URL. Review the imported ingredients, servings, and steps before relying on them. A site that blocks automated requests may need another import method.

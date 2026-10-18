@@ -43,12 +43,16 @@ function SettingsLayout() {
     <>
       <PageHeader title={t("nav.settings")} />
       <nav
+        data-tour="page-actions"
         aria-label={t("settings.sections")}
         className="mb-6 flex w-fit gap-1 rounded-4xl bg-muted p-1"
       >
         {sections.map((section) => (
           <Link
             key={section.to}
+            data-tour={
+              section.only === "serverAdmin" ? "server-settings" : undefined
+            }
             to={section.to}
             className="rounded-4xl px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
             activeProps={{

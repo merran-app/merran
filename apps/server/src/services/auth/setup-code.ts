@@ -1,4 +1,6 @@
 import { randomInt, timingSafeEqual } from "node:crypto"
+import { mkdirSync, writeFileSync, rmSync } from "node:fs"
+import { dirname } from "node:path"
 
 /** No 0/O or 1/I/L, so the code is easy to copy from a log. */
 const ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
@@ -13,6 +15,10 @@ const WINDOW_MS = 15 * 60 * 1000
  * the first account exists.
  */
 export class SetupCode {
+  private readonly file?: string
+  constructor(file?: string) {
+    this.file = file
+  }
   #code: string | null = null
   #failures: number[] = []
 
@@ -22,7 +28,37 @@ export class SetupCode {
       { length: LENGTH },
       () => ALPHABET[randomInt(ALPHABET.length)]
     ).join("")
+    if (this.file) {
+      mkdirSync(dirname(this.file), { recursive: true })
+      rmSync(this.file, { force: true })
+      writeFileSync(this.file, this.formatted!, { mode: 0o600, flag: "wx" })
+    }
     return this.#code
+  }
+
+  get formatted(): string | null {
+    return this.#code?.match(/.{4}/g)?.join("-") ?? null
+  }
+
+  get retryAfter(): number {
+    if (!this.locked) return 0
+    return Math.max(
+      1,
+      Math.ceil((this.#failures[0]! + WINDOW_MS - Date.now()) / 1000)
+    )
+  }
+
+  #claiming = false
+
+  /** Only one claim may be in progress in this server process. */
+  async claim<T>(run: () => Promise<T>): Promise<T> {
+    if (this.#claiming) throw new Error("setup_in_progress")
+    this.#claiming = true
+    try {
+      return await run()
+    } finally {
+      this.#claiming = false
+    }
   }
 
   get active(): boolean {
@@ -50,5 +86,6 @@ export class SetupCode {
   /** The first account exists: the code is done. */
   retire(): void {
     this.#code = null
+    if (this.file) rmSync(this.file, { force: true })
   }
 }

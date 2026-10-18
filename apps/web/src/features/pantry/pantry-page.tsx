@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
+import { TermHelp } from "@/features/onboarding/term-help"
 
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -335,6 +336,7 @@ function UseSoonCard({
         <div className="grid gap-0.5">
           <h2 id="use-soon" className="text-xl font-semibold tracking-tight">
             {t("pantry.soon.title")}
+            <TermHelp term="useSoon" />
           </h2>
           <p className="text-sm text-muted-foreground">
             {t("pantry.soon.count", { count: items.length })}
@@ -614,6 +616,7 @@ function AlwaysOnHand({ onEdit }: { onEdit: () => void }) {
         <div className="grid gap-0.5">
           <h2 id="on-hand" className="text-lg font-semibold tracking-tight">
             {t("pantry.onHand")}
+            <TermHelp term="alwaysOnHand" />
           </h2>
           <p className="text-sm text-muted-foreground">
             {t("pantry.onHandHint")}

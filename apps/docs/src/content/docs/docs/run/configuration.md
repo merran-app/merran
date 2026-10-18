@@ -52,4 +52,19 @@ For a public address, configure HTTPS at your reverse proxy or tunnel, set MERRA
 
 ## Next steps
 
+### Repeat setup during development (not released yet)
+
+From a source checkout, set `MERRAN_DEV_SETUP=on` before starting the server. Each start uses a fresh temporary SQLite database and a fresh secret, even if `DATABASE_URL` normally points to Postgres. Existing accounts, files and database settings are untouched. The startup warning prints the temporary data directory. A process restart repeats actual claiming, telemetry consent and onboarding; a browser refresh keeps the current test session.
+
+PowerShell, from the repository root:
+
+```powershell
+$env:MERRAN_DEV_SETUP = 'on'
+pnpm dev
+# After stopping the dev servers:
+Remove-Item Env:MERRAN_DEV_SETUP
+```
+
+On a Unix shell, run `MERRAN_DEV_SETUP=on pnpm dev`. The flag is refused with `NODE_ENV=production` or `MERRAN_INSTALL_METHOD=docker`; it cannot reopen claiming on an existing installation. This tests SQLite; Postgres claiming is covered separately by server tests. A separate CLI invocation must have the flag unset and `MERRAN_DATA_DIR` pointing at the logged temporary directory to operate on that instance. For an existing account, use **Help → Show getting started and tours again** to replay guidance without starting over.
+
 Use [troubleshooting](../troubleshooting/) for startup, connection, import, or job failures. Read [updating, backups, and recovery](../updating-and-backups/) before changing versions or restoring data.

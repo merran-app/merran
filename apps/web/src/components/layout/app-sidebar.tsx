@@ -37,7 +37,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup data-tour="navigation">
           <SidebarGroupContent>
             <SidebarMenu>
               {PRIMARY_NAV.map((item) => (

@@ -17,7 +17,11 @@ export function PageHeader({
         </h1>
         {description && <p className="text-muted-foreground">{description}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && (
+        <div data-tour="page-actions" className="flex items-center gap-2">
+          {actions}
+        </div>
+      )}
     </div>
   )
 }

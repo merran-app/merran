@@ -337,7 +337,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
             paired={paired}
             onSelect={showWith}
           />
-          <div className="flex flex-wrap gap-2 pt-2">
+          <div data-tour="page-actions" className="flex flex-wrap gap-2 pt-2">
             <Button
               size="lg"
               render={
