@@ -27,11 +27,11 @@ The **Add a key** dialog now includes provider-specific steps and a button to op
 
 ### Get a provider key
 
-| Provider | Where to register or create a key | In Merran |
-| --- | --- | --- |
-| Anthropic / Claude | [Claude Platform API keys](https://platform.claude.com/settings/keys) | **Open Claude API keys** |
-| OpenAI | [OpenAI Platform API keys](https://platform.openai.com/api-keys) | **Open OpenAI API keys** |
-| Google / Gemini | [Google AI Studio](https://aistudio.google.com/apikey) | **Open Google AI Studio** |
+| Provider           | Where to register or create a key                                     | In Merran                 |
+| ------------------ | --------------------------------------------------------------------- | ------------------------- |
+| Anthropic / Claude | [Claude Platform API keys](https://platform.claude.com/settings/keys) | **Open Claude API keys**  |
+| OpenAI             | [OpenAI Platform API keys](https://platform.openai.com/api-keys)      | **Open OpenAI API keys**  |
+| Google / Gemini    | [Google AI Studio](https://aistudio.google.com/apikey)                | **Open Google AI Studio** |
 
 Sign in or create an account, create an API key, then return to Merran and paste it into **Key**. Check the provider's API billing and available credit. ChatGPT and Claude chat subscriptions do not include API usage; Google's quotas and charges depend on the project and model. These are provider pages, so Merran does not create the account or manage billing for you. **AI setup guide** opens this guide in another tab while you keep the dialog open.
 
