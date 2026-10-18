@@ -13,7 +13,7 @@ The feature baseline is [v0.1.0-alpha.1](https://github.com/merran-app/merran/re
 
 ## In progress (not released yet)
 
-- **Email delivery:** SMTP settings, administrator tests and address-bound household invitations with queued delivery, retry, resend and cancellation are implemented on the development branch. Password recovery and email verification remain planned. Copyable invite links continue to work without email.
+- **Email delivery:** SMTP settings, administrator tests and address-bound household invitations with queued delivery, retry, resend and cancellation are implemented on the development branch. Invitations and test messages have styled HTML with a plain-text alternative. Start with [email setup](../../run/configuration/#email-transport-not-released-yet) and [household invitations](../../run/household-roles/#email-an-invitation-not-released-yet). Password recovery and email verification remain planned. Copyable invite links continue to work without email.
 
 ## Available now
 

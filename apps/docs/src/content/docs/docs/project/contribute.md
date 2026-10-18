@@ -17,6 +17,8 @@ pnpm dev
 
 The web app runs on port 5173 and the API on port 3000. The server prints a setup code for a new local database.
 
+The API does not automatically load `.env` during `pnpm dev`. Set process environment variables in the terminal that starts it; see [source development settings](../../run/configuration/#source-development-environment) for a PowerShell example. For email invitations in the unreleased SMTP update, use the web app's reachable origin as `MERRAN_PUBLIC_URL`, configure **Settings → This server → Email**, then restart and reload after environment changes.
+
 ## Work on this site
 
 From the repository root:

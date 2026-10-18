@@ -5,6 +5,12 @@ description: What was tested on the published alpha, and what still needs real-d
 
 The application release **0.1.0-alpha.1** and the public documentation site are published. Publication is separate from verification of every deployment and integration. This record is dated **October 17, 2026**.
 
+## Email development checks — October 18, 2026 (not released yet)
+
+These checks apply to the SMTP development branch, not the published image below. Automated invitation checks passed on SQLite and Postgres, covering address matching, account creation, queued delivery, retries, expiry, cancellation, resend, concurrent duplicate prevention and the household send limit. SMTP transport was mocked; no real email was sent by those tests. The HTML templates and their wiring passed 24 focused SQLite checks, including HTML escaping and rejecting unsafe links. Invitation and test-email browser previews were inspected at desktop width and a 375px reading width. Typechecks, formatting and the documentation build/link check passed.
+
+Real inbox rendering in mail clients, provider delivery and spam placement remain to verify. A browser preview or SMTP acceptance does not establish those results. See [email setup](../../run/configuration/#email-transport-not-released-yet) and [household invitations](../../run/household-roles/#email-an-invitation-not-released-yet).
+
 ## Tested on the published image
 
 Tests used `ghcr.io/merran-app/merran:0.1.0-alpha.1`, digest `sha256:bd4d97da003d5b8ffbc7d55ca764e40809bebfec391a614069db0a19e1ea64ae`, on Docker Desktop's Linux AMD64 engine. They used fresh, separate data directories and synthetic accounts/recipes. No live provider keys, purchases, or household data were used.

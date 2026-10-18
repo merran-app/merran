@@ -32,6 +32,19 @@ docker compose up -d
 
 MERRAN_PORT is a Compose setting for the published port; Merran's internal server port is PORT. Keep the supplied container mapping unless you intentionally change both.
 
+## Source development environment
+
+When running from source with `pnpm dev`, the API reads the environment of the process that starts it. It does not automatically load a root or server `.env` file. The Compose instructions above apply to Docker; a file read by Vite does not configure the API.
+
+Stop the existing dev process, then set the public address and restart from the repository root. For the default local web app in PowerShell:
+
+```powershell
+$env:MERRAN_PUBLIC_URL = 'http://localhost:5173'
+pnpm dev
+```
+
+On a Unix shell, use `MERRAN_PUBLIC_URL=http://localhost:5173 pnpm dev`. Use the address where you open the web app, without a path such as `/settings`. For invitations opened on another device, use a hostname or LAN address that device can reach. `localhost` always refers to the device opening the link. Restart the API after changing a process environment value, then reload the browser to refresh capabilities. SMTP credentials can still be saved in **Settings → This server → Email**; they do not need to be entered in the terminal.
+
 ## Optional modules
 
 Open **Settings → This server** to configure modules such as AI, stores, nutrition, or voice. Values supplied through the environment can lock the corresponding settings in the app.
