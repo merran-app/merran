@@ -476,6 +476,34 @@
         "address": "Address",
         "noAddress": "Not set, so links use the address in the browser"
       },
+      "email": {
+        "title": "Email",
+        "description": "Connect your SMTP provider. This first step supports test messages; email invitations and password recovery are still being built.",
+        "enabled": "Enable email",
+        "enabledHint": "Off by default. Complete and save the SMTP settings before sending a test.",
+        "host": "SMTP host",
+        "port": "SMTP port",
+        "tls": "Use TLS from the start",
+        "tlsHint": "Turn on for port 465. Turn off for STARTTLS, usually port 587. Both modes require encryption and valid certificates.",
+        "username": "SMTP username",
+        "usernameHint": "For a trusted relay without authentication, leave both username and password unset.",
+        "password": "SMTP password or API key",
+        "passwordHint": "Use the credentials supplied by your email provider.",
+        "passwordSet": "A password is saved. Leave this unchanged to keep it, or enter a replacement.",
+        "removeCredentials": "Remove saved SMTP credentials",
+        "from": "Sender email address",
+        "saved": "Email settings saved.",
+        "test": "Send test email",
+        "testHint": "Save changes first. The test goes to your account email address. Provider acceptance does not guarantee inbox delivery; check spam and your provider dashboard.",
+        "accepted": "The mail service accepted the test email. Check your inbox and spam folder.",
+        "setup": {
+          "title": "Connect an email provider",
+          "provider": "Get your provider's SMTP host, port and credentials, and authorize a sender address or verify your sending domain.",
+          "resend": "For Resend: host smtp.resend.com, port 465, TLS from the start on, username resend, and your API key as the password. Use a sender on your verified domain.",
+          "test": "Save the settings, enable email, then send yourself a test. Other providers use the same fields with their own SMTP values.",
+          "link": "Resend SMTP instructions"
+        }
+      },
       "errorTracking": {
         "title": "Error tracking",
         "description": "Send errors from the server and from browsers to your own Sentry, GlitchTip or Bugsink. Reports leave out cookies, keys and who was signed in.",

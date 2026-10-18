@@ -58,7 +58,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Passkeys | Key | Planned | |
 | Two-step sign-in | Detail | Planned | |
 | Single sign-on (OIDC) | Key | Planned | |
-| Email for invites and password resets (SMTP) | Detail | Planned | |
+| Email for invites and password resets (SMTP) | Detail | In progress | Not released yet: optional SMTP settings, TLS sender and administrator test email. Address-bound invitations, delivery jobs, password resets and verification remain to build |
 | Encrypted saved secrets and secret rotation | Detail | Built | SecretBox storage and the merran rotate-secret command ship in alpha.1 |
 | Audit log | Detail | Planned | Secret encryption and rotation are not an audit trail |
 | A limited role for kids | Detail | Later | |

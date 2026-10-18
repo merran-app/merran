@@ -55,6 +55,12 @@ Settings live at three levels, and each one says which level it's at:
 
 ## Accounts and households
 
+Email implementation started October 18, 2026 (not released yet): the optional `email` module owns server-level SMTP settings and a provider-independent Nodemailer sender. Email is explicitly off by default. Settings → This server → Email supports saving credentials and sending a fixed test to the signed-in server administrator's account address. Environment variables lock settings; saved passwords use the existing sealed-secret store. TLS from the start and mandatory STARTTLS both validate certificates. Trusted relays may omit both credentials; a partially configured credential pair refuses sending. Configuration readiness is not a delivery health check. Test success means the SMTP service accepted the message, not that it reached an inbox.
+
+Resend uses the same SMTP fields as other services: `smtp.resend.com`, port 465, TLS from the start, username `resend`, API key as password, and a sender on a verified domain. The server administrator chooses the service for this installation; households do not configure their own transports. No external call happens at startup or merely by saving settings. Local relays are allowed because configuring the destination and sending tests are server-admin-only operations. The test endpoint accepts neither arbitrary message content nor an arbitrary recipient.
+
+Remaining email work: address-bound household invitations and their acceptance/registration screens, delivery jobs with safe retry semantics and sealed token payloads, resend/cancel and delivery feedback, then password reset and email verification. Keep existing copyable invite links and operator password recovery available. Before sending account links, require the configured public URL and validate link destinations. Do not advertise invite/reset capabilities until those flows ship.
+
 Built on Better Auth (see [stack.md](stack.md#better-auth-instead-of-our-own-sign-in)).
 
 - **Households are Better Auth organizations.** A household has members with a role: **owner**, **admin** or **member**. There's always at least one owner.

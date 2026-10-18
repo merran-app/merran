@@ -100,7 +100,7 @@ Every outside call Merran can make, when, and how to stop it. This table also go
 | Kroger | Prices, product search, sending a cart | Food names, product ids, the linked account's token | No Kroger app |
 | Browsers' push services | Sending a notification | An encrypted message only the phone can read | Notifications off |
 | Addresses a household chose | Webhooks | Event ids and a short summary, signed | No webhooks; private addresses refused unless the server admin allows |
-| SMTP server | Invites, resets | The email | No SMTP |
+| SMTP server | Administrator test email (not released yet); invites and resets still in progress | Sender, recipient and message | Off until enabled and configured |
 | SSO provider | Signing in | The usual OIDC exchange | No SSO |
 | Sentry or compatible | Errors | Scrubbed error reports | No DSN |
 | `telemetry.merran.app` | Daily | The summary above | Off unless opted in |

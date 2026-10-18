@@ -26275,6 +26275,87 @@
         }
       }
     },
+    "/api/settings/server/email/test": {
+      "post": {
+        "operationId": "sendTestEmail",
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Send a test email",
+        "description": "Server admins only. Sends a fixed test message to the signed-in administrator's account email using saved SMTP settings. Acceptance by the provider does not confirm inbox delivery.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted by the mail service.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accepted": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "accepted"
+                  ],
+                  "example": {
+                    "accepted": true
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email is disabled or incomplete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The mail service did not accept the email.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/settings/server/ai": {
       "get": {
         "operationId": "getServerAi",
