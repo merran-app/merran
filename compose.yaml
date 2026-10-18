@@ -16,7 +16,8 @@ services:
   merran:
     # next: the newest release, pre-releases included. latest: the newest
     # 0.1 or later, once there is one. edge: every commit to main, for
-    # testers. Or a version of its own, to stay on it: 0.1.0-alpha.1.
+    # testers. Use next during alpha; latest becomes the recommended tag
+    # with the first full release. Set a specific release tag to pin a version.
     image: ${MERRAN_IMAGE:-ghcr.io/merran-app/merran:next}
     restart: unless-stopped
     ports:

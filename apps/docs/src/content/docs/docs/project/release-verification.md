@@ -23,6 +23,12 @@ Tests used `ghcr.io/merran-app/merran:0.1.0-alpha.1`, digest `sha256:bd4d97da003
 
 These are smoke tests, not a complete UI acceptance suite or a backup guarantee for every installation. The core workflow was exercised through the API, not by clicking every step in the public guides. Operators should test their own backups with representative data.
 
+## Installation-guide follow-up — October 18, 2026
+
+The tabbed install guide was checked with a new app directory on Docker Desktop's Linux engine using the same **0.1.0-alpha.1** image. Readiness, the original setup-code log line, first-account/household creation, and saving a recipe passed. The account/session, recipe and original secret survived stop/start and container recreation with the same mount. The temporary container and network were removed afterward. This was an isolated fresh-data test, not a new physical machine, a different-version upgrade, or acceptance of the TrueNAS/Dockge/Portainer interfaces.
+
+All six downloadable manager YAML files passed Compose configuration validation, along with the starter `.env` and all eight combinations of the project Compose file's optional profiles. The final examples use `:next` during alpha; the container smoke test above intentionally records the exact alpha.1 image tested. Tab navigation, remembered/synchronized platform selection, old platform bookmarks and desktop/phone layout were checked in the browser.
+
 ## Existing site review
 
 The homepage claim/comparison audit and fixes for all 14 recorded browser-QA findings are present on main. The recorded checks covered selected mobile/tablet/desktop widths and palette/mode combinations. They did not establish universal browser, screen-reader, or real-device compatibility.
