@@ -77,7 +77,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | How did it go? Stars and notes after cooking | Key | Built | |
 | Select and act on many recipes; Recently deleted for 30 days | Detail | Built | |
 | Nutrition from the recipe's site | Detail | Built | |
-| Nutrition worked out from USDA data or by AI, with plan totals | Key | Built | Module: a free USDA key; AI estimates without one. Worked out by itself when a recipe's saved, and for the whole library. The foods Merran knows have their USDA food checked by hand, so they aren't searched for |
+| Nutrition worked out from USDA data or by AI, with plan totals | Key | Built | Module: a free USDA key; AI estimates without one. Worked out by itself when a recipe's saved, and for the whole library. The foods Merran knows have their USDA food checked by hand, so they aren't searched for. Not released yet: free-key signup steps and email/spam guidance in Settings |
 | What recipes cost, and a weekly budget, in any currency | Key | Built | Module (stores): each line's share of its product's price at the household's Kroger store (by weight or volume, a baking staple's density, or a can as one can), shown on recipes and cards when three in five lines have a price; the Plan page says what the week comes to against the budget, and Fill the week and the autoplan pick recipes that fit what's left of it more |
 | AI photos in a consistent style for recipes without one | Key | Built | Module, off by default; an OpenAI or Google key; four styles per household, one by itself for each new recipe, or the whole library |
 | Recipe translations, step photos, meaning-based search | Detail | Later | |
@@ -151,7 +151,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Select and act on many list or pantry items | Detail | Built | |
 | Fridge, freezer or cupboard | Detail | Built | Released in 0.1.0-alpha.1; storedIn on pantry items and place controls in the pantry UI |
 | Receipts into the pantry: looked over, then off the list | Key | Built | AI; a photo, screenshots, a PDF or pasted text, shared from Android or an iPhone, or sent to the assistant |
-| Kroger stores (Fry's, Ralphs...): products, send the cart, prices, sales | Key | Built | Module (stores), with the server admin's Kroger developer app: a store by ZIP code, one linked account for the household, Merran's pick and how many for each thing, today's price and sale, sent to the cart by barcode |
+| Kroger stores (Fry's, Ralphs...): products, send the cart, prices, sales | Key | Built | Module (stores), with the server admin's Kroger developer app: a store by ZIP code, one linked account for the household, Merran's pick and how many for each thing, today's price and sale, sent to the cart by barcode. Not released yet: developer registration and redirect guidance in Settings |
 | What the list costs, and the deals on it | Key | Built | Module (stores): each thing left on the list for Kroger priced for the packs needed (~ when how many is a guess), from the product kept for it and the last price seen; what a real deal saves under its price, and what it's for on one line under the name; each list's card says about what it comes to and what the sales save |
 | Costco and any store with a search page | Detail | Built | Find any thing on its site, in the app and the extension, from the household's stores; stores by country |
 | Buying by the package: the rest of a 2 lb pack goes in the pantry | Key | Built | Module (stores): what was sent to the Kroger cart is put away as the packs bought, with the meals' share set aside and the rest there to use |
@@ -163,7 +163,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
-| Bring your own AI key: Anthropic, OpenAI, Google, or OpenAI-compatible (Ollama) | Headline | Built | |
+| Bring your own AI key: Anthropic, OpenAI, Google, or OpenAI-compatible (Ollama) | Headline | Built | Not released yet: provider-specific registration/key links and setup steps, with API billing and test-cost guidance |
 | The server admin doesn't pay for everyone: household keys, a policy, monthly limits | Headline | Built | |
 | Usage and cost by key; warnings when a key runs low | Detail | Built | |
 | A suggested model for each task | Detail | Built | |

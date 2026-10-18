@@ -37,6 +37,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { ApiError } from "@/lib/api/client"
 
 import { formatMoney, type AiKey, type NewAiKey } from "./queries"
+import { ProviderSetup } from "./provider-setup"
 
 type Choice = (typeof KEYED_PROVIDERS)[number] | "openai-compatible"
 
@@ -379,7 +380,7 @@ function AddKeyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90svh] overflow-y-auto">
         <form onSubmit={(event) => void save(event)} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>{t("ai.keys.addTitle")}</DialogTitle>
@@ -409,6 +410,7 @@ function AddKeyDialog({
                 </SelectContent>
               </Select>
             </Field>
+            <ProviderSetup provider={provider} />
             {address && (
               <>
                 <Field>

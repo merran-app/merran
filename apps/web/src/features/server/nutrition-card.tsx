@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import * as React from "react"
-import { Trans, useTranslation } from "react-i18next"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { TextField } from "@/components/form/text-field"
@@ -18,6 +18,7 @@ import {
 import { FieldGroup } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { LockedNote } from "@/features/settings/setting-fields"
+import { SetupHelp } from "@/features/settings/setup-help"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { serverSettingsQuery, useSaveServerSettings } from "./queries"
@@ -86,19 +87,7 @@ export function NutritionCard() {
       <CardHeader>
         <CardTitle>{t("settings.server.nutrition.title")}</CardTitle>
         <CardDescription>
-          <Trans
-            i18nKey="settings.server.nutrition.description"
-            components={{
-              link: (
-                <a
-                  href="https://api.data.gov/signup/"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="underline underline-offset-3"
-                />
-              ),
-            }}
-          />
+          {t("settings.server.nutrition.description")}
         </CardDescription>
         <CardAction>
           <Badge variant={set ? "default" : "secondary"}>
@@ -113,7 +102,25 @@ export function NutritionCard() {
           if (key.trim()) void saveKey(key.trim())
         }}
       >
-        <CardContent>
+        <CardContent className="grid gap-5">
+          <SetupHelp
+            title={t("settings.server.nutrition.setup.title")}
+            steps={[
+              t("settings.server.nutrition.setup.register"),
+              t("settings.server.nutrition.setup.email"),
+              t("settings.server.nutrition.setup.paste"),
+            ]}
+            links={[
+              {
+                label: t("settings.server.nutrition.setup.button"),
+                href: "https://fdc.nal.usda.gov/api-key-signup/",
+              },
+              {
+                label: t("settings.server.nutrition.setup.guide"),
+                href: "https://fdc.nal.usda.gov/api-guide/",
+              },
+            ]}
+          />
           <FieldGroup>
             <TextField
               label={t("settings.server.nutrition.key")}
