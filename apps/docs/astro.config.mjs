@@ -76,7 +76,11 @@ export default defineConfig({
         },
         {
           label: "Project",
-          items: [{ autogenerate: { directory: "docs/project" } }],
+          items: [
+            { autogenerate: { directory: "docs/project" } },
+            // A page of its own, outside the docs: src/pages/telemetry.astro.
+            { label: "Telemetry totals", link: "/telemetry/" },
+          ],
         },
       ],
       plugins: [
