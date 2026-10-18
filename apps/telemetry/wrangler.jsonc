@@ -16,7 +16,7 @@
       "binding": "DB",
       "database_name": "merran-telemetry",
       // Made once with `wrangler d1 create merran-telemetry` (README.md).
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "da42675e-c4e0-4abb-8d7e-77918e7caa95",
       "migrations_dir": "migrations",
     },
   ],
