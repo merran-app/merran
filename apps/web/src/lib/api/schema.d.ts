@@ -3576,6 +3576,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/telemetry/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Answer whether to send the daily summary
+         * @description Server admins only. The answer to the question asked once after setup: turns telemetry on or off, and it isn't asked again. Settings can change it any time.
+         */
+        post: operations["answerTelemetryQuestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/telemetry/install-id": {
         parameters: {
             query?: never;
@@ -3608,6 +3628,26 @@ export interface paths {
          * @description Server admins only. Exactly what the daily summary would send, whether or not it's on.
          */
         get: operations["getTelemetryReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/telemetry/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How telemetry is going
+         * @description Server admins only. Whether the Merran project is taking summaries yet, whether to ask the admin about sending one, and how the last one went.
+         */
+        get: operations["getTelemetryStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -10636,6 +10676,43 @@ export interface components {
         };
         /**
          * @example {
+         *       "receiving": true,
+         *       "ask": false,
+         *       "last": {
+         *         "at": "2026-10-18T06:12:40.000Z",
+         *         "outcome": "sent",
+         *         "detail": null
+         *       },
+         *       "totals": "https://merran.app/telemetry"
+         *     }
+         */
+        TelemetryStatus: {
+            /** @description Whether the Merran project is taking summaries yet. Until it is, nothing is sent. */
+            receiving: boolean;
+            /** @description Whether to ask the server admin about sending a summary: once, until they answer, unless they've chosen in Settings or the environment has. */
+            ask: boolean;
+            /** @description How the last summary went; null before the first. */
+            last: {
+                at: string;
+                /** @enum {string} */
+                outcome: "sent" | "unreachable" | "refused" | "retired";
+                /** @description What the receiver said, when it refused the summary. */
+                detail: string | null;
+            } | null;
+            /** @description The public page with every server's totals. */
+            totals: string;
+        };
+        /**
+         * @example {
+         *       "send": true
+         *     }
+         */
+        TelemetryAnswer: {
+            /** @description Send the Merran project an anonymous summary once a day. */
+            send: boolean;
+        };
+        /**
+         * @example {
          *       "installId": "0199e8b0-5a10-7a01-8b00-0000000000ff",
          *       "version": "0.1.0",
          *       "install": "docker",
@@ -10645,6 +10722,9 @@ export interface components {
          *         "errorTracking": true,
          *         "telemetry": true
          *       },
+         *       "aiProviders": [
+         *         "anthropic"
+         *       ],
          *       "households": "1",
          *       "people": "2-5",
          *       "recipes": "100-499"
@@ -10660,6 +10740,8 @@ export interface components {
             modules: {
                 [key: string]: boolean;
             };
+            /** @description The kinds of AI provider with a key anywhere on the server, not which keys or models. */
+            aiProviders: string[];
             /** @example 2-5 */
             households: string;
             people: string;
@@ -21252,6 +21334,57 @@ export interface operations {
             };
         };
     };
+    answerTelemetryQuestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetryAnswer"];
+            };
+        };
+        responses: {
+            /** @description How it's going now. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryStatus"];
+                };
+            };
+            /** @description Something's wrong with what was sent. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     renewInstallId: {
         parameters: {
             query?: never;
@@ -21306,6 +21439,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TelemetryReport"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getTelemetryStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description How it's going. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryStatus"];
                 };
             };
             /** @description Not signed in. */

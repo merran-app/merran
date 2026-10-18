@@ -71,8 +71,12 @@ export type JobHandler = {
   run(ctx: JobContext): Promise<Record<string, unknown> | void>
 }
 
-/** A job that comes round again: a cron expression, in the server's time. */
-export type JobSchedule = { kind: string; cron: string }
+/**
+ * A job that comes round again: a cron expression, in the server's time.
+ * `spreadMinutes` runs each one up to that much later, picked at random, so
+ * every server calling out doesn't call at the same minute.
+ */
+export type JobSchedule = { kind: string; cron: string; spreadMinutes?: number }
 
 /** Thrown into a job that's stopped, so it can tell. */
 export class JobStopped extends Error {
@@ -387,10 +391,13 @@ export class JobRunner {
   async #ensureScheduled(em: EntityManager, schedule: JobSchedule) {
     const next = new Cron(schedule.cron).nextRun()
     if (!next) return
+    const spread = Math.floor(
+      Math.random() * (schedule.spreadMinutes ?? 0) * 60_000
+    )
     await enqueue(em, {
       kind: schedule.kind,
       key: scheduleKey(schedule.kind),
-      runAt: next,
+      runAt: new Date(next.getTime() + spread),
       maxAttempts: 1,
     })
   }

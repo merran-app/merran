@@ -1,4 +1,8 @@
-import { ArrowDown01Icon, RefreshIcon } from "@hugeicons/core-free-icons"
+import {
+  ArrowDown01Icon,
+  LinkSquare02Icon,
+  RefreshIcon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import * as React from "react"
@@ -29,19 +33,26 @@ import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
 import { LockedNote } from "@/features/settings/setting-fields"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { formatDate } from "@/lib/format"
 
 import {
   serverSettingsQuery,
   telemetryReportQuery,
+  telemetryStatusQuery,
   useSaveServerSettings,
+  type TelemetryStatus,
 } from "./queries"
 
-/** The opt-in daily summary for the Merran project, and exactly what's in it. */
+/**
+ * The opt-in daily summary for the Merran project, and exactly what's in it.
+ * Not shown until the project is taking summaries (docs/telemetry.md).
+ */
 export function TelemetryCard() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const { data } = useSuspenseQuery(serverSettingsQuery)
   const { data: report } = useSuspenseQuery(telemetryReportQuery)
+  const { data: status } = useSuspenseQuery(telemetryStatusQuery)
   const save = useSaveServerSettings()
   const [saving, setSaving] = React.useState(false)
   const [renewing, setRenewing] = React.useState(false)
@@ -49,7 +60,7 @@ export function TelemetryCard() {
   const labelId = React.useId()
 
   const state = data.settings.find((s) => s.key === "telemetry.enabled")
-  if (!state) return null
+  if (!state || !status.receiving) return null
   const enabled = state.value === true
 
   async function change(next: boolean) {
@@ -66,6 +77,23 @@ export function TelemetryCard() {
       toast.error(error.message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  function lastText(last: NonNullable<TelemetryStatus["last"]>) {
+    const day = formatDate(last.at, i18n.language)
+    switch (last.outcome) {
+      case "sent":
+        return t("settings.server.telemetry.lastSent", { day })
+      case "unreachable":
+        return t("settings.server.telemetry.lastUnreachable", { day })
+      case "refused":
+        return t("settings.server.telemetry.lastRefused", {
+          day,
+          detail: last.detail,
+        })
+      case "retired":
+        return t("settings.server.telemetry.lastRetired")
     }
   }
 
@@ -114,6 +142,11 @@ export function TelemetryCard() {
               disabled={saving || state.lockedBy !== null}
             />
           </Field>
+          {enabled && status.last && (
+            <p className="text-sm text-muted-foreground">
+              {lastText(status.last)}
+            </p>
+          )}
           <Collapsible>
             <CollapsibleTrigger
               render={
@@ -151,6 +184,19 @@ export function TelemetryCard() {
               </div>
             </CollapsibleContent>
           </Collapsible>
+          <a
+            href={status.totals}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+          >
+            {t("settings.server.telemetry.totals")}
+            <HugeiconsIcon
+              icon={LinkSquare02Icon}
+              strokeWidth={2}
+              className="size-4"
+            />
+          </a>
         </FieldGroup>
       </CardContent>
     </Card>

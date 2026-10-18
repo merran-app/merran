@@ -9,7 +9,7 @@ const section = id.includes("/api")
       ? "Run Merran"
       : id.includes("/use/")
         ? "Use Merran"
-        : id.includes("/project/")
+        : id.includes("/project/") || id === "telemetry"
           ? "The project"
           : "Get started"
 ---

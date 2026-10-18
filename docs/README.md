@@ -36,6 +36,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio, which thes
 | [platform.md](platform.md) | Modules and settings, accounts and households, API keys and the public API, AI keys and policy, jobs, files, export, isolation, security, languages |
 | [export-format.md](export-format.md) | The household export: what's in the zip, and how an import treats what's there |
 | [operations.md](operations.md) | Logs, error tracking, analytics and telemetry, what leaves the server, images, releases, backups, the demo |
+| [telemetry.md](telemetry.md) | The telemetry receiver: what it keeps and for how long, checking reports, its API, where it runs, deploying it, the public totals page |
 | [open-source.md](open-source.md) | Name and license, contributing, CI, dependencies, security reports, docs site, funding, launch |
 | [features.md](features.md) | Every feature with its importance and status, for the marketing and docs sites |
 | [scope.md](scope.md) | Where each REFERENCE feature lands, what's not coming over, and the build order |
@@ -79,7 +80,7 @@ Decided with the user on October 15, 2026, from the plan's open questions:
 | Belonging to more than one household | **Yes, with a household switcher in 0.1** (say, your household and your parents') |
 | Primitives under shadcn/ui | Base UI |
 | AI-written contributions | Welcome, with the parts an AI wrote named in the pull request, and the contributor answerable for every line |
-| A telemetry receiver | Yes: small, opt-in, its code public, with a public totals page |
+| A telemetry receiver | Yes: small, opt-in, its code public, with a public totals page. Built October 17, 2026 on a Cloudflare Worker with D1 ([telemetry.md](telemetry.md#decisions)) |
 | The REFERENCE app and its docs | Kept in `apps/REFERENCE/` while Merran was built, removed once Merran had everything it did |
 | The database | SQLite or Postgres, like Mealie, with SQLite the default |
 | The schema | Defined in TypeScript, not SQL |

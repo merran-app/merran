@@ -218,7 +218,7 @@ In this order:
 
 ### Phase 7: Release 0.1
 
-- The telemetry question at setup, and the telemetry receiver with its totals page
+- The telemetry question after setup, and the telemetry receiver with its totals page ([telemetry.md](telemetry.md))
 - The docs site complete, with install, configuration, use, AI and API guides
 - The demo, the Unraid template, the restore test in CI, Chrome and Firefox store listings
 - The `@merran` npm scope claimed, and the app store names checked (see [README.md](README.md#open-questions))

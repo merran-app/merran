@@ -1,0 +1,36 @@
+// The telemetry receiver on Cloudflare Workers (docs/telemetry.md).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "merran-telemetry",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "minify": true,
+  // Wrangler's own usage reports to Cloudflare: off.
+  "send_metrics": false,
+  // Only at telemetry.merran.app: deploying makes its DNS record and
+  // certificate. No workers.dev address as well.
+  "workers_dev": false,
+  "routes": [{ "pattern": "telemetry.merran.app", "custom_domain": true }],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "merran-telemetry",
+      // Made once with `wrangler d1 create merran-telemetry` (README.md).
+      "database_id": "da42675e-c4e0-4abb-8d7e-77918e7caa95",
+      "migrations_dir": "migrations",
+    },
+  ],
+  // 10 summaries a minute from one address, counted in memory at each
+  // Cloudflare location and never written down.
+  "ratelimits": [
+    {
+      "name": "REPORT_LIMIT",
+      "namespace_id": "1001",
+      "simple": { "limit": 10, "period": 60 },
+    },
+  ],
+  // The night's totals, just after midnight UTC.
+  "triggers": { "crons": ["15 0 * * *"] },
+  // No request logs: Cloudflare keeps none for this Worker.
+  "observability": { "enabled": false },
+}

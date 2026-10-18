@@ -5,6 +5,7 @@ import { AssistantProvider } from "@/features/assistant/assistant-context"
 import { AssistantPanel } from "@/features/assistant/assistant-panel"
 import { InstallGuide } from "@/features/install/install-ui"
 import { LiveUpdates } from "@/features/live/live-updates"
+import { TelemetryQuestion } from "@/features/server/telemetry-question"
 
 import { AppSidebar } from "./app-sidebar"
 import { BottomNav } from "./bottom-nav"
@@ -26,6 +27,7 @@ export function AppShell() {
         </SidebarInset>
         <BottomNav />
         <InstallGuide />
+        <TelemetryQuestion />
         <AssistantPanel />
       </SidebarProvider>
     </AssistantProvider>

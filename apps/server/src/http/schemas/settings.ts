@@ -163,6 +163,10 @@ export const TelemetryReportSchema = z
     arch: z.string(),
     database: z.string().openapi({ example: "postgres 18" }),
     modules: z.record(z.string(), z.boolean()),
+    aiProviders: z.array(z.string()).openapi({
+      description:
+        "The kinds of AI provider with a key anywhere on the server, not which keys or models.",
+    }),
     households: z.string().openapi({ example: "2-5" }),
     people: z.string(),
     recipes: z.string(),
@@ -175,9 +179,45 @@ export const TelemetryReportSchema = z
       arch: "x64",
       database: "sqlite",
       modules: { errorTracking: true, telemetry: true },
+      aiProviders: ["anthropic"],
       households: "1",
       people: "2-5",
       recipes: "100-499",
+    },
+  })
+
+export const TelemetryStatusSchema = z
+  .object({
+    receiving: z.boolean().openapi({
+      description:
+        "Whether the Merran project is taking summaries yet. Until it is, nothing is sent.",
+    }),
+    ask: z.boolean().openapi({
+      description:
+        "Whether to ask the server admin about sending a summary: once, until they answer, unless they've chosen in Settings or the environment has.",
+    }),
+    last: z
+      .object({
+        at: z.string(),
+        outcome: z.enum(["sent", "unreachable", "refused", "retired"]),
+        detail: z.string().nullable().openapi({
+          description: "What the receiver said, when it refused the summary.",
+        }),
+      })
+      .nullable()
+      .openapi({
+        description: "How the last summary went; null before the first.",
+      }),
+    totals: z.string().openapi({
+      description: "The public page with every server's totals.",
+    }),
+  })
+  .openapi("TelemetryStatus", {
+    example: {
+      receiving: true,
+      ask: false,
+      last: { at: "2026-10-18T06:12:40.000Z", outcome: "sent", detail: null },
+      totals: "https://merran.app/telemetry",
     },
   })
 

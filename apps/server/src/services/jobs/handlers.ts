@@ -42,7 +42,8 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
 export const JOB_SCHEDULES: readonly JobSchedule[] = [
   { kind: purgeDeletedJob.kind, cron: "17 3 * * *" },
   { kind: cleanUpJobsJob.kind, cron: "27 3 * * *" },
-  { kind: sendTelemetryJob.kind, cron: "41 4 * * *" },
+  // Somewhere between 4:41 and 7:41, so servers don't all send at once.
+  { kind: sendTelemetryJob.kind, cron: "41 4 * * *", spreadMinutes: 180 },
   // Merran's newest release, for the server admin's Update badge.
   { kind: checkUpdatesJob.kind, cron: "53 */6 * * *" },
   // Each site is read every 6 hours; this finds the ones that are due.

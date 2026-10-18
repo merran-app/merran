@@ -13798,6 +13798,87 @@
           ]
         }
       },
+      "TelemetryStatus": {
+        "type": "object",
+        "properties": {
+          "receiving": {
+            "type": "boolean",
+            "description": "Whether the Merran project is taking summaries yet. Until it is, nothing is sent."
+          },
+          "ask": {
+            "type": "boolean",
+            "description": "Whether to ask the server admin about sending a summary: once, until they answer, unless they've chosen in Settings or the environment has."
+          },
+          "last": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "at": {
+                "type": "string"
+              },
+              "outcome": {
+                "type": "string",
+                "enum": [
+                  "sent",
+                  "unreachable",
+                  "refused",
+                  "retired"
+                ]
+              },
+              "detail": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "What the receiver said, when it refused the summary."
+              }
+            },
+            "required": [
+              "at",
+              "outcome",
+              "detail"
+            ],
+            "description": "How the last summary went; null before the first."
+          },
+          "totals": {
+            "type": "string",
+            "description": "The public page with every server's totals."
+          }
+        },
+        "required": [
+          "receiving",
+          "ask",
+          "last",
+          "totals"
+        ],
+        "example": {
+          "receiving": true,
+          "ask": false,
+          "last": {
+            "at": "2026-10-18T06:12:40.000Z",
+            "outcome": "sent",
+            "detail": null
+          },
+          "totals": "https://merran.app/telemetry"
+        }
+      },
+      "TelemetryAnswer": {
+        "type": "object",
+        "properties": {
+          "send": {
+            "type": "boolean",
+            "description": "Send the Merran project an anonymous summary once a day."
+          }
+        },
+        "required": [
+          "send"
+        ],
+        "example": {
+          "send": true
+        }
+      },
       "TelemetryReport": {
         "type": "object",
         "properties": {
@@ -13823,6 +13904,13 @@
               "type": "boolean"
             }
           },
+          "aiProviders": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The kinds of AI provider with a key anywhere on the server, not which keys or models."
+          },
           "households": {
             "type": "string",
             "example": "2-5"
@@ -13841,6 +13929,7 @@
           "arch",
           "database",
           "modules",
+          "aiProviders",
           "households",
           "people",
           "recipes"
@@ -13855,6 +13944,9 @@
             "errorTracking": true,
             "telemetry": true
           },
+          "aiProviders": [
+            "anthropic"
+          ],
           "households": "1",
           "people": "2-5",
           "recipes": "100-499"
@@ -28833,6 +28925,73 @@
         }
       }
     },
+    "/api/telemetry/answer": {
+      "post": {
+        "operationId": "answerTelemetryQuestion",
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Answer whether to send the daily summary",
+        "description": "Server admins only. The answer to the question asked once after setup: turns telemetry on or off, and it isn't asked again. Settings can change it any time.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelemetryAnswer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "How it's going now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Something's wrong with what was sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/telemetry/install-id": {
       "post": {
         "operationId": "renewInstallId",
@@ -28900,6 +29059,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TelemetryReport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/telemetry/status": {
+      "get": {
+        "operationId": "getTelemetryStatus",
+        "tags": [
+          "Settings"
+        ],
+        "summary": "How telemetry is going",
+        "description": "Server admins only. Whether the Merran project is taking summaries yet, whether to ask the admin about sending one, and how the last one went.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "How it's going.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryStatus"
                 }
               }
             }
