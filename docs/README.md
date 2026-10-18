@@ -39,6 +39,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio, which thes
 | [operations.md](operations.md) | Logs, error tracking, analytics and telemetry, what leaves the server, images, releases, backups, the demo |
 | [telemetry.md](telemetry.md) | The telemetry receiver: what it keeps and for how long, checking reports, its API, where it runs, deploying it, the public totals page |
 | [open-source.md](open-source.md) | Name and license, contributing, CI, dependencies, security reports, docs site, funding, launch |
+| [shopping-and-planning-feedback.md](shopping-and-planning-feedback.md) | October 18 usage feedback: list completion after sending to stores, ingredient purpose and swaps while shopping, and rearranging automatically planned meals |
 | [features.md](features.md) | Every feature with its importance and status, for the marketing and docs sites |
 | [scope.md](scope.md) | Where each REFERENCE feature lands, what's not coming over, and the build order |
 | [foods.md](foods.md) | One vocabulary of foods: names in every language, kinds of, brands, what Merran knows about each, and matching a line to its food |

@@ -9,7 +9,7 @@ Merran is in alpha. This roadmap describes our direction, not a delivery schedul
 
 The feature baseline is [v0.1.0-alpha.1](https://github.com/merran-app/merran/releases/tag/v0.1.0-alpha.1). See the [release verification record](../release-verification/) for what we have tested and what still needs checking.
 
-**Last reviewed:** October 17, 2026. Features move to Planned when we choose to build them; In progress will be used only when implementation starts.
+**Last reviewed:** October 18, 2026. Features move to Planned when we choose to build them; In progress will be used only when implementation starts.
 
 ## Available now
 
@@ -28,7 +28,7 @@ Start with [the guides](../../) and [integration setup](../../integrations/brows
 
 ## Up next
 
-**Built since alpha.1, not released yet:** shopping progress on **List**, including per-store sent/ready/attention counts, selected products, review over the list, cart links, and marking sent purchases bought. Changed quantities or products prompt a retailer-cart review. Sending remains separate from buying and pantry put-away.
+**Built since alpha.1, not released yet:** shopping progress on **List**, including per-store sent/ready/attention counts, selected products, review over the list, cart links, and marking sent purchases bought. Changed quantities or products prompt a retailer-cart review. Sending remains separate from buying and pantry put-away. Each shopping row also has an info icon for current recipe lines, amounts scaled to planned servings, and contributions after pantry deductions.
 
 Our immediate focus is checking the released workflows in real use before choosing the next feature to build.
 
@@ -42,6 +42,8 @@ Fresh SQLite and Postgres installation and isolated backup/restore smoke tests h
 
 These are features we intend to build. Their order here does not indicate priority, and none has a promised release date.
 
+- **Shopping substitutions:** ask what could replace an ingredient directly from the shopping list, with recipe and dietary context carried through for review. Ingredient details are already built for the next release, as described above.
+- **Rearrange planned meals:** quickly move meals between days or swap them after automatic planning, potentially by dragging, with a touch and keyboard alternative. Preserve meal details and account for any existing shopping list.
 - **Offline recipes, plans, and shopping lists:** keep previously opened recipes, the week's plan, and shopping lists useful without a connection, with list check-offs syncing when you reconnect.
 - **Prep reminders:** help you remember to thaw ingredients, start a marinade, or begin cooking before dinner is due.
 - **More sign-in options:** add passkeys, authenticator-based two-step sign-in, and OIDC single sign-on so you can choose a sign-in method that fits your household or server.
