@@ -17,7 +17,8 @@ let today: string
 let week: string
 const ids: Record<string, string> = {}
 
-const plan = async (from = week, to = addDays(week, 6)) =>
+// This week and next: tomorrow is next week's when today is the week's last day.
+const plan = async (from = week, to = addDays(week, 13)) =>
   (await (await kyle.get(`/api/plan?from=${from}&to=${to}`)).json()).entries
 
 async function add(body: Record<string, unknown>) {
