@@ -561,7 +561,7 @@
       },
       "nutrition": {
         "title": "Nutrition",
-        "description": "A key for USDA FoodData Central works recipes' nutrition out from their ingredients. It's free: <link>get one at api.data.gov</link>. Without one, households with AI get an estimate.",
+        "description": "Calculate recipe nutrition from ingredients using USDA FoodData Central. A USDA key is free. Without one, households with AI can get an estimate.",
         "key": "USDA key",
         "keyHint": "Paste the key api.data.gov sends you. It's tested before it's saved.",
         "keySet": "A key is saved. Paste another to replace it.",
@@ -571,7 +571,15 @@
         "replace": "Replace key",
         "remove": "Remove",
         "saved": "USDA key saved.",
-        "removed": "USDA key removed."
+        "removed": "USDA key removed.",
+        "setup": {
+          "title": "Get your USDA key",
+          "register": "Register for a free FoodData Central API key using your name and email.",
+          "email": "Look for the key email. If it hasn't arrived, check your spam or junk folder.",
+          "paste": "Paste the key below and choose Save key. Merran tests it before saving.",
+          "button": "Get a free USDA key",
+          "guide": "USDA API guide"
+        }
       },
       "sites": {
         "title": "Recipe sites",
@@ -624,7 +632,7 @@
       },
       "kroger": {
         "title": "Kroger",
-        "description": "A Kroger developer app lets households pick their Kroger store (Fry's, Ralphs, King Soopers, Fred Meyer and the rest), see its prices and send the list to its cart. It's free: <link>make one at developer.kroger.com</link> with the Product, Cart and Profile APIs, and give it the redirect address below.",
+        "description": "Connect a Kroger developer app so households can find stores, see prices and send their shopping list to a Kroger-family cart.",
         "redirect": "Redirect address",
         "redirectHint": "Add this to the Kroger app as its redirect URI.",
         "redirectHere": "Add this to the Kroger app as its redirect URI. It's the address you're using now: set the server's public address so it doesn't change.",
@@ -637,7 +645,15 @@
         "save": "Save app",
         "remove": "Remove",
         "saved": "Kroger app saved.",
-        "removed": "Kroger app removed."
+        "removed": "Kroger app removed.",
+        "setup": {
+          "title": "Create your Kroger app",
+          "register": "Sign in to the Kroger developer portal and register an application with the Product, Cart and Profile APIs.",
+          "redirect": "Copy the Redirect address below into your application as its redirect URI.",
+          "paste": "Copy the Client ID and Client secret into Merran, then choose Save app.",
+          "button": "Open Kroger developer portal",
+          "guide": "Kroger setup guide"
+        }
       },
       "walmart": {
         "title": "Walmart",
@@ -2267,7 +2283,7 @@
       "remove": "Take off {{name}}",
       "add": "Add a key",
       "addTitle": "Add a key",
-      "addHint": "It's tested with the provider first, which costs nothing, then kept sealed. Only its last four characters are ever shown.",
+      "addHint": "Merran tests the key before saving it, including a small request that may use API credit. Only its last four characters are shown afterward.",
       "provider": "From",
       "address": "An address of your own (Ollama, LM Studio, OpenRouter…)",
       "name": "Name",
@@ -2292,7 +2308,33 @@
       "creditSaved": "Noted.",
       "worksWithCredit": "{{name}} works, and has credit.",
       "worksNoCredit": "{{name}} works, but it's out of credit. Top it up with the provider, then test it again.",
-      "worksUnchecked": "{{name}} works, but its credit couldn't be checked: {{why}}"
+      "worksUnchecked": "{{name}} works, but its credit couldn't be checked: {{why}}",
+      "setup": {
+        "guide": "AI setup guide",
+        "anthropic": {
+          "title": "Get a Claude API key",
+          "create": "Sign in or register on the Claude Platform, then create an API key.",
+          "billing": "Check API billing and credit on the platform. A Claude chat subscription does not include API usage.",
+          "button": "Open Claude API keys"
+        },
+        "openai": {
+          "title": "Get an OpenAI API key",
+          "create": "Sign in or register on the OpenAI Platform, then create an API key for your project.",
+          "billing": "Set up API billing on the platform. A ChatGPT subscription does not include API usage.",
+          "button": "Open OpenAI API keys"
+        },
+        "google": {
+          "title": "Get a Gemini API key",
+          "create": "Sign in to Google AI Studio and create a Gemini API key for your project.",
+          "billing": "Check project quotas and billing in AI Studio. Availability and charges depend on the model and project.",
+          "button": "Open Google AI Studio"
+        },
+        "openai-compatible": {
+          "title": "Connect your own AI service",
+          "create": "Get the API address and any required key from your service or gateway. There is no single signup page for compatible services.",
+          "billing": "Use an address reachable from the Merran server, usually ending in /v1. Local services and paid gateways have their own setup and billing."
+        }
+      }
     },
     "models": {
       "large": "Model for big tasks",

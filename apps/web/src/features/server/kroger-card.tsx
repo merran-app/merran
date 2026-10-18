@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import * as React from "react"
-import { Trans, useTranslation } from "react-i18next"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { CopyField } from "@/components/form/copy-field"
@@ -19,6 +19,7 @@ import {
 import { FieldGroup } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { LockedNote } from "@/features/settings/setting-fields"
+import { SetupHelp } from "@/features/settings/setup-help"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { serverSettingsQuery, useSaveServerSettings } from "./queries"
@@ -109,19 +110,7 @@ export function KrogerCard() {
       <CardHeader>
         <CardTitle>{t("settings.server.kroger.title")}</CardTitle>
         <CardDescription>
-          <Trans
-            i18nKey="settings.server.kroger.description"
-            components={{
-              link: (
-                <a
-                  href="https://developer.kroger.com/"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="underline underline-offset-3"
-                />
-              ),
-            }}
-          />
+          {t("settings.server.kroger.description")}
         </CardDescription>
         <CardAction>
           <Badge variant={set ? "default" : "secondary"}>
@@ -136,7 +125,25 @@ export function KrogerCard() {
           if (changed && clientId.trim()) void saveApp()
         }}
       >
-        <CardContent>
+        <CardContent className="grid gap-5">
+          <SetupHelp
+            title={t("settings.server.kroger.setup.title")}
+            steps={[
+              t("settings.server.kroger.setup.register"),
+              t("settings.server.kroger.setup.redirect"),
+              t("settings.server.kroger.setup.paste"),
+            ]}
+            links={[
+              {
+                label: t("settings.server.kroger.setup.button"),
+                href: "https://developer.kroger.com/",
+              },
+              {
+                label: t("settings.server.kroger.setup.guide"),
+                href: "https://merran.app/docs/integrations/kroger/",
+              },
+            ]}
+          />
           <FieldGroup>
             <CopyField
               label={t("settings.server.kroger.redirect")}

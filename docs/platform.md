@@ -148,7 +148,10 @@ All through AI SDK 7, behind Merran's own thin layer.
 
 **Models know what they can do.** Each model has abilities: structured output, tools, reading images, web search, making images, transcribing, speaking. A feature checks before it runs and says what's missing. Local models are free but vary a lot; the docs keep a short list of local models that handle recipe import well.
 
+Settings guidance, decided October 18, 2026 (not released yet): put short numbered setup instructions and official provider key-page links beside credential inputs. The shared AI-key dialog links to Claude Platform, OpenAI Platform or Google AI Studio according to the selected provider, at both household and server scope; compatible services point to Merran's setup guide. Explain separate API billing and possible credit use during key testing. USDA includes its free signup link and a reminder to check spam/junk for the key email. Kroger includes developer registration, API selection and redirect instructions. These helpers do not register accounts, configure billing or call a provider by themselves.
+
 ### AI tasks
+
 
 | Task | Default size | Notes |
 |---|---|---|

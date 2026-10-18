@@ -11,8 +11,12 @@ Manual recipes, planning, lists, pantry tracking, and ordinary cook steps work w
 
 **Prerequisites:** recipes with ingredients and a meaningful serving count. Imported nutrition can be retained without configuring a provider. To calculate from food data, a server admin supplies a USDA FoodData Central key. Optional AI can estimate nutrition when configured; it is not required for the USDA path.
 
-1. Obtain a key through the link in **Settings → This server → Nutrition**.
-2. Enter **USDA key**, choose **Test**, then **Save key**. Environment-managed servers can use `MERRAN_USDA_KEY` instead.
+:::note[Not released yet]
+The Nutrition card includes **Get your USDA key** steps, **Get a free USDA key**, and **USDA API guide** buttons.
+:::
+
+1. Open **Settings → This server → Nutrition** and choose **Get a free USDA key**, or use the [USDA FoodData Central signup page](https://fdc.nal.usda.gov/api-key-signup/). Register using your name and email. If the key email has not arrived, check your spam or junk folder.
+2. Enter **USDA key** and choose **Save key**. Merran tests it before saving; **Test** rechecks an already saved key. Environment-managed servers can use `MERRAN_USDA_KEY` instead.
 3. Open **Settings → Household → Nutrition for the library**. Fix recipes listed as needing servings, then choose **Work out …** for recipes missing nutrition.
 4. Wait for the run to finish, or choose **Stop**. Inspect several recipes' nutrition and ingredient matches.
 

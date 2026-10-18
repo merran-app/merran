@@ -21,6 +21,24 @@ Merran currently supports Anthropic, OpenAI, Google, and OpenAI-compatible addre
 
 ## Connect a household provider
 
+:::note[Not released yet]
+The **Add a key** dialog now includes provider-specific steps and a button to open its key page. The same guidance appears for household and shared server keys.
+:::
+
+### Get a provider key
+
+| Provider | Where to register or create a key | In Merran |
+| --- | --- | --- |
+| Anthropic / Claude | [Claude Platform API keys](https://platform.claude.com/settings/keys) | **Open Claude API keys** |
+| OpenAI | [OpenAI Platform API keys](https://platform.openai.com/api-keys) | **Open OpenAI API keys** |
+| Google / Gemini | [Google AI Studio](https://aistudio.google.com/apikey) | **Open Google AI Studio** |
+
+Sign in or create an account, create an API key, then return to Merran and paste it into **Key**. Check the provider's API billing and available credit. ChatGPT and Claude chat subscriptions do not include API usage; Google's quotas and charges depend on the project and model. These are provider pages, so Merran does not create the account or manage billing for you. **AI setup guide** opens this guide in another tab while you keep the dialog open.
+
+For compatible services, the dialog shows **Connect your own AI service** instead of a provider signup button. Get the API address and any required key from the service or gateway operator.
+
+### Add the key
+
 1. Open **Settings → Household → AI** in the intended household.
 2. Under **Your own keys**, choose **Add a key**.
 3. Choose the provider under **From**, paste the complete **Key**, and choose **Test and add**.
@@ -30,7 +48,7 @@ Merran currently supports Anthropic, OpenAI, Google, and OpenAI-compatible addre
 
 **Expected result:** eligible tasks can use the household's provider key. If controls are missing, a household admin must make the change, or the server policy may prohibit adding keys.
 
-Adding a key tests the provider's model list and can also send a tiny generation request to check credit. Despite the current dialog's “costs nothing” hint, that credit check can be billable. A successful model-list test alone does not prove that every task can run or that the account has credit. Adding another key for the same named provider at the same scope replaces its earlier saved key; compatible addresses can coexist.
+Adding a key tests the provider's model list and can also send a tiny generation request to check credit. That credit check can be billable; the updated dialog explains this before **Test and add**. A successful model-list test alone does not prove that every task can run or that the account has credit. Adding another key for the same named provider at the same scope replaces its earlier saved key; compatible addresses can coexist.
 
 ## Share server keys
 
