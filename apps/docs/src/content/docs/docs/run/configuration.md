@@ -13,6 +13,8 @@ Use the [generated settings reference](../settings-reference/) for the registere
 
 The repository's [.env.example](https://github.com/merran-app/merran/blob/main/.env.example) documents common deployment settings. Put your .env beside compose.yaml.
 
+For a first installation, use the [copyable starter .env](../../get-started/install/#environment-variables) or [download it](../../../deploy/merran.env.example). It selects the `:next` alpha release channel and shows the host port, time zone and user/group IDs together. The self-contained TrueNAS, Dockge and Portainer examples put environment values directly in YAML instead of loading this file.
+
 | Setting           | Purpose                                                        |
 | ----------------- | -------------------------------------------------------------- |
 | MERRAN_PORT       | Published host port; 3000 by default                           |

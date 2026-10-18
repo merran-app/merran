@@ -1,0 +1,34 @@
+<!-- Keep old platform bookmarks useful when their content lives in a tab. -->
+<script>
+  function revealInstallTarget() {
+    let id: string
+    try {
+      id = decodeURIComponent(window.location.hash.slice(1))
+    } catch {
+      return
+    }
+    const target = document.getElementById(id)
+    if (!target) return
+    let revealed = false
+    for (
+      let parent = target.parentElement;
+      parent;
+      parent = parent.parentElement
+    ) {
+      if (parent instanceof HTMLDetailsElement && !parent.open) {
+        parent.open = true
+        revealed = true
+      }
+      if (parent.getAttribute("role") === "tabpanel" && parent.hidden) {
+        const tab = [
+          ...document.querySelectorAll<HTMLAnchorElement>('[role="tab"]'),
+        ].find((item) => item.hash === `#${parent.id}`)
+        tab?.click()
+        revealed = true
+      }
+    }
+    if (revealed) requestAnimationFrame(() => target.scrollIntoView())
+  }
+  customElements.whenDefined("starlight-tabs").then(revealInstallTarget)
+  window.addEventListener("hashchange", revealInstallTarget)
+</script>

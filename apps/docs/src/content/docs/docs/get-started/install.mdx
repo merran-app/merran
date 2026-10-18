@@ -1,0 +1,432 @@
+---
+title: Install Merran
+description: Choose your platform, copy a complete example, and create your first household.
+tableOfContents:
+  maxHeadingLevel: 2
+---
+
+import {
+  Aside,
+  Code,
+  LinkButton,
+  Tabs,
+  TabItem,
+} from "@astrojs/starlight/components"
+import truenas from "../../../../../public/deploy/merran-truenas.compose.yaml?raw"
+import dockge from "../../../../../public/deploy/merran-dockge.compose.yaml?raw"
+import portainer from "../../../../../public/deploy/merran-portainer.compose.yaml?raw"
+import truenasFull from "../../../../../public/deploy/merran-truenas-postgres-kokoro.compose.yaml?raw"
+import dockgeFull from "../../../../../public/deploy/merran-dockge-postgres-kokoro.compose.yaml?raw"
+import portainerFull from "../../../../../public/deploy/merran-portainer-postgres-kokoro.compose.yaml?raw"
+import starterEnv from "../../../../../public/deploy/merran.env.example?raw"
+import InstallLinks from "../../../../components/install/InstallLinks.astro"
+
+<InstallLinks />
+
+One container, SQLite included, no API keys required. You need Docker, local storage for recipes and photos, and a browser that can reach your server.
+
+Examples use **:next**, the release channel recommended while Merran is in alpha. Pick your platform below; optional services can wait.
+
+<div className="install-shortcuts">
+  <LinkButton href="#environment-variables" variant="secondary">
+    Copy environment settings
+  </LinkButton>
+  <LinkButton
+    href="../../../deploy/merran.env.example"
+    download=".env"
+    variant="secondary"
+    icon="download"
+  >
+    Starter .env
+  </LinkButton>
+</div>
+
+## Choose your installation
+
+**Docker Compose** is the quick start for a Linux Docker host. Already use a manager? Choose its tab.
+
+<Tabs syncKey="install-platform">
+<TabItem label="Docker Compose">
+
+<span id="docker-compose" />
+
+Run this in a **new installation directory** on the Docker host. It downloads the project's Compose file, selects `:next` in `.env`, and starts Merran:
+
+```bash
+mkdir merran
+cd merran
+curl -fsSLO https://raw.githubusercontent.com/merran-app/merran/main/compose.yaml
+printf 'MERRAN_IMAGE=ghcr.io/merran-app/merran:next\n' > .env
+docker compose up -d
+docker compose logs --tail 100 merran
+```
+
+Open **http://YOUR-SERVER:3000** (or **http://localhost:3000** on the Docker host). Find the setup code in **Merran's logs**, then [create your first household](#finish-setup).
+
+**Persistent data:** `./data/app`, beside `compose.yaml`. Keep the directory and `.env` when updating or recreating the container.
+
+Nothing else is required for SQLite. To change the host port, time zone or user IDs, use the [copyable environment example](#environment-variables) below before starting, or edit `.env` and run `docker compose up -d` again.
+
+</TabItem>
+<TabItem label="TrueNAS">
+
+<span id="truenas-custom-app" />
+
+Use **Docker-based Apps on TrueNAS SCALE 24.10 or newer**, with an Apps pool prepared. This is not a TrueNAS CORE or older Kubernetes-app template. See [TrueNAS's custom-app guide](https://apps.truenas.com/managing-apps/installing-custom-apps/).
+
+1. Create a **dedicated local dataset**, such as `tank/apps/merran`, at `/mnt/tank/apps/merran`. Replace `tank` with your pool. Grant the app identity write access and traversal through its parents. The example uses `568:568` (`apps`); choose IDs and dataset ACLs appropriate to your NAS.
+2. Open **Apps → Discover Apps → ⋮ → Install via YAML** and name the app `merran`.
+3. Copy the complete YAML below. Change the dataset path, user/group IDs, host port and time zone as needed, then save to deploy.
+
+<LinkButton
+  href="../../../deploy/merran-truenas.compose.yaml"
+  download="merran-truenas.compose.yaml"
+  variant="secondary"
+>
+  Download TrueNAS YAML
+</LinkButton>
+
+<Code code={truenas} lang="yaml" title="compose.yaml" />
+
+**Environment:** edit `TZ`, `PUID` and `PGID` directly under `environment`. For a public address, uncomment `MERRAN_PUBLIC_URL` and replace the example hostname. No separate `.env` is read by this file.
+
+Open **http://YOUR-NAS-IP:3000** and read the `merran` container's logs for the setup code. Follow [Finish setup](#finish-setup). Preserve the dataset and exported YAML when recreating the app. To update, pull the current `:next` image and redeploy from the app editor.
+
+</TabItem>
+<TabItem label="Dockge">
+
+<span id="dockge-stack" />
+
+Dockge must already be running. Its default stacks directory is `/opt/stacks`, mapped at the **same absolute path** inside Dockge and on the Docker host ([Dockge's installation requirements](https://github.com/louislam/dockge#how-to-install)).
+
+1. Create a stack named **merran**, paste the YAML below, and **save without deploying**. Dockge creates the stack directory.
+2. Create its data directory on the Docker host:
+
+   ```bash
+   sudo mkdir -p /opt/stacks/merran/data
+   ```
+
+3. If your stacks directory differs, use `merran/data` inside that directory. Set the YAML's `PUID`/`PGID` for your host, then deploy the saved stack.
+
+<LinkButton
+  href="../../../deploy/merran-dockge.compose.yaml"
+  download="merran-dockge.compose.yaml"
+  variant="secondary"
+>
+  Download Dockge YAML
+</LinkButton>
+
+<Code code={dockge} lang="yaml" title="compose.yaml" />
+
+**Environment:** edit `TZ`, `PUID` and `PGID` in this stack's `environment` block. Uncomment `MERRAN_PUBLIC_URL` only when you have a real public address. These values are inline; no `.env` is required.
+
+Open **http://YOUR-DOCKER-HOST:3000** and find the code in the stack's **merran** logs. The data mount resolves to `/opt/stacks/merran/data` with Dockge's default layout. Keep this directory and the Compose file when updating; pull the current `:next` image before redeploying the stack.
+
+<details>
+<summary>Permission trouble on a Linux host?</summary>
+
+For a **dedicated Merran directory** using `1000:1000`, these commands prepare that directory without changing unrelated files:
+
+```bash
+sudo chown 1000:1000 /opt/stacks/merran/data
+sudo chmod 750 /opt/stacks/merran/data
+```
+
+Use your actual IDs and path. Merran's entrypoint prepares ownership inside `/data` before dropping privileges. For an existing directory with nested ownership problems, inspect those files and permissions before changing them. On TrueNAS, use dataset ACLs and parent traversal permissions instead of applying these Linux commands to an ACL-managed dataset.
+
+</details>
+
+If Dockge runs on TrueNAS, use a dataset-backed stacks directory or an absolute dedicated dataset path as in the TrueNAS tab. Storage belongs to the Docker host, not the computer displaying Dockge.
+
+</TabItem>
+<TabItem label="Portainer">
+
+<span id="portainer-stack" />
+
+Use **Docker Standalone**, not Swarm. Create `/srv/merran/data` on the selected Docker endpoint first, or choose an existing dedicated directory. On a TrueNAS endpoint, use its `/mnt/POOL/...` dataset path and permitted IDs.
+
+1. Open **Stacks → Add stack → Web editor** and name the stack `merran`.
+2. Paste the YAML below, changing the endpoint's data path, user/group IDs, host port and time zone.
+3. Choose **Deploy the stack**. You can also use **Upload** with the download below ([Portainer's stack guide](https://docs.portainer.io/user/docker/stacks/add)).
+
+<LinkButton
+  href="../../../deploy/merran-portainer.compose.yaml"
+  download="merran-portainer.compose.yaml"
+  variant="secondary"
+>
+  Download Portainer YAML
+</LinkButton>
+
+<Code code={portainer} lang="yaml" title="compose.yaml" />
+
+**Environment:** edit values directly under `environment`. This self-contained file does not read an external `.env` or require Portainer's stack-variable editor. Uncomment `MERRAN_PUBLIC_URL` if using a real public hostname.
+
+Open **http://YOUR-DOCKER-HOST:3000** and inspect the **merran** service container's logs for the setup code. The absolute data path keeps persistence independent of Portainer's own stack directory.
+
+To update, choose **Update the stack** and re-pull the `:next` image ([Portainer's update guide](https://docs.portainer.io/user/docker/stacks/edit)). Keep the data directory and exported YAML.
+
+</TabItem>
+<TabItem label="Docker CLI">
+
+<span id="a-single-docker-container" />
+
+In a new directory on the Docker host:
+
+```bash
+mkdir data
+docker run -d --name merran --restart unless-stopped \
+  -p 3000:3000 -v "$(pwd)/data:/data" \
+  ghcr.io/merran-app/merran:next
+docker logs --tail 100 merran
+```
+
+Open **http://YOUR-SERVER:3000**. The application stores its database, files and secret directly in **./data**. Use the setup code in the logs to [finish setup](#finish-setup).
+
+**Environment:** pass settings using `-e TZ=UTC`, `-e PUID=1000` and `-e PGID=1000` **before the image name**, or use `--env-file .env` with the example below. Set the host port in `-p`, and choose the image tag in the command: `MERRAN_PORT` and `MERRAN_IMAGE` are Compose substitutions, not standalone-container settings.
+
+</TabItem>
+</Tabs>
+
+## Environment variables
+
+**Required for basic SQLite: no credentials or API keys.** The quick start writes just `MERRAN_IMAGE` into `.env` to select the alpha release channel. This longer starter example exposes the settings most people change:
+
+<LinkButton
+  href="../../../deploy/merran.env.example"
+  download=".env"
+  icon="download"
+>
+  Download starter .env
+</LinkButton>
+
+<Code code={starterEnv} lang="dotenv" title=".env — beside compose.yaml" />
+
+| Value               | Change it when…                                                                                    |
+| ------------------- | -------------------------------------------------------------------------------------------------- |
+| `MERRAN_IMAGE`      | You choose another release channel or pin a specific published version.                            |
+| `MERRAN_PORT`       | Port `3000` is already in use; change the browser URL to match.                                    |
+| `TZ`                | You want another IANA time zone for container logs. Household planning time is set in Merran.      |
+| `PUID` / `PGID`     | The data directory belongs to another numeric host user/group. These are not Merran login details. |
+| `MERRAN_PUBLIC_URL` | People reach Merran through a public hostname or reverse proxy.                                    |
+
+For **Docker Compose**, save this as `.env` beside `compose.yaml`, then run `docker compose up -d`. To keep an existing configuration, merge the values you need instead of replacing the file. Review the [full .env.example](https://github.com/merran-app/merran/blob/main/.env.example) for advanced controls and the [settings reference](../../run/settings-reference/) for module variables.
+
+For **TrueNAS, Dockge and Portainer**, edit the inline `environment` block in your tab's YAML instead. The published host port is the **left** side of `"3000:3000"`; the image version is the `image` line. Keep the right-hand container port `3000`.
+
+AI, nutrition and most optional modules can be configured later in **Settings → This server** or **Settings → Household**. Environment-supplied module values override and lock those controls, so leave them unset if you want to manage them in the app. Keep `.env` private if you add keys, passwords or tokens.
+
+## Finish setup
+
+1. Open **http://YOUR-SERVER:3000**, using the IP/hostname and port from your installation.
+2. Open **only Merran's container logs**. Find the searchable **MERRAN SETUP CODE** banner printed after the server starts listening. Postgres and Kokoro logs do not contain the code.
+3. Enter the code and create your account and household. Continue with [first-run setup](../setup/) and [your first meal](../first-week/).
+
+You can also read the active code directly from the running container:
+
+```sh
+docker compose exec merran merran setup-code
+```
+
+For a standalone container, use `docker exec merran merran setup-code`.
+
+<Aside type="caution" title="Keep your data when updating">
+  Never delete the directory mounted at **/data** when updating or recreating
+  Merran. It holds your SQLite database, uploaded photos and generated server
+  secret. Keep the same mount path and back up the whole directory plus your
+  deployment configuration. Postgres also needs its own database backup.
+</Aside>
+
+Use local disk or a local ZFS dataset for SQLite, not an SMB/NFS-mounted database directory. The image's entrypoint prepares ownership as root, then runs Merran as `PUID:PGID` (default `1000:1000`). It can change ownership inside the mount, so use a dedicated Merran directory. The examples retain that entrypoint and do not set Compose `user:`.
+
+Manager instructions follow their platform documentation; these particular TrueNAS, Dockge and Portainer interfaces have not been acceptance-tested for Merran. The [verification record](../../project/release-verification/) describes the container tests that were performed.
+
+## Optional services with Compose
+
+<details className="install-advanced">
+<summary>Advanced: add Postgres, Kokoro voice or a Cloudflare Tunnel</summary>
+
+Choose the services you actually want. Postgres replaces SQLite; Kokoro reads cooking steps aloud; neither is needed for core recipes, planning, or shopping.
+
+| Setup                     | What to run                           | What to configure in Merran                                      |
+| ------------------------- | ------------------------------------- | ---------------------------------------------------------------- |
+| SQLite + device speech    | `merran` only                         | Nothing additional                                               |
+| Postgres                  | `merran` + `db`                       | `DATABASE_URL`                                                   |
+| Self-hosted Kokoro speech | `merran` + `kokoro`                   | `MERRAN_VOICE=kokoro` and `MERRAN_KOKORO_URL=http://kokoro:8880` |
+| Both                      | `merran` + `db` + `kokoro`            | Database URL and voice settings                                  |
+| Cloudflare Tunnel         | Add `cloudflared` to one of the above | Public hostname, tunnel token, and trusted-proxy configuration   |
+
+**Existing SQLite users:** adding Kokoro can use your existing data. Selecting Postgres does **not** migrate that data: it connects Merran to another database. Use the combined Postgres examples for a **fresh installation**; for an existing household, first read [migration limits](../../run/postgres/#moving-an-existing-installation) and keep your original installation and backup.
+
+#### Complete optional-service setup
+
+Use the project Compose profiles, or a complete manager file with **no profiles or external `.env` dependency**. Choose your platform below. For a new Postgres deployment, replace both password placeholders and set paths/IDs before deploying.
+
+<Tabs syncKey="install-platform">
+<TabItem label="Docker Compose">
+
+#### Project Compose file: enable the profiles
+
+This method uses the full `compose.yaml` downloaded in the **Docker Compose** tab above, not one of the smaller host-manager files. The full file already defines `db`, `kokoro`, and `cloudflared`, behind profiles.
+
+For a **new Postgres + Kokoro installation**, edit `.env` beside `compose.yaml`. Replace the existing password line rather than adding a duplicate, and add these values:
+
+```dotenv
+MERRAN_IMAGE=ghcr.io/merran-app/merran:next
+COMPOSE_PROFILES=postgres,voice
+POSTGRES_PASSWORD=REPLACE_WITH_A_LONG_RANDOM_HEX_PASSWORD
+DATABASE_URL=postgres://merran:REPLACE_WITH_A_LONG_RANDOM_HEX_PASSWORD@db:5432/merran
+MERRAN_VOICE=kokoro
+MERRAN_KOKORO_URL=http://kokoro:8880
+```
+
+Generate a random password with a password manager or `openssl rand -hex 24`, and replace **both** password placeholders with the same value. Hex avoids reserved URL characters. Keep `.env` private. Then run:
+
+```bash
+docker compose up -d
+docker compose ps
+docker compose logs --tail 100 db kokoro merran
+```
+
+Keeping `COMPOSE_PROFILES` in `.env` also enables those services during later `pull`, `up`, and `down` commands. Alternatively, supply `--profile postgres --profile voice` each time. See [Docker's profile behavior](https://docs.docker.com/compose/how-tos/profiles/).
+
+- **Postgres only:** use `COMPOSE_PROFILES=postgres`, keep the password/database URL, and omit the two voice settings.
+- **Kokoro with existing SQLite:** use `COMPOSE_PROFILES=voice` and the two voice settings; leave `DATABASE_URL` unset.
+- **Postgres and Kokoro:** use the complete settings block above.
+
+The project file uses `./data/app` for Merran and `./data/postgres` for Postgres. Only Merran's port 3000 is published; services reach each other by Docker names `db` and `kokoro`, not `localhost`. The `.env` file supplies both Compose substitutions and Merran's environment through the project's `env_file` entry. These instructions do not make the smaller SQLite examples gain additional services automatically.
+
+</TabItem>
+<TabItem label="TrueNAS">
+
+[Download TrueNAS Postgres + Kokoro YAML](../../../deploy/merran-truenas-postgres-kokoro.compose.yaml)
+
+<Code
+  code={truenasFull}
+  lang="yaml"
+  title="compose.yaml — fresh Postgres + Kokoro"
+/>
+
+</TabItem>
+<TabItem label="Dockge">
+
+[Download Dockge Postgres + Kokoro YAML](../../../deploy/merran-dockge-postgres-kokoro.compose.yaml)
+
+<Code
+  code={dockgeFull}
+  lang="yaml"
+  title="compose.yaml — fresh Postgres + Kokoro"
+/>
+
+</TabItem>
+<TabItem label="Portainer">
+
+[Download Portainer Postgres + Kokoro YAML](../../../deploy/merran-portainer-postgres-kokoro.compose.yaml)
+
+<Code
+  code={portainerFull}
+  lang="yaml"
+  title="compose.yaml — fresh Postgres + Kokoro"
+/>
+
+</TabItem>
+<TabItem label="Docker CLI">
+
+Use the **Docker Compose** tab for a complete multi-service deployment. A single `docker run` command does not create Postgres, Kokoro or a tunnel. Preserve your existing data mount when moving to Compose.
+
+</TabItem>
+</Tabs>
+
+1. **Prepare storage.** For TrueNAS, create two dedicated local datasets and replace `tank` with your pool. Allow the Merran identity to use its app dataset; Postgres manages its own data ownership, so do not apply Merran's UID to the database dataset. Its startup must be able to initialize and write that dataset. For Dockge, save the stack first, then create `data` and `postgres` beside its Compose file. For Portainer, create both directories on the selected endpoint.
+2. **Edit the file.** Replace both password placeholders with the same random hex password, choose permitted Merran `PUID`/`PGID`, and adjust host port/time zone. The database does not use Merran's `PUID`/`PGID` variables. No `5432` or `8880` host mapping is needed.
+3. **Deploy the whole stack** using [your manager's steps](#choose-your-installation). The database health check gates Merran startup. Kokoro's container may be started before its model is ready; wait for its logs to show it is serving before testing speech.
+4. **Verify Postgres.** Open `http://YOUR-SERVER:3000/api/health/ready` (with your chosen port). Expect `status: "ready"` and `database: "postgres"`, then use Merran's setup code from its logs.
+5. **Verify Kokoro.** In **Settings → This server → Voice**, check the provider/address and use **Hear …** to preview a voice. Environment-set values are managed by Compose; change them there and recreate Merran. Kokoro produces speech audio; microphone commands still depend on HTTPS and browser support.
+
+To use **Postgres without Kokoro**, remove the `kokoro` service, its `depends_on` entry, and the two voice environment values. To use **Kokoro with SQLite**, remove the `db` service, its dependency, and `DATABASE_URL`; preserve Merran's existing `/data` mount. There is no automatic cross-database migration in either edit.
+
+Kokoro uses the CPU image in this example, so no GPU/device mapping is required. It adds image/model storage and CPU/RAM use; startup and speech speed depend on the host. See [Kokoro-FastAPI](https://github.com/remsky/Kokoro-FastAPI) for image/platform options; use a tested release tag if you need a fixed version. If speech falls back to the device, inspect the Kokoro logs and confirm `http://kokoro:8880` is reachable from Merran. The [voice guide](../../integrations/optional-modules/#server-voices) covers playback and provider troubleshooting.
+
+The Postgres 18 image mounts at `/var/lib/postgresql`, not the older `/var/lib/postgresql/data` layout. Keep this major version and mount together; see the [official image notes](https://hub.docker.com/_/postgres). Once initialized, changing the Compose password does not change the database role's password. Back up Postgres with a database dump **and** Merran's app files; do not use the SQLite-only directory-backup procedure for this stack.
+
+#### Optional Cloudflare Tunnel
+
+For the **project Compose file**, [create a remotely managed tunnel in Cloudflare](https://developers.cloudflare.com/tunnel/get-started/), set its published hostname's service to `http://merran:3000`, and add these values to `.env`:
+
+```dotenv
+# Keep any existing profiles: add tunnel to the comma-separated list.
+COMPOSE_PROFILES=postgres,voice,tunnel
+CLOUDFLARE_TUNNEL_TOKEN=REPLACE_WITH_YOUR_TUNNEL_TOKEN
+MERRAN_PUBLIC_URL=https://food.example.com
+```
+
+If using SQLite/device speech, use `COMPOSE_PROFILES=tunnel` instead. Run `docker compose up -d` to start the connector and recreate Merran with its public URL. The hostname must belong to your configured tunnel; `food.example.com` is a placeholder.
+
+For a **UI-managed file**, add this service under its existing `services:` key, alongside `merran`, `db`, and/or `kokoro`:
+
+```yaml
+cloudflared:
+  image: cloudflare/cloudflared:latest
+  restart: unless-stopped
+  command: tunnel --no-autoupdate run
+  environment:
+    TUNNEL_TOKEN: REPLACE_WITH_YOUR_TUNNEL_TOKEN
+  depends_on:
+    - merran
+```
+
+Indent this service two spaces to match `merran`. Add `MERRAN_PUBLIC_URL: https://food.example.com` under **Merran's** `environment`, using your real hostname. Keep the token private. Both containers must share the stack's network for `merran:3000` to resolve. Configure trusted proxies and verify sign-in/live updates using [HTTPS and remote access](../../run/https-and-remote-access/); starting a connector alone does not finish DNS/hostname/proxy setup.
+
+#### Other optional features
+
+Most modules need settings or credentials, rather than another Compose container:
+
+| Feature                              | Installation/configuration                                                                                                                                                                         |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AI imports, assistant, and discovery | Add supported server/household provider keys through [AI setup](../../run/ai-setup/). Postgres or Kokoro does not provide an AI model.                                                             |
+| Nutrition                            | Add a USDA key and/or eligible AI through [Nutrition](../../integrations/optional-modules/#nutrition).                                                                                             |
+| Video import                         | The Merran image includes `yt-dlp` and `ffmpeg`; configure the module and AI through [Video imports](../../integrations/optional-modules/#video-imports). No separate tools container is required. |
+| Generated photos                     | Enable the module and an eligible image-provider key through [AI recipe photos](../../integrations/optional-modules/#ai-recipe-photos).                                                            |
+| OpenAI speech                        | Configure an eligible key and choose OpenAI in Voice; no Kokoro container is needed. See [server voices](../../integrations/optional-modules/#server-voices).                                      |
+| Kroger / experimental Walmart        | Follow [Kroger setup](../../integrations/kroger/) or [Walmart setup](../../integrations/walmart/); Walmart also uses the browser extension.                                                        |
+
+These are additional setup paths, not a reason to enable every module. The environment-variable [settings reference](../../run/settings-reference/) lists the supported names. Compose parsing is checked for the examples; the new combined stack and host-manager interfaces have not received live provider/device acceptance testing.
+
+</details>
+
+## Backups, updates, and HTTPS
+
+Before an update, stop Merran and back up the **whole directory mounted at `/data`**, plus your Compose configuration. For the examples above, those directories are:
+
+| Example                 | Host directory            |
+| ----------------------- | ------------------------- |
+| TrueNAS                 | `/mnt/tank/apps/merran`   |
+| Dockge (default layout) | `/opt/stacks/merran/data` |
+| Portainer               | `/srv/merran/data`        |
+
+Adapt the [backup and restore walkthrough](../../run/backup-restore/) to your actual mount path. For a consistent SQLite dataset snapshot, stop Merran first; keep a separate backup and verify a restore. Recreating a container with the same data does not replace backing it up. Follow [updating and backups](../../run/updating-and-backups/) before changing image versions.
+
+For remote access, follow [HTTPS and remote access](../../run/https-and-remote-access/) and set `MERRAN_PUBLIC_URL` to the address people actually use. The commented `food.example.com` value is a placeholder, not a working hostname. HTTP on your LAN is enough to begin setup; phone installation/sharing and some browser features need HTTPS.
+
+For Postgres and/or Kokoro, use [the complete optional-service setup](#optional-services-with-compose). The [Postgres guide](../../run/postgres/) adds external-database and migration details. The minimal host-manager examples remain SQLite-only.
+
+## Choose an image
+
+The examples use **:next** while Merran is in alpha. Pulling this tag and recreating the container installs the newest published release, including alpha releases. Keep the same data directory and back up before updating.
+
+- **next** follows the newest published release, including alpha releases.
+- **latest** follows stable releases. It will become the recommended tag with the first full release.
+- **edge** follows development on main, for testing changes before a release.
+- A specific release tag keeps an installation on that version. To update a pinned installation, change `MERRAN_IMAGE` in `.env`, the YAML `image` line or the `docker run` image before pulling and recreating.
+
+See [published releases](https://github.com/merran-app/merran/releases) for available versions and the [verification record](../../project/release-verification/) for tested configurations.
+
+## If the page does not open
+
+Check that the container is running with Docker's container list, then inspect its logs. Confirm that port 3000 is available and your firewall permits access from your device. If you change `MERRAN_PORT` in the Compose environment file, use that port in the browser.
+
+- **Bind source path does not exist:** create the directory on the selected Docker host or correct the YAML path. A path on your laptop is not a path on a remote NAS.
+- **Permission denied / operation not permitted:** confirm dataset ACLs, parent traversal, and matching `PUID`/`PGID`. A read-only dataset or ACL that prevents startup ownership changes needs host-side correction; avoid granting access to the whole pool.
+- **Address already in use:** change only the published host port, then recreate the container and use that port in your URL.
+- **Setup appears again after redeploy:** check the actual `/data` bind source before creating another account. You may have mounted an empty directory rather than your existing installation.
+
+Continue with [first-run setup](../setup/).

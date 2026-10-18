@@ -36,6 +36,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Prebuilt, signed images; releases with notes | Detail | Built | A Release workflow run with a version: images for amd64 and arm64, signed with cosign, with an SBOM and provenance; the extension's zips; notes drafted by Release Drafter from each pull request's title (`feat:`, `fix:`...), under a heading for each kind, with highlights written by hand; `edge` from every commit to main |
 | Automatic backups before migrations | Detail | Planned | Manual backups and restores are available; startup migration currently calls the migrator directly |
 | Release installation and backup/restore smoke tests | Detail | Built | SQLite and Postgres tests recorded in [site-release-verification.md](site-release-verification.md); automated restore coverage in CI remains planned |
+| Platform-specific installation walkthroughs | Key | Built | Docker Compose, TrueNAS, Dockge, Portainer and Docker CLI tabs; alpha release-channel examples, copyable starter environment, persistent storage guidance and optional-service downloads ([operations.md](operations.md#host-manager-installation-examples--october-17-2026)) |
 | Public documentation site | Key | Built | https://merran.app is published; PR #8 adds integration/deployment guides and scoped release verification |
 | Unraid template and hosted app demo | Key | Planned | Homepage previews are scripted examples, not a hosted application instance |
 

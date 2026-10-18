@@ -55,18 +55,18 @@ The [installation guide](https://merran.app/docs/get-started/install/) includes 
 
 Merran runs in one Docker container with SQLite included. Postgres is optional.
 
-For a development build:
+Use the **:next** release channel while Merran is in alpha:
 
 ```bash
 mkdir data
 docker run -d --name merran --restart unless-stopped \
-  -p 3000:3000 -v ./data:/data ghcr.io/merran-app/merran:edge
+  -p 3000:3000 -v "$(pwd)/data:/data" ghcr.io/merran-app/merran:next
 docker logs merran
 ```
 
 Open **http://YOUR-SERVER:3000** and use the setup code from the log to create your account and household.
 
-**Merran is in alpha.** The `edge` image follows development on main. Once releases are available, choose a published version for a repeatable installation. Back up the complete data directory before updating.
+**Merran is in alpha.** `next` follows published releases, including alphas; `edge` follows development on main. The docs will recommend `latest` with the first full release. You can pin a specific published version if you prefer to choose when to change versions. Never delete the persistent data directory when recreating Merran: it contains the database, photos and server secret. Back up the complete directory before updating.
 
 See the [installation guide](https://merran.app/docs/get-started/install/) for Docker Compose and image tags, and [updating and backups](https://merran.app/docs/run/updating-and-backups/) for maintaining your server.
 

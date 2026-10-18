@@ -39,6 +39,8 @@ If using the project Compose file's optional database, voice or tunnel, keep the
 
 Read the [release notes](https://github.com/merran-app/merran/releases), make a backup, then run from the Compose directory:
 
+The installation guide uses `:next` during alpha. Pulling and recreating installs the newest published release on that channel. If you chose a specific version tag instead, change `MERRAN_IMAGE` in `.env` or your host-manager YAML's `image` tag to your chosen release before pulling. Preserve the same data directory and original server secret throughout the update.
+
 ```bash
 docker compose pull
 docker compose up -d
