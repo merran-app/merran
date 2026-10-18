@@ -3704,6 +3704,57 @@
           "enumItems": [],
           "mappedType": "text"
         },
+        "delivery_job_id": {
+          "name": "delivery_job_id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "delivery_token_id": {
+          "name": "delivery_token_id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
         "expires_at": {
           "name": "expires_at",
           "type": "datetime",
@@ -3755,6 +3806,23 @@
           "enumItems": [],
           "mappedType": "text"
         },
+        "queued_at": {
+          "name": "queued_at",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
         "role": {
           "name": "role",
           "type": "text",
@@ -3774,6 +3842,23 @@
             "member"
           ],
           "mappedType": "enum"
+        },
+        "sent_at": {
+          "name": "sent_at",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
         },
         "token_hash": {
           "name": "token_hash",
@@ -3840,6 +3925,26 @@
         },
         {
           "columnNames": [
+            "delivery_job_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "invite_links_delivery_job_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "delivery_token_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "invite_links_delivery_token_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "household_id"
           ],
           "composite": false,
@@ -3899,6 +4004,30 @@
             "id"
           ],
           "referencedTableName": "users",
+          "deleteRule": "set null"
+        },
+        "invite_links_delivery_job_id_foreign": {
+          "columnNames": [
+            "delivery_job_id"
+          ],
+          "constraintName": "invite_links_delivery_job_id_foreign",
+          "localTableName": "invite_links",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "jobs",
+          "deleteRule": "set null"
+        },
+        "invite_links_delivery_token_id_foreign": {
+          "columnNames": [
+            "delivery_token_id"
+          ],
+          "constraintName": "invite_links_delivery_token_id_foreign",
+          "localTableName": "invite_links",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "secrets",
           "deleteRule": "set null"
         },
         "invite_links_household_id_foreign": {

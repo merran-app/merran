@@ -28,7 +28,7 @@ There is no read-only household membership role. **Member** still permits everyd
 
 ## Invite someone
 
-1. In **Settings → Household → Invite links**, choose **Make a link**.
+1. In **Settings → Household → Invite links** (**Invitations** in the unreleased email update), choose **Make a link**.
 2. Choose **Member** or **Admin**, then **Make link**.
 3. Copy the link immediately and send it privately to the intended person. The full link is shown only once.
 4. Have them open the link and complete the join flow, then check **Members** for their account.
@@ -36,6 +36,14 @@ There is no read-only household membership role. **Member** still permits everyd
 Each link works once and expires after seven days. Anyone holding it can use it. Use **Cancel** on an unused invite if it went to the wrong person, then make a new one. Owners are appointed after joining; an invite cannot directly grant ownership.
 
 **Expected result:** the person appears in **Members** with the selected role and can access the shared household.
+
+## Email an invitation (not released yet)
+
+After the server administrator [configures Email and the public address](../configuration/#email-transport-not-released-yet), household owners and admins can use **Settings → Household → Invitations → Invite by email**. Enter **Email** and choose **Role**, then choose **Invite by email**. The invitation expires seven days after creation and can be accepted once, using the address it was sent to. New accounts have that address filled in; existing users sign in with the matching account. If another account is signed in, use **Sign out and use another account** on the join page. Opening the link does not join automatically: choose **Join** or **Make account and join**.
+
+The list shows **Waiting to send**, **Sending**, **Accepted by mail service**, **Sending failed**, or **Sending cancelled**. Provider acceptance does not guarantee inbox delivery. Check spam and the provider dashboard if needed. Temporary failures retry automatically up to three attempts with increasing waits. **Resend email** is available after delivery finishes or fails; wait at least one minute between sends. Resending keeps the same link and original expiry. Each household can queue up to 20 emails or resends per hour.
+
+**Cancel** invalidates the link and stops a waiting job from sending it. Mail already in flight cannot be recalled, but its cancelled link cannot be used. SMTP retries can occasionally produce duplicate messages after a connection loss; they contain the same single-use link. Expired invitations disappear from the pending list; create a new one if needed. Copyable links remain available when email is disabled. Invite recipients use the join link, never the server setup code. Password recovery and email verification are still planned.
 
 ## Change a role or remove someone
 

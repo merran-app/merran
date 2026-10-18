@@ -82,6 +82,7 @@ export const InviteTokenParam = z.object({
 export const InviteSchema = z
   .object({
     household: z.object({ name: z.string() }),
+    email: z.email().optional(),
     role: z.enum(INVITE_ROLES),
     expiresAt: z.iso.datetime(),
   })

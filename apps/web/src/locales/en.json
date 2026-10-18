@@ -109,6 +109,9 @@
       "connectionFailure": "The connection was interrupted. Try signing in before submitting setup again."
     },
     "join": {
+      "invitedEmail": "This invitation is for {{email}}.",
+      "wrongEmail": "Sign in with {{email}} to accept this invitation.",
+      "switchAccount": "Sign out and use another account",
       "title": "Join {{household}}",
       "signedIn": "You can switch between your households from the account menu.",
       "submit": "Join",
@@ -281,8 +284,20 @@
         "left": "You left the household."
       },
       "invites": {
-        "title": "Invite links",
-        "description": "Each link works once, for 7 days.",
+        "emailInvite": "Invite by email",
+        "emailDescription": "Send a single-use invitation that lasts seven days. Only the invited email address can accept it.",
+        "emailUnavailable": "Ask the server administrator to configure Email and the server's public address. You can still make and share an invite link.",
+        "emailQueued": "Invitation queued. You can follow its status in the invitations list.",
+        "resend": "Resend email",
+        "delivery": {
+          "queued": "Waiting to send",
+          "sending": "Sending",
+          "accepted": "Accepted by mail service",
+          "failed": "Sending failed",
+          "cancelled": "Sending cancelled"
+        },
+        "title": "Invitations",
+        "description": "Each invitation works once, for 7 days. Mail service acceptance does not confirm inbox delivery.",
         "none": "No open invites",
         "noneHint": "Make a link to invite someone.",
         "make": "Make a link",
@@ -478,7 +493,7 @@
       },
       "email": {
         "title": "Email",
-        "description": "Connect your SMTP provider. This first step supports test messages; email invitations and password recovery are still being built.",
+        "description": "Connect your SMTP provider for household invitations. Password recovery by email is still being built.",
         "enabled": "Enable email",
         "enabledHint": "Off by default. Complete and save the SMTP settings before sending a test.",
         "host": "SMTP host",

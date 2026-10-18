@@ -13,7 +13,7 @@ The feature baseline is [v0.1.0-alpha.1](https://github.com/merran-app/merran/re
 
 ## In progress (not released yet)
 
-- **Email delivery:** optional SMTP configuration and administrator test messages are implemented on the development branch. Household email invitations, delivery retries, password recovery and verification remain in progress. Copyable invite links continue to work without email.
+- **Email delivery:** SMTP settings, administrator tests and address-bound household invitations with queued delivery, retry, resend and cancellation are implemented on the development branch. Password recovery and email verification remain planned. Copyable invite links continue to work without email.
 
 ## Available now
 

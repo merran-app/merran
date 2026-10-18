@@ -6,8 +6,8 @@ import { User } from "./users.ts"
 
 /**
  * Better Auth's invitations, which go to an email address and can only be
- * accepted by that address. Kept for when Merran can send email; until
- * then invites are links (invite_links).
+ * accepted by that address. Reserved for Better Auth compatibility; Merran's
+ * own email invitations extend invite_links and use its existing join flow.
  */
 export const EmailInvitation = defineEntity({
   name: "EmailInvitation",

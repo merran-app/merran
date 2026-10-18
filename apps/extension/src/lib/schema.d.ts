@@ -809,6 +809,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/households/current/invites/{inviteId}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend an email invitation
+         * @description Household admins only. Queues the same link without extending its seven-day expiry. Wait at least one minute between sends; invitations already queued or sending cannot be resent. Counts toward the household's 20-per-hour limit.
+         */
+        post: operations["resendInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/invites/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Email a household invitation
+         * @description Household admins only. Queues a single-use, seven-day invitation bound to the recipient address. Requires configured SMTP and MERRAN_PUBLIC_URL. Limited to 20 email invitations or resends per household per hour. No link or token is returned.
+         */
+        post: operations["emailInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/households/current/jobs/{jobId}": {
         parameters: {
             query?: never;
@@ -4197,6 +4237,8 @@ export interface components {
             household: {
                 name: string;
             };
+            /** Format: email */
+            email?: string;
             /** @enum {string} */
             role: "admin" | "member";
             /** Format: date-time */
@@ -5476,6 +5518,10 @@ export interface components {
             expiresAt: string;
             /** Format: date-time */
             createdAt: string;
+            /** Format: email */
+            email?: string;
+            /** @enum {string} */
+            delivery?: "queued" | "sending" | "accepted" | "failed" | "cancelled";
         };
         /**
          * @example {
@@ -11559,6 +11605,15 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description Use the invited email address. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description No invite has that link. */
             404: {
                 headers: {
@@ -13128,6 +13183,159 @@ export interface operations {
             };
             /** @description No such invite. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    resendInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inviteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Queued for delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InviteLink"];
+                };
+            };
+            /** @description Email or the public URL is not configured. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No pending email invitation. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Already queued or sending. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Wait before resending, or the hourly limit was reached. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    emailInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                    /**
+                     * @default member
+                     * @enum {string}
+                     */
+                    role?: "admin" | "member";
+                };
+            };
+        };
+        responses: {
+            /** @description Queued for delivery. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InviteLink"];
+                };
+            };
+            /** @description Email or the public URL is not configured. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Already a member, or an invitation is pending. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description This household has reached its hourly invitation limit. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

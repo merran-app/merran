@@ -34,7 +34,7 @@ export default (router: Router, _deps: AppDeps) => {
     const invites = await em.find(
       InviteLink,
       { usedAt: null, expiresAt: { $gt: new Date() } },
-      { orderBy: { createdAt: "desc" } }
+      { orderBy: { createdAt: "desc" }, populate: ["deliveryJob"] }
     )
     return c.json(invites.map(describeInviteLink), 200)
   })

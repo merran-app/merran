@@ -46,13 +46,13 @@ For AI, follow [AI setup and costs](../ai-setup/) to connect providers, select m
 
 ### Email transport (not released yet)
 
-In **Settings → This server → Email**, enter **SMTP host**, **SMTP port**, **SMTP username**, **SMTP password or API key**, and **Sender email address**. Save with **Save**, turn on **Enable email**, then choose **Send test email**. Tests go to your account's email address. Check your inbox and spam folder; provider acceptance does not guarantee inbox delivery. This first implementation sends test messages; email invitations and password recovery are still being built. Continue using invite links and operator password recovery.
+In **Settings → This server → Email**, enter **SMTP host**, **SMTP port**, **SMTP username**, **SMTP password or API key**, and **Sender email address**. Save with **Save**, turn on **Enable email**, then choose **Send test email**. Tests go to your account's email address. Check your inbox and spam folder; provider acceptance does not guarantee inbox delivery. Household email invitations are supported in this unreleased change. Password recovery by email is still planned; continue using operator password recovery.
 
 For [Resend](https://resend.com/docs/send-with-smtp), verify a domain you own, use host `smtp.resend.com`, port `465`, turn on **Use TLS from the start**, set username `resend`, and use a sending API key as the password. The sender address must be allowed by your provider. Other services use the same fields with their own SMTP credentials.
 
 For port `587`, leave **Use TLS from the start** off: Merran requires STARTTLS. Both modes require encryption and valid certificates. A trusted relay can omit both username and password. Use **Remove saved SMTP credentials** to clear both; environment-locked fields must be changed in the server environment.
 
-The equivalent environment variables are `MERRAN_EMAIL_ENABLED`, `MERRAN_SMTP_HOST`, `MERRAN_SMTP_PORT`, `MERRAN_SMTP_SECURITY` (`tls` or `starttls`), `MERRAN_SMTP_USERNAME`, `MERRAN_SMTP_PASSWORD`, and `MERRAN_EMAIL_FROM`. Setting them locks those fields in the app. Email defaults to off. Before invitation or recovery links are enabled in a future change, configure `MERRAN_PUBLIC_URL` to an address recipients can reach.
+The equivalent environment variables are `MERRAN_EMAIL_ENABLED`, `MERRAN_SMTP_HOST`, `MERRAN_SMTP_PORT`, `MERRAN_SMTP_SECURITY` (`tls` or `starttls`), `MERRAN_SMTP_USERNAME`, `MERRAN_SMTP_PASSWORD`, and `MERRAN_EMAIL_FROM`. Setting them locks those fields in the app. Email defaults to off. Email invitations additionally require `MERRAN_PUBLIC_URL` set to an HTTP(S) origin recipients can reach, such as `https://meals.example.com`, without a path, query, fragment or credentials. A working test message alone does not enable invitations without that address. See [household invitations](../household-roles/#email-an-invitation-not-released-yet).
 
 Merran generates a secret in its data directory when no explicit secret is supplied. Keep it with your backups: it protects saved credentials. Do not replace it casually.
 
