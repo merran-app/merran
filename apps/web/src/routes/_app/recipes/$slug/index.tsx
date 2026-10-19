@@ -347,7 +347,7 @@ function RecipeView({
             {recipe.name}
           </h1>
           {recipe.description && (
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg text-muted-foreground lg:line-clamp-5">
               {recipe.description}
             </p>
           )}
