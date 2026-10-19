@@ -53,6 +53,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           package: "@merran/server"
+          web-styles: "true"
       - run: pnpm exec prettier --check apps/server
       - run: pnpm --filter @merran/server typecheck
       - run: pnpm --filter @merran/server test:all
@@ -84,6 +85,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           package: "@merran/extension"
+          web-styles: "true"
       - run: pnpm exec prettier --check apps/extension
       - run: pnpm --filter @merran/extension typecheck
       - if: inputs.extension-build
@@ -99,6 +101,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           package: "@merran/shared"
+          web-styles: "true"
       - run: pnpm exec prettier --check packages/shared
       - run: pnpm --filter @merran/shared typecheck
       - run: pnpm --filter @merran/shared test
@@ -111,6 +114,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           package: "@merran/telemetry"
+          web-styles: "true"
       - run: pnpm exec prettier --check apps/telemetry
       - run: pnpm --filter @merran/telemetry typecheck
       - run: pnpm --filter @merran/telemetry test
