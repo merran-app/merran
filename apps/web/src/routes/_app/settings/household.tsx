@@ -35,6 +35,7 @@ import {
 import { TastesCard } from "@/features/household/tastes-card"
 import { ThemeNightsCard } from "@/features/household/theme-nights-card"
 import { autoplanQuery } from "@/features/plan/queries"
+import { SettingsPage } from "@/features/settings/settings-page"
 
 /** How linking a Kroger account went, when Kroger sends someone back. */
 type HouseholdSearch = {
@@ -73,24 +74,77 @@ function HouseholdSettings() {
   const { t } = useTranslation()
   const me = useMe()
   const household = useActiveHousehold()
+  const canManage = isAdminRole(household?.role)
 
   return (
     <>
       {household ? (
-        <>
-          <DetailsCard />
-          {isAdminRole(household.role) && <PlanningCard />}
-          <TastesCard />
-          {isAdminRole(household.role) && <ThemeNightsCard />}
-          {isAdminRole(household.role) && <AutoplanCard />}
-          {isAdminRole(household.role) && <HouseholdAiCard />}
-          {isAdminRole(household.role) && <NutritionLibraryCard />}
-          {isAdminRole(household.role) && <PhotosCard />}
-          {isAdminRole(household.role) && <YourStoresCard />}
-          {isAdminRole(household.role) && <StoresCard />}
-          <MembersCard />
-          {isAdminRole(household.role) && <InvitesCard />}
-        </>
+        <SettingsPage
+          groups={[
+            {
+              id: "household-details",
+              title: t("settings.household.groups.details.title"),
+              description: t("settings.household.groups.details.description"),
+              content: <DetailsCard />,
+            },
+            {
+              id: "people-and-households",
+              title: t("settings.household.groups.people.title"),
+              description: t("settings.household.groups.people.description"),
+              content: (
+                <>
+                  <MembersCard />
+                  {canManage && <InvitesCard />}
+                  {me.serverAdmin && <NewHouseholdCard />}
+                </>
+              ),
+            },
+            {
+              id: "meal-planning",
+              title: t("settings.household.groups.planning.title"),
+              description: t("settings.household.groups.planning.description"),
+              content: (
+                <>
+                  {canManage && <PlanningCard />}
+                  <TastesCard />
+                  {canManage && <ThemeNightsCard />}
+                  {canManage && <AutoplanCard />}
+                </>
+              ),
+            },
+            ...(canManage
+              ? [
+                  {
+                    id: "recipes-and-ai",
+                    title: t("settings.household.groups.recipes.title"),
+                    description: t(
+                      "settings.household.groups.recipes.description"
+                    ),
+                    content: (
+                      <>
+                        <HouseholdAiCard />
+                        <NutritionLibraryCard />
+                        <PhotosCard />
+                      </>
+                    ),
+                  },
+                  {
+                    id: "shopping-and-stores",
+                    title: t("settings.household.groups.shopping.title"),
+                    description: t(
+                      "settings.household.groups.shopping.description"
+                    ),
+                    content: (
+                      <>
+                        <YourStoresCard />
+                        <StoresCard />
+                      </>
+                    ),
+                  },
+                ]
+              : []),
+          ]}
+        />
       ) : (
         <Empty className="rounded-3xl border border-dashed">
           <EmptyHeader>
@@ -104,7 +158,7 @@ function HouseholdSettings() {
           </EmptyHeader>
         </Empty>
       )}
-      {me.serverAdmin && <NewHouseholdCard />}
+      {!household && me.serverAdmin && <NewHouseholdCard />}
     </>
   )
 }
