@@ -29,6 +29,15 @@ After Fill the week or scheduled automatic planning, make it quick to move meals
 - Preserve servings, paired recipes and notes. Decide how to handle cooked/skipped meals and theme-night mismatches.
 - Review the effect on an already-generated shopping list so moving meals does not duplicate ingredients or silently discard checked items.
 
+## See recipes already planned for the week
+
+Decided and implemented October 18, 2026, not released yet. Show **Already planned** in the recipe picker when a recipe is already on the destination week, and **Planned this week** on recipe-library cards for the household's current week.
+
+- Use the household's time zone and first day of the week. Adding to a future or past week checks that week; picking a side uses the meal's selected destination week.
+- Count main dishes and sides, dated meals and the any-day pool. Cooked entries still count toward variety for the week; skipped entries do not.
+- Keep recipes selectable so intentional repeats are possible. Refresh badges through the existing plan queries after additions, moves, removals, status changes and Undo.
+- Keep the existing API and badge colors.
+
 ## Completion celebrations
 
 Decided October 18, 2026; built, not released yet. Reward finishing a shopping list or cooking with a randomly chosen shower of confetti, stars or petals. Pieces enter above the viewport at staggered times, fall through the full screen, and flutter and tumble independently; the shower clears within five seconds.

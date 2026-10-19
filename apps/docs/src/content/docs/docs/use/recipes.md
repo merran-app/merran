@@ -60,6 +60,8 @@ Text and photo controls appear only when AI is available. Video processing can t
 
 ## Edit and organize
 
+**Not released yet:** cards show **Planned this week** when the recipe is on the household's current weekly plan, as a main dish or side, including the any-day pool. The badge follows the household's time zone and week-start setting. Cooked meals still count; skipped meals do not.
+
 1. Open a recipe and choose **Edit**.
 2. Correct the name, original link, servings, times, ingredients, or steps. Use **Notes** for lasting tips and substitutions.
 3. Under **Tags**, type a tag and press Enter or type a comma. Add a rating if useful.

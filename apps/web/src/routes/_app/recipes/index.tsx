@@ -34,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { SitesSpotlight, SitesStart } from "@/features/find/sites-spotlight"
 import { AddRecipeDialog } from "@/features/recipes/add-recipe-dialog"
+import { usePlannedRecipes } from "@/features/plan/use-planned-recipes"
 import {
   DeleteRecipesDialog,
   TagRecipesDialog,
@@ -107,6 +108,7 @@ function RecipesPage() {
   const [managingTags, setManagingTags] = React.useState(false)
   const recipes = useInfiniteQuery(recipesQuery(search))
   const deals = useDeals()
+  const planned = usePlannedRecipes()
 
   const setSearch = React.useCallback(
     (next: RecipeSearch) => void navigate({ search: next, replace: true }),
@@ -287,6 +289,7 @@ function RecipesPage() {
                 <RecipeCard
                   key={recipe.id}
                   recipe={recipe}
+                  planned={planned.has(recipe.id)}
                   onSale={deals.recipes.get(recipe.id)}
                   select={{
                     selecting: selection.selecting,

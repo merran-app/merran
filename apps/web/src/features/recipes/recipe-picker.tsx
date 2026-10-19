@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
+import { Badge } from "@/components/ui/badge"
+import { usePlannedRecipes } from "@/features/plan/use-planned-recipes"
 import {
   InputGroup,
   InputGroupAddon,
@@ -24,13 +26,17 @@ export function RecipePicker({
   onPick,
   exclude = [],
   label,
+  planDate,
 }: {
   onPick: (recipe: RecipeSummary) => void
   exclude?: readonly string[]
   /** What the search box is for. */
   label: string
+  /** A day in the week this meal will join. */
+  planDate: string | null
 }) {
   const { t } = useTranslation()
+  const planned = usePlannedRecipes(planDate)
   const [words, setWords] = React.useState("")
   const [find, setFind] = React.useState("")
 
@@ -93,7 +99,14 @@ export function RecipePicker({
                 ) : (
                   <span className="size-9 shrink-0 rounded-lg bg-secondary" />
                 )}
-                <span className="min-w-0 flex-1 truncate">{recipe.name}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{recipe.name}</span>
+                  {planned.has(recipe.id) && (
+                    <Badge variant="secondary">
+                      {t("plan.alreadyPlanned")}
+                    </Badge>
+                  )}
+                </span>
                 {recipe.totalMinutes != null && (
                   <span className="shrink-0 text-xs text-muted-foreground">
                     {formatMinutes(t, recipe.totalMinutes)}

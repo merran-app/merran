@@ -127,6 +127,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 |---|---|---|---|
 | A week of meals, with the meals your household eats | Headline | Built | Breakfast, lunch and dinner each optional |
 | A pool of meals for the week, cooked in any order | Key | Built | |
+| See which recipes are already planned for the week | Detail | Built | Not released yet: Already planned badges in meal and side pickers for the destination week; Planned this week on recipe-library cards. Includes sides and any-day meals, counts cooked meals and excludes skipped ones ([decision](shopping-and-planning-feedback.md#see-recipes-already-planned-for-the-week)) |
 | What's next: tonight's dinner, this afternoon's lunch | Key | Built | |
 | Fill the week, re-roll, Something else | Headline | Built | No AI needed |
 | Saying why for each pick: on hand, needs using, not had lately... | Headline | Built | With the stores module, what's on sale too |

@@ -44,8 +44,10 @@ export function RecipeCard({
   recipe,
   select,
   onSale,
+  planned,
 }: {
   recipe: RecipeSummary
+  planned?: boolean
   select?: CardSelect
   /** What it uses that's a deal at the household's store. */
   onSale?: readonly RecipeSale[] | undefined
@@ -71,7 +73,12 @@ export function RecipeCard({
           select.picked && "border-primary ring-2 ring-primary"
         )}
       >
-        <CardContent recipe={recipe} picked={select.picked} onSale={onSale} />
+        <CardContent
+          recipe={recipe}
+          picked={select.picked}
+          onSale={onSale}
+          planned={planned}
+        />
       </button>
     )
   }
@@ -82,7 +89,7 @@ export function RecipeCard({
       className={CARD}
       {...press}
     >
-      <CardContent recipe={recipe} onSale={onSale} />
+      <CardContent recipe={recipe} onSale={onSale} planned={planned} />
     </Link>
   )
 }
@@ -91,8 +98,10 @@ function CardContent({
   recipe,
   picked,
   onSale,
+  planned,
 }: {
   recipe: RecipeSummary
+  planned?: boolean | undefined
   /** Picked or not, while selecting. */
   picked?: boolean
   onSale?: readonly RecipeSale[] | undefined
@@ -168,6 +177,9 @@ function CardContent({
           {recipe.rating !== null && <RatingStars rating={recipe.rating} />}
         </div>
         <div className="flex flex-wrap gap-1.5">
+          {planned && (
+            <Badge variant="secondary">{t("recipes.plannedThisWeek")}</Badge>
+          )}
           {/* New until it's made, then when it last was. */}
           {recipe.lastMadeAt ? (
             <Badge className="bg-accent text-accent-foreground">

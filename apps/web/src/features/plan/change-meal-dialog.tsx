@@ -84,6 +84,7 @@ export function ChangeMealDialog({
         {pickingSide ? (
           <div className="grid min-w-0 gap-3">
             <RecipePicker
+              planDate={parseWhen(when).date}
               label={t("plan.pickSide")}
               exclude={entry.recipe ? [entry.recipe.id] : []}
               onPick={(recipe) => {
