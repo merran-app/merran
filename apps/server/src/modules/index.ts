@@ -1,3 +1,4 @@
+import { authentication } from "./auth/index.ts"
 import { ai } from "./ai/index.ts"
 import { email } from "./email/index.ts"
 import { errorTracking } from "./error-tracking/index.ts"
@@ -13,6 +14,7 @@ import { updates } from "./updates/index.ts"
 
 /** Every module, in the order Settings lists them. */
 export const MODULES: readonly Module[] = [
+  authentication,
   ai,
   video,
   nutrition,

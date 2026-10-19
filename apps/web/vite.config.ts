@@ -19,6 +19,7 @@ export default defineConfig({
     // xfwd keeps the browser's address, so links the API makes (invite
     // links) point back here.
     proxy: {
+      "/.well-known": { target: "http://localhost:3000", xfwd: true },
       "/api": { target: "http://localhost:3000", xfwd: true },
       "/mcp": { target: "http://localhost:3000", xfwd: true },
     },

@@ -34,6 +34,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio, which thes
 |---|---|
 | [stack.md](stack.md) | Every layer reconsidered: what stays, what changes, and why |
 | [platform.md](platform.md) | Modules and settings, accounts and households, API keys and the public API, AI keys and policy, jobs, files, export, isolation, security, languages |
+| [authentication.md](authentication.md) | The authentication round: shared credentials, passkeys, two-step sign-in, external OIDC and OAuth connections for MCP and REST |
 | [onboarding.md](onboarding.md) | Setup and first-use audit, proposed implementation batches, recovery, household review and guided-tour acceptance |
 | [export-format.md](export-format.md) | The household export: what's in the zip, and how an import treats what's there |
 | [operations.md](operations.md) | Logs, error tracking, analytics and telemetry, what leaves the server, images, releases, backups, the demo |

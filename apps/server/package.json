@@ -20,6 +20,8 @@
     "@ai-sdk/google": "^4.0.91",
     "@ai-sdk/openai": "^4.0.88",
     "@ai-sdk/openai-compatible": "^3.0.65",
+    "@better-auth/oauth-provider": "1.7.8",
+    "@better-auth/passkey": "1.7.8",
     "@hono/node-server": "^2.1.5",
     "@hono/zod-openapi": "^1.6.3",
     "@merran/shared": "workspace:*",

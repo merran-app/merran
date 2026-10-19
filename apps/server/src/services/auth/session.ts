@@ -7,6 +7,9 @@ import {
 } from "../households/households.ts"
 import { API_KEY_PREFIX, verifyApiKey } from "./api-keys.ts"
 import type { Auth } from "./auth.ts"
+import type { Credential } from "./credentials.ts"
+import { OAUTH_PREFIX } from "./oauth/provider.ts"
+import { withOAuthToken } from "./oauth/tokens.ts"
 
 /** Whoever sent the request, however they signed in. */
 export type CurrentUser = {
@@ -17,12 +20,14 @@ export type CurrentUser = {
   displayUsername: string | null
   /** "admin" for the server admin. */
   role: string | null
+  twoFactorEnabled?: boolean
 }
 
 export type Authenticated = {
+  credential: Credential
   user: CurrentUser
   /** The signed-in session; null when the request came with an API key. */
-  session: { id: string } | null
+  session: { id: string; strongAuthAt?: Date | null } | null
   /** The household in use (a key's own household), or null when they're in none. */
   household: ActiveHousehold | null
   /** The API key used, if one was. */
@@ -37,10 +42,23 @@ export type Authenticated = {
 export async function authenticate(
   auth: Auth,
   em: EntityManager,
-  headers: Headers
+  headers: Headers,
+  oauthPublicUrl?: string
 ): Promise<Authenticated | null> {
-  const bearer = headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1]
-  if (bearer) return withApiKey(em, bearer)
+  const authorization = headers.get("authorization")
+  if (authorization !== null) {
+    const bearer = authorization.match(/^Bearer\s+(\S+)$/i)?.[1]
+    if (!bearer) {
+      throw new AppError(
+        "unauthorized",
+        "invalid_authorization",
+        "Use Authorization: Bearer followed by a valid access token."
+      )
+    }
+    if (oauthPublicUrl && bearer.startsWith(OAUTH_PREFIX))
+      return withOAuthToken(em, bearer, oauthPublicUrl)
+    return withApiKey(em, bearer)
+  }
 
   const found = await auth.api.getSession({ headers })
   if (!found) return null
@@ -51,6 +69,7 @@ export async function authenticate(
     activeHouseholdId: found.session.activeOrganizationId ?? null,
   })
   return {
+    credential: { kind: "session", id: found.session.id },
     user: {
       id: found.user.id,
       name: found.user.name,
@@ -58,8 +77,9 @@ export async function authenticate(
       username: found.user.username ?? null,
       displayUsername: found.user.displayUsername ?? null,
       role: found.user.role ?? null,
+      twoFactorEnabled: found.user.twoFactorEnabled ?? false,
     },
-    session: { id: found.session.id },
+    session: { id: found.session.id, strongAuthAt: found.session.strongAuthAt },
     household,
     apiKey: null,
   }
@@ -82,6 +102,12 @@ async function withApiKey(
   }
   const { apiKey, user, role } = verified
   return {
+    credential: {
+      kind: "apiKey",
+      id: apiKey.id,
+      name: apiKey.name,
+      permissions: apiKey.permissions,
+    },
     user,
     session: null,
     household: { id: apiKey.household.id, role },

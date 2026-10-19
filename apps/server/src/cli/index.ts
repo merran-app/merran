@@ -8,11 +8,17 @@ import { foodsCoverage } from "./foods.ts"
 import { rotateSecret } from "./rotate-secret.ts"
 import { showSetupCode } from "./setup-code.ts"
 import { resetAccountPassword } from "./reset-password.ts"
+import { resetAccountSecondFactor } from "./reset-two-factor.ts"
 
 const COMMANDS: Record<
   string,
   { description: string; run: (args: string[]) => Promise<number> }
 > = {
+  "reset-two-factor": {
+    description:
+      "Recover a lost authenticator, signing out devices and disconnecting apps.",
+    run: resetAccountSecondFactor,
+  },
   "setup-code": {
     description: "Show the running server's active first-run code.",
     run: () => showSetupCode(),

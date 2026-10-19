@@ -1,3 +1,4 @@
+import { delegatedCredential } from "../../services/auth/credentials.ts"
 import { createMiddleware } from "hono/factory"
 import type { AppEnv } from "../../core/context.ts"
 import type { EventBus, LiveArea } from "../../services/events/events.ts"
@@ -44,11 +45,12 @@ export function announceChanges(events: EventBus) {
     const method = c.req.method
     if (method === "GET" || method === "HEAD" || method === "OPTIONS") return
     if (c.error || c.res.status >= 400) return
-    const { household, user, apiKey } = c.var
+    const { household, user } = c.var
+    const delegated = delegatedCredential(c.var.credential)
     if (!household) return
     const areas = CHANGES.find(([path]) => path.test(c.req.path))?.[1] ?? []
     const by = user
-      ? { id: user.id, name: apiKey ? apiKey.name : user.name }
+      ? { id: user.id, name: delegated ? delegated.name : user.name }
       : null
     const client = c.req.header(CLIENT_HEADER)?.slice(0, 64) || null
     for (const area of areas) events.changed(household.id, { area, by, client })

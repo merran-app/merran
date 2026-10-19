@@ -9,6 +9,8 @@ import { meQuery, setupQuery } from "./queries"
  */
 export async function requireSignedIn(queryClient: QueryClient, href: string) {
   const me = await queryClient.ensureQueryData(meQuery)
+  if (me?.requiresTwoFactor)
+    throw redirect({ to: "/verify", search: { redirect: href } })
   if (me) return
 
   const setup = await queryClient.fetchQuery(setupQuery)

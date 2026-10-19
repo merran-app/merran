@@ -20,6 +20,8 @@ export const Session = defineEntity({
     activeHousehold: () =>
       p.manyToOne(Household).ref().nullable().deleteRule("set null"),
     impersonatedBy: p.string().nullable(),
+    /** Set only after a verified second factor or user-verified passkey ceremony. */
+    strongAuthAt: p.datetime().nullable(),
   },
 })
 export type Session = InferEntity<typeof Session>

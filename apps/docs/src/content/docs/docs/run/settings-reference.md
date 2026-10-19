@@ -144,6 +144,105 @@ How Merran was installed. The Docker image sets it.
 
 [Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/core/config.ts)
 
+## auth.passwords
+
+Allow password sign-in. Disabling takes effect only after an administrator has a usable linked OIDC identity or registered passkey. Set true to recover password access.
+
+- **Scope:** server (environment only)
+- **Type:** switch
+- **Default:** `true`
+- **Environment:** `MERRAN_AUTH_PASSWORDS`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/auth/settings.ts)
+
+## auth.oauth
+
+Allow connected applications to request household access through OAuth. Requires MERRAN_PUBLIC_URL and a restart.
+
+- **Scope:** server (environment only)
+- **Type:** switch
+- **Default:** `false`
+- **Environment:** `MERRAN_AUTH_OAUTH`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/auth/settings.ts)
+
+## auth.oidcDiscovery
+
+OIDC discovery document URL for the operator's sign-in provider. Restart after changing.
+
+- **Scope:** server (environment only)
+- **Type:** text
+- **Default:** Unset
+- **Environment:** `MERRAN_AUTH_OIDC_DISCOVERY`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/auth/settings.ts)
+
+## auth.oidcClientId
+
+Client ID registered with the external OIDC provider.
+
+- **Scope:** server (environment only)
+- **Type:** text
+- **Default:** Unset
+- **Environment:** `MERRAN_AUTH_OIDC_CLIENT_ID`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/auth/settings.ts)
+
+## auth.oidcClientSecret
+
+Client secret for the external OIDC provider. Never exposed to clients.
+
+- **Scope:** server (environment only)
+- **Type:** secret
+- **Default:** Unset
+- **Environment:** `MERRAN_AUTH_OIDC_CLIENT_SECRET`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/auth/settings.ts)
+
+## auth.oidcAllowSignup
+
+Allow the configured OIDC provider to create new Merran accounts. Off: people must explicitly link an existing account first.
+
+- **Scope:** server (environment only)
+- **Type:** switch
+- **Default:** `false`
+- **Environment:** `MERRAN_AUTH_OIDC_ALLOW_SIGNUP`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/auth/settings.ts)
+
+## auth.passkeys
+
+Allow passkey registration and sign-in. Requires a stable HTTPS public URL, or localhost for development.
+
+- **Scope:** server
+- **Type:** switch
+- **Default:** `false`
+- **Environment:** `MERRAN_AUTH_PASSKEYS`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/auth/settings.ts)
+
+## auth.twoFactor
+
+Allow people to enroll an authenticator and recovery codes. Turning this off does not bypass an enrolled person's second factor.
+
+- **Scope:** server
+- **Type:** switch
+- **Default:** `false`
+- **Environment:** `MERRAN_AUTH_TWO_FACTOR`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/auth/settings.ts)
+
+## auth.requireAdminTwoFactor
+
+Require administrators to verify a second factor or a user-verified passkey before using the app. Also enables authenticator enrollment.
+
+- **Scope:** server
+- **Type:** switch
+- **Default:** `false`
+- **Environment:** `MERRAN_AUTH_REQUIRE_ADMIN_TWO_FACTOR`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/auth/settings.ts)
+
 ## ai.anthropicKey
 
 A Claude key for the server, for the households the AI policy covers. Keys can also be added in Settings.

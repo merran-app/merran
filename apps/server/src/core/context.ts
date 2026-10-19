@@ -63,6 +63,9 @@ export type AppEnv = {
     household: Authenticated["household"]
     /** The API key they used, if any. */
     apiKey: Authenticated["apiKey"]
+    /** The verified authentication method; delegated access never acts as a session. */
+    credential: Authenticated["credential"] | null
+    requiresTwoFactor: boolean
     /** The permission that lets an API key use this route, set by `openToKeys()`. */
     keyPermission?: { area: ApiArea; access: ApiAccess }
   }

@@ -204,6 +204,14 @@ docker compose exec merran merran db copy --to postgres://merran:<password>@db:5
 - It works the other way too (Postgres to SQLite), for anyone shrinking a server.
 - CI runs it on every change to the schema, on the sample household, so it can't quietly break.
 
+## Authentication recovery and rollout
+
+Decided October 19, 2026, not released: authentication methods and OAuth are opt-in. Configure a stable HTTPS public origin before relying on passkeys or remote OAuth. Keep the database and matching server secret in the same backup; `merran rotate-secret` now re-encrypts authenticator secrets, recovery codes, OIDC tokens and OAuth client secrets together with existing encrypted settings.
+
+`merran reset-two-factor username-or-email` removes a lost authenticator and revokes sessions and OAuth connections. It preserves passkeys and does not bypass mandatory administrator assurance on the next sign-in. `merran reset-password` can establish a recovery password for an SSO-only person; restore password sign-in policy if it was disabled. See [authentication.md](authentication.md) and the public authentication guide for recovery and grant lifetime behavior.
+
+The earlier TrueNAS/Dockge install and API-key MCP flow were reported working. They do not verify this new authentication round. Before requiring alternative sign-in, verify a real identity provider, physical passkey, external MCP OAuth client, non-MCP REST client, restart and restore behind the deployment's proxy. Automated tests use SQLite and Postgres and exercise the protocol boundaries separately.
+
 ## A public demo
 
 - `demo.merran.app`: a household full of sample recipes, a planned week and a list, reset every night.

@@ -56,9 +56,9 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Repeatable setup testing in an isolated development database | Detail | Built | Available in alpha.4: MERRAN_DEV_SETUP uses fresh temporary SQLite storage each start; refused in production and Docker |
 | Invite links, roles, open sign-up (off by default) | Key | Built | |
 | Export your own account's data | Detail | Built | |
-| Passkeys | Key | Planned | |
-| Two-step sign-in | Detail | Planned | |
-| Single sign-on (OIDC) | Key | Planned | |
+| Passkeys | Key | Built | Not released yet: opt-in WebAuthn, required user verification, account management and last-method protection ([authentication](authentication.md)) |
+| Two-step sign-in | Detail | Built | Not released yet: TOTP enrollment, single-use recovery codes, operator recovery and mandatory administrator policy across sign-in methods |
+| Single sign-on (OIDC) | Key | Built | Not released yet: one operator-configured provider, explicit linking, optional account creation and password policy; no automatic email linking |
 | Household invitations by email (SMTP) | Detail | Built | Available in alpha.4: optional SMTP settings and test, address-bound seven-day invitations, queued delivery with retries, resend/cancel and provider-acceptance status; styled HTML with plain-text fallback; requires MERRAN_PUBLIC_URL |
 | Password reset by email | Detail | Built | Available in alpha.4: optional SMTP recovery with styled, single-use 30-minute links, durable delivery, rate limits, password confirmation and session revocation; operator recovery remains available |
 | Account email verification | Detail | Skipped | Decided October 18, 2026: unnecessary for the intended self-hosted deployment; no verification email or verified-email sign-in requirement. Provider sending-domain verification is separate |
@@ -209,8 +209,8 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | API keys with permissions, one household, rate limits | Key | Built | Not released yet: key creation and the generated-key screen use a drawer on mobile, including MCP setup; larger screens use a dialog. |
 | Live events stream | Detail | Built | |
 | Webhooks for Home Assistant, n8n and others | Key | Planned | |
-| MCP server for compatible external AI apps | Headline | Built | Not released yet: stateless /mcp with the official SDK, scoped bearer keys, shared assistant tools and proposals in Review. API-key setup instructions are in Settings. OAuth-only connectors and direct plan/list application remain future work ([decision](platform.md#mcp-server)) |
-| OAuth so the ChatGPT and Claude apps can connect | Detail | Later | |
+| MCP server for compatible external AI apps | Headline | Built | Not released yet: stateless /mcp with the official SDK, scoped API keys or OAuth tokens, shared assistant tools and proposals in Review. Direct plan/list application remains future work ([decision](platform.md#mcp-server)) |
+| OAuth connections for MCP and REST clients | Key | Built | Not released yet: PKCE, discovery, dynamic and administrator client registration, household consent, separate resource audiences, rotating refresh tokens and connection revocation. External-client deployment acceptance remains to be done. General “Sign in with Merran” is excluded ([plan](authentication.md)). |
 | Household-owned API keys; OpenTelemetry; a Helm chart | Detail | Later | |
 
 ## Research candidates — October 17, 2026

@@ -95,6 +95,21 @@ describe("making an API key", () => {
 })
 
 describe("using an API key", () => {
+  test.each(["", "Bearer", "Bearer token with spaces", "Basic abc"])(
+    "does not fall back to the browser session for malformed Authorization %j",
+    async (authorization) => {
+      const headers = kyle.headers()
+      headers.set("authorization", authorization)
+      const response = await app.request(`${TEST_ORIGIN}/api/auth/me`, {
+        headers,
+      })
+      expect(response.status).toBe(401)
+      expect(await response.json()).toMatchObject({
+        error: { code: "invalid_authorization" },
+      })
+    }
+  )
+
   test("it says which key it is", async () => {
     const made = await makeKey(kyle)
     const res = await withKey(made.key, "/api/auth/api-keys/current")

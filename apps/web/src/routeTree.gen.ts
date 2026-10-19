@@ -15,10 +15,13 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppPlanRouteImport } from './routes/_app/plan'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppShareRouteImport } from './routes/_app/share'
+import { Route as AuthorizeIndexRouteImport } from './routes/authorize.index'
+import { Route as AuthorizeHouseholdRouteImport } from './routes/authorize.household'
 import { Route as JoinTokenRouteImport } from './routes/join/$token'
 import { Route as AppListIndexRouteImport } from './routes/_app/list/index'
 import { Route as AppListKrogerRouteImport } from './routes/_app/list/kroger'
@@ -72,6 +75,11 @@ const SetupRoute = SetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerifyRoute = VerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -91,6 +99,16 @@ const AppShareRoute = AppShareRouteImport.update({
   id: '/share',
   path: '/share',
   getParentRoute: () => AppRoute,
+} as any)
+const AuthorizeIndexRoute = AuthorizeIndexRouteImport.update({
+  id: '/authorize/',
+  path: '/authorize/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthorizeHouseholdRoute = AuthorizeHouseholdRouteImport.update({
+  id: '/authorize/household',
+  path: '/authorize/household',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const JoinTokenRoute = JoinTokenRouteImport.update({
   id: '/join/$token',
@@ -222,10 +240,13 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/setup': typeof SetupRoute
+  '/verify': typeof VerifyRoute
   '/plan': typeof AppPlanRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/share': typeof AppShareRoute
+  '/authorize/household': typeof AuthorizeHouseholdRoute
   '/join/$token': typeof JoinTokenRoute
+  '/authorize/': typeof AuthorizeIndexRoute
   '/list/kroger': typeof AppListKrogerRoute
   '/list/send': typeof AppListSendRoute
   '/list/walmart': typeof AppListWalmartRoute
@@ -256,9 +277,12 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/setup': typeof SetupRoute
+  '/verify': typeof VerifyRoute
   '/plan': typeof AppPlanRoute
   '/share': typeof AppShareRoute
+  '/authorize/household': typeof AuthorizeHouseholdRoute
   '/join/$token': typeof JoinTokenRoute
+  '/authorize': typeof AuthorizeIndexRoute
   '/list/kroger': typeof AppListKrogerRoute
   '/list/send': typeof AppListSendRoute
   '/list/walmart': typeof AppListWalmartRoute
@@ -291,11 +315,14 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/setup': typeof SetupRoute
+  '/verify': typeof VerifyRoute
   '/_app/plan': typeof AppPlanRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/share': typeof AppShareRoute
+  '/authorize/household': typeof AuthorizeHouseholdRoute
   '/join/$token': typeof JoinTokenRoute
   '/_app/': typeof AppIndexRoute
+  '/authorize/': typeof AuthorizeIndexRoute
   '/_app/list/kroger': typeof AppListKrogerRoute
   '/_app/list/send': typeof AppListSendRoute
   '/_app/list/walmart': typeof AppListWalmartRoute
@@ -328,10 +355,13 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/setup'
+    | '/verify'
     | '/plan'
     | '/settings'
     | '/share'
+    | '/authorize/household'
     | '/join/$token'
+    | '/authorize/'
     | '/list/kroger'
     | '/list/send'
     | '/list/walmart'
@@ -362,9 +392,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/setup'
+    | '/verify'
     | '/plan'
     | '/share'
+    | '/authorize/household'
     | '/join/$token'
+    | '/authorize'
     | '/list/kroger'
     | '/list/send'
     | '/list/walmart'
@@ -396,11 +429,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/setup'
+    | '/verify'
     | '/_app/plan'
     | '/_app/settings'
     | '/_app/share'
+    | '/authorize/household'
     | '/join/$token'
     | '/_app/'
+    | '/authorize/'
     | '/_app/list/kroger'
     | '/_app/list/send'
     | '/_app/list/walmart'
@@ -433,7 +469,10 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SetupRoute: typeof SetupRoute
+  VerifyRoute: typeof VerifyRoute
+  AuthorizeHouseholdRoute: typeof AuthorizeHouseholdRoute
   JoinTokenRoute: typeof JoinTokenRoute
+  AuthorizeIndexRoute: typeof AuthorizeIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -480,6 +519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/verify': {
+      id: '/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof VerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/': {
       id: '/_app/'
       path: '/'
@@ -507,6 +553,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/share'
       preLoaderRoute: typeof AppShareRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/authorize/': {
+      id: '/authorize/'
+      path: '/authorize'
+      fullPath: '/authorize/'
+      preLoaderRoute: typeof AuthorizeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/authorize/household': {
+      id: '/authorize/household'
+      path: '/authorize/household'
+      fullPath: '/authorize/household'
+      preLoaderRoute: typeof AuthorizeHouseholdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/join/$token': {
       id: '/join/$token'
@@ -766,7 +826,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SetupRoute: SetupRoute,
+  VerifyRoute: VerifyRoute,
+  AuthorizeHouseholdRoute: AuthorizeHouseholdRoute,
   JoinTokenRoute: JoinTokenRoute,
+  AuthorizeIndexRoute: AuthorizeIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

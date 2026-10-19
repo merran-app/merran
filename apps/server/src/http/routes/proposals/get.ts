@@ -1,3 +1,4 @@
+import { delegatedCredential } from "../../../services/auth/credentials.ts"
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../core/context.ts"
 import { listProposals } from "../../../services/proposals/proposals.ts"
@@ -29,11 +30,12 @@ const route = createRoute({
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em } = inHousehold(c)
+    const delegated = delegatedCredential(c.var.credential)
     return c.json(
       await listProposals(em, {
         ...c.req.valid("query"),
-        kinds: c.var.apiKey
-          ? readableProposalKinds(c.var.apiKey.permissions)
+        kinds: delegated
+          ? readableProposalKinds(delegated.permissions)
           : undefined,
       }),
       200

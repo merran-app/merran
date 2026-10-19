@@ -1,6 +1,8 @@
 import type { OpenAPIHono } from "@hono/zod-openapi"
-import type { AppEnv } from "../../../core/context.ts"
-import type { Auth } from "../../../services/auth/auth.ts"
+import type { AppEnv, AppDeps } from "../../../core/context.ts"
+import { AUTH_METHOD_ENDPOINTS } from "../../auth/methods.ts"
+import { OAUTH_SESSION_ENDPOINTS } from "../../auth/oauth.ts"
+import { handleBetterAuth } from "../../auth/better-auth-handler.ts"
 import { AUTH_SESSION, AUTH_USER, IDS, TIMES } from "../../schemas/examples.ts"
 
 type BetterAuthEndpoint = {
@@ -25,6 +27,8 @@ const PASSWORD = "correct horse battery staple"
  * in the API reference.
  */
 export const BETTER_AUTH_ENDPOINTS: readonly BetterAuthEndpoint[] = [
+  ...AUTH_METHOD_ENDPOINTS,
+  ...OAUTH_SESSION_ENDPOINTS,
   {
     method: "POST",
     path: "/sign-in/username",
@@ -166,8 +170,14 @@ export const BETTER_AUTH_ENDPOINTS: readonly BetterAuthEndpoint[] = [
  * Hands those endpoints to Better Auth. They answer in Better Auth's own
  * error shape, not Merran's.
  */
-export function mountBetterAuth(router: OpenAPIHono<AppEnv>, auth: Auth) {
-  for (const { method, path } of BETTER_AUTH_ENDPOINTS) {
-    router.on(method, `/auth${path}`, (c) => auth.handler(c.req.raw))
+export function mountBetterAuth(router: OpenAPIHono<AppEnv>, deps: AppDeps) {
+  for (const {
+    method,
+    path,
+    signedIn: needsSession,
+  } of BETTER_AUTH_ENDPOINTS) {
+    router.on(method, `/auth${path.replace(/\{(\w+)\}/g, ":$1")}`, (c) =>
+      handleBetterAuth(c, deps, path, needsSession)
+    )
   }
 }

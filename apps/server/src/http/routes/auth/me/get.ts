@@ -26,9 +26,12 @@ const route = createRoute({
 
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { user } = signedIn(c)
+    const { user } = signedIn(c, true)
     return c.json(
-      await describeMe(c.var.em, user, c.var.household?.id ?? null),
+      {
+        ...(await describeMe(c.var.em, user, c.var.household?.id ?? null)),
+        requiresTwoFactor: c.var.requiresTwoFactor,
+      },
       200
     )
   })

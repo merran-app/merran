@@ -6,6 +6,7 @@ import joinRoutes from "./join/index.ts"
 import meRoutes from "./me/index.ts"
 import setupRoutes from "./setup/index.ts"
 import passwordResetRoutes from "./password-reset/index.ts"
+import oauthClientRoutes from "./oauth-clients/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
   apiKeysRoutes(router, deps)
@@ -13,6 +14,7 @@ export default (router: Router, deps: AppDeps) => {
   meRoutes(router, deps)
   setupRoutes(router, deps)
   passwordResetRoutes(router, deps)
+  oauthClientRoutes(router, deps)
   // Better Auth's own endpoints, the ones Merran uses (see better-auth.ts).
-  mountBetterAuth(router, deps.auth)
+  mountBetterAuth(router, deps)
 }

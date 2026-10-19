@@ -1,3 +1,4 @@
+import { AUTH_SECURITY } from "./auth/settings.ts"
 import type { AnySetting } from "../core/settings.ts"
 import { AI } from "./ai/settings.ts"
 import { EMAIL } from "./email/settings.ts"
@@ -17,6 +18,7 @@ import { VOICE } from "./voice/settings.ts"
  * A module's settings go here and in its module.
  */
 export const MODULE_SETTINGS: readonly AnySetting[] = [
+  ...Object.values(AUTH_SECURITY),
   ...Object.values(AI),
   ...Object.values(EMAIL),
   ...Object.values(VIDEO),

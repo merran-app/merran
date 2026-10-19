@@ -1,6 +1,6 @@
 ---
 title: Connect an AI app with MCP
-description: Connect a compatible AI app to your household with an API key and review its suggestions in Merran.
+description: Connect a compatible AI app with OAuth or an API key and review its suggestions in Merran.
 ---
 
 :::note[Not released yet]
@@ -11,7 +11,15 @@ API key setup opens in a drawer on mobile and a dialog on larger screens. The ge
 
 Merran serves MCP over Streamable HTTP at `/mcp`. A compatible client can read the kitchen data you allow and suggest recipes, recipe edits, meals and shopping items. All MCP changes wait in **Recipes → Review**. The external app supplies its own model; these tools do not call a Merran AI provider.
 
-## Connect
+## Connect with OAuth
+
+On builds containing the authentication changes, an operator can enable `MERRAN_AUTH_OAUTH=true` and set `MERRAN_PUBLIC_URL` to the server's stable HTTPS address. Restart the server after changing these settings.
+
+Enter `https://meals.example.com/mcp` in a client that supports MCP OAuth discovery and dynamic client registration. Sign into Merran, choose the household, and review the permissions before choosing **Allow access**. The app receives an MCP-only token. Its write permissions create proposals; this token cannot make direct REST changes.
+
+Use **Settings → You → Connected apps → Disconnect** to revoke the connection. See [Authentication and connected apps](../../run/authentication/) for sign-in options, lifetimes and operator configuration. External clients need network access to your server; enabling OAuth does not expose a private instance.
+
+## Connect with an API key
 
 1. Switch to the household the app should use.
 2. Open **Settings → You → API keys → Use with an AI app**. Give the key a recognizable name and choose its expiry and permissions. Start with read access; add write access only for areas where you want proposals.
@@ -35,7 +43,7 @@ Use `/mcp` in Claude Code to check the connection. Keep the key out of shared pr
 
 ### Other clients
 
-Use the same URL and bearer header in any client that supports them. An OAuth-only remote connector is not compatible with this first version: Merran does not yet provide MCP OAuth discovery or a sign-in flow. Do not assume that a Claude Desktop or ChatGPT connector accepts a raw API key merely because it supports MCP. Check the client's supported authentication methods.
+Use the same URL and bearer header in clients that accept API keys. For clients that require OAuth, enable OAuth and use the connection flow above. Check the client's supported authentication methods and your running Merran version; the original MCP implementation supported API keys only.
 
 ## Tools and permissions
 
@@ -53,17 +61,17 @@ Write access includes read access. These are the same permissions used by the RE
 
 `get_recipe` includes dietary warnings only when the key also has Plan read access. Meal proposals use the assistant's existing allergy checks. There is no MCP tool to apply a proposal, change household tastes, import from the web, scan receipts or generate media. Those workflows remain in Merran; optional direct application of plan/list proposals is future work.
 
-MCP requests share the existing limit of 300 requests per minute per key with REST requests. The endpoint accepts request bodies up to 1 MiB. It is stateless, reauthenticates each request, and supports current protocol requests and the SDK's legacy Streamable HTTP negotiation. It does not expose the old standalone SSE transport, persistent sessions or subscriptions. A GET to `/mcp` is not a tool-list page; clients use the protocol's `tools/list` request.
+MCP requests are limited to 300 per minute per credential. API keys share that allowance with REST; OAuth credentials are restricted to their approved interface. The endpoint accepts request bodies up to 1 MiB. It is stateless, reauthenticates each request, and supports current protocol requests and the SDK's legacy Streamable HTTP negotiation. It does not expose the old standalone SSE transport, persistent sessions or subscriptions. A GET to `/mcp` is not a tool-list page; clients use the protocol's `tools/list` request.
 
 ## Troubleshooting
 
 | What happens                                  | What to check                                                                                                                                 |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| 401                                           | Send the bearer key, not a browser session cookie. Check expiry and revocation.                                                               |
+| 401                                           | Send a valid API key or OAuth access token. Check expiry, revocation and the issuing session.                                                 |
 | 403 with `invalid_origin`                     | A browser client's Origin must match `MERRAN_PUBLIC_URL`. Native clients normally omit Origin.                                                |
 | A tool is missing                             | Check the key's area permissions, including Recipes read access for meal proposals.                                                           |
 | A suggestion was returned but nothing changed | Open **Recipes → Review**. Proposing never applies it.                                                                                        |
-| The connection asks for OAuth                 | Use a client that accepts a bearer header; OAuth is not implemented yet.                                                                      |
+| The connection asks for OAuth                 | Enable OAuth on a build containing the authentication changes; see the OAuth setup above.                                                     |
 | 429                                           | Wait for the `Retry-After` interval. REST and MCP share the key's allowance.                                                                  |
 | A connection was interrupted                  | Check Review before asking again. A completed proposal may exist even if the client missed its response; retries can create another proposal. |
 

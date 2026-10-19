@@ -33,4 +33,5 @@ export const API_KEY_SECURITY: Security = [{ apiKey: [] }]
 export const SESSION_OR_API_KEY_SECURITY: Security = [
   { session: [] },
   { apiKey: [] },
+  { oauth: [] },
 ]
