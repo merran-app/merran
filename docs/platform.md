@@ -107,7 +107,7 @@ A person can belong to several households (say, their own and their parents'), w
 
 ## API keys
 
-Authentication round, October 19, 2026: [authentication.md](authentication.md) records the agreed scope for passkeys, two-step sign-in, external OIDC and household-scoped OAuth connections for MCP and REST. The sign-in methods, credential boundary and OAuth issuance are implemented but not released; external-client and deployment acceptance remain to be verified. General “Sign in with Merran” identity-provider support is excluded.
+Authentication round, October 19, 2026: [authentication.md](authentication.md) records the agreed scope for passkeys, two-step sign-in, external OIDC and household-scoped OAuth connections for MCP and REST. The sign-in methods, credential boundary and OAuth issuance are implemented but not released; the operator has confirmed MCP OAuth, recipe proposals and Bitwarden passkey sign-in on TrueNAS/Dockge. Broader provider, device and lifecycle acceptance remains. General “Sign in with Merran” identity-provider support is excluded.
 
 October 19, 2026, not released yet: creating an API key, including **Use with an AI app**, opens in a drawer on mobile and a dialog on larger screens. The generated key and connection details stay in that same surface, with scrolling and phone safe-area spacing.
 
@@ -149,7 +149,7 @@ Household admins add them in Settings → Household → Webhooks, for Home Assis
 
 ### MCP server
 
-An MCP server at `/mcp` (Streamable HTTP, through the official MCP TypeScript SDK) lets compatible bearer-token clients work with a household's recipes, plan, list and pantry. Implemented October 19, 2026, not released yet. OAuth discovery and household consent are implemented in the authentication round, with real-client deployment acceptance still pending.
+An MCP server at `/mcp` (Streamable HTTP, through the official MCP TypeScript SDK) lets compatible bearer-token clients work with a household's recipes, plan, list and pantry. Implemented October 19, 2026, not released yet. OAuth discovery and household consent are implemented in the authentication round, with operator-reported MCP OAuth and recipe proposals working on TrueNAS/Dockge; broader client and lifecycle acceptance remains.
 
 - **Signed in with an API key,** so it can do only what the key allows, in the key's household. Settings → You → API keys has a **Use with an AI app** option that makes a key and shows its endpoint and Authorization value, with instructions for Claude Code and other compatible clients.
 - **The tools match the assistant's:** search and read recipes, the plan, the list and the pantry, then propose a new recipe, a recipe edit, meals or list items. The same service layer runs both.
@@ -161,7 +161,7 @@ Assistant tool organization, decided October 19, 2026: each tool lives in its ow
 
 MCP implementation decision, October 19, 2026: use @modelcontextprotocol/server 2.3.1 with its stateless legacy fallback and current protocol handler, one server per request, no sessions/subscriptions, and a 1 MiB body limit. Existing authentication rechecks expiry, revocation and membership and shares the key rate limit with REST. Browser Origins must match the configured public URL; cookie-only requests are refused. Tools are registered only when all their permissions are present. Recipe-only readers receive no household dietary details; those require plan:read, matching the tastes REST route. Every proposal has no chat, retains its creator, publishes a Review refresh and returns a review link. Review includes proposals without a recipe and renders the existing proposal cards for meals, lists and new recipes. REST proposal access also checks the affected area, in addition to its existing recipes permission. Public instructions mark this work unreleased; real-client and reverse-proxy acceptance is still separate from SDK integration tests.
 
-MCP validation, October 19, 2026: 1,572 SQLite tests passed, including 14 MCP integration checks, and 60 targeted Postgres checks passed across MCP, assistant, Review and API keys. The official MCP client and a legacy handshake both connected. Server/web typechecks, web production build, generated API-client equality, formatting and the docs build/link check passed (296 pages). An isolated browser preview with synthetic data checked recipe/meal/list cards, full recipe details and the scrollable API-key form. Real external AI app installation and deployment/proxy acceptance remain to verify.
+MCP validation, October 19, 2026: 1,572 SQLite tests passed, including 14 MCP integration checks, and 60 targeted Postgres checks passed across MCP, assistant, Review and API keys. The official MCP client and a legacy handshake both connected. Server/web typechecks, web production build, generated API-client equality, formatting and the docs build/link check passed (296 pages). An isolated browser preview with synthetic data checked recipe/meal/list cards, full recipe details and the scrollable API-key form. Subsequent operator verification confirmed an external AI client connecting through OAuth and producing recipe proposals on TrueNAS/Dockge; see [authentication.md](authentication.md#operator-verification--october-19-2026). Broader client and proxy coverage remains to verify.
 
 ## Service ownership
 

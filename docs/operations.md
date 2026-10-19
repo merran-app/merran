@@ -210,7 +210,7 @@ Decided October 19, 2026, not released: authentication methods and OAuth are opt
 
 `merran reset-two-factor username-or-email` removes a lost authenticator and revokes sessions and OAuth connections. It preserves passkeys and does not bypass mandatory administrator assurance on the next sign-in. `merran reset-password` can establish a recovery password for an SSO-only person; restore password sign-in policy if it was disabled. See [authentication.md](authentication.md) and the public authentication guide for recovery and grant lifetime behavior.
 
-The earlier TrueNAS/Dockge install and API-key MCP flow were reported working. They do not verify this new authentication round. Before requiring alternative sign-in, verify a real identity provider, physical passkey, external MCP OAuth client, non-MCP REST client, restart and restore behind the deployment's proxy. Automated tests use SQLite and Postgres and exercise the protocol boundaries separately.
+Operator report, October 19, 2026: after deploying the merged authentication changes on TrueNAS through Dockge, an external AI client connected through MCP OAuth and produced recipe proposals. Bitwarden passkey registration and sign-in after logout also worked. Exact image and client versions and the database backend were not recorded. See [authentication.md](authentication.md#operator-verification--october-19-2026) for the report's scope. External OIDC, TOTP/recovery, hardware security keys, non-MCP REST OAuth, refresh/revocation and restart/restore remain deployment checks. Automated tests use SQLite and Postgres and exercise the protocol boundaries separately.
 
 ## A public demo
 

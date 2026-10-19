@@ -4,7 +4,13 @@ Decided October 19, 2026. This round covers passwords, passkeys, authenticator-b
 
 ## Status
 
-Implemented, not released. Browser sessions, API keys and OAuth credentials are distinct. Passkeys, TOTP and recovery codes, one operator-configured OIDC provider, and OAuth authorization-code connections for MCP and REST are available behind opt-in settings. Automated protocol tests run on SQLite and Postgres. Real-provider, physical authenticator, external MCP client and TrueNAS/Dockge acceptance remain deployment checks; earlier successful MCP testing used API keys.
+Implemented, not released. Browser sessions, API keys and OAuth credentials are distinct. Passkeys, TOTP and recovery codes, one operator-configured OIDC provider, and OAuth authorization-code connections for MCP and REST are available behind opt-in settings. Automated protocol tests run on SQLite and Postgres. The operator has also reported successful MCP OAuth use and Bitwarden passkey sign-in on TrueNAS through Dockge; broader provider, device and lifecycle checks remain.
+
+### Operator verification — October 19, 2026
+
+After deploying the merged authentication changes, the operator confirmed connecting an external AI client through MCP OAuth and receiving recipe proposals based on previous conversations and meals. They also registered a passkey in Bitwarden, signed out, and signed back in with that passkey.
+
+This is an operator report, separate from automated protocol tests. Applying proposals and opening their review links were not explicitly confirmed. Exact application image, client, browser, Bitwarden and host versions, and the database backend were not recorded. This does not establish a tagged release or verify external OIDC, TOTP/recovery, hardware security keys, non-MCP REST OAuth, refresh/revocation, or restart/restore behavior in that deployment.
 
 ## Identity and authorization
 

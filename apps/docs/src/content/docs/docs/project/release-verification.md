@@ -15,7 +15,19 @@ The authentication branch adds opt-in passkeys, TOTP and recovery codes, externa
 
 The full server run exercised 3,236 checks: 3,229 passed initially. Four capability expectations and one generated-schema comparison were corrected; two Postgres onboarding checks exceeded the existing five-second timeout under local load. All seven passed focused reruns without raising timeouts. A subsequent OAuth run passed 22 checks across both databases, including an additional immediate-revocation scenario. Web and Chrome/Firefox extension builds, formatting, documentation generation and local-link checks passed. The local browser preview was unavailable, so this round does not claim visual UI acceptance.
 
-These checks do not establish external MCP client compatibility or production deployment acceptance. The previously reported TrueNAS/Dockge installation and successful API-key MCP connection predate this auth round. Verify the configured identity provider, physical authenticator, OAuth client, restart and restore in the intended deployment before requiring alternative sign-in. See [authentication setup](../../run/authentication/).
+These automated checks are separate from the operator report below. Verify the configured identity provider, devices and integration lifecycle in the intended deployment before requiring alternative sign-in. See [authentication setup](../../run/authentication/).
+
+## Operator authentication report — October 19, 2026
+
+After deploying the merged authentication changes on TrueNAS through Dockge, the operator reported:
+
+- Successfully connecting an external AI client to Merran through MCP OAuth.
+- Receiving recipe proposals based on previous conversations and meals.
+- Registering a passkey with Bitwarden, signing out, and signing back in using that passkey.
+
+Applying the proposals and opening their review links were not explicitly confirmed. The application image digest, database backend, AI client version, browser, Bitwarden version and host versions were not recorded. This verifies the reported workflows in one deployment; it does not establish a tagged release or compatibility with every client and device.
+
+External OIDC sign-in, TOTP and recovery, hardware security keys, non-MCP REST OAuth, token refresh and revocation, and authentication persistence through restart/restore still need deployment verification.
 
 ## Email development checks — October 18, 2026
 
