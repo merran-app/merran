@@ -322,6 +322,46 @@ describe("adding from the plan", () => {
     // 2 tbsp for the chicken, and 2 tbsp for the rice, scaled to match.
     expect(of("olive oil")).toMatchObject({ quantity: 4, unit: "tablespoon" })
     expect(of("garlic")).toMatchObject({ amount: "4 cloves" })
+    const oilDetails = await kyle.get(
+      `/api/list/items/${of("olive oil")!.id}/details`
+    )
+    expect(oilDetails.status).toBe(200)
+    expect(await oilDetails.json()).toMatchObject({
+      amount: "4 tbsp",
+      unavailableMeals: 0,
+      meals: [
+        {
+          id: chicken.id,
+          name: "Lemon Chicken",
+          listedAmounts: ["4 tbsp"],
+          lines: [
+            {
+              recipe: "Lemon Chicken",
+              original: "1 tbsp olive oil",
+              planned: "2 tbsp olive oil",
+              factor: 2,
+            },
+            {
+              recipe: "Garlic Rice",
+              original: "1 tbsp olive oil",
+              planned: "2 tbsp olive oil",
+              factor: 2,
+            },
+          ],
+        },
+      ],
+    })
+    const garlicDetails = await (
+      await kyle.get(`/api/list/items/${of("garlic")!.id}/details`)
+    ).json()
+    expect(garlicDetails.meals[0].lines).toEqual([
+      {
+        recipe: "Garlic Rice",
+        original: "2 cloves garlic",
+        planned: "4 cloves garlic",
+        factor: 2,
+      },
+    ])
     expect(of("ground beef")).toMatchObject({
       amount: "1 lb",
       // Where it was moved to before.
@@ -395,6 +435,51 @@ describe("adding from the plan", () => {
       source: "typed",
       meals: [{ name: "Beef Tacos" }],
     })
+    await kyle.patch(`/api/list/items/${typed.id}`, { amount: "3 packs" })
+    expect(
+      await (await kyle.get(`/api/list/items/${typed.id}/details`)).json()
+    ).toMatchObject({
+      amount: "3 packs",
+      meals: [
+        {
+          listedAmounts: ["1 lb"],
+          lines: [{ original: "1 lb ground beef", factor: 1 }],
+        },
+      ],
+    })
+    await clearAll()
+  })
+
+  test("ingredient details separate pantry deductions and repeated meals", async () => {
+    await kyle.post("/api/pantry/items", { text: "1/2 lb ground beef" })
+    const first = await plan({
+      date: day(0),
+      meal: "dinner",
+      recipe: ids["Beef Tacos"],
+    })
+    const second = await plan({
+      date: day(1),
+      meal: "dinner",
+      recipe: ids["Beef Tacos"],
+    })
+    await fromPlan()
+    const beef = (await find("ground beef"))!
+    const details = await (
+      await kyle.get(`/api/list/items/${beef.id}/details`)
+    ).json()
+    expect(details.meals).toMatchObject([
+      {
+        id: first.id,
+        listedAmounts: ["½ lb"],
+        lines: [{ original: "1 lb ground beef", planned: "1 lb ground beef" }],
+      },
+      {
+        id: second.id,
+        listedAmounts: ["1 lb"],
+        lines: [{ original: "1 lb ground beef" }],
+      },
+    ])
+    await kyle.post("/api/pantry/clear")
     await clearAll()
   })
 
@@ -614,6 +699,15 @@ describe("the list follows the plan", () => {
 describe("the list", () => {
   test("is the household's own", async () => {
     const towels = await type("paper towels")
+    expect(
+      await (await kyle.get(`/api/list/items/${towels.id}/details`)).json()
+    ).toMatchObject({
+      name: "paper towels",
+      amount: "",
+      source: "typed",
+      meals: [],
+      unavailableMeals: 0,
+    })
     const before = await (
       await kyle.delete(`/api/list/items/${towels.id}`)
     ).json()
@@ -621,6 +715,9 @@ describe("the list", () => {
     // Making a household switches the server admin to it.
     await kyle.post("/api/households", { name: "Cabin" })
     expect(await list()).toEqual([])
+    expect(
+      (await kyle.get(`/api/list/items/${towels.id}/details`)).status
+    ).toBe(404)
     expect(
       (await kyle.patch(`/api/list/items/${towels.id}`, { checked: true }))
         .status

@@ -22,7 +22,15 @@ export function useListActions() {
   const queryClient = useQueryClient()
 
   const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: listQuery.queryKey })
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: listQuery.queryKey }),
+      queryClient.invalidateQueries({
+        queryKey: ["stores", "kroger", "basket"],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["stores", "walmart", "basket"],
+      }),
+    ])
 
   /** Only a local successful action earns a celebration, never loading a list. */
   function celebrateEmpty(before: Pick<ListItem, "list">[]) {

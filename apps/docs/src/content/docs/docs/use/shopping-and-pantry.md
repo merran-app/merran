@@ -65,6 +65,26 @@ Checking the last outstanding item on a list, or emptying a list with **Clear ch
 
 ## Optional store connections
 
+:::note[Not released yet: ingredient details]
+Tap or hover the info icon beside any list item to compare **On the list** with its current recipe ingredient lines. **For this meal** shows a line scaled to the planned servings when those differ from the recipe's servings. Main dishes and sides are named separately, and repeated planned meals appear separately.
+
+**Recorded for this meal after pantry** shows the contribution left to buy when the list was calculated. The recipe lines are before pantry deductions; recipe changes and manual list edits can make them differ from the amount on the list. Items added by hand or from recurring buys may have no linked recipe lines. Unavailable recipe details are identified rather than guessed.
+:::
+
+:::note[Not released yet: shopping progress on List]
+The next release adds **Shopping progress** directly to **List**. Each item shows its selected product, whether it needs a product or is ready to send, and which store received it. Store cards show sent, ready, and attention counts. **Review Fry's** (or your store's name) opens product and pack review over the list; **Back to the list** closes it without losing your place. Already sent items are left out of the next send by default.
+
+Each row has a compact store/status menu, such as **Fry's · Choose product**, **Fry's · Ready**, or **Fry's · Sent**. Open it for product and sent-pack details, review, or to route an unsent item elsewhere, including **Shop for this item yourself**. With several connected stores, **Store for items without a product** chooses where unmatched items go. These choices are remembered in this browser tab.
+
+On phones, review opens in a bottom drawer like the assistant, with a scrollable body and fixed close/back controls. On larger screens it opens in a dialog. Both keep your place on the list.
+
+The product finder also uses a phone drawer: its title, close button, and search field stay above the scrolling results. Choosing a product returns to the review drawer; closing the finder leaves the review open. On larger screens, the finder replaces the review contents in the same dialog. Choose a product or use **Back to review** to return with your pack quantities, included items, and review position preserved. Product finding opened outside review still uses its own desktop dialog.
+
+Use **All items**, **Needs attention**, or **Sent to a cart** to see what remains. If an amount or selected product changes after sending, review the retailer cart before sending again; older sends without recorded details also need review. Merran records successful transfers, not live retailer-cart contents. It cannot detect items removed at the retailer or whether checkout completed.
+
+After checkout, **Mark … sent items bought** checks the unchanged, verified sent items, with **Undo** available. Check individual items instead if only some were bought. Items needing review stay unchecked. Checking items does not put them in the pantry: after receiving them, correct substitutions and quantities, then choose **Put away**. Sending to a cart alone never marks an item bought.
+:::
+
 The stores module is optional. **Find** can open searches at selected stores without a direct cart integration. Prices, product choices, and **Send** depend on the configured integration; support is not universal.
 
 For Kroger-family cart handoff:

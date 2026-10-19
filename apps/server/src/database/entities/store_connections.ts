@@ -20,7 +20,22 @@ export type StoreLocation = {
 }
 
 /** What was last sent to the cart: by list item, how many. */
-export type LastSent = { at: string; items: Record<string, number> }
+export type LastSent = {
+  at: string
+  items: Record<string, number>
+  /** Older sends have no snapshot; ask the person to check those carts. */
+  details?: Record<
+    string,
+    {
+      name: string
+      amount: string | null
+      productId: string
+      product: string
+      size: string | null
+      at: string
+    }
+  >
+}
 
 /**
  * A household's connection to a store with an API (Kroger): the store it

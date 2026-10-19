@@ -35,7 +35,7 @@ export function FindProductDialog({
         store: finding?.store.name ?? "",
       })
     )
-    void queryClient.invalidateQueries({ queryKey: ["list", "prices"] })
+    void queryClient.invalidateQueries({ queryKey: ["list"] })
     void queryClient.invalidateQueries({ queryKey: ["stores"] })
   }
 

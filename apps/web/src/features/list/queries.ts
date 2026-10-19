@@ -16,6 +16,18 @@ export const listQuery = queryOptions({
   queryFn: () => unwrap(api.GET("/api/list")),
 })
 
+/** Fetch the original recipe wording only when an item's info is opened. */
+export const itemDetailsQuery = (itemId: string) =>
+  queryOptions({
+    queryKey: ["list", "items", itemId, "details"],
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/list/items/{itemId}/details", {
+          params: { path: { itemId } },
+        })
+      ),
+  })
+
 /** What the household buys every so often and is about due for. */
 export const usualQuery = queryOptions({
   queryKey: ["list", "usual"],

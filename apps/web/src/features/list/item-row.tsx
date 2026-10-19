@@ -5,6 +5,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useTranslation } from "react-i18next"
+import type { ReactNode } from "react"
 
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -26,6 +27,7 @@ import { formatDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 import type { ListItem } from "./queries"
+import { ItemInfo } from "./item-info"
 import { useListActions } from "./use-list-actions"
 
 /** What the things on a list cost, each at its store. */
@@ -55,6 +57,7 @@ export function ItemRow({
   onEdit,
   find = null,
   prices = null,
+  shopping,
 }: {
   item: ListItem
   selection: Selection
@@ -66,6 +69,7 @@ export function ItemRow({
    * price keeps the column, so prices line up.
    */
   prices?: RowPrices | null
+  shopping?: ReactNode
 }) {
   const { t, i18n } = useTranslation()
   const actions = useListActions()
@@ -106,7 +110,7 @@ export function ItemRow({
     .join(" · ")
 
   const finding =
-    item.checked || selecting || !find?.stores.length ? null : find
+    item.checked || selecting || shopping || !find?.stores.length ? null : find
   const note = cost ? priceNote(cost) : undefined
 
   /** "Fry's price on Oct 17, for 2 × Kroger 2% Milk. Usually $3.49 each." */
@@ -135,17 +139,17 @@ export function ItemRow({
   }
 
   return (
-    <li className="flex items-center gap-3.5 py-3 @2xl:gap-4">
+    <li className="flex min-w-0 items-start gap-3 py-2.5 @2xl:gap-4">
       {selecting ? (
         <span
           onClick={() => selection.toggle(item.id)}
-          className="shrink-0 cursor-pointer"
+          className="mt-0.5 shrink-0 cursor-pointer"
         >
           <SelectMark picked={picked} />
         </span>
       ) : (
         <Checkbox
-          className="size-6 shrink-0 rounded-md"
+          className="mt-0.5 size-6 shrink-0 rounded-md"
           checked={item.checked}
           aria-label={
             item.checked
@@ -157,36 +161,40 @@ export function ItemRow({
           }
         />
       )}
-      <div className="grid min-w-0 flex-1 gap-0.5">
-        <button
-          type="button"
-          onClick={selecting ? () => selection.toggle(item.id) : onEdit}
-          {...(selecting ? {} : press)}
-          aria-pressed={selecting ? picked : undefined}
-          aria-label={
-            selecting
-              ? picked
-                ? t("select.unpick", { name: item.name })
-                : t("select.pick", { name: item.name })
-              : t("list.edit", { name: item.name })
-          }
-          className={cn(
-            "flex min-w-0 items-baseline gap-1.5 justify-self-start rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
-            item.checked && !selecting && "text-muted-foreground line-through"
-          )}
-        >
-          <span className="truncate font-medium first-letter:uppercase">
-            {item.name}
-          </span>
-          {item.amount && (
-            <span className="shrink-0 text-muted-foreground">
-              · {item.amount}
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
+        <div className="flex min-w-0 basis-full items-center gap-1 @md:flex-1 @md:basis-0">
+          <button
+            type="button"
+            onClick={selecting ? () => selection.toggle(item.id) : onEdit}
+            {...(selecting ? {} : press)}
+            aria-pressed={selecting ? picked : undefined}
+            aria-label={
+              selecting
+                ? picked
+                  ? t("select.unpick", { name: item.name })
+                  : t("select.pick", { name: item.name })
+                : t("list.edit", { name: item.name })
+            }
+            className={cn(
+              "flex min-h-7 min-w-0 flex-1 items-center gap-1.5 rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+              item.checked && !selecting && "text-muted-foreground line-through"
+            )}
+          >
+            <span className="truncate font-medium first-letter:uppercase">
+              {item.name}
             </span>
-          )}
-        </button>
+            {item.amount && (
+              <span className="max-w-[45%] shrink-0 truncate text-muted-foreground">
+                · {item.amount}
+              </span>
+            )}
+          </button>
+          {!selecting && <ItemInfo item={item} />}
+        </div>
+        {!selecting && shopping}
         {about && (
           <p
-            className="flex min-w-0 text-sm text-muted-foreground"
+            className="flex min-w-0 flex-1 text-sm text-muted-foreground @md:basis-full"
             title={more > 0 ? list("conjunction").format(meals) : undefined}
           >
             <span className="truncate">{about}</span>
@@ -201,7 +209,10 @@ export function ItemRow({
       {priced && (
         <div
           title={note}
-          className="grid min-w-16 shrink-0 justify-items-end gap-0.5 tabular-nums"
+          className={cn(
+            "grid shrink-0 justify-items-end gap-0.5 pt-1 tabular-nums sm:min-w-16",
+            !cost && "hidden sm:grid"
+          )}
         >
           {cost && (
             <>

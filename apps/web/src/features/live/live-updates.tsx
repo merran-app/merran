@@ -16,7 +16,11 @@ const MOST_WAIT_MS = 30_000
 /** What to fetch again when something in an area changes. */
 const REFRESH: Record<string, QueryKey[]> = {
   plan: [["plan"]],
-  list: [["list"]],
+  list: [
+    ["list"],
+    ["stores", "kroger", "basket"],
+    ["stores", "walmart", "basket"],
+  ],
   pantry: [["pantry"]],
   // What AI suggests for recipes is in Review.
   recipes: [["recipes"], ["tags"], ["review"]],
