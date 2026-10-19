@@ -1288,7 +1288,9 @@
       "tagsHint": "Press Enter, or type a comma, after each one.",
       "removeTag": "Remove {{name}}",
       "notesHint": "Tips, swaps, what to serve it with.",
-      "leave": "Leave without saving your changes?"
+      "leave": "Leave without saving your changes?",
+      "leaveDescription": "Your changes will be lost.",
+      "leaveConfirm": "Leave without saving"
     },
     "tagsHint": "Rename a tag to another tag's name to merge the two.",
     "tagName": "Rename {{name}}",

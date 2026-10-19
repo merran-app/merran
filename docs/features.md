@@ -193,13 +193,13 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
 | Today: the next meal, the rest of the week, ideas for tonight | Headline | Built | |
-| Made for phone, tablet and desktop | Key | Built | |
+| Made for phone, tablet and desktop | Key | Built | Not released yet: forms, confirmations and other overlays that use dialogs open as bottom drawers on phones; larger screens keep dialogs. |
 | Install to the home screen | Detail | Built | |
 | Three palettes, light and dark, per person | Detail | Built | |
 | Settings for the server, the household and you, kept apart | Detail | Built | |
 | Notifications and prep reminders: thaw the chicken, start the marinade | Key | Planned | Module |
 | Works offline: recipes you've opened, this week's plan, the list | Key | Planned | |
-| Guided tours, ⓘ explanations, a glossary and a Help menu | Key | Built | Available in alpha.4: core-page Driver.js tours start on first visit with remembered skip/disable choices; assistant orientation, Help replay and contextual explanations share the public glossary; real-device acceptance remains ([onboarding.md](onboarding.md#3-driverjs-and-help)) |
+| Guided tours, ⓘ explanations, a glossary and a Help menu | Key | Built | Available in alpha.4: core-page Driver.js tours start on first visit with remembered skip/disable choices; assistant orientation, Help replay and contextual explanations share the public glossary. Not released yet: replay waits for Help's mobile drawer to finish closing; real-device acceptance remains ([onboarding.md](onboarding.md#3-driverjs-and-help)) |
 | Translations, with units, aisles, stores and currency by country | Key | Planned | |
 
 ## For developers and integrations

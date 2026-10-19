@@ -9,6 +9,16 @@ import { TextareaField } from "@/components/form/textarea-field"
 import { TextField } from "@/components/form/text-field"
 import { PageHeader } from "@/components/layout/page-header"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -96,10 +106,10 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
   const saved = React.useRef(false)
 
   // Leaving with changes not saved asks first.
-  useBlocker({
-    shouldBlockFn: () =>
-      isDirty && !saved.current && !window.confirm(t("recipes.editor.leave")),
+  const blocker = useBlocker({
+    shouldBlockFn: () => isDirty && !saved.current,
     enableBeforeUnload: () => isDirty && !saved.current,
+    withResolver: true,
   })
 
   const whole = (minimum: number) => ({
@@ -156,6 +166,30 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
 
   return (
     <>
+      <AlertDialog
+        open={blocker.status === "blocked"}
+        onOpenChange={(open) => {
+          if (!open && blocker.status === "blocked") blocker.reset()
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("recipes.editor.leave")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("recipes.editor.leaveDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => blocker.status === "blocked" && blocker.proceed()}
+            >
+              {t("recipes.editor.leaveConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <PageHeader
         title={
           recipe ? t("recipes.editor.editTitle") : t("recipes.editor.newTitle")

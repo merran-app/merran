@@ -5,13 +5,52 @@ import { cn } from "cn"
 import { Button } from "@/components/ui/button"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Cancel01Icon } from "@hugeicons/core-free-icons"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
+import { useIsMobile } from "@/hooks/use-mobile"
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+const MobileDialog = React.createContext(false)
+
+type DialogRootProps = Omit<DialogPrimitive.Root.Props, "onOpenChange"> & {
+  onOpenChange?: (open: boolean) => void
 }
 
-function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
+function useMobileDialog() {
+  return React.useContext(MobileDialog)
+}
+
+function Dialog({ handle, ...props }: DialogRootProps) {
+  const mobile = useIsMobile()
+
+  return (
+    <MobileDialog.Provider value={mobile}>
+      {mobile ? (
+        <Drawer data-slot="dialog" {...props} />
+      ) : (
+        <DialogPrimitive.Root data-slot="dialog" handle={handle} {...props} />
+      )}
+    </MobileDialog.Provider>
+  )
+}
+
+function DialogTrigger({ handle, ...props }: DialogPrimitive.Trigger.Props) {
+  if (useMobileDialog()) {
+    return <DrawerTrigger data-slot="dialog-trigger" {...props} />
+  }
+
+  return (
+    <DialogPrimitive.Trigger
+      data-slot="dialog-trigger"
+      handle={handle}
+      {...props}
+    />
+  )
 }
 
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
@@ -19,6 +58,10 @@ function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
 }
 
 function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
+  if (useMobileDialog()) {
+    return <DrawerClose data-slot="dialog-close" {...props} />
+  }
+
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
@@ -46,6 +89,42 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
+  const mobile = useMobileDialog()
+
+  if (mobile) {
+    const mobileProps = props as React.ComponentProps<"div">
+
+    return (
+      <DrawerContent className="relative max-h-[92svh] min-h-0">
+        <div
+          data-slot="dialog-content"
+          className={cn(
+            "grid min-h-0 gap-6 overflow-y-auto overscroll-contain px-6 pt-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]",
+            className
+          )}
+          {...mobileProps}
+        >
+          {children}
+        </div>
+        {showCloseButton && (
+          <DrawerClose
+            data-slot="dialog-close"
+            render={
+              <Button
+                variant="ghost"
+                className="absolute top-7 right-4"
+                size="icon-sm"
+              />
+            }
+          >
+            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+            <span className="sr-only">Close</span>
+          </DrawerClose>
+        )}
+      </DrawerContent>
+    )
+  }
+
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -79,10 +158,12 @@ function DialogContent({
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+  const mobile = useMobileDialog()
+
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
+      className={cn("flex flex-col gap-2", mobile && "pr-10", className)}
       {...props}
     />
   )
@@ -96,6 +177,8 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean
 }) {
+  const mobile = useMobileDialog()
+
   return (
     <div
       data-slot="dialog-footer"
@@ -106,16 +189,29 @@ function DialogFooter({
       {...props}
     >
       {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close render={<Button variant="outline" />}>
-          Close
-        </DialogPrimitive.Close>
-      )}
+      {showCloseButton &&
+        (mobile ? (
+          <DrawerClose render={<Button variant="outline" />}>Close</DrawerClose>
+        ) : (
+          <DialogPrimitive.Close render={<Button variant="outline" />}>
+            Close
+          </DialogPrimitive.Close>
+        ))}
     </div>
   )
 }
 
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
+  if (useMobileDialog()) {
+    return (
+      <DrawerTitle
+        data-slot="dialog-title"
+        className={cn("leading-none", className)}
+        {...props}
+      />
+    )
+  }
+
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
@@ -132,6 +228,19 @@ function DialogDescription({
   className,
   ...props
 }: DialogPrimitive.Description.Props) {
+  if (useMobileDialog()) {
+    return (
+      <DrawerDescription
+        data-slot="dialog-description"
+        className={cn(
+          "*:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+          className
+        )}
+        {...props}
+      />
+    )
+  }
+
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"

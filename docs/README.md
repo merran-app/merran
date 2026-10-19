@@ -63,7 +63,7 @@ The REFERENCE app's docs described each feature in detail; they're in the repo's
 | Background work | A small job runner of our own on a `jobs` table, with `croner` schedules | Durable jobs on either database; pg-boss is Postgres only |
 | AI | AI SDK 6 behind a thin Merran layer; Anthropic, OpenAI, OpenAI-compatible, Google | Households bring many kinds of keys |
 | Web | React 19, Vite, TanStack Router and Query, shadcn/ui on Base UI, Tailwind v4 | Mostly kept; typed routes and the current shadcn default |
-| Mobile dialogs | Always use a drawer on mobile; dialogs are for larger screens | Decided October 19, 2026: applies to forms, confirmations and other dialog content in new or changed UI; existing dialogs will be converted as they are touched |
+| Mobile dialogs | Always use a drawer on mobile; dialogs are for larger screens | Decided October 19, 2026: applies to forms, confirmations and other dialog content throughout the web app. The shared dialog and confirmation components select drawers below 768px. |
 | Translations | i18next from the first string, Weblate later | Far cheaper than retrofitting |
 | Extension | WXT, for Chrome, Edge and Firefox | One codebase for every browser |
 | Guided tours | driver.js, with tours per page and role, ⓘ explanations and a glossary | New people learn what everything is and means |

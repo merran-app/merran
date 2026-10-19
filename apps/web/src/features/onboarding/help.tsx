@@ -19,8 +19,30 @@ export function HelpButton() {
   const { start, current } = useTour()
   const { update, saving } = useOnboarding()
   const ai = useCapability("ai")
+  const pendingTour = React.useRef<"current" | "assistant" | null>(null)
+
+  function replay(tour: "current" | "assistant") {
+    pendingTour.current = tour
+    setOpen(false)
+  }
+
+  function onOpenChangeComplete(finishedOpen: boolean) {
+    if (finishedOpen || !pendingTour.current) return
+
+    const tour = pendingTour.current
+    pendingTour.current = null
+    // Wait for the closing popup to leave the DOM before the tour checks for overlays.
+    window.requestAnimationFrame(() =>
+      start(tour === "assistant" ? "assistant" : undefined)
+    )
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={setOpen}
+      onOpenChangeComplete={onOpenChangeComplete}
+    >
       <DialogTrigger
         render={<Button data-tour="help" variant="ghost" size="sm" />}
       >
@@ -33,23 +55,12 @@ export function HelpButton() {
         </DialogHeader>
         <div className="grid gap-3">
           {current && (
-            <Button
-              onClick={() => {
-                setOpen(false)
-                window.setTimeout(() => start(), 200)
-              }}
-            >
+            <Button onClick={() => replay("current")}>
               {t("help.replay")}
             </Button>
           )}
           {ai && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                setOpen(false)
-                window.setTimeout(() => start("assistant"), 200)
-              }}
-            >
+            <Button variant="outline" onClick={() => replay("assistant")}>
               {t("help.assistantTour")}
             </Button>
           )}
