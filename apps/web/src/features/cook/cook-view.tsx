@@ -68,6 +68,7 @@ import { mergeLeftOut, useRecipeTastes } from "@/features/recipes/use-tastes"
 import { useUnitSystem } from "@/features/recipes/use-unit-system"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
+import { celebrate } from "@/lib/celebrations/celebrate"
 
 import {
   loadProgress,
@@ -247,6 +248,7 @@ export function CookView({
       clearSwaps(recipe.id)
       await refresh()
       toast.success(t("cook.made"))
+      celebrate()
       // Then "How did it go?", and back where cooking started.
       setAsking(true)
     } catch (error) {

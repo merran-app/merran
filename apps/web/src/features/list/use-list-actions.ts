@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
+import { celebrate } from "@/lib/celebrations/celebrate"
 
 import { listQuery, type ListItem, type ListItemSnapshot } from "./queries"
 
@@ -30,6 +31,16 @@ export function useListActions() {
         queryKey: ["stores", "walmart", "basket"],
       }),
     ])
+
+  /** Only a local successful action earns a celebration, never loading a list. */
+  function celebrateEmpty(before: Pick<ListItem, "list">[]) {
+    const items = queryClient.getQueryData(listQuery.queryKey)?.items
+    if (
+      items &&
+      before.some((old) => !items.some((item) => item.list === old.list))
+    )
+      celebrate()
+  }
 
   async function run<T>(work: () => Promise<T>): Promise<T | null> {
     try {
@@ -71,10 +82,10 @@ export function useListActions() {
     add: (body: Schemas["NewListItem"]) =>
       run(() => unwrap(api.POST("/api/list/items", { body }))),
 
-    change: (item: ListItem, changes: Changes) => {
+    change: async (item: ListItem, changes: Changes) => {
       if (changes.checked !== undefined)
         showChange(item.id, { checked: changes.checked })
-      return run(() =>
+      const done = await run(() =>
         unwrap(
           api.PATCH("/api/list/items/{itemId}", {
             params: { path: { itemId: item.id } },
@@ -82,6 +93,15 @@ export function useListActions() {
           })
         )
       )
+      if (done && changes.checked === true && !item.checked) {
+        const items = queryClient.getQueryData(listQuery.queryKey)?.items
+        if (
+          items?.some((line) => line.id === item.id && line.checked) &&
+          !items.some((line) => line.list === item.list && !line.checked)
+        )
+          celebrate()
+      }
+      return done
     },
 
     async remove(item: ListItem) {
@@ -107,11 +127,30 @@ export function useListActions() {
       if (!done) return false
       if (action.action === "every-week") toast.success(said(done.changed))
       else undoable(said(done.changed), done.before)
+      if (action.action === "remove") celebrateEmpty(done.before)
+      if (action.action === "check") {
+        const items = queryClient.getQueryData(listQuery.queryKey)?.items
+        if (
+          items &&
+          done.before.some(
+            (old) =>
+              !old.checked &&
+              !items.some((item) => item.list === old.list && !item.checked)
+          )
+        )
+          celebrate()
+      }
       return true
     },
 
     /** What's checked off (on a list, or all of them) into the pantry. */
     async putAway(list?: string) {
+      const before =
+        queryClient
+          .getQueryData(listQuery.queryKey)
+          ?.items.filter(
+            (item) => item.checked && (!list || item.list === list)
+          ) ?? []
       const done = await run(() =>
         unwrap(
           api.POST("/api/list/put-away", {
@@ -121,6 +160,7 @@ export function useListActions() {
       )
       await queryClient.invalidateQueries({ queryKey: ["pantry"] })
       if (!done) return
+      if (done.stored + done.cleared > 0) celebrateEmpty(before)
       toast.success(
         done.stored > 0
           ? t("list.putAwayDone", { count: done.stored })
@@ -180,8 +220,10 @@ export function useListActions() {
       )
       if (!done) return
       if (done.before.length === 0) toast(t("list.clearedNone"))
-      else
+      else {
         undoable(t("list.cleared", { count: done.before.length }), done.before)
+        celebrateEmpty(done.before)
+      }
     },
   }
 }

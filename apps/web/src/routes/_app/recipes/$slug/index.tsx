@@ -80,6 +80,7 @@ import { PlanItDialog } from "@/features/plan/plan-it-dialog"
 import { formatPrice, useCosts } from "@/features/stores/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { formatRelativeDate } from "@/lib/format"
+import { celebrate } from "@/lib/celebrations/celebrate"
 
 type RecipePageSearch = {
   /** A recipe it goes with, shown with it. */
@@ -202,6 +203,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
       )
       await refresh()
       toast.success(t("recipes.markedMade"))
+      celebrate()
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       toast.error(error.message)

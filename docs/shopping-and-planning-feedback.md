@@ -1,6 +1,6 @@
 # Shopping and planning feedback
 
-Recorded October 18, 2026 from using Merran with Fry's and automatic meal planning. This record tracks the resulting improvements and the work still planned; none is a commitment to a release. Track their status in [features.md](features.md) and the public roadmap.
+Recorded October 18, 2026 from using Merran with Fry's and automatic meal planning. This record tracks the resulting improvements and the work still planned; none is a commitment to a release. Completion celebrations below are built but not released yet. Track status in [features.md](features.md) and the public roadmap.
 
 ## Complete list items after sending to a store
 
@@ -29,6 +29,15 @@ After Fill the week or scheduled automatic planning, make it quick to move meals
 - Preserve servings, paired recipes and notes. Decide how to handle cooked/skipped meals and theme-night mismatches.
 - Review the effect on an already-generated shopping list so moving meals does not duplicate ingredients or silently discard checked items.
 
-## Before implementation
+## Completion celebrations
 
-For the remaining substitutions and meal-rearranging work, confirm the interaction choices above, inspect ingredient provenance and Move or change behavior, and split implementation into independently reviewable changes. The original feedback record introduced no runtime changes; the shopping completion and ingredient-context decisions above describe the subsequent implementation.
+Decided October 18, 2026; built, not released yet. Reward finishing a shopping list or cooking with a randomly chosen shower of confetti, stars or petals. Pieces enter above the viewport at staggered times, fall through the full screen, and flutter and tumble independently; the shower clears within five seconds.
+
+- Celebrate after a successful action checks the last outstanding item on a list, empties a list through clearing or putting purchases away, or marks a recipe made or a planned meal cooked. Bulk actions can celebrate once too.
+- Do not celebrate merely opening an empty list, receiving a live update, undoing an action, or a failed request. Removing only some items is not finishing a list.
+- Keep the effect silent, decorative, brief and unable to intercept taps or keyboard focus. Skip animations when the device requests reduced motion, and stop an active effect if that preference changes. Existing success messages, Undo and cooking notes remain available.
+- Use the current palette's chart colors and browser animations, with no new dependency. Ignore overlapping celebration requests so several quick completions cannot fill the screen with effects.
+
+## Before implementation of the planned improvements
+
+For the remaining substitutions and meal-rearranging work, confirm the interaction choices above, inspect ingredient provenance and Move or change behavior, and split implementation into independently reviewable changes. The original feedback record introduced no runtime changes; the shopping completion, ingredient-context and celebration decisions above describe the subsequent implementation.

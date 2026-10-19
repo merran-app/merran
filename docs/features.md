@@ -94,6 +94,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Cook view for the kitchen counter: get ready, ingredients per step, big text | Headline | Built | |
 | Kitchen timers from the steps | Key | Built | |
 | Screen stays on, and your place is kept | Detail | Built | |
+| Random celebrations when shopping or cooking is finished | Detail | Built | Not released yet: falling showers of confetti, stars or petals after successful list completion/clearing and marking a meal made or cooked; respects reduced motion ([decision](shopping-and-planning-feedback.md#completion-celebrations)) |
 | Hands-free: steps read aloud, voice commands | Key | Built | Uses the device's voice |
 | A better server voice (Kokoro or OpenAI) | Detail | Built | Module; each step read once and kept; the device's own voice when it can't |
 | Swap an ingredient you're out of | Key | Built | AI; for this time or saved to the recipe, with the steps rewritten to match, in cook view too |

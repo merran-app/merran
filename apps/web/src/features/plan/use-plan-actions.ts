@@ -3,6 +3,7 @@ import { toast } from "sonner"
 
 import { useRefreshRecipes } from "@/features/recipes/queries"
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
+import { celebrate } from "@/lib/celebrations/celebrate"
 
 import { suggest, type PlanEntry, type PlanSnapshot } from "./queries"
 
@@ -68,15 +69,19 @@ export function usePlanActions() {
     add: (body: NewEntry) =>
       run(() => unwrap(api.POST("/api/plan/entries", { body }))),
 
-    change: (entry: PlanEntry, changes: Changes) =>
-      run(() =>
+    change: async (entry: PlanEntry, changes: Changes) => {
+      const done = await run(() =>
         unwrap(
           api.PATCH("/api/plan/entries/{entryId}", {
             params: { path: { entryId: entry.id } },
             body: changes,
           })
         )
-      ),
+      )
+      if (done && changes.status === "cooked" && entry.status !== "cooked")
+        celebrate()
+      return done
+    },
 
     /** Fill the week's meals, all at once, with Undo taking them off. */
     async addMany(entries: NewEntry[]) {
@@ -159,6 +164,12 @@ export function usePlanActions() {
       )
       if (!done) return false
       const count = done.before.length
+      if (
+        action.action === "status" &&
+        action.status === "cooked" &&
+        done.before.some((entry) => entry.status !== "cooked")
+      )
+        celebrate()
       undoable(
         action.action === "remove"
           ? t("plan.bulk.removed", { count })

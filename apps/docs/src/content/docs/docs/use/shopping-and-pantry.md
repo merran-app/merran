@@ -59,6 +59,10 @@ Creating the list sets pantry stock aside for meals; it does not mean the food h
 
 Where a supported cart handoff recorded pack sizes, put-away can use purchased packs instead of the recipe's required amount. Otherwise it uses the list's amount. Correct the pantry if you actually bought a different pack. Purchase history can later produce **Due about now** suggestions; adding those remains your choice.
 
+:::note[Not released yet]
+Checking the last outstanding item on a list, or emptying a list with **Clear checked**, **Clear the list**, **Put away**, or **Put it all away**, plays a short shower of confetti, stars, or petals chosen at random. Pieces rain down across the screen, drifting and tumbling as they fall. Effects are silent and respect your device's reduced-motion preference. Partially clearing a list does not celebrate.
+:::
+
 ## Optional store connections
 
 :::note[Not released yet: ingredient details]

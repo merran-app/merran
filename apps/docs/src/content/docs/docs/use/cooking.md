@@ -59,6 +59,10 @@ The optional server voice module can read using a configured Kokoro service or O
 
 Cooking notes record what happened on a particular occasion. Use **Edit → Notes** for lasting recipe instructions. When optional AI note suggestions are available, a note may produce a proposed recipe change in **Review**; inspect it before applying it.
 
+:::note[Not released yet]
+Finishing with **Done cooking**, **Made it**, or **Mark cooked** on a planned meal plays a short shower of confetti, stars, or petals chosen at random. Pieces rain down across the screen, drifting and tumbling as they fall. Effects are silent and respect your device's reduced-motion preference.
+:::
+
 ## Resume and troubleshoot
 
 Progress is remembered in this browser for up to 12 hours, including the step and checked ingredients, when the serving scale and paired recipe match. **Start over** discards that progress. This is not cross-device cooking progress or an offline copy of the recipe.
