@@ -114,7 +114,7 @@ Every outside call Merran can make, when, and how to stop it. This table also go
 Runtime dependency fix, October 18, 2026: shared telemetry imports zod at runtime. The image previously copied only root and server node_modules, omitting the shared package's pnpm dependency links. Production and web installs now select workspace dependencies explicitly with the trailing ... filter, and the runtime copies packages/shared/node_modules. A final-image import check loads the shared entry point and telemetry schema during every CI/release build so this packaging failure blocks publication. This changes no settings or storage layout; recover by installing a corrected image while preserving app files, database and server secret.
 
 - **Prebuilt images on GitHub's registry:** `ghcr.io/merran-app/merran`, for `amd64` and `arm64` (so a Raspberry Pi 4 or 5 works).
-- **Tags:** the version itself (`0.1.0-alpha.1`, `1.4.2`), which never moves; `next` (the newest release, pre-releases included); for a release that isn't a pre-release, `1.4`, `1` (from 1.0 on) and `latest`; and `edge` (every commit to main, for testers). The compose file uses `next` while Merran is in alpha.
+- **Tags:** the version itself (`0.1.0-alpha.1`, `1.4.2`), which never moves; `next` (the newest release, pre-releases included); for a release that isn't a pre-release, `1.4`, `1` (from 1.0 on) and `latest`; and `edge` (checked image-affecting changes on main, for testers). The compose file uses `next` while Merran is in alpha.
 - **Signed and described:** each image is signed with cosign and carries an SBOM and build provenance, so anyone can check it came from this repo's CI.
 - **One image with everything,** yt-dlp and ffmpeg included (about 100 MB of the image), and Postgres's `pg_dump` so Merran can back up either database itself. Modules that aren't wanted are turned off rather than built out.
 - **Running as a normal user:** the container drops to `PUID`/`PGID` as in the REFERENCE app, or runs as any user set in compose.
@@ -154,11 +154,34 @@ Docs for each common way in: a Cloudflare Tunnel (in the compose file), Tailscal
 - **The Release workflow** (`.github/workflows/release.yml`), run by hand on main with a version: every check again, then the images for amd64 and arm64 with the version baked in (`MERRAN_VERSION`), signed with cosign (keyless, so anyone can check they came from this repo's workflow), the browser extension's zips, and last the GitHub release, tagged `v<version>`. It's published only once the images exist, because every Merran's update check sees it at once. Pre-releases (`0.1.0-alpha.1`) are marked so, and don't move `latest`.
 - **Release notes, drafted as pull requests merge** (decided October 17, 2026, like Mealie's): Release Drafter (`.github/release-drafter.yml`) keeps a draft of the next release, with each merged pull request under a heading for its kind, taken from the start of its title: `feat:`, `fix:`, `docs:`, `chore:` (or `refactor:`, `perf:`, `test:`, `build:`, `ci:`), `chore(deps):` for dependencies, and a `!` for a breaking change (`feat!: ...`). The Pull request workflow's Title check holds every pull request to those, and the `skip-changelog` label leaves one out. Commit messages stay plain English; only pull request titles have a type. While Merran is in alpha, each draft is the next alpha (`prerelease-identifier: alpha`, taken out for 0.1.0).
 - **Making a release:** write the highlights in the draft on GitHub (what's new, with screenshots) just before running Release, since each merge writes the draft afresh. Release takes the draft's notes as they are when it starts, won't publish one that still has its placeholder, and adds how to get the release and a link to everything since the last one. The first release's draft has nothing to compare with, so its notes are written by hand, and Release won't publish it while Release Drafter's warning about that is still in it. Without a draft, GitHub writes the notes from the pull requests.
-- **CI** (`.github/workflows/ci.yml`, with the checks in `check.yml`): every push to main and pull request runs the checks on SQLite and Postgres, builds the extension and the image, and main publishes `edge`, versioned `0.0.0-edge.<commit>`.
+- **CI** (`.github/workflows/ci.yml`, with the checks in `check.yml`): every push to main and pull request selects checks from its changed files. Application checks run by package; server changes still test SQLite and Postgres. Relevant image changes build amd64 alongside PR checks; main publishes amd64 and arm64 as `edge`, versioned `0.0.0-edge.<commit>`, only after checks pass. Documentation-only changes do not publish another image. See the October 19 decision below.
 - **Database changes run at startup.** Before applying any, Merran backs the database up into `data/backups` (`pre-1.5.0-<date>`), so a bad update can always be undone.
 - **Downgrades aren't supported,** and the release notes say when an update can't be undone without that dump.
 - **The update check** (the Update check module) asks GitHub for Merran's releases (not commits, as the REFERENCE app did) every 6 hours, and a minute after Merran starts. A server on a pre-release hears about newer pre-releases too; one on a release only about releases; a build that isn't a release (from source, or `edge`) isn't checked. The server admin sees an Update badge in the sidebar and the account menu, and Settings → This server shows the release notes and the commands for their install method, with **Look now**. `MERRAN_UPDATE_CHECK=false` turns it off; only the request for the releases is sent.
 - **Support:** the latest minor version gets fixes. Security fixes go to the latest minor of the current major.
+
+### Selective CI — October 19, 2026 (not released yet)
+
+CI always starts, then `.github/scripts/changes.mjs` selects jobs from the complete Git diff. PRs use the merge base; pushes compare the previous and current commit. Renames include both paths and deletions count. An unavailable initial base runs all checks; a failed diff fails CI. Unknown paths, shared-package changes and global configuration changes select all checks conservatively.
+
+| Changed area | Checks |
+|---|---|
+| Root Markdown, internal `docs/`, GitHub screenshots | Routing tests and final gates; no application builds |
+| `apps/docs/` | Site formatting, typecheck, tests, build and link validation |
+| `apps/web/` | Web formatting, typecheck, contrast, build, tests and generated-file checks; image |
+| `apps/server/` | Server formatting, typecheck, SQLite and Postgres tests; site generation checks and image |
+| `apps/extension/` | Extension formatting, typecheck and both browser builds |
+| `apps/telemetry/` | Receiver formatting, typecheck and tests |
+| `packages/shared/` | All checks and image |
+| Dockerfile, `.dockerignore`, `docker/` | Image |
+
+OpenAPI JSON changes also select the web and extension checks. Extension API types select the web consistency check. Web locale changes select the site glossary check. The web stylesheet selects all checks because the root Prettier configuration reads it. Every package job installs its workspace dependencies plus root tools, with a lockfile-keyed pnpm download cache. Server tests keep both databases; only that job starts Postgres.
+
+The public site checks are reusable (`docs-check.yml`), called once by CI and also by Release. The Public site workflow remains a manual build/deploy entry point and only uploads a Pages artifact when deploying main. Release selects every package regardless of the diff; the extension is typechecked there and built once per browser when making its versioned ZIPs. Published release images retain signing, provenance and SBOM generation. PR images keep the final-image import check and skip QEMU because they only build amd64.
+
+**Required checks:** configure branch protection/rulesets to require **CI passed** and **Title**. Replace the former Docker image and Public site `build` requirements, whose job paths have changed. `check / Check and test` is retained as the package aggregate, but only **CI passed** also covers the image. The gates run with `always()` and reject failures, cancellations, missing results and unexpected skips. Do not require conditionally started workflows. Existing repository rules are not changed by these files; update them when adopting this workflow.
+
+Local validation: `node --test .github/scripts/*.test.mjs` covers routing, real Git merge-base and rename/deletion behavior, and gate failure cases. Run `actionlint` for workflow syntax and reusable-workflow inputs. Runtime execution, cache hits and elapsed-time comparisons still need GitHub-hosted runs.
 
 ## Backups and restore
 
