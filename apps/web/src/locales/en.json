@@ -900,6 +900,7 @@
       "addNote": "Add"
     },
     "addTo": "Add to {{when}}",
+    "alreadyPlanned": "Already planned",
     "moveTo": "Move to",
     "anyDayOf": "Any day, {{week}}",
     "keepMeal": "Each one's own",
@@ -1278,6 +1279,7 @@
     "filters": "Filters",
     "new": "New",
     "notMadeYet": "Not made yet",
+    "plannedThisWeek": "Planned this week",
     "madeWhen": "Made {{when}}",
     "cookNotes": {
       "title": "Cooking notes",

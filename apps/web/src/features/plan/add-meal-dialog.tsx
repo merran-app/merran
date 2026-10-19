@@ -79,6 +79,7 @@ export function AddMealDialog({
           </TabsList>
           <TabsContent value="recipe" className="pt-2">
             <RecipePicker
+              planDate={slot?.date ?? null}
               label={t("plan.pick.find")}
               onPick={(recipe) => void add({ recipe: recipe.id }, recipe.name)}
             />

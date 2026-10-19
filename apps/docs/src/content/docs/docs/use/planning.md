@@ -17,6 +17,8 @@ These steps follow the current repository implementation, pending fresh-install 
 
 ## Add a meal and set servings
 
+**Not released yet:** the recipe picker shows **Already planned** for recipes already added to the week you are choosing meals for, including its any-day pool and sides. Cooked meals still count; skipped meals do not. This badge also appears when you **Pick a side**, using the week selected in **When**. You can still select a recipe again for an intentional repeat.
+
 1. Open **Plan** and use the week controls to choose your week.
 2. On a day, choose **Add breakfast**, **Add lunch**, **Add dinner**, or **Add a snack**.
 3. Choose **A recipe**, search, and select a recipe. For leftovers or eating out, choose **A note** instead and enter the text.
