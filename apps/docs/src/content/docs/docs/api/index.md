@@ -23,6 +23,18 @@ Sign in to Merran and open your personal API key settings. Create a key for the 
 
 Keys are scoped to a household. A key's permissions determine which areas it can read or change. Routes without API-key support require a browser session instead; check each endpoint's security requirements.
 
+:::note[Not released yet]
+Requests with a malformed `Authorization` header return `401` with code `invalid_authorization`, even when a valid browser session cookie is also present. Omit the header to use a browser session, or supply a valid bearer key or OAuth access token.
+:::
+
+## OAuth connections (not released yet)
+
+OAuth-enabled servers also accept `Authorization: Bearer mro_…` on routes that support delegated access. Register an application in **Settings → This server → OAuth applications**, then use authorization code with S256 PKCE and the `https://meals.example.com/api` resource. Permissions use scopes such as `recipes:read` and `list:write`; `offline_access` requests a rotating refresh token. The person chooses one household and approves the permissions. REST write scopes permit direct changes.
+
+Discovery is available at `/.well-known/oauth-protected-resource/api` and `/.well-known/oauth-authorization-server/api/auth`. Authorization, token exchange, revocation and client registration live under `/api/auth/oauth2/`; the generated endpoint reference describes them. Token exchange uses form encoding and the registered client's authentication method. Client-credentials grants and identity scopes are unavailable.
+
+An MCP resource token cannot call REST routes. Delegated credentials cannot use session-only account or administrator operations, even when their owner is an administrator. **Connected apps → Disconnect** revokes the grant and its tokens. See [Authentication and connected apps](../run/authentication/) for setup, sign-in policy and token lifetimes.
+
 ## Check the key
 
 Replace the address and placeholder key with your own:

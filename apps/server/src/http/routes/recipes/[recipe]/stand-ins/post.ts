@@ -1,3 +1,4 @@
+import { delegatedCredential } from "../../../../../services/auth/credentials.ts"
 import { createRoute } from "@hono/zod-openapi"
 import { AppError } from "../../../../../core/errors.ts"
 import type { AppDeps } from "../../../../../core/context.ts"
@@ -40,7 +41,7 @@ const route = createRoute({
 export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
-    if (c.req.valid("json").mealId && c.var.apiKey)
+    if (c.req.valid("json").mealId && delegatedCredential(c.var.credential))
       throw new AppError(
         "forbidden",
         "api_key_not_allowed",

@@ -65,7 +65,10 @@ export async function buildReport(
   modules: readonly Module[]
 ): Promise<Required<TelemetryReport>> {
   const statuses = await Promise.all(
-    modules.map(async (module) => [module.id, (await module.status(ctx)).on])
+    // Authentication is core infrastructure, not an optional capability report.
+    modules
+      .filter((module) => module.id !== "auth")
+      .map(async (module) => [module.id, (await module.status(ctx)).on])
   )
   return {
     installId: await installId(em, ctx),

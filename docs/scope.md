@@ -241,6 +241,8 @@ Email follow-up, October 18, 2026 (released in alpha.4): SMTP settings and test 
 
 MCP follow-up, October 19, 2026 (not released yet): the bearer-key endpoint and shared tools now create proposals in Review. OAuth connections and optional direct plan/list application remain planned; see [platform.md](platform.md#mcp-server).
 
+Authentication round, October 19, 2026: OAuth is promoted from a later MCP-only item into the current shared authentication work, alongside passkeys, two-step sign-in, external OIDC, recovery and account linking. It will cover household-scoped MCP and REST clients. General “Sign in with Merran” and machine-to-machine grants are excluded. The credential foundation is underway; no new sign-in method or OAuth issuance is available yet. See [authentication.md](authentication.md).
+
 ## Research candidates — October 17, 2026
 
 Saved menus, prepared-meal/freezer portions, iCalendar subscriptions, minimum-stock reminders, recipe-only share links and print/cookbook views were added to public Exploring after comparing official documentation from similar apps with Merran's source. These are not added to the 0.1 commitments or build order. See [roadmap-research.md](roadmap-research.md) for evidence, suggested first slices and tradeoffs.

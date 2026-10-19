@@ -35,7 +35,8 @@ Start with [the guides](../../) and [integration setup](../../integrations/brows
 
 ## In progress (not released yet)
 
-- **MCP:** a bearer-key endpoint, shared assistant tools, connection setup and proposals in Review are implemented after alpha.4. All changes require review in this version. See [MCP setup](../../integrations/mcp/). Real-client acceptance, OAuth connectors and optional direct plan/list application remain separate work.
+- **MCP:** a bearer-key endpoint, shared assistant tools, connection setup and proposals in Review are implemented after alpha.4. All changes require review in this version. See [MCP setup](../../integrations/mcp/). Broader real-client acceptance and optional direct plan/list application remain separate work.
+- **Authentication and connected apps:** passkeys, authenticator-based two-step sign-in, external OIDC single sign-on, and OAuth connections for MCP and REST are implemented after alpha.4. They are opt-in; external provider, device and deployment acceptance remains to be verified. See [authentication setup](../../run/authentication/).
 
 ## Up next
 
@@ -54,7 +55,6 @@ These are features we intend to build. Their order here does not indicate priori
 - **Swap planned meals:** exchange two meals directly while preserving their details and shopping-list state. Moving a meal to another day or the any-day pool already works.
 - **Offline recipes, plans, and shopping lists:** keep previously opened recipes, the week's plan, and shopping lists useful without a connection, with list check-offs syncing when you reconnect.
 - **Prep reminders:** help you remember to thaw ingredients, start a marinade, or begin cooking before dinner is due.
-- **More sign-in options:** add passkeys, authenticator-based two-step sign-in, and OIDC single sign-on so you can choose a sign-in method that fits your household or server.
 - **Webhooks:** let tools such as Home Assistant and n8n react when recipes, plans, lists, or pantry items change.
 - **Translations:** make the interface available beyond English, including the planned option to translate recipes as they are imported. Measurement conversion already works.
 - **After-cooking pantry checks:** offer a checklist of ingredients that ran out, with an option to put them on the shopping list. Existing planned-meal deductions remain available.
@@ -72,7 +72,6 @@ These ideas need more feedback and design work before we choose whether or how t
 - **Barcode scanning:** make it quicker to identify packaged food when adding it to the pantry.
 - **Meaning-based recipe search:** help you find a meal by what you have in mind, even when you do not remember its title or exact ingredients.
 - **A limited role for children:** let younger household members take part with permissions suited to their needs.
-- **OAuth connections for external AI apps:** make connecting supported remote AI clients easier without manually copying an API key.
 - **More recipe tools:** consider Tandoor migration, step photos, recipe translations beyond import, and AI-ranked meal suggestions.
 - **Larger deployments:** consider household-owned integration keys, OpenTelemetry, and a Helm chart.
 

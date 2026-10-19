@@ -10,35 +10,18 @@ import { roleIn, type HouseholdRole } from "../households/households.ts"
 /** Every key starts with this, so secret scanners can spot a leaked one. */
 export const API_KEY_PREFIX = "mrn_"
 
-/** What a key can be allowed to do. `household` is only ever read. */
-export const API_AREAS = [
-  "household",
-  "recipes",
-  "plan",
-  "list",
-  "pantry",
-  "imports",
-  "assistant",
-] as const
-
-export type ApiArea = (typeof API_AREAS)[number]
-export type ApiAccess = "read" | "write"
+export {
+  API_AREAS,
+  allows,
+  type ApiArea,
+  type ApiAccess,
+} from "./permissions.ts"
 
 /** Last used is noted at most this often, so a busy key isn't a write per request. */
 const LAST_USED_EVERY_MS = 10 * 60 * 1000
 
 function hash(key: string) {
   return createHash("sha256").update(key).digest("hex")
-}
-
-/** Whether a key's permissions cover this. Write includes read. */
-export function allows(
-  permissions: ApiKeyPermissions,
-  area: ApiArea,
-  access: ApiAccess
-) {
-  const given = permissions[area]
-  return given === "write" || (given === "read" && access === "read")
 }
 
 /** Makes a key. The key itself is returned once and never kept. */

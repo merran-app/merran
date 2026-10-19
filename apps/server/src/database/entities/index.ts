@@ -1,3 +1,21 @@
+import { OauthClient } from "./oauth_clients.ts"
+export * from "./oauth_clients.ts"
+import { OauthResource } from "./oauth_resources.ts"
+export * from "./oauth_resources.ts"
+import { OauthClientResource } from "./oauth_client_resources.ts"
+export * from "./oauth_client_resources.ts"
+import { OauthRefreshToken } from "./oauth_refresh_tokens.ts"
+export * from "./oauth_refresh_tokens.ts"
+import { OauthAccessToken } from "./oauth_access_tokens.ts"
+export * from "./oauth_access_tokens.ts"
+import { OauthConsent } from "./oauth_consents.ts"
+export * from "./oauth_consents.ts"
+import { OauthClientAssertion } from "./oauth_client_assertions.ts"
+export * from "./oauth_client_assertions.ts"
+import { Passkey } from "./passkeys.ts"
+import { TwoFactor } from "./two_factors.ts"
+export * from "./passkeys.ts"
+export * from "./two_factors.ts"
 // One file per table, named after the table.
 
 import { Account } from "./accounts.ts"
@@ -98,6 +116,15 @@ export * from "./weekly_items.ts"
 
 /** Every entity. A new one goes here, or the database won't know about it. */
 export const entities = [
+  OauthClient,
+  OauthResource,
+  OauthClientResource,
+  OauthRefreshToken,
+  OauthAccessToken,
+  OauthConsent,
+  OauthClientAssertion,
+  Passkey,
+  TwoFactor,
   Account,
   AiKey,
   AiUsage,

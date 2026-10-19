@@ -8,6 +8,8 @@ import {
 } from "@/features/ai/server-ai-cards"
 import { serverAiQuery } from "@/features/ai/queries"
 import { AboutCard } from "@/features/server/about-card"
+import { AuthCard } from "@/features/server/auth-card"
+import { OAuthClientsCard } from "@/features/server/oauth-clients-card"
 import { ErrorTrackingCard } from "@/features/server/error-tracking-card"
 import { EmailCard } from "@/features/server/email-card"
 import { JobsCard, serverJobsQuery } from "@/features/server/jobs-card"
@@ -45,6 +47,8 @@ function ServerSettings() {
   return (
     <>
       <AboutCard />
+      <AuthCard />
+      <OAuthClientsCard />
       <ServerAiKeysCard />
       <ServerAiPolicyCard />
       <ServerAiSpendCard />

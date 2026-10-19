@@ -9,7 +9,13 @@ import {
 } from "../../services/auth/api-keys.ts"
 import type { Auth } from "../../services/auth/auth.ts"
 import { KeyRateLimit } from "../../services/auth/key-rate-limit.ts"
+import {
+  delegatedCredential,
+  requireAudience,
+} from "../../services/auth/credentials.ts"
 import { authenticate } from "../../services/auth/session.ts"
+import type { Settings } from "../../services/settings/settings.ts"
+import { AUTH_SECURITY } from "../../modules/auth/settings.ts"
 import { isAdminRole } from "../../services/households/households.ts"
 import { AppError } from "../../core/errors.ts"
 import {
@@ -69,12 +75,22 @@ export const OPEN_TO_READERS = {
  */
 export function authenticateRequests(
   auth: Auth,
-  limit = new KeyRateLimit()
+  limit = new KeyRateLimit(),
+  settings?: Settings,
+  oauthPublicUrl?: string
 ): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
-    const found = await authenticate(auth, c.var.em, c.req.raw.headers)
-    if (found?.apiKey) {
-      const hit = limit.hit(found.apiKey.id)
+    const found = await authenticate(
+      auth,
+      c.var.em,
+      c.req.raw.headers,
+      oauthPublicUrl
+    )
+    const delegated = delegatedCredential(found?.credential)
+    if (delegated) {
+      const hit = limit.hit(
+        delegated.kind === "apiKey" ? delegated.id : `oauth:${delegated.id}`
+      )
       if (!hit.ok) {
         c.header("Retry-After", String(hit.retryAfter))
         throw new AppError(
@@ -88,6 +104,13 @@ export function authenticateRequests(
     c.set("session", found?.session ?? null)
     c.set("household", found?.household ?? null)
     c.set("apiKey", found?.apiKey ?? null)
+    c.set("credential", found?.credential ?? null)
+    const required =
+      found?.session &&
+      (found.user.twoFactorEnabled ||
+        (found.user.role === "admin" &&
+          (await settings?.server(AUTH_SECURITY.requireAdminTwoFactor))))
+    c.set("requiresTwoFactor", !!required && !found?.session?.strongAuthAt)
     await next()
   }
 }
@@ -97,18 +120,24 @@ export function authenticateRequests(
 // are refused unless a route says which permission lets one in.
 
 /** A person signed in with a session. API keys can't do this. */
-export function signedIn(c: Context<AppEnv>) {
-  const { user, session, apiKey } = c.var
-  if (apiKey) {
+export function signedIn(c: Context<AppEnv>, allowVerification = false) {
+  const { user, session, credential } = c.var
+  if (delegatedCredential(credential)) {
     throw new AppError(
       "forbidden",
       "api_key_not_allowed",
       "API keys can't do this. Sign in instead."
     )
   }
-  if (!user || !session) {
+  if (!user || !session || credential?.kind !== "session") {
     throw new AppError("unauthorized", "signed_out", "Sign in first.")
   }
+  if (c.var.requiresTwoFactor && !allowVerification)
+    throw new AppError(
+      "forbidden",
+      "two_factor_required",
+      "Verify your sign-in before continuing."
+    )
   return { user, session }
 }
 
@@ -132,8 +161,10 @@ export function serverAdmin(c: Context<AppEnv>) {
  * permission.
  */
 export function inHousehold(c: Context<AppEnv>) {
-  const { user, apiKey, keyPermission: permission } = c.var
-  if (apiKey) {
+  const { user, keyPermission: permission } = c.var
+  const delegated = delegatedCredential(c.var.credential)
+  if (delegated) {
+    requireAudience(delegated, "api")
     if (!permission) {
       throw new AppError(
         "forbidden",
@@ -141,7 +172,7 @@ export function inHousehold(c: Context<AppEnv>) {
         "API keys can't do this. Sign in instead."
       )
     }
-    if (!allows(apiKey.permissions, permission.area, permission.access)) {
+    if (!allows(delegated.permissions, permission.area, permission.access)) {
       throw new AppError(
         "forbidden",
         "missing_permission",
@@ -177,10 +208,14 @@ export function readingHousehold<A extends ApiArea>(
   c: Context<AppEnv>,
   areas: readonly A[]
 ) {
-  const { user, apiKey, household } = c.var
+  const { user, household } = c.var
+  const delegated = delegatedCredential(c.var.credential)
   let readable = areas
-  if (apiKey) {
-    readable = areas.filter((area) => allows(apiKey.permissions, area, "read"))
+  if (delegated) {
+    requireAudience(delegated, "api")
+    readable = areas.filter((area) =>
+      allows(delegated.permissions, area, "read")
+    )
     if (readable.length === 0) {
       throw new AppError(
         "forbidden",
@@ -196,7 +231,7 @@ export function readingHousehold<A extends ApiArea>(
       "You're not in a household."
     )
   }
-  return { householdId: household.id, user, apiKey, readable }
+  return { householdId: household.id, user, delegated, readable }
 }
 
 /** The household in use, by one of its owners or admins, signed in: never a key. */

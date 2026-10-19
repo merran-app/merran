@@ -35,6 +35,7 @@ CI runs all of these (`.github/workflows/check.yml`, and `docs.yml` for the site
 - **Mobile uses drawers, never modal dialogs.** Forms, confirmations and other content that opens in a dialog on larger screens must open in a drawer on mobile. Follow this rule for new UI and when changing existing dialogs, reusing the app's existing drawer patterns.
 - **Files go in folders.** Keep the root and each folder short: put related files in a folder of their own rather than side by side.
 - **Match the code around you:** its naming, its idioms, and its comments, which are plain English and say why.
+- **Write code for people to read.** Use normal line breaks and indentation from the start. Expand control flow, objects and JSX instead of packing statements onto one line. Give substantial event handlers and repeated logic named functions, and split large handlers into focused helpers. Never compress code to save space or tokens. Format all changed code before presenting it for review; passing the formatter alone does not make dense logic readable.
 - **Package versions:** pnpm won't install a version newer than its minimum release age. Pick an older version rather than adding an exemption.
 
 ## Keeping everything current

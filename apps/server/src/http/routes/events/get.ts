@@ -51,7 +51,7 @@ const route = createRoute({
 
 export default (router: Router, { events }: AppDeps) => {
   router.openapi(route, (c) => {
-    const { householdId, user, apiKey, readable } = readingHousehold(
+    const { householdId, user, delegated, readable } = readingHousehold(
       c,
       LIVE_AREAS
     )
@@ -91,9 +91,9 @@ export default (router: Router, { events }: AppDeps) => {
       })
       const stop = events.subscribe(householdId, {
         // A key isn't a person with a page open.
-        person: apiKey ? null : { id: user.id, name: user.name },
+        person: delegated ? null : { id: user.id, name: user.name },
         client: client ?? null,
-        page: apiKey ? null : (page ?? null),
+        page: delegated ? null : (page ?? null),
         areas: new Set(readable),
         send,
         close: hangUp,

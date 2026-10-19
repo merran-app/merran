@@ -3,6 +3,7 @@ import { loadSecret, newSecret, writeSecretFile } from "../core/secret.ts"
 import { migrate, openDatabase } from "../database/orm.ts"
 import { rotateSecrets } from "../services/secrets/rotate.ts"
 import { SecretBox } from "../services/secrets/secret-box.ts"
+import { rotateAuthSecrets } from "../services/auth/rotate-secrets.ts"
 
 /**
  * Changes the server's secret, sealing every saved key again with the new
@@ -33,11 +34,10 @@ export async function rotateSecret(
   const database = await openDatabase(config.database)
   try {
     await migrate(database)
-    const result = await rotateSecrets(
-      database.em.fork(),
-      new SecretBox(oldSecret),
-      new SecretBox(next)
-    )
+    const result = await database.em.fork().transactional(async (em) => {
+      await rotateAuthSecrets(em, oldSecret, next)
+      return rotateSecrets(em, new SecretBox(oldSecret), new SecretBox(next))
+    })
     if (!config.secret) writeSecretFile(config.dataDir, next)
 
     console.log(

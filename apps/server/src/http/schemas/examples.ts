@@ -70,6 +70,8 @@ export const HOUSEHOLD = {
 }
 
 export const ME = {
+  twoFactorEnabled: false,
+  requiresTwoFactor: false,
   id: IDS.sam,
   name: "Sam Rivera",
   email: "sam@example.com",

@@ -1,6 +1,19 @@
 import { betterAuth } from "better-auth"
 import type { Logger } from "pino"
-import { admin, openAPI, organization, username } from "better-auth/plugins"
+import {
+  admin,
+  openAPI,
+  organization,
+  username,
+  twoFactor,
+  genericOAuth,
+} from "better-auth/plugins"
+import { passkey } from "@better-auth/passkey"
+import { createAuthMiddleware, APIError } from "better-auth/api"
+import { Session } from "../../database/entities/sessions.ts"
+import { passkeyOrigin } from "../../modules/auth/index.ts"
+import { oidcConfiguration } from "../../modules/auth/oidc.ts"
+import { authorizationProvider } from "./oauth/provider.ts"
 import { v7 as uuidv7 } from "uuid"
 import type { Config } from "../../core/config.ts"
 import type { Database } from "../../database/orm.ts"
@@ -28,7 +41,8 @@ function snake(...fields: string[]): Record<string, string> {
 }
 
 export type AuthOptions = {
-  config: Pick<Config, "database" | "publicUrl">
+  config: Pick<Config, "database" | "publicUrl"> &
+    Partial<Pick<Config, "fromEnv">>
   database: Database
   secret: string
   /** Where Better Auth's own messages go. Without it, they're printed plainly. */
@@ -42,11 +56,44 @@ export type AuthOptions = {
  */
 export function createAuth({ config, database, secret, logger }: AuthOptions) {
   const log = logger?.child({ source: "better-auth" })
+  const oidc = oidcConfiguration(config)
   return betterAuth({
     appName: "Merran",
     basePath: AUTH_BASE,
     ...(config.publicUrl ? { baseURL: config.publicUrl } : {}),
     secret,
+    hooks: {
+      after: createAuthMiddleware(async (ctx) => {
+        if (
+          ![
+            "/two-factor/verify-totp",
+            "/two-factor/verify-backup-code",
+            "/passkey/verify-authentication",
+          ].includes(ctx.path)
+        )
+          return
+        const result = ctx.context.returned as {
+          token?: unknown
+          session?: { token?: unknown }
+        } | null
+        if (
+          typeof (
+            ctx.context.newSession?.session.token ??
+            result?.token ??
+            result?.session?.token
+          ) !== "string"
+        )
+          return
+        const token =
+          ctx.context.newSession?.session.token ??
+          result?.token ??
+          result?.session?.token
+        if (typeof token !== "string") return
+        await database.em
+          .fork()
+          .nativeUpdate(Session, { token }, { strongAuthAt: new Date() })
+      }),
+    },
     ...(log
       ? {
           logger: {
@@ -92,6 +139,14 @@ export function createAuth({ config, database, secret, logger }: AuthOptions) {
     },
     session: {
       modelName: "sessions",
+      additionalFields: {
+        strongAuthAt: {
+          type: "date",
+          required: false,
+          input: false,
+          fieldName: "strong_auth_at",
+        },
+      },
       fields: snake(
         "expiresAt",
         "createdAt",
@@ -102,9 +157,17 @@ export function createAuth({ config, database, secret, logger }: AuthOptions) {
       ),
       expiresIn: SESSION_DAYS * 24 * 60 * 60,
       updateAge: 24 * 60 * 60,
+      freshAge: 24 * 60 * 60,
     },
     account: {
       modelName: "accounts",
+      encryptOAuthTokens: true,
+      accountLinking: {
+        enabled: true,
+        disableImplicitLinking: true,
+        allowDifferentEmails: true,
+        allowUnlinkingAll: false,
+      },
       fields: snake(
         "accountId",
         "providerId",
@@ -145,6 +208,62 @@ export function createAuth({ config, database, secret, logger }: AuthOptions) {
       },
     },
     plugins: [
+      authorizationProvider({ config, database, secret }),
+      genericOAuth({ config: oidc ? [oidc] : [] }),
+      passkey({
+        rpName: "Merran",
+        rpID: new URL(passkeyOrigin(config.publicUrl) ?? "http://localhost")
+          .hostname,
+        origin: passkeyOrigin(config.publicUrl) ?? "http://localhost",
+        authenticatorSelection: { userVerification: "required" },
+        registration: {
+          afterVerification({ verification }) {
+            if (!verification.registrationInfo?.userVerified)
+              throw new APIError("UNAUTHORIZED", {
+                message: "Verify your identity on your authenticator.",
+              })
+          },
+        },
+        authentication: {
+          afterVerification({ verification }) {
+            if (!verification.authenticationInfo.userVerified)
+              throw new APIError("UNAUTHORIZED", {
+                message: "Verify your identity on your authenticator.",
+              })
+          },
+        },
+        schema: {
+          passkey: {
+            modelName: "passkeys",
+            fields: {
+              ...snake(
+                "publicKey",
+                "userId",
+                "deviceType",
+                "backedUp",
+                "createdAt"
+              ),
+              credentialID: "credential_id",
+            },
+          },
+        },
+      }),
+      twoFactor({
+        issuer: "Merran",
+        allowPasswordless: true,
+        schema: {
+          user: { fields: { twoFactorEnabled: "two_factor_enabled" } },
+          twoFactor: {
+            modelName: "two_factors",
+            fields: snake(
+              "backupCodes",
+              "userId",
+              "failedVerificationCount",
+              "lockedUntil"
+            ),
+          },
+        },
+      }),
       // Describes Better Auth's endpoints for Merran's own API reference.
       openAPI({ disableDefaultReference: true }),
       username({

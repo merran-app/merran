@@ -1,3 +1,4 @@
+import { revokeUserGrants } from "../../services/auth/oauth/revoke.ts"
 import { createHash, randomBytes } from "node:crypto"
 import { LockMode, raw, ref } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
@@ -204,6 +205,7 @@ export async function completePasswordReset(
     )
     if (!claimed) throw invalidReset()
     account.password = passwordHash
+    await revokeUserGrants(tx, user.id)
     await tx.nativeDelete(Session, { user: user.id })
     const pending = await tx.find(PasswordReset, {
       user: user.id,

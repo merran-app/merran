@@ -75,4 +75,6 @@ Keep an isolated restore off public traffic and prevent it from making unwanted 
 
 ## Next steps
 
+Authentication changes after alpha.4 also store passkeys, encrypted authenticators and OAuth grants in the database. Preserve the matching server secret and public hostname when restoring. Use the documented [authentication recovery and rotation commands](../authentication/#operator-recovery-and-backups); do not replace the secret file by hand.
+
 For failed startup or migrations, missing data, and job errors, follow [troubleshooting](../troubleshooting/). Check [configuration](../configuration/) and the [settings reference](../settings-reference/) when moving an installation to a new address or host.

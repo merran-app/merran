@@ -7,6 +7,8 @@ sidebar:
 
 A default SQLite installation needs no external services. Configure optional features as you begin using them.
 
+Passkeys, authenticators, external OIDC sign-in and OAuth connections are **not released yet**. Their environment settings, account-linking policy and recovery commands are described in [Authentication and connected apps](../authentication/).
+
 Use the [generated settings reference](../settings-reference/) for the registered keys, environment variables, scopes, types, defaults, and choices. It is generated from source definitions each site build; it does not read your deployment's values.
 
 ## Compose environment

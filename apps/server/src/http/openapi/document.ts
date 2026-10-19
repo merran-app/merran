@@ -3,6 +3,8 @@ import type { AppEnv } from "../../core/context.ts"
 import { AUTH_BASE, type Auth } from "../../services/auth/auth.ts"
 import { KEY_PERMISSION } from "../middleware/auth.ts"
 import { BETTER_AUTH_ENDPOINTS } from "../routes/auth/better-auth.ts"
+import { OAUTH_PROTOCOL_ENDPOINTS } from "../auth/oauth.ts"
+import { authOverrides } from "./auth-overrides.ts"
 
 type Document = ReturnType<OpenAPIHono<AppEnv>["getOpenAPI31Document"]>
 type Operation = Record<string, unknown>
@@ -142,7 +144,10 @@ export async function buildOpenApiDocument(
   }
   document.paths ??= {}
   const added: Operation[] = []
-  for (const endpoint of BETTER_AUTH_ENDPOINTS) {
+  for (const endpoint of [
+    ...BETTER_AUTH_ENDPOINTS,
+    ...OAUTH_PROTOCOL_ENDPOINTS,
+  ]) {
     const { method, path, signedIn } = endpoint
     const verb = method.toLowerCase()
     const operation = betterAuth.paths[path]?.[verb]
@@ -150,7 +155,7 @@ export async function buildOpenApiDocument(
       throw new Error(`Better Auth doesn't describe ${method} ${path}`)
     }
     const described = {
-      ...withExamples(operation, endpoint),
+      ...withExamples(authOverrides(path, operation), endpoint),
       operationId: endpoint.operationId,
       summary: endpoint.summary,
       description: endpoint.description,
@@ -191,41 +196,42 @@ function withExamples(
   type Media = Record<string, Record<string, unknown>>
   const body = operation.requestBody as { content?: Media } | undefined
   const responses = operation.responses as Record<string, { content?: Media }>
-  const ok = responses["200"]
-  return {
+  const result: Operation & { responses: typeof responses } = {
     ...operation,
-    ...(body?.content?.["application/json"] && "requestExample" in examples
-      ? {
-          requestBody: {
-            ...body,
-            content: {
-              ...body.content,
-              "application/json": {
-                ...body.content["application/json"],
-                example: examples.requestExample,
-              },
-            },
-          },
-        }
-      : {}),
-    responses: {
-      ...responses,
-      ...(ok?.content?.["application/json"]
-        ? {
-            200: {
-              ...ok,
-              content: {
-                ...ok.content,
-                "application/json": {
-                  ...ok.content["application/json"],
-                  example: examples.responseExample,
-                },
-              },
-            },
-          }
-        : {}),
-    },
+    responses: { ...responses },
   }
+  const requestJson = body?.content?.["application/json"]
+
+  if (requestJson && "requestExample" in examples) {
+    result.requestBody = {
+      ...body,
+      content: {
+        ...body?.content,
+        "application/json": {
+          ...requestJson,
+          example: examples.requestExample,
+        },
+      },
+    }
+  }
+
+  for (const [status, response] of Object.entries(responses)) {
+    const responseJson = response.content?.["application/json"]
+    if (!status.startsWith("2") || !responseJson) continue
+
+    result.responses[status] = {
+      ...response,
+      content: {
+        ...response.content,
+        "application/json": {
+          ...responseJson,
+          example: examples.responseExample,
+        },
+      },
+    }
+  }
+
+  return result
 }
 
 /**

@@ -1,3 +1,4 @@
+import { delegatedCredential } from "../../../../../services/auth/credentials.ts"
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { applyProposal } from "../../../../../services/proposals/proposals.ts"
@@ -48,7 +49,11 @@ export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
     const proposal = await getProposal(em, c.req.valid("param").proposalId)
-    requireProposalPermission(c.var.apiKey?.permissions, proposal.kind, "write")
+    requireProposalPermission(
+      delegatedCredential(c.var.credential)?.permissions,
+      proposal.kind,
+      "write"
+    )
     const result = await applyProposal(em, deps, {
       householdId,
       userId,

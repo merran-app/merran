@@ -107,6 +107,8 @@ A person can belong to several households (say, their own and their parents'), w
 
 ## API keys
 
+Authentication round, October 19, 2026: [authentication.md](authentication.md) records the agreed scope for passkeys, two-step sign-in, external OIDC and household-scoped OAuth connections for MCP and REST. The sign-in methods, credential boundary and OAuth issuance are implemented but not released; external-client and deployment acceptance remain to be verified. General “Sign in with Merran” identity-provider support is excluded.
+
 October 19, 2026, not released yet: creating an API key, including **Use with an AI app**, opens in a drawer on mobile and a dialog on larger screens. The generated key and connection details stay in that same surface, with scrolling and phone safe-area spacing.
 
 People make their own keys for scripts, Home Assistant, the browser extension and the iPhone Shortcut. In the REFERENCE app every key had its owner's full rights; in Merran each key says what it can do.
@@ -147,13 +149,13 @@ Household admins add them in Settings → Household → Webhooks, for Home Assis
 
 ### MCP server
 
-An MCP server at `/mcp` (Streamable HTTP, through the official MCP TypeScript SDK) lets compatible bearer-token clients work with a household's recipes, plan, list and pantry. Implemented October 19, 2026, not released yet. OAuth-only connectors remain future work.
+An MCP server at `/mcp` (Streamable HTTP, through the official MCP TypeScript SDK) lets compatible bearer-token clients work with a household's recipes, plan, list and pantry. Implemented October 19, 2026, not released yet. OAuth discovery and household consent are implemented in the authentication round, with real-client deployment acceptance still pending.
 
 - **Signed in with an API key,** so it can do only what the key allows, in the key's household. Settings → You → API keys has a **Use with an AI app** option that makes a key and shows its endpoint and Authorization value, with instructions for Claude Code and other compatible clients.
 - **The tools match the assistant's:** search and read recipes, the plan, the list and the pantry, then propose a new recipe, a recipe edit, meals or list items. The same service layer runs both.
 - **The AI proposes, people apply, here too.** Changes from an outside AI become proposals in Merran's Review queue, with a link back. The first version requires review for every change. Optional direct plan/list application remains a follow-up; recipe changes always wait through MCP. Regular API keys still retain their existing REST write permissions.
 - **Using the MCP server spends no Merran AI money:** the outside app's model does the thinking.
-- **Later:** remote connectors in the ChatGPT and Claude apps need OAuth rather than a key. Better Auth's OAuth provider plugin could make Merran its own sign-in for them.
+- **OAuth:** compatible remote connectors use discovery, PKCE, explicit household consent and revocable grants. MCP and REST tokens have separate audiences. This delegates Merran data access; it does not make Merran a general identity provider. See [authentication.md](authentication.md).
 
 Assistant tool organization, decided October 19, 2026: each tool lives in its own file under `services/assistant/tools/`, with shared schemas and recipe lookup helpers. The index binds the tools to a chat and owns proposal creation; individual tools receive only the database access, household identity and proposal callback they need. Receipt scanning keeps its chat attachments and AI dependencies explicit. The shared catalog now supplies the assistant and MCP with the same schemas and executors. Receipt scanning, web import, swaps and taste changes remain assistant-specific.
 

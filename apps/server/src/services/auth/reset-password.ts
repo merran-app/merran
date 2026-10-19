@@ -1,5 +1,12 @@
 import type { EntityManager } from "@mikro-orm/sql"
-import { Account, Session, User } from "../../database/entities/index.ts"
+import {
+  Account,
+  Session,
+  User,
+  OauthAccessToken,
+  OauthRefreshToken,
+  OauthConsent,
+} from "../../database/entities/index.ts"
 import { AppError } from "../../core/errors.ts"
 import type { Auth } from "./auth.ts"
 
@@ -30,9 +37,17 @@ export async function resetPassword(
       user: user.id,
       providerId: "credential",
     })
-    if (!account)
-      throw new Error("This account has no password sign-in to reset.")
-    account.password = hash
+    if (account) account.password = hash
+    else
+      tx.create(Account, {
+        user: user.id,
+        providerId: "credential",
+        accountId: user.id,
+        password: hash,
+      })
+    await tx.nativeDelete(OauthAccessToken, { user: user.id })
+    await tx.nativeDelete(OauthRefreshToken, { user: user.id })
+    await tx.nativeDelete(OauthConsent, { user: user.id })
     await tx.nativeDelete(Session, { user: user.id })
   })
 }

@@ -19,6 +19,7 @@ import { createRouter } from "./http/router.ts"
 import routes from "./http/routes/index.ts"
 import { serveWebApp } from "./http/web-app.ts"
 import registerMcp from "./http/mcp/index.ts"
+import { mountOAuthProtocol } from "./http/auth/oauth.ts"
 
 export const API_BASE = "/api"
 const SPEC_PATH = `${API_BASE}/openapi.json`
@@ -31,13 +32,40 @@ export function createApp(deps: AppDeps) {
   app.use(secureHeaders())
   app.use(requestLogger(deps.logger))
   app.use(entityManager(deps.database))
+  mountOAuthProtocol(app, deps)
+  app.use("/api/*", async (c, next) => {
+    await next()
+    if (
+      c.res.status === 401 &&
+      deps.config.fromEnv.get("auth.oauth") === true &&
+      deps.config.publicUrl
+    )
+      c.header(
+        "WWW-Authenticate",
+        `Bearer resource_metadata="${new URL("/.well-known/oauth-protected-resource/api", deps.config.publicUrl).href}"`
+      )
+  })
   app.use("/mcp", async (c, next) => {
     c.header("Cache-Control", "no-store")
     await next()
     if (c.res.status === 401)
-      c.header("WWW-Authenticate", 'Bearer realm="Merran MCP"')
+      c.header(
+        "WWW-Authenticate",
+        deps.config.fromEnv.get("auth.oauth") === true && deps.config.publicUrl
+          ? `Bearer resource_metadata="${new URL("/.well-known/oauth-protected-resource/mcp", deps.config.publicUrl).href}"`
+          : 'Bearer realm="Merran MCP"'
+      )
   })
-  app.use(authenticateRequests(deps.auth))
+  app.use(
+    authenticateRequests(
+      deps.auth,
+      undefined,
+      deps.settings,
+      deps.config.fromEnv.get("auth.oauth") === true
+        ? (deps.config.publicUrl ?? undefined)
+        : undefined
+    )
+  )
   app.use(announceChanges(deps.events))
 
   const api = createRouter()
@@ -58,6 +86,13 @@ export function createApp(deps: AppDeps) {
     bearerFormat: "mrn_…",
     description:
       "An API key, made at POST /api/auth/api-keys, sent as `Authorization: Bearer mrn_…`. It acts as its person in one household, with only the permissions it was given.",
+  })
+  app.openAPIRegistry.registerComponent("securitySchemes", "oauth", {
+    type: "http",
+    scheme: "bearer",
+    bearerFormat: "mro_…",
+    description:
+      "An OAuth access token for this server's /api resource, limited to the approved household and scopes. MCP-audience tokens cannot use REST routes.",
   })
   // Built once, on first request, since the routes don't change while running.
   let spec: ReturnType<typeof buildOpenApiDocument> | undefined

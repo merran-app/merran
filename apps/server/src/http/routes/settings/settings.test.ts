@@ -245,8 +245,8 @@ describe("capabilities", () => {
         { id: "test", on: false, needs: "key" },
       ])
     )
-    // Recipe sites need nothing, so they're on from the start.
-    expect(body.capabilities).toEqual(["sites"])
+    // Password sign-in and recipe sites work without optional configuration.
+    expect(body.capabilities).toEqual(["auth.passwords", "sites"])
     expect(body.client).toEqual({})
   })
 
@@ -257,7 +257,11 @@ describe("capabilities", () => {
     ).json()
 
     expect(body.modules).toContainEqual({ id: "test", on: true })
-    expect(body.capabilities).toEqual(["sites", "test.things"])
+    expect(body.capabilities).toEqual([
+      "auth.passwords",
+      "sites",
+      "test.things",
+    ])
     expect(body.client).toEqual({ test: { color: "red" } })
 
     await kyle.patch("/api/settings/server", { "test.apiKey": null })

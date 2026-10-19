@@ -31,6 +31,8 @@ export const MeSchema = z
     email: z.string(),
     username: z.string().nullable(),
     serverAdmin: z.boolean(),
+    twoFactorEnabled: z.boolean(),
+    requiresTwoFactor: z.boolean(),
     households: z.array(
       z.object({
         id: z.string(),
@@ -53,6 +55,7 @@ export async function describeMe(
     email: string
     username?: string | null
     role?: string | null
+    twoFactorEnabled?: boolean
   },
   activeHouseholdId: string | null
 ): Promise<Me> {
@@ -68,6 +71,8 @@ export async function describeMe(
     email: user.email,
     username: user.username ?? null,
     serverAdmin: user.role === "admin",
+    twoFactorEnabled: user.twoFactorEnabled ?? false,
+    requiresTwoFactor: false,
     households,
     activeHouseholdId: households.some((h) => h.id === activeHouseholdId)
       ? activeHouseholdId

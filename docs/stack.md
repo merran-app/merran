@@ -92,12 +92,15 @@ Sign-in is the code most likely to hurt people if we get it wrong, and the code 
 - email or username with a password, sessions, and rate limits
 - **organizations**, which become households: members, roles and invitations
 - passkeys and two-step sign-in (TOTP), off until someone turns them on
-- single sign-on with OIDC (Authentik, Authelia, Keycloak, Pocket ID, Google and the like) through `@better-auth/sso`
+- single sign-on with one operator-configured OIDC provider through Better Auth's built-in `genericOAuth` plugin
+- OAuth authorization-code connections through `@better-auth/oauth-provider`, with opaque access tokens, PKCE and rotating refresh tokens
 - an admin plugin for the server admin
 
 What we keep for ourselves: **API keys**, and **what each role may do.** Better Auth has an API key plugin, but its keys belong to a user or an organization and stand in for a session, while Merran's act as one person in one household. So keys are Merran's own (`services/auth/api-keys.ts`, decided October 15, 2026): a SHA-256 hash, permissions per area, expiry and a per-key rate limit. As for roles: Better Auth says who someone is and which household they're in; Merran's own service layer decides what they can touch, and every query is scoped to the household (see [platform.md](platform.md#keeping-households-apart)).
 
-**Watch out for:** Better Auth moves quickly and had real security fixes in mid-2026 (SSO and invitation issues fixed in 1.6.11). Use 1.6.14 or later, update every `@better-auth/*` package together, and let Renovate flag security releases straight away.
+Decision, October 19, 2026: the authentication round uses Better Auth 1.7.8 with matching passkey and OAuth Provider plugins. MikroORM remains the migration authority for every plugin table on both databases. The built-in generic OIDC client meets the single operator-provider scope; enterprise SSO discovery and general Merran identity-provider support are excluded. See [authentication.md](authentication.md) for credential boundaries, assurance and grant lifetimes.
+
+**Watch out for:** Better Auth moves quickly. Update every `@better-auth/*` package together, inspect protocol behavior on upgrades, and let Renovate flag security releases straight away.
 
 ### A job runner of our own instead of hand-rolled schedules
 
