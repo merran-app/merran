@@ -1,7 +1,31 @@
 name: Public site
 
-# PR and main checks are selected by CI; this entry point publishes manually.
 on:
+  pull_request:
+    paths:
+      - "apps/docs/**"
+      - "apps/server/src/http/openapi/openapi.json"
+      - "apps/server/src/core/config.ts"
+      - "apps/server/src/core/settings.ts"
+      - "apps/server/src/modules/**/settings.ts"
+      - "apps/server/src/modules/settings.ts"
+      - "packages/shared/src/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/docs.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/docs/**"
+      - "apps/server/src/http/openapi/openapi.json"
+      - "apps/server/src/core/config.ts"
+      - "apps/server/src/core/settings.ts"
+      - "apps/server/src/modules/**/settings.ts"
+      - "apps/server/src/modules/settings.ts"
+      - "packages/shared/src/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
     inputs:
       deploy:
@@ -13,14 +37,31 @@ permissions:
   contents: read
 
 concurrency:
-  group: docs-deploy
-  cancel-in-progress: false
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ASTRO_TELEMETRY_DISABLED: "1"
+  SITE_URL: ${{ vars.SITE_URL || 'https://merran.app' }}
+  SITE_BASE: ${{ vars.SITE_BASE || '/' }}
 
 jobs:
   build:
-    uses: ./.github/workflows/docs-check.yml
-    with:
-      upload: ${{ inputs.deploy && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile --filter @merran/docs...
+      - run: pnpm --filter @merran/docs typecheck
+      - run: pnpm --filter @merran/docs test
+      - run: pnpm exec prettier --check apps/docs
+      - run: pnpm docs:build
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: apps/docs/dist
 
   deploy:
     if: github.event_name == 'workflow_dispatch' && inputs.deploy && github.ref == 'refs/heads/main'

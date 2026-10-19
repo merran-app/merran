@@ -35,10 +35,6 @@ A household export is not a full server backup: it does not replace accounts, se
 
 ## Update a Compose installation
 
-:::note[Not released yet: development image builds]
-The `edge` image will be published after checks pass for changes affecting the application image on main. Documentation-only changes will not publish another image. The `next` and versioned release channels are unchanged.
-:::
-
 If using the project Compose file's optional database, voice or tunnel, keep the matching `COMPOSE_PROFILES` value in `.env` (for example `postgres,voice`), or pass the same `--profile` flags when pulling and starting. The self-contained host-manager stacks have no profiles. Postgres backups need both a database dump and app files; Kokoro does not replace either. See [the complete installation examples](../../get-started/install/#optional-services-with-compose).
 
 Read the [release notes](https://github.com/merran-app/merran/releases), make a backup, then run from the Compose directory:

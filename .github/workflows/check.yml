@@ -1,38 +1,17 @@
 name: Check
 
-# Release uses the defaults to run every check. CI selects affected packages.
+# Every check Merran's code has to pass, on SQLite and Postgres: called by CI
+# for each push and pull request, and by Release before anything's built.
+
 on:
   workflow_call:
-    inputs:
-      server:
-        type: boolean
-        default: true
-      web:
-        type: boolean
-        default: true
-      extension:
-        type: boolean
-        default: true
-      shared:
-        type: boolean
-        default: true
-      telemetry:
-        type: boolean
-        default: true
-      docs:
-        type: boolean
-        default: true
-      extension-build:
-        description: Release builds versioned ZIPs separately
-        type: boolean
-        default: true
 
 permissions:
   contents: read
 
 jobs:
-  server:
-    if: inputs.server
+  check:
+    name: Check and test
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -47,87 +26,36 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
       MERRAN_TEST_POSTGRES_URL: postgres://postgres:merran@localhost:5433/postgres
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          package: "@merran/server"
-      - run: pnpm exec prettier --check apps/server
-      - run: pnpm --filter @merran/server typecheck
-      - run: pnpm --filter @merran/server test:all
-
-  web:
-    if: inputs.web
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
-        with:
-          package: "@merran/web"
-      - run: pnpm exec prettier --check apps/web
-      - run: pnpm --filter @merran/web typecheck
+          node-version-file: .nvmrc
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm typecheck
       - run: pnpm --filter @merran/web check:contrast
       - run: pnpm --filter @merran/web build
       - run: pnpm --filter @merran/web test
+      # The web app's API types come from openapi.json, and its route tree
+      # from its route files: both are committed, so both must be current.
+      # The extension uses the same API types.
       - run: pnpm --filter @merran/web api
       - name: Check generated files are committed
         run: |
           git diff --exit-code -- apps/web/src/lib/api/schema.d.ts apps/web/src/routeTree.gen.ts
           diff -q apps/web/src/lib/api/schema.d.ts apps/extension/src/lib/schema.d.ts
-
-  extension:
-    if: inputs.extension
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
-        with:
-          package: "@merran/extension"
-      - run: pnpm exec prettier --check apps/extension
-      - run: pnpm --filter @merran/extension typecheck
-      - if: inputs.extension-build
-        run: pnpm --filter @merran/extension build
-      - if: inputs.extension-build
-        run: pnpm --filter @merran/extension build:firefox
-
-  shared:
-    if: inputs.shared
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
-        with:
-          package: "@merran/shared"
-      - run: pnpm exec prettier --check packages/shared
-      - run: pnpm --filter @merran/shared typecheck
+      # On SQLite and on Postgres. The tests also check that the migrations
+      # match the entities, that openapi.json is current, and that each
+      # route file sits where its path says.
+      - run: pnpm --filter @merran/server test:all
+      # The ingredient parser, units and scaling the server and web app share.
       - run: pnpm --filter @merran/shared test
-
-  telemetry:
-    if: inputs.telemetry
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
-        with:
-          package: "@merran/telemetry"
-      - run: pnpm exec prettier --check apps/telemetry
-      - run: pnpm --filter @merran/telemetry typecheck
+      # The telemetry receiver (apps/telemetry), on Node's SQLite.
       - run: pnpm --filter @merran/telemetry test
-
-  docs:
-    if: inputs.docs
-    uses: ./.github/workflows/docs-check.yml
-
-  check:
-    name: Check and test
-    if: always()
-    needs: [server, web, extension, shared, telemetry, docs]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: node .github/scripts/gate.mjs
-        env:
-          CI_GATE_RESULTS: ${{ toJSON(needs) }}
-          CI_GATE_EXPECTED: >-
-            {"server": ${{ inputs.server }}, "web": ${{ inputs.web }}, "extension": ${{ inputs.extension }}, "shared": ${{ inputs.shared }}, "telemetry": ${{ inputs.telemetry }}, "docs": ${{ inputs.docs }}}
+      # The browser extension, for Chrome and Edge, and for Firefox.
+      - run: pnpm --filter @merran/extension build
+      - run: pnpm --filter @merran/extension build:firefox

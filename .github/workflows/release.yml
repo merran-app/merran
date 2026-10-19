@@ -107,8 +107,6 @@ jobs:
   check:
     needs: version
     uses: ./.github/workflows/check.yml
-    with:
-      extension-build: false
 
   image:
     name: Docker image
@@ -173,9 +171,11 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          package: "@merran/extension"
+          node-version-file: .nvmrc
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
       # The release's version: WXT gives the browsers its numbers (0.1.0),
       # and Chrome shows the rest (0.1.0-alpha.1).
       - run: npm pkg set version="$VERSION"
