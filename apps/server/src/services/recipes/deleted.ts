@@ -9,7 +9,7 @@ import {
 } from "../../database/scope.ts"
 import type { JobHandler } from "../jobs/runner.ts"
 import type { FileStore } from "../storage/files.ts"
-import { removePhoto } from "./photos.ts"
+import { removePhoto } from "./photos/photos.ts"
 import { summarize } from "./recipes.ts"
 import { pruneTags, tagsOf } from "./tags.ts"
 

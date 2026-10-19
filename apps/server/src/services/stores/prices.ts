@@ -26,11 +26,13 @@ import { ACROSS_HOUSEHOLDS } from "../../database/scope.ts"
 import { STORE_SETTINGS } from "../../modules/stores/settings.ts"
 import { enqueue } from "../jobs/jobs.ts"
 import type { JobHandler } from "../jobs/runner.ts"
-import { householdToday } from "../pantry/pantry.ts"
-import { choose, ready, recordPrices, searchAll } from "./basket.ts"
-import { KROGER, krogerConnection } from "./connections.ts"
+import { householdToday } from "../households/clock.ts"
+import { choose } from "./basket/products.ts"
+import { ready, searchAll } from "./kroger/basket.ts"
+import { recordPrices } from "./basket/prices.ts"
+import { KROGER, krogerConnection } from "./kroger/connection.ts"
 import { priceHistory } from "./history.ts"
-import { krogerApp, productsById } from "./kroger.ts"
+import { krogerApp, productsById } from "./kroger/client.ts"
 
 // Prices, sales and deals at the household's Kroger store. Each morning
 // in the household's time zone (and before its weekly autoplan) the
@@ -290,7 +292,7 @@ export async function checkPrices(
       delete searchedOn[row.food]
     }
   }
-  await recordPrices(em, householdId, fresh)
+  await recordPrices(em, householdId, fresh, KROGER)
 
   const lately = (key: string, days: number) =>
     (searchedOn[key] ?? "") > addDays(today, -days)
@@ -326,7 +328,7 @@ export async function checkPrices(
       location,
       lookup.map((food) => food.name)
     )
-    await recordPrices(em, householdId, results.flat())
+    await recordPrices(em, householdId, results.flat(), KROGER)
     const asks = lookup.map((food, i) => ({
       food,
       text: food.name,

@@ -4,7 +4,7 @@ import { admin, openAPI, organization, username } from "better-auth/plugins"
 import { v7 as uuidv7 } from "uuid"
 import type { Config } from "../../core/config.ts"
 import type { Database } from "../../database/orm.ts"
-import { membershipsOf } from "../households.ts"
+import { membershipsOf } from "../households/households.ts"
 
 export const AUTH_BASE = "/api/auth"
 

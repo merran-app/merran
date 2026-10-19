@@ -18,10 +18,11 @@ import {
   WeeklyItem,
 } from "../../database/entities/index.ts"
 import { NOT_DELETED_FILTER } from "../../database/scope.ts"
-import { householdAliases, householdKeys } from "./food-aliases.ts"
+import { householdAliases, householdKeys } from "../foods/aliases.ts"
 import { coverFromPantry, releasePantry } from "../pantry/stock.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
-import { inHouseholdTransaction, toNumber } from "../recipes/recipes.ts"
+import { inHouseholdTransaction } from "../../database/transactions.ts"
+import { toNumber } from "../../database/numbers.ts"
 import { aislesOf } from "./aisles.ts"
 import { listsOf } from "./lists.ts"
 

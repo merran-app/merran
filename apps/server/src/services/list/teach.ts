@@ -1,13 +1,12 @@
+import { removeAlias } from "../foods/aliases.ts"
 import { householdKey, lineFoods, plainKey } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
-import { FoodAlias, PlanEntry } from "../../database/entities/index.ts"
+import { PlanEntry } from "../../database/entities/index.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
-import { apartName, householdAliases, saveAlias } from "./food-aliases.ts"
+import { apartName, householdAliases, saveAlias } from "../foods/aliases.ts"
 import { findItem } from "./list.ts"
 import { rekeyHousehold } from "./rekey.ts"
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // Teaching Merran a household's own foods from the list (docs/foods.md):
 // "Same as…" joins one thing to another from now on, and "Not the same"
@@ -96,15 +95,6 @@ export async function keepApart(
 
 /** Forgets one of the household's names; keys are made again without it. */
 export async function forgetAlias(em: EntityManager, id: string) {
-  const row = UUID.test(id) ? await em.findOne(FoodAlias, { id }) : null
-  if (!row) {
-    throw new AppError(
-      "not_found",
-      "food_alias_not_found",
-      "Merran doesn't have that one."
-    )
-  }
-  em.remove(row)
-  await em.flush()
+  await removeAlias(em, id)
   await rekeyHousehold(em)
 }

@@ -20,7 +20,8 @@ import {
 import { NUTRITION } from "../../modules/nutrition/settings.ts"
 import { useAi, type AiDeps } from "../ai/run.ts"
 import { resolveTask } from "../ai/status.ts"
-import { findRecipe, loadRecipe, toNumber } from "../recipes/recipes.ts"
+import { findRecipe, loadRecipe } from "../recipes/recipes.ts"
+import { toNumber } from "../../database/numbers.ts"
 import {
   createFdcClient,
   type FdcCandidate,

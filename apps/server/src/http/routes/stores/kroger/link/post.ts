@@ -1,6 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
-import { startKrogerLink } from "../../../../../services/stores/connections.ts"
+import { startKrogerLink } from "../../../../../services/stores/kroger/connection.ts"
 import { asHouseholdAdmin } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import {

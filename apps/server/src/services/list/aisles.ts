@@ -6,7 +6,7 @@ import {
   FoodPlacement,
   Household,
 } from "../../database/entities/index.ts"
-import { householdKeys } from "./food-aliases.ts"
+import { householdKeys } from "../foods/aliases.ts"
 
 // Aisles: each household starts with its country's, in a typical walk
 // through the store. Food goes in the aisle the household last put it in,

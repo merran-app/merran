@@ -8,7 +8,7 @@ import {
   type HouseholdMember,
   type InviteLink,
 } from "../../database/entities/index.ts"
-import type { HouseholdRole } from "../../services/households.ts"
+import type { HouseholdRole } from "../../services/households/households.ts"
 import { HOUSEHOLD, INVITE_LINK, MEMBER } from "./examples.ts"
 
 function isTimeZone(zone: string) {

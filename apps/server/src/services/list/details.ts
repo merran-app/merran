@@ -8,8 +8,8 @@ import type { EntityManager } from "@mikro-orm/sql"
 import { PlanEntry } from "../../database/entities/index.ts"
 import { NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
-import { toNumber } from "../recipes/recipes.ts"
-import { householdAliases } from "./food-aliases.ts"
+import { toNumber } from "../../database/numbers.ts"
+import { householdAliases } from "../foods/aliases.ts"
 import { findItem } from "./list.ts"
 
 /** Current recipe wording, matched with the same food and unit rules as the list. */

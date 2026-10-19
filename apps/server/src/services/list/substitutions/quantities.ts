@@ -9,8 +9,8 @@ import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../../core/errors.ts"
 import { PantryItem, ShoppingItem } from "../../../database/entities/index.ts"
 import { coverFromPantry } from "../../pantry/stock.ts"
-import { toNumber } from "../../recipes/recipes.ts"
-import { householdAliases } from "../food-aliases.ts"
+import { toNumber } from "../../../database/numbers.ts"
+import { householdAliases } from "../../foods/aliases.ts"
 import { addMealNeeds, onHandOf } from "../meals.ts"
 
 /** Recalculate changed foods only. A purchase or manual remainder is never discarded. */

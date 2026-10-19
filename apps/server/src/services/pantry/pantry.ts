@@ -1,6 +1,6 @@
+import { householdToday } from "../households/clock.ts"
 import {
   addAmounts,
-  clockIn,
   formatAmount,
   guessStorage,
   guessUseBy,
@@ -18,15 +18,15 @@ import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
 import {
   Aisle,
-  Household,
   PantryItem,
   PlanEntry,
   STORAGE_PLACES,
 } from "../../database/entities/index.ts"
-import { householdKeys } from "../list/food-aliases.ts"
+import { householdKeys } from "../foods/aliases.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { aislesOf, findAisle, householdAisles } from "../list/aisles.ts"
-import { inHouseholdTransaction, toNumber } from "../recipes/recipes.ts"
+import { inHouseholdTransaction } from "../../database/transactions.ts"
+import { toNumber } from "../../database/numbers.ts"
 
 // What's at home, kept in the fridge, the freezer or the cupboard. It
 // goes in from the list when the shopping's put away, or typed in, and
@@ -35,12 +35,6 @@ import { inHouseholdTransaction, toNumber } from "../recipes/recipes.ts"
 // on twice.
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-/** The household's today, in its time zone. */
-export async function householdToday(em: EntityManager, householdId: string) {
-  const household = await em.findOneOrFail(Household, { id: householdId })
-  return clockIn(household.timeZone).today
-}
 
 export type PantryMealInfo = {
   id: string

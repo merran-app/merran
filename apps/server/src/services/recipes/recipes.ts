@@ -1,3 +1,5 @@
+import { toNumber } from "../../database/numbers.ts"
+import { inHouseholdTransaction } from "../../database/transactions.ts"
 import {
   applyDietOverrides,
   dietsFor,
@@ -17,7 +19,7 @@ import {
 import { raw, type FilterQuery } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
 import { rescaled } from "../nutrition/nutrition.ts"
-import { photoAfterCreate } from "../ai-photos/runs.ts"
+import { photoAfterCreate } from "./photos/runs.ts"
 import { nutritionAfterSave } from "../nutrition/runs.ts"
 import {
   CookNote,
@@ -30,7 +32,7 @@ import {
   type Nutrition,
   type RECIPE_ORIGINS,
 } from "../../database/entities/index.ts"
-import { HOUSEHOLD_FILTER } from "../../database/scope.ts"
+
 import type { FileStore } from "../storage/files.ts"
 import { containing } from "../../database/text.ts"
 import { AppError } from "../../core/errors.ts"
@@ -42,7 +44,7 @@ import {
   withDiet,
   workOutDiets,
 } from "./diet-labels.ts"
-import { photoUrls, removePhoto, storePhoto } from "./photos.ts"
+import { photoUrls, removePhoto, storePhoto } from "./photos/photos.ts"
 import { uniqueSlug } from "./slugs.ts"
 import { pruneTags, setTags, tagKey, tagsOf } from "./tags.ts"
 import { saveVersion, type VersionSource } from "./versions.ts"
@@ -50,22 +52,6 @@ import { saveVersion, type VersionSource } from "./versions.ts"
 export type RecipeOrigin = (typeof RECIPE_ORIGINS)[number]
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-/**
- * Runs `work` in a transaction that sees only one household's rows. It
- * starts from a fresh fork, so what it loads isn't shared with whatever
- * the caller already loaded.
- */
-export function inHouseholdTransaction<T>(
-  em: EntityManager,
-  householdId: string,
-  work: (tx: EntityManager) => Promise<T>
-): Promise<T> {
-  return em.fork({ keepTransactionContext: true }).transactional((tx) => {
-    tx.setFilterParams(HOUSEHOLD_FILTER, { householdId })
-    return work(tx)
-  })
-}
 
 /** A recipe by its id or slug, with its lines. Not one in Recently deleted. */
 export async function findRecipe(em: EntityManager, idOrSlug: string) {
@@ -83,10 +69,6 @@ export async function findRecipe(em: EntityManager, idOrSlug: string) {
   }
   return recipe
 }
-
-/** A double column, which the database driver may hand back as text. */
-export const toNumber = (value: string | number | null | undefined) =>
-  value == null ? null : Number(value)
 
 /** Total time as given, or prep and cook added up. */
 export function totalMinutes(recipe: Recipe) {

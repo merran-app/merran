@@ -12,7 +12,10 @@ import { JOB_HANDLERS } from "../services/jobs/handlers.ts"
 import { JobRunner, type JobHandler } from "../services/jobs/runner.ts"
 import { createSettings } from "../services/settings/settings.ts"
 import { LocalFileStore } from "../services/storage/files.ts"
-import { NO_VIDEO_TOOLS, type VideoTools } from "../services/video/tools.ts"
+import {
+  NO_VIDEO_TOOLS,
+  type VideoTools,
+} from "../services/recipes/import/video/tools.ts"
 import { createAuth } from "../services/auth/auth.ts"
 import { SetupCode } from "../services/auth/setup-code.ts"
 import { createEventBus } from "../services/events/events.ts"

@@ -7,7 +7,7 @@ import {
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { StorePrice } from "../../database/entities/index.ts"
-import { KROGER } from "./connections.ts"
+import { KROGER } from "./kroger/connection.ts"
 
 // The prices a household has seen at its store, by day: what sales are
 // judged against, and "usually $4.49".

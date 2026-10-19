@@ -1,7 +1,7 @@
 import { z } from "@hono/zod-openapi"
 import type { EntityManager } from "@mikro-orm/sql"
 import { HOUSEHOLD_ROLES, INVITE_ROLES } from "../../database/entities/index.ts"
-import { membershipsOf } from "../../services/households.ts"
+import { membershipsOf } from "../../services/households/households.ts"
 import { ME, NEW_ACCOUNT, TIMES } from "./examples.ts"
 
 /** A new account's details. The same rules as Better Auth's username plugin. */

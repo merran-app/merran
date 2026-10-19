@@ -1,7 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../core/context.ts"
 import { Session } from "../../../database/entities/index.ts"
-import { createHousehold } from "../../../services/households.ts"
+import { createHousehold } from "../../../services/households/households.ts"
 import { serverAdmin } from "../../middleware/auth.ts"
 import type { Router } from "../../router.ts"
 import {

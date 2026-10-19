@@ -1,39 +1,13 @@
-import { addDays, levelOf, type HouseholdTastes } from "@merran/shared"
+import { tastesText } from "../households/taste-text.ts"
+import { addDays, type HouseholdTastes } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { listPlan } from "../plan/plan.ts"
-import { findRecipe, snapshotOf, toNumber } from "../recipes/recipes.ts"
+import { findRecipe, snapshotOf } from "../recipes/recipes.ts"
+import { toNumber } from "../../database/numbers.ts"
 import { tagsOf } from "../recipes/tags.ts"
 
 // What the assistant is told: who it's talking with, how to help, the
 // household's tastes and rules, and what's on their screen.
-
-/** The household's tastes, as the assistant reads them. */
-export function tastesText(tastes: HouseholdTastes) {
-  const who = (item: { who: string | null }) =>
-    item.who ? ` (for ${item.who})` : ""
-  const by = (level: string) =>
-    tastes.avoid
-      .filter((item) => levelOf(item) === level)
-      .map((item) => `${item.food}${who(item)}`)
-  const allergies = by("allergy")
-  const never = by("never")
-  const leaveOut = by("leave-out")
-  return [
-    allergies.length ? `- Allergies, strict: ${allergies.join(", ")}.` : "",
-    never.length ? `- Never eaten: ${never.join(", ")}.` : "",
-    leaveOut.length
-      ? `- Not liked, and left out of a dish that can do without them: ${leaveOut.join(", ")}.`
-      : "",
-    tastes.diets.length
-      ? `- Every meal must be: ${tastes.diets.join(", ")}.`
-      : "",
-    tastes.weeknightMinutes
-      ? `- Dinners Monday to Thursday take at most ${tastes.weeknightMinutes} minutes.`
-      : "",
-  ]
-    .filter(Boolean)
-    .join("\n")
-}
 
 /** How the assistant helps, and what it knows of the household. */
 export function systemPrompt(options: {

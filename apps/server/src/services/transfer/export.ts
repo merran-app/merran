@@ -12,8 +12,8 @@ import {
   Tag,
 } from "../../database/entities/index.ts"
 import { ACROSS_HOUSEHOLDS } from "../../database/scope.ts"
-import { readPhoto } from "../recipes/photos.ts"
-import { toNumber } from "../recipes/recipes.ts"
+import { readPhoto } from "../recipes/photos/photos.ts"
+import { toNumber } from "../../database/numbers.ts"
 import { tagsOf } from "../recipes/tags.ts"
 import type { Settings } from "../settings/settings.ts"
 import type { FileStore } from "../storage/files.ts"

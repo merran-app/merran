@@ -4,6 +4,8 @@ A plan for one shared vocabulary of foods: what each one is called (in every lan
 
 Status: slice 1 built (October 17, 2026): about 450 foods, matching, brands, the corpus and the coverage report. Slices 2 to 4 are planned. It comes after the stores' costs and budget and before the Walmart cart, which searches by the same names. See [scope.md](scope.md).
 
+Household alias ownership, decided October 19, 2026 (not released yet): persistence, lookup and deletion live in `apps/server/src/services/foods/aliases.ts`. Shopping-list teaching and rekeying remain in `services/list/`, so alias storage has no dependency on shopping operations. The shared parser and vocabulary stay in `packages/shared`. Behavior and matching rules are unchanged.
+
 ## Why
 
 Today Merran knows about food through about fifteen word lists spread over the shared package, each kept by hand:

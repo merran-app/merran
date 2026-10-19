@@ -5,7 +5,7 @@ import {
   type ApiKeyPermissions,
 } from "../../database/entities/index.ts"
 import { ACROSS_HOUSEHOLDS } from "../../database/scope.ts"
-import { roleIn, type HouseholdRole } from "../households.ts"
+import { roleIn, type HouseholdRole } from "../households/households.ts"
 
 /** Every key starts with this, so secret scanners can spot a leaked one. */
 export const API_KEY_PREFIX = "mrn_"

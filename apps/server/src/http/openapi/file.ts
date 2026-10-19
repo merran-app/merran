@@ -17,7 +17,7 @@ import { JobRunner } from "../../services/jobs/runner.ts"
 import { createEventBus } from "../../services/events/events.ts"
 import { createSettings } from "../../services/settings/settings.ts"
 import { LocalFileStore } from "../../services/storage/files.ts"
-import { NO_VIDEO_TOOLS } from "../../services/video/tools.ts"
+import { NO_VIDEO_TOOLS } from "../../services/recipes/import/video/tools.ts"
 import { buildOpenApiDocument, DEFAULT_SERVER_URL } from "./document.ts"
 
 /**

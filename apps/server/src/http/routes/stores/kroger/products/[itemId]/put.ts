@@ -1,6 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../../core/context.ts"
-import { pickKrogerProduct } from "../../../../../../services/stores/basket.ts"
+import { pickKrogerProduct } from "../../../../../../services/stores/kroger/basket.ts"
 import { inHousehold, openToKeys } from "../../../../../middleware/auth.ts"
 import type { Router } from "../../../../../router.ts"
 import {

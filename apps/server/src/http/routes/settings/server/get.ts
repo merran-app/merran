@@ -3,7 +3,7 @@ import { existsSync } from "node:fs"
 import { join } from "node:path"
 import type { AppDeps } from "../../../../core/context.ts"
 import { VIDEO } from "../../../../modules/video/settings.ts"
-import { shelfSummary } from "../../../../services/sites/sites.ts"
+import { shelfSummary } from "../../../../services/recipes/discover/sites/sites.ts"
 import { serverAdmin } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import {

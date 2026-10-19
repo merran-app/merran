@@ -17,8 +17,8 @@ import {
 import { forHousehold } from "../../database/scope.ts"
 import { enqueue } from "../jobs/jobs.ts"
 import type { JobHandler } from "../jobs/runner.ts"
-import { toNumber } from "../recipes/recipes.ts"
-import { householdKeys } from "./food-aliases.ts"
+import { toNumber } from "../../database/numbers.ts"
+import { householdKeys } from "../foods/aliases.ts"
 
 // When food keys are made differently (FOOD_KEYS_VERSION), the ones kept
 // on lists, in the pantry, for aisles, purchases and store products are

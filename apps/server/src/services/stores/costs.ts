@@ -17,10 +17,10 @@ import {
   StoreProduct,
 } from "../../database/entities/index.ts"
 import { STORE_SETTINGS } from "../../modules/stores/settings.ts"
-import { householdToday } from "../pantry/pantry.ts"
-import { toNumber } from "../recipes/recipes.ts"
-import { KROGER } from "./connections.ts"
-import { krogerApp } from "./kroger.ts"
+import { householdToday } from "../households/clock.ts"
+import { toNumber } from "../../database/numbers.ts"
+import { KROGER } from "./kroger/connection.ts"
+import { krogerApp } from "./kroger/client.ts"
 
 // What recipes cost at the household's Kroger store, from the products it
 // keeps for each food and today's prices, and the weekly budget Fill the

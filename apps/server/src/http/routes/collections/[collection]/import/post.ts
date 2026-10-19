@@ -5,8 +5,8 @@ import {
   describeLinkImport,
   startLinkImport,
 } from "../../../../../services/recipes/import/import-links.ts"
-import { getCollection } from "../../../../../services/sites/collections.ts"
-import { languageOf } from "../../../../../services/sites/sites.ts"
+import { getCollection } from "../../../../../services/recipes/discover/sites/collections.ts"
+import { languageOf } from "../../../../../services/recipes/discover/sites/sites.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import { LinkImportSchema } from "../../../../schemas/imports.ts"
