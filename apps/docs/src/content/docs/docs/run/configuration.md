@@ -55,12 +55,12 @@ Some settings belong to the household or account rather than the server. Use hou
 
 The checked-out app groups each Settings page into sections with an **On this page** list for jumping to one. This navigation is not released yet, so the installed app may still show a single list of cards.
 
-| Page | Find here |
-| --- | --- |
-| **You** | **Profile and appearance**, **Sign-in and security**, **Connected apps and API keys**, **Devices and sharing**, and **Your data** |
-| **Household** | **Household details**, **People and households**, **Meal planning**, **Recipes and AI**, and **Shopping and stores** |
-| **Import and export** | **Move a household** for Merran archives, or **Import from another app** for recipe imports. Household owners and admins only. |
-| **This server** | **Server overview**, **Access and email**, **Shared AI**, **Recipe services**, **Store connections**, and **Operations**. Server admin only. |
+| Page                  | Find here                                                                                                                                    |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **You**               | **Profile and appearance**, **Sign-in and security**, **Connected apps and API keys**, **Devices and sharing**, and **Your data**            |
+| **Household**         | **Household details**, **People and households**, **Meal planning**, **Recipes and AI**, and **Shopping and stores**                         |
+| **Import and export** | **Move a household** for Merran archives, or **Import from another app** for recipe imports. Household owners and admins only.               |
+| **This server**       | **Server overview**, **Access and email**, **Shared AI**, **Recipe services**, **Store connections**, and **Operations**. Server admin only. |
 
 Household members can view shared details, people and tastes; household admins see additional sections for recipes, AI and stores. The server admin role does not by itself grant household-admin access.
 
