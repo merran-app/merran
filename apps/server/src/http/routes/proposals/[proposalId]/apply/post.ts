@@ -2,6 +2,8 @@ import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { applyProposal } from "../../../../../services/proposals/proposals.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
+import { getProposal } from "../../../../../services/proposals/proposals.ts"
+import { requireProposalPermission } from "../../../../../services/proposals/permissions.ts"
 import type { Router } from "../../../../router.ts"
 import {
   errorResponse,
@@ -21,7 +23,7 @@ const route = createRoute({
   tags: ["Review"],
   summary: "Apply a suggestion",
   description:
-    "Changes to a recipe apply the sections picked, as one change that keeps a version of how it was; the rest are skipped. A section changed since it was suggested is refused rather than overwritten, and the error says which. The assistant's other suggestions add what they say: a recipe, meals, things for the list, tastes, or a recipe from the web.",
+    "Changes to a recipe apply the sections picked, as one change that keeps a version of how it was; the rest are skipped. A section changed since it was suggested is refused rather than overwritten, and the error says which. The assistant's other suggestions add what they say: a recipe, meals, things for the list, tastes, or a recipe from the web. API keys additionally need write access to the affected area: plan for meals/tastes, list for shopping items, imports for imports, and recipes otherwise.",
   ...openToKeys("recipes", "write"),
   request: {
     params: ProposalParam,
@@ -45,6 +47,8 @@ const route = createRoute({
 export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
+    const proposal = await getProposal(em, c.req.valid("param").proposalId)
+    requireProposalPermission(c.var.apiKey?.permissions, proposal.kind, "write")
     const result = await applyProposal(em, deps, {
       householdId,
       userId,

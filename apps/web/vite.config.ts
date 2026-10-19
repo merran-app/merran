@@ -18,6 +18,9 @@ export default defineConfig({
     // The API runs on its own in development (apps/server on :3000).
     // xfwd keeps the browser's address, so links the API makes (invite
     // links) point back here.
-    proxy: { "/api": { target: "http://localhost:3000", xfwd: true } },
+    proxy: {
+      "/api": { target: "http://localhost:3000", xfwd: true },
+      "/mcp": { target: "http://localhost:3000", xfwd: true },
+    },
   },
 })

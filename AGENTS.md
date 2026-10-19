@@ -32,6 +32,7 @@ CI runs all of these (`.github/workflows/check.yml`, and `docs.yml` for the site
 - **Routes mirror the API.** Each part of a path is a folder, a `{param}` is `[param]`, and each method is a file named after it: `PATCH /api/households/current/members/{memberId}` is `apps/server/src/http/routes/households/current/members/[memberId]/patch.ts`. A folder's `index.ts` only registers its routes and subfolders. A test checks all of this.
 - **Settings exist only through modules.** A module's settings go in its `settings.ts` and in `apps/server/src/modules/settings.ts`; settings Merran needs to start go in `apps/server/src/core/config.ts`. Each has a `MERRAN_` environment variable.
 - **Words people read** in the web app are in `apps/web/src/locales/en.json`.
+- **Mobile uses drawers, never modal dialogs.** Forms, confirmations and other content that opens in a dialog on larger screens must open in a drawer on mobile. Follow this rule for new UI and when changing existing dialogs, reusing the app's existing drawer patterns.
 - **Files go in folders.** Keep the root and each folder short: put related files in a folder of their own rather than side by side.
 - **Match the code around you:** its naming, its idioms, and its comments, which are plain English and say why.
 - **Package versions:** pnpm won't install a version newer than its minimum release age. Pick an older version rather than adding an exemption.

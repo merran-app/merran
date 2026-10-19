@@ -1,6 +1,7 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
 import { getProposal } from "../../../../services/proposals/proposals.ts"
+import { requireProposalPermission } from "../../../../services/proposals/permissions.ts"
 import { inHousehold, openToKeys } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import {
@@ -16,7 +17,8 @@ const route = createRoute({
   operationId: "getProposal",
   tags: ["Review"],
   summary: "A suggestion",
-  description: "Waiting, applied or dismissed.",
+  description:
+    "Waiting, applied or dismissed. API keys additionally need read access to the affected area: plan for meals/tastes, list for shopping items, imports for imports, and recipes otherwise.",
   ...openToKeys("recipes", "read"),
   request: { params: ProposalParam },
   responses: {
@@ -29,6 +31,8 @@ const route = createRoute({
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em } = inHousehold(c)
-    return c.json(await getProposal(em, c.req.valid("param").proposalId), 200)
+    const proposal = await getProposal(em, c.req.valid("param").proposalId)
+    requireProposalPermission(c.var.apiKey?.permissions, proposal.kind, "read")
+    return c.json(proposal, 200)
   })
 }

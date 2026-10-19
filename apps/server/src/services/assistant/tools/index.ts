@@ -4,20 +4,12 @@ import type { AiDeps } from "../../ai/run.ts"
 import { createProposal } from "../../proposals/proposals.ts"
 import type { FileStore } from "../../storage/files.ts"
 import type { ToolContext } from "./context.ts"
-import { searchRecipesTool } from "./search-recipes.ts"
-import { getRecipeTool } from "./get-recipe.ts"
-import { listTagsTool } from "./list-tags.ts"
-import { getMealPlanTool } from "./get-meal-plan.ts"
-import { getShoppingListTool } from "./get-shopping-list.ts"
-import { getPantryTool } from "./get-pantry.ts"
-import { proposeRecipeEditTool } from "./propose-recipe-edit.ts"
-import { proposeNewRecipeTool } from "./propose-new-recipe.ts"
-import { proposeMealsTool } from "./propose-meals.ts"
 import { scanReceiptTool } from "./scan-receipt.ts"
 import { proposeSwapTool } from "./propose-swap.ts"
-import { proposeListItemsTool } from "./propose-list-items.ts"
 import { proposeTastesTool } from "./propose-tastes.ts"
 import { proposeImportRecipeTool } from "./propose-import-recipe.ts"
+
+import { sharedTools } from "./catalog.ts"
 
 type ChatContext = {
   householdId: string
@@ -47,21 +39,12 @@ export function assistantTools(
       }).then((proposal) => ({ proposal })),
   }
   return {
-    search_recipes: searchRecipesTool(context),
-    get_recipe: getRecipeTool(context),
-    list_tags: listTagsTool(context),
-    get_meal_plan: getMealPlanTool(context),
-    get_shopping_list: getShoppingListTool(context),
-    get_pantry: getPantryTool(context),
-    propose_recipe_edit: proposeRecipeEditTool(context),
-    propose_new_recipe: proposeNewRecipeTool(context),
-    propose_meals: proposeMealsTool(context),
+    ...sharedTools(context),
     scan_receipt: scanReceiptTool(
       { ...context, userId: chat.userId, files: chat.files },
       deps
     ),
     propose_swap: proposeSwapTool(context),
-    propose_list_items: proposeListItemsTool(context),
     propose_tastes: proposeTastesTool(context),
     propose_import_recipe: proposeImportRecipeTool(context, deps),
   }

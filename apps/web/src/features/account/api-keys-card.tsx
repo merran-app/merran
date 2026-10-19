@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -41,9 +40,10 @@ export function ApiKeysCard() {
         <CardDescription>
           {t("settings.you.apiKeys.description")}
         </CardDescription>
-        <CardAction>
+        <div className="flex flex-wrap gap-2 pt-2">
           <NewApiKeyDialog />
-        </CardAction>
+          <NewApiKeyDialog mcp />
+        </div>
       </CardHeader>
       <CardContent>
         {keys.length === 0 ? (

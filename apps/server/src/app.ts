@@ -18,6 +18,7 @@ import {
 import { createRouter } from "./http/router.ts"
 import routes from "./http/routes/index.ts"
 import { serveWebApp } from "./http/web-app.ts"
+import registerMcp from "./http/mcp/index.ts"
 
 export const API_BASE = "/api"
 const SPEC_PATH = `${API_BASE}/openapi.json`
@@ -30,12 +31,19 @@ export function createApp(deps: AppDeps) {
   app.use(secureHeaders())
   app.use(requestLogger(deps.logger))
   app.use(entityManager(deps.database))
+  app.use("/mcp", async (c, next) => {
+    c.header("Cache-Control", "no-store")
+    await next()
+    if (c.res.status === 401)
+      c.header("WWW-Authenticate", 'Bearer realm="Merran MCP"')
+  })
   app.use(authenticateRequests(deps.auth))
   app.use(announceChanges(deps.events))
 
   const api = createRouter()
   routes(api, deps)
   app.route(API_BASE, api)
+  registerMcp(app, deps)
 
   app.openAPIRegistry.register("Error", ErrorSchema)
   app.openAPIRegistry.registerComponent("securitySchemes", "session", {

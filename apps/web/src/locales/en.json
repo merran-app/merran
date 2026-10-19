@@ -217,7 +217,15 @@
         "revoke": "Revoke",
         "revokeTitle": "Revoke {{name}}?",
         "revokeDescription": "It stops working straight away. Anything using it will need a new key.",
-        "revoked": "Revoked {{name}}."
+        "revoked": "Revoked {{name}}.",
+        "mcp": {
+          "make": "Use with an AI app",
+          "permissions": "Start with read access. To allow suggestions, give write access to Recipes, Plan or Shopping list. Meal suggestions also need read access to Recipes. Plan read access includes dietary preferences. MCP changes wait in Review. This is a regular API key: its write permissions also allow changes through the REST API.",
+          "url": "MCP server URL",
+          "authorization": "Authorization header value",
+          "connect": "Choose Streamable HTTP in an app that accepts a bearer token. Use the URL above and send this value in its Authorization header. Your AI app must be able to reach your Merran server. Suggestions appear in Recipes → Review; Merran does not use your AI credits for MCP calls.",
+          "guide": "Connection instructions and supported clients"
+        }
       },
       "myData": {
         "title": "Your data",
@@ -1473,11 +1481,11 @@
       "review": "Review",
       "hide": "Hide",
       "reviewTitle": "Review",
-      "reviewPage": "What AI suggests for your recipes. Nothing changes until you apply it.",
+      "reviewPage": "Suggestions for your recipes, meal plan and shopping list. Nothing changes until you apply it.",
       "none": "Nothing to review",
-      "noneHint": "Tidy up a recipe from its page, or pick a few on Recipes, and what AI suggests waits here.",
-      "waiting_one": "{{count}} recipe has suggestions to review.",
-      "waiting_other": "{{count}} recipes have suggestions to review.",
+      "noneHint": "Suggestions from recipe tidy-up, cooking notes and connected AI apps wait here.",
+      "waiting_one": "{{count}} suggestion to review.",
+      "waiting_other": "{{count}} suggestions to review.",
       "waitingHere": "Tidy up has suggestions for this recipe: {{summary}}",
       "picked_one": "Tidying {{count}} recipe. Its suggestions will be in Review.",
       "picked_other": "Tidying {{count}} recipes. Their suggestions will be in Review.",
@@ -2728,7 +2736,8 @@
       "diets": "Every meal: {{diets}}",
       "weeknight": "Weeknight dinners in {{minutes}} minutes or less",
       "recipeSize": "{{ingredients}} ingredients, {{steps}} steps",
-      "minutes": "{{minutes}} min"
+      "minutes": "{{minutes}} min",
+      "inspectRecipe": "Review the full recipe"
     },
     "close": "Close",
     "files": {

@@ -33,6 +33,10 @@ Alpha.4 also includes:
 
 Start with [the guides](../../) and [integration setup](../../integrations/browser-extension/). The [release verification record](../release-verification/) separates implementation from the device and provider checks still to do.
 
+## In progress (not released yet)
+
+- **MCP:** a bearer-key endpoint, shared assistant tools, connection setup and proposals in Review are implemented after alpha.4. All changes require review in this version. See [MCP setup](../../integrations/mcp/). Real-client acceptance, OAuth connectors and optional direct plan/list application remain separate work.
+
 ## Up next
 
 Our immediate focus is checking the released workflows in real use before choosing the next feature to build.
@@ -52,7 +56,6 @@ These are features we intend to build. Their order here does not indicate priori
 - **Prep reminders:** help you remember to thaw ingredients, start a marinade, or begin cooking before dinner is due.
 - **More sign-in options:** add passkeys, authenticator-based two-step sign-in, and OIDC single sign-on so you can choose a sign-in method that fits your household or server.
 - **Webhooks:** let tools such as Home Assistant and n8n react when recipes, plans, lists, or pantry items change.
-- **MCP support:** let compatible external AI tools work with your household's recipes, plan, and list, with proposed changes reviewed before they are applied.
 - **Translations:** make the interface available beyond English, including the planned option to translate recipes as they are imported. Measurement conversion already works.
 - **After-cooking pantry checks:** offer a checklist of ingredients that ran out, with an option to put them on the shopping list. Existing planned-meal deductions remain available.
 - **Server administration:** add automatic backups before migrations, a consolidated Problems page, an audit log, and a guided SQLite-to-Postgres transfer. Manual restore smoke tests and secret rotation already exist; they do not implement these additions.
