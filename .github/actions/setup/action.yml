@@ -1,0 +1,25 @@
+name: Install workspace dependencies
+description: Set up Node and cache pnpm downloads before installing a package and its dependencies.
+inputs:
+  package:
+    description: Workspace package to install, including its dependencies
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: .nvmrc
+    - run: corepack enable
+      shell: bash
+    # pnpm must be available before setup-node can locate its store.
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
+    - run: pnpm install --frozen-lockfile --filter "${PACKAGE}..." --filter merran
+      shell: bash
+      env:
+        PACKAGE: ${{ inputs.package }}
+        COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"

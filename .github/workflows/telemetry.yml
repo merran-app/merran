@@ -11,8 +11,13 @@ on:
     branches: [main]
     paths:
       - "apps/telemetry/**"
-      - "packages/shared/src/telemetry/**"
-      - "packages/shared/src/releases/**"
+      - "packages/shared/**"
+      - "package.json"
+      - "pnpm-workspace.yaml"
+      - ".nvmrc"
+      - ".npmrc"
+      - "tsconfig.base.json"
+      - ".github/actions/setup/**"
       - "pnpm-lock.yaml"
       - ".github/workflows/telemetry.yml"
   workflow_dispatch:
@@ -39,11 +44,9 @@ jobs:
       WRANGLER_SEND_METRICS: "false"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/setup
         with:
-          node-version-file: .nvmrc
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile --filter @merran/telemetry...
+          package: "@merran/telemetry"
       - run: pnpm --filter @merran/telemetry typecheck
       - run: pnpm --filter @merran/telemetry test
       # The database's migrations first, then the Worker that uses them.
