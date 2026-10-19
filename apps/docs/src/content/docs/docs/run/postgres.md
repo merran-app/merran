@@ -13,11 +13,11 @@ Use Docker Compose, a new installation directory, and a backup location. For an 
 
 ## Start a new installation
 
-1. Download `compose.yaml` from the [release tag](https://github.com/merran-app/merran/blob/v0.1.0-alpha.1/compose.yaml), rather than mixing a pinned image with an unreviewed future Compose file.
+1. Download `compose.yaml` from the [release tag](https://github.com/merran-app/merran/blob/v0.1.0-alpha.4/compose.yaml), rather than mixing a pinned image with an unreviewed future Compose file.
 2. Create `.env` beside it:
 
    ```dotenv
-   MERRAN_IMAGE=ghcr.io/merran-app/merran:0.1.0-alpha.1
+   MERRAN_IMAGE=ghcr.io/merran-app/merran:0.1.0-alpha.4
    COMPOSE_PROFILES=postgres
    POSTGRES_PASSWORD=REPLACE_WITH_A_LONG_RANDOM_URL_SAFE_PASSWORD
    DATABASE_URL=postgres://merran:REPLACE_WITH_THE_SAME_PASSWORD@db:5432/merran
@@ -48,7 +48,7 @@ Follow your database provider's TLS requirements and credential-handling guidanc
 
 ## Moving an existing installation
 
-There is no documented, verified in-place SQLite-to-Postgres migration command in alpha.1. Setting `DATABASE_URL` selects another database; if it is empty, Merran offers setup. It does not mean your original SQLite data was deleted.
+There is no documented, verified in-place SQLite-to-Postgres migration command in alpha.4. Setting `DATABASE_URL` selects another database; if it is empty, Merran offers setup. It does not mean your original SQLite data was deleted.
 
 Keep the original deployment and a full backup. For household recipe portability, use the supported household export/import on a separately initialized destination and review its supported contents. A household export is not a server migration: do not assume it transfers accounts, credentials, every setting, or all operational history. A complete cross-database migration needs a separately tested procedure before retiring the source.
 

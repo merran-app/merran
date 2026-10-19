@@ -59,13 +59,13 @@ Creating the list sets pantry stock aside for meals; it does not mean the food h
 
 Where a supported cart handoff recorded pack sizes, put-away can use purchased packs instead of the recipe's required amount. Otherwise it uses the list's amount. Correct the pantry if you actually bought a different pack. Purchase history can later produce **Due about now** suggestions; adding those remains your choice.
 
-:::note[Not released yet]
+:::note[Available in alpha.4]
 Checking the last outstanding item on a list, or emptying a list with **Clear checked**, **Clear the list**, **Put away**, or **Put it all away**, plays a short shower of confetti, stars, or petals chosen at random. Pieces rain down across the screen, drifting and tumbling as they fall. Effects are silent and respect your device's reduced-motion preference. Partially clearing a list does not celebrate.
 :::
 
 ## Start a shopping trip
 
-:::note[Not released yet]
+:::note[Available in alpha.4]
 Choose **Start shopping** on **List** for a focused aisle view with larger checkboxes. Select your shopping list and optionally a store under **Shopping at**; **All stores** keeps the whole trip in view. No retailer connection is required. The mode requests that the screen stay awake while visible and shows whether that request is active. Your device may decline it.
 
 Check items off as you buy them. **Couldn’t find it** offers **Set aside for this trip**, **Try [store] instead**, or **Find a substitute**. Set-aside items stay needed on the household list and appear in a collapsed section with **Restore**. Try-another-store choices appear under **At another store**. They are not purchases. Trip focus and deferred choices are remembered for this household on this device; the list itself remains shared.
@@ -75,7 +75,7 @@ The shopping header scrolls with the list so it does not cover items. Scroll bac
 
 ### Replace an unavailable ingredient
 
-:::note[Not released yet]
+:::note[Available in alpha.4]
 In shopping mode, choose **Couldn’t find it → Find a substitute**. The search starts automatically when household AI is configured. It includes every planned recipe needing this item, including sides. Choose one idea to fill replacements for all recipes, with amounts and cooking changes tailored to each dish. All contributing meals are selected under **Use for these planned meals**; uncheck a meal to keep its original ingredient.
 
 Use **Get substitution ideas** to search again, or type replacement lines for each recipe yourself. Enter amounts for each recipe as written; **Review the replacement** shows each selected meal's scaled amounts. **Adjust cooking instructions** lets you review or edit rewritten steps. Ingredient names in unchanged steps are updated where recognized; inspect preparation and cooking-time differences yourself. **Apply replacement** saves all selected recipes together, with one **Undo**.
@@ -89,14 +89,14 @@ Items with no planned recipe can be replaced manually using one line that includ
 
 ## Optional store connections
 
-:::note[Not released yet: ingredient details]
+:::note[ingredient details]
 Tap or hover the info icon beside any list item to compare **On the list** with its current recipe ingredient lines. **For this meal** shows a line scaled to the planned servings when those differ from the recipe's servings. Main dishes and sides are named separately, and repeated planned meals appear separately.
 
 **Recorded for this meal after pantry** shows the contribution left to buy when the list was calculated. The recipe lines are before pantry deductions; recipe changes and manual list edits can make them differ from the amount on the list. Items added by hand or from recurring buys may have no linked recipe lines. Unavailable recipe details are identified rather than guessed.
 :::
 
-:::note[Not released yet: shopping progress on List]
-The next release adds **Shopping progress** directly to **List**. Each item shows its selected product, whether it needs a product or is ready to send, and which store received it. Store cards show sent, ready, and attention counts. **Review Fry's** (or your store's name) opens product and pack review over the list; **Back to the list** closes it without losing your place. Already sent items are left out of the next send by default.
+:::note[shopping progress on List]
+**Shopping progress** appears directly on **List**. Each item shows its selected product, whether it needs a product or is ready to send, and which store received it. Store cards show sent, ready, and attention counts. **Review Fry's** (or your store's name) opens product and pack review over the list; **Back to the list** closes it without losing your place. Already sent items are left out of the next send by default.
 
 Each row has a compact store/status menu, such as **Fry's · Choose product**, **Fry's · Ready**, or **Fry's · Sent**. Open it for product and sent-pack details, review, or to route an unsent item elsewhere, including **Shop for this item yourself**. With several connected stores, **Store for items without a product** chooses where unmatched items go. These choices are remembered in this browser tab.
 

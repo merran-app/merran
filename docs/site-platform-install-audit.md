@@ -2,6 +2,10 @@
 
 Added explicit TrueNAS Docker-based Apps, Dockge and Portainer Docker Standalone deployment examples to the existing installation page. Downloadable, self-contained Compose files live at apps/docs/public/deploy. No root Compose, Dockerfile, environment default, server behavior or deployment workflow changed.
 
+## Operator deployment report — October 19, 2026
+
+The operator reports running Merran on a TrueNAS server deployed through Dockge. Installation was straightforward, and everything used so far has worked. This report was provided during the alpha.4 documentation reconciliation. Exact TrueNAS/Dockge versions, image digest, database backend and individual workflows were not recorded, so it establishes practical installation and initial-use feedback rather than a full platform or integration test matrix.
+
 ## Evidence
 
 October 18, 2026 follow-up: the install page is MDX with Starlight's keyboard-accessible platform tabs and copyable Code components. Previews import all six downloadable YAML files directly. Basic and advanced tabs share a platform selection. The starter .env is downloadable and rendered from the same source, and the recommended image is next during alpha, per user review, with latest intended for the first full release. README and homepage commands match. Root compose.yaml still falls back to next without an override. Existing release verification remains the baseline; the tabbed documentation does not establish acceptance of a host manager's UI or dataset ACLs.

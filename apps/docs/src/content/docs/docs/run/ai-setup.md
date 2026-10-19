@@ -21,7 +21,7 @@ Merran currently supports Anthropic, OpenAI, Google, and OpenAI-compatible addre
 
 ## Connect a household provider
 
-:::note[Not released yet]
+:::note[Available in alpha.4]
 The **Add a key** dialog now includes provider-specific steps and a button to open its key page. The same guidance appears for household and shared server keys.
 :::
 

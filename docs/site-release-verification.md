@@ -1,6 +1,12 @@
 # Release smoke-test evidence — October 17, 2026
 
+Current baseline, October 19, 2026: v0.1.0-alpha.4. Public guides and the roadmap now include released SMTP recovery/invitations, onboarding, shopping and planning improvements, and live telemetry. The dated evidence below remains historical; it does not claim fresh alpha.4 image or provider verification. See [the current roadmap audit](site-roadmap-audit.md).
+
 No real household, retailer account or provider credential was used. App ports were loopback-only. No release or site deployment was initiated.
+
+## Operator deployment report — October 19, 2026
+
+The operator reports running Merran on a TrueNAS server deployed through Dockge. Installation was straightforward, and everything used so far has worked. This report was provided during the alpha.4 documentation reconciliation. Exact TrueNAS/Dockge versions, image digest, database backend and individual workflows were not recorded, so it establishes practical installation and initial-use feedback rather than a full platform or integration test matrix.
 
 ## Baseline
 

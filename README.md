@@ -99,7 +99,7 @@ pnpm dev
 
 The app runs on **http://localhost:5173**, with its API on port **3000**. Run `pnpm docs:dev` for the public site. Development checks and API-generation commands are covered in the contributor guide; internal plans live in [docs/](docs/README.md).
 
-New onboarding work (not released yet): set `MERRAN_DEV_SETUP=on` in the shell before `pnpm dev` to use a fresh temporary SQLite database on every server start. The normal database is untouched; the flag is rejected in production and Docker installs. See [setup development](docs/onboarding.md#development-testing). New builds also provide `docker exec merran merran setup-code` to retrieve a buried setup code and `docker exec -it merran merran reset-password USERNAME` for operator recovery.
+For repeatable setup development: set `MERRAN_DEV_SETUP=on` in the shell before `pnpm dev` to use a fresh temporary SQLite database on every server start. The normal database is untouched; the flag is rejected in production and Docker installs. See [setup development](docs/onboarding.md#development-testing). Alpha.4 also provides `docker exec merran merran setup-code` to retrieve a buried setup code and `docker exec -it merran merran reset-password USERNAME` for operator recovery.
 
 Read [AGENTS.md](AGENTS.md) for repository conventions and what to update with each change. Pull request titles use a kind such as `feat:`, `fix:`, or `docs:`; release drafts are assembled from merged PRs. See the [release process](docs/operations.md#releases-and-updates) before running the Release workflow on main.
 

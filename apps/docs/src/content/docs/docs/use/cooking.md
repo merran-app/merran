@@ -17,7 +17,7 @@ These steps follow the current repository implementation, pending fresh-install 
 
 ## Open cook view and gather ingredients
 
-**Not released yet:** open a meal from **Plan** to use the ingredients and instructions saved by a shopping substitution, including adjusted sides. **Adjusted for this meal** identifies these variants. The library recipe remains separate, and its nutrition/cost estimates do not apply to the variation. Finishing from a planned-meal link marks that specific meal cooked and consumes its adjusted pantry requirements.
+open a meal from **Plan** to use the ingredients and instructions saved by a shopping substitution, including adjusted sides. **Adjusted for this meal** identifies these variants. The library recipe remains separate, and its nutrition/cost estimates do not apply to the variation. Finishing from a planned-meal link marks that specific meal cooked and consumes its adjusted pantry requirements.
 
 1. Open a recipe and choose **Start cooking**, or choose **Start cooking** from a planned meal's menu.
 2. On **Get ready**, review the servings and ingredients. Tick each ingredient as you gather and measure it.
@@ -61,7 +61,7 @@ The optional server voice module can read using a configured Kokoro service or O
 
 Cooking notes record what happened on a particular occasion. Use **Edit → Notes** for lasting recipe instructions. When optional AI note suggestions are available, a note may produce a proposed recipe change in **Review**; inspect it before applying it.
 
-:::note[Not released yet]
+:::note[Available in alpha.4]
 Finishing with **Done cooking**, **Made it**, or **Mark cooked** on a planned meal plays a short shower of confetti, stars, or petals chosen at random. Pieces rain down across the screen, drifting and tumbling as they fall. Effects are silent and respect your device's reduced-motion preference.
 :::
 

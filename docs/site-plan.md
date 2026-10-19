@@ -1,5 +1,7 @@
 # Public site implementation and backlog
 
+Current baseline, October 19, 2026: v0.1.0-alpha.4. Public guides and the roadmap now include released SMTP recovery/invitations, onboarding, shopping and planning improvements, and live telemetry. The dated evidence below remains historical; it does not claim fresh alpha.4 image or provider verification. See [the current roadmap audit](site-roadmap-audit.md).
+
 Reconciled October 17, 2026 against main `f5129c9`, release `v0.1.0-alpha.1` (tag commit `d0461a5`), published assets, and the live site. Public guides live in apps/docs; this file is an internal record.
 
 ## Shipped before this refresh
@@ -45,13 +47,15 @@ Evidence: site-release-verification.md and the public project/release-verificati
 
 ## Remaining acceptance work, not missing guides
 
+October 19 operator report: installation on TrueNAS through Dockge was straightforward and initial use has worked. See [the deployment record](site-release-verification.md#operator-deployment-report--october-19-2026). The checklist below covers specific scenarios beyond that report.
+
 - [ ] Full first-week UI walkthrough, representative real-site imports and interrupted job recovery.
 - [ ] Actual extension installation/use/update in Chrome, Edge and Firefox, including restart behavior.
 - [ ] Android and iPhone/iPad share-sheet workflows on devices.
 - [ ] Kroger authorization/product/cart transfer and experimental Walmart; human review before purchases.
 - [ ] Live nutrition, video, image and voice provider checks; no fixed cost guarantees.
 - [ ] Public certificate issuance, proxy cookie/login and streaming behavior, Cloudflare and VPN topologies.
-- [ ] ARM64, another host, large libraries, external Postgres and encrypted real-provider credential recovery.
+- [ ] ARM64, broader host coverage, large libraries, external Postgres and encrypted real-provider credential recovery.
 - [ ] Screen readers, Safari/Firefox site behavior, touch keyboards, zoom, measured contrast and broader page sampling.
 - [ ] Long-running API clients, concurrent pagination and proxy interruption/reconnect tests.
 
@@ -69,7 +73,7 @@ Optional-service follow-up: installation now covers the full project Compose pro
 
 The installation page now includes copyable and downloadable SQLite Compose examples for TrueNAS Docker-based Apps, Dockge and Portainer Docker Standalone. Each makes the host storage path, numeric ownership, port mapping and first-run log access explicit. TrueNAS uses a dedicated local dataset, Dockge saves its stack before its data directory is created, and Portainer uses an absolute endpoint path. Downloads live under apps/docs/public/deploy; inline YAML must remain semantically identical to each file. These examples do not change root compose.yaml, image defaults or existing installations.
 
-Platform instructions were compared with official TrueNAS Apps, Dockge and Portainer documentation. Compose parsing and site checks are recorded in site-platform-install-audit.md. Actual UI deployment, NAS ACL behavior and host-manager image updates still require acceptance testing; documentation does not claim that they passed.
+Platform instructions were compared with official TrueNAS Apps, Dockge and Portainer documentation. Compose parsing and site checks are recorded in site-platform-install-audit.md. The October 19 operator report confirms straightforward installation and initial use on TrueNAS through Dockge. Detailed NAS ACL behavior, native TrueNAS Apps/Portainer deployment and host-manager image updates still need acceptance testing.
 
 Run docs typecheck, docs tests, Prettier on apps/docs (not internal docs), and the production build/link checker. Review new navigation and narrow layouts. Public guides describe the release, label newer behavior, and defer to the running server's schema when versions differ.
 

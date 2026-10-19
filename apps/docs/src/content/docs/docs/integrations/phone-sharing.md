@@ -11,7 +11,7 @@ Share content to your own Merran server without copying it into a recipe editor.
 
 Sign in to the intended household and open **Settings → You → Share to Merran**. Your phone must be able to reach the server. Android installation/share-target support needs HTTPS and a compatible browser. A home-network-only address will not work away from home without [remote access](../../run/https-and-remote-access/).
 
-These steps match alpha.1's UI and share endpoint. Real Android and iOS share-sheet behavior remains a device-test gap; browser and OS labels can vary.
+These steps match alpha.4's UI and share endpoint. Real Android and iOS share-sheet behavior remains a device-test gap; browser and OS labels can vary.
 
 ## Android
 

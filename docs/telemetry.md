@@ -4,9 +4,9 @@ The small service that takes in the opt-in daily summaries Merran servers send (
 
 Status: live since October 18, 2026. The receiver is `apps/telemetry`, deployed to `telemetry.merran.app` by its workflow on each change to main. `RECEIVER_LIVE` in `apps/server/src/modules/telemetry/receiver.ts` is on, so 0.1.0-alpha.2 offers telemetry, asks after setup and sends. The [decisions](#decisions) were made as recommended on October 17, 2026.
 
-## Why now
+## Original motivation — October 17, 2026
 
-0.1.0-alpha.1 shipped on October 17, 2026 with the sender (`apps/server/src/modules/telemetry/`), which posts to `https://telemetry.merran.app/v1/reports` at 04:41 server time each day. Nothing answers there: the name doesn't resolve. A server whose admin turned telemetry on gets one failed job a day ("Sending the daily summary", in Settings → This server → Jobs). Scheduled jobs are tried once, so it stays at one, and nothing else breaks. [Until it's live](#until-its-live) covers what to do meanwhile.
+0.1.0-alpha.1 shipped on October 17, 2026 with the sender (`apps/server/src/modules/telemetry/`), which posts to `https://telemetry.merran.app/v1/reports` at 04:41 server time each day. At that time nothing answered there: the name did not resolve. The receiver has since gone live, as recorded above. A server whose admin turned telemetry on gets one failed job a day ("Sending the daily summary", in Settings → This server → Jobs). Scheduled jobs are tried once, so it stays at one, and nothing else breaks. [Until it's live](#until-its-live) records the pre-launch fallback.
 
 ## What it isn't
 

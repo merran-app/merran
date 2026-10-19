@@ -60,9 +60,9 @@ Text and photo controls appear only when AI is available. Video processing can t
 
 ## Edit and organize
 
-**Not released yet:** recipes opened from **Plan** include any shopping substitutions saved for that meal. The notice explains that the library recipe may differ. Open the recipe directly from **Recipes** to inspect the library version; permanent edits still change that library recipe.
+recipes opened from **Plan** include any shopping substitutions saved for that meal. The notice explains that the library recipe may differ. Open the recipe directly from **Recipes** to inspect the library version; permanent edits still change that library recipe.
 
-**Not released yet:** cards show **Planned this week** when the recipe is on the household's current weekly plan, as a main dish or side, including the any-day pool. The badge follows the household's time zone and week-start setting. Cooked meals still count; skipped meals do not.
+cards show **Planned this week** when the recipe is on the household's current weekly plan, as a main dish or side, including the any-day pool. The badge follows the household's time zone and week-start setting. Cooked meals still count; skipped meals do not.
 
 1. Open a recipe and choose **Edit**.
 2. Correct the name, original link, servings, times, ingredients, or steps. Use **Notes** for lasting tips and substitutions.

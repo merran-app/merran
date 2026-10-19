@@ -4,7 +4,7 @@ Running Merran: logs, error tracking, analytics, what leaves the server, how it'
 
 ## Logs
 
-Setup improvements, October 17, 2026 (not released yet): readiness logs use MERRAN SETUP CODE and a grouped code. The operator can retrieve it with `merran setup-code` even when info logs are suppressed. A mode-0600 file in the data directory holds the active code and is removed after claiming or normal shutdown; restrict data-directory access on hosts where Unix modes do not apply. `merran reset-password <username-or-email>` uses hidden prompts and revokes sessions. `MERRAN_DEV_SETUP=on` uses a new temporary SQLite database/secret each start and is refused in production and Docker. It never resets existing accounts. See [onboarding.md](onboarding.md) for implementation, acceptance and remaining checks.
+Setup improvements, October 17, 2026 (released in alpha.4): readiness logs use MERRAN SETUP CODE and a grouped code. The operator can retrieve it with `merran setup-code` even when info logs are suppressed. A mode-0600 file in the data directory holds the active code and is removed after claiming or normal shutdown; restrict data-directory access on hosts where Unix modes do not apply. `merran reset-password <username-or-email>` uses hidden prompts and revokes sessions. `MERRAN_DEV_SETUP=on` uses a new temporary SQLite database/secret each start and is refused in production and Docker. It never resets existing accounts. See [onboarding.md](onboarding.md) for implementation, acceptance and remaining checks.
 
 - **pino:** JSON lines in production (for Loki, Dozzle or `docker logs`), readable colored lines in development.
 - `MERRAN_LOG_LEVEL`: `info` by default; `debug` for troubleshooting.
@@ -100,7 +100,7 @@ Every outside call Merran can make, when, and how to stop it. This table also go
 | Kroger | Prices, product search, sending a cart | Food names, product ids, the linked account's token | No Kroger app |
 | Browsers' push services | Sending a notification | An encrypted message only the phone can read | Notifications off |
 | Addresses a household chose | Webhooks | Event ids and a short summary, signed | No webhooks; private addresses refused unless the server admin allows |
-| SMTP server | Administrator tests, household invitations and password recovery (not released yet) | Sender, recipient, household name/role for invites, and the expiring invite or reset link | Off until enabled and configured |
+| SMTP server | Administrator tests, household invitations and password recovery (released in alpha.4) | Sender, recipient, household name/role for invites, and the expiring invite or reset link | Off until enabled and configured |
 | SSO provider | Signing in | The usual OIDC exchange | No SSO |
 | Sentry or compatible | Errors | Scrubbed error reports | No DSN |
 | `telemetry.merran.app` | Daily | The summary above | Off unless opted in |

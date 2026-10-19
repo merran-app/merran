@@ -4,18 +4,18 @@ Merran is a self-hosted meal planner for households, with an AI cooking assistan
 
 It's a full rewrite of the app that was called Mise and then Nourvio, which these docs call the REFERENCE app. That app was a place to try ideas out, and most of them worked; Merran builds them again, properly, as an open-source project anyone can run. It sat in `apps/REFERENCE/` while Merran was built, and was removed once Merran had everything it did (it's in the repo's history before 0.1.0-alpha.1).
 
-**Status:** alpha. Everything the REFERENCE app did is built, with much of the new work; releases start at 0.1.0-alpha.1, and 0.1.0 comes once the rest of [scope.md](scope.md) is done.
+**Status:** alpha. Everything the REFERENCE app did is built, with much of the new work; the current release is 0.1.0-alpha.4, and 0.1.0 comes once the rest of [scope.md](scope.md) is done.
 
 ## What's different this time
 
 - **Anyone can run it,** not just us: no hard-coded stores, currencies, units or hosting setup.
 - **One container, nothing to fill in.** Merran runs on SQLite out of the box, like Mealie, and on Postgres for bigger servers.
-- **Everything beyond the basics is optional.** The core needs nothing but Merran itself. AI, video import, nutrition, voice, stores, email, sign-in providers, error tracking, metrics and telemetry are modules that stay off until they're set up, and the app says what's missing instead of breaking.
+- **Everything beyond the basics is optional.** The core needs nothing but Merran itself. AI, video import, nutrition, voice, stores, email, error tracking and telemetry are modules that stay off until they're set up, and the app says what's missing instead of breaking.
 - **The person running the server doesn't pay for everyone.** Each household can bring its own AI keys; the server admin decides who, if anyone, uses the server's.
-- **A real API,** documented and versioned, with API keys that say what they can do. The web app and the browser extension use the same one. Webhooks tell other tools (Home Assistant, n8n) when things change, and an MCP server lets Claude Desktop, Claude Code and other AI apps work with a household's recipes, plan and list.
+- **A real API,** documented and versioned, with API keys that say what they can do. The web app and the browser extension use the same one. Planned webhooks will tell other tools (Home Assistant, n8n) when things change, and an MCP server will let Claude Desktop, Claude Code and other AI apps work with a household's recipes, plan and list.
 - **Nothing leaves the server unless the server admin turned it on.** Telemetry is opt-in and shows exactly what it sends; error tracking goes to the operator's own Sentry-compatible service, if any.
 - **New people are shown around:** a short guided tour of each page, and an explanation a tap away for every Merran term.
-- **Built for contributors and translators** from the first line: adapters for stores, importers and AI providers, translations from day one, one-command setup with sample data and a fake AI.
+- **Built for contributors and translators** from the first line: adapters for stores, importers and AI providers, localization infrastructure with English currently bundled, one-command setup with sample data and a fake AI.
 
 ## Principles
 
@@ -25,7 +25,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio, which thes
 4. **One API.** If the web app can do it, the API can.
 5. **Households never see each other.** Enforced by a scoped data layer and tests generated from the schema, not by remembering.
 6. **The AI proposes, people apply.** Carried over unchanged.
-7. **Boring to run.** One image, one compose file, migrations on start with a backup first, signed releases.
+7. **Boring to run.** One image, one compose file, migrations on start (automatic pre-migration backups remain planned), signed releases.
 8. **Honest on the internet.** Merran says who it is when it fetches pages, and doesn't try to get past bot blocks.
 
 ## The docs
@@ -76,7 +76,7 @@ Decided with the user on October 15, 2026, from the plan's open questions:
 | Decision | Choice |
 |---|---|
 | Who uses the server's AI keys on a fresh install | Only the server admin's own household. The admin can give other households access, with a monthly limit; everyone else brings their own key. |
-| The first public release (0.1) | **Everything the REFERENCE app has, plus new work:** the platform (household AI keys, API keys, SSO, export, translations, units both ways), the pool of meals (M16), fridge, freezer or cupboard and usual buys (M17), working offline (M17), reminders and the install button (M12), smarter deals and saying why (M15), and webhooks and an MCP server. It's the first release; until then there are only `edge` images. |
+| The first public release (0.1) | **Everything the REFERENCE app has, plus new work:** the platform (household AI keys, API keys, SSO, export, translations, units both ways), the pool of meals (M16), fridge, freezer or cupboard and usual buys (M17), working offline (M17), reminders and the install button (M12), smarter deals and saying why (M15), and webhooks and an MCP server. Alpha releases already ship on `next`; `edge` follows main. This row describes the intended full 0.1 scope, not the alpha feature inventory. |
 | A paid hosted version or a proprietary edition | No. Contributions use a **DCO** (signed-off commits), not a CLA. |
 | Filling the Walmart cart through the extension | In the public build as an **experimental** part of the stores module, **off by default**, still stopping at Walmart's bot check |
 | Belonging to more than one household | **Yes, with a household switcher in 0.1** (say, your household and your parents') |

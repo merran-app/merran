@@ -7,19 +7,13 @@ sidebar:
 
 Merran is in alpha. This roadmap describes our direction, not a delivery schedule: priorities and scope can change as we learn from people using it. The released features below are available now; planned and exploratory work has no promised release date.
 
-The feature baseline is [v0.1.0-alpha.1](https://github.com/merran-app/merran/releases/tag/v0.1.0-alpha.1). See the [release verification record](../release-verification/) for what we have tested and what still needs checking.
+The feature baseline is [v0.1.0-alpha.4](https://github.com/merran-app/merran/releases/tag/v0.1.0-alpha.4). See the [release verification record](../release-verification/) for what we have tested and what still needs checking.
 
-**Last reviewed:** October 18, 2026. Features move to Planned when we choose to build them; In progress means implementation has started.
-
-## In progress (not released yet)
-
-- **Email delivery and recovery:** SMTP settings, administrator tests, address-bound household invitations and self-service password resets are implemented on development branches. Messages have styled HTML with plain-text alternatives. Reset links expire after 30 minutes and sign out existing sessions when used. Start with [email setup](../../run/configuration/#email-transport-not-released-yet), [household invitations](../../run/household-roles/#email-an-invitation-not-released-yet) and [password recovery](../../run/configuration/#password-recovery-not-released-yet). Copyable invite links and operator recovery remain available without SMTP.
-
-**Skipped, October 18, 2026:** account email verification is excluded from the self-hosted scope. Accounts do not need a verification email to sign in. Sending-domain verification required by an SMTP provider is separate.
+**Last reviewed:** October 19, 2026. Implementation status is separate from device and provider acceptance.
 
 ## Available now
 
-These features already ship in alpha.1 and are not future roadmap items:
+These features ship in alpha.4:
 
 | Area                    | Available today                                                                                                                                                                               |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -30,11 +24,16 @@ These features already ship in alpha.1 and are not future roadmap items:
 | Developers              | A documented API, permission-scoped API keys, and a live event stream.                                                                                                                        |
 | Running Merran          | SQLite or Postgres, signed release images, encrypted saved secrets, and a secret-rotation command. Manual backup and restore procedures are documented.                                       |
 
+Alpha.4 also includes:
+
+- **Setup and Help:** setup-code retrieval, password confirmation and operator recovery, household review, the persistent first-meal checklist, contextual explanations, a glossary and guided tours.
+- **Email delivery and recovery:** optional SMTP tests, address-bound invitations, and single-use 30-minute password-reset links that sign out existing sessions. See [email setup](../../run/configuration/#email-transport), [invitations](../../run/household-roles/#email-an-invitation) and [password recovery](../../run/configuration/#password-recovery). Copyable invite links and operator recovery work without SMTP. Accounts do not need a verification email to sign in.
+- **Planning and shopping:** already-planned recipe badges, meal moves by dragging or choosing a destination, shopping mode, ingredient details, contextual substitutions saved for individual meals, per-store shopping progress and review, and marking verified sent purchases bought with Undo. Sending to a store remains separate from buying and pantry put-away. Completion celebrations respect reduced motion.
+- **Project telemetry:** the optional receiver and public aggregate totals are live; the app provides a preview of the summary before enabling it.
+
 Start with [the guides](../../) and [integration setup](../../integrations/browser-extension/). The [release verification record](../release-verification/) separates implementation from the device and provider checks still to do.
 
 ## Up next
-
-**Built since alpha.1, not released yet:** shopping progress on **List**, including per-store sent/ready/attention counts, selected products, review over the list, cart links, and marking sent purchases bought. Changed quantities or products prompt a retailer-cart review. Sending remains separate from buying and pantry put-away. Each shopping row also has an info icon for current recipe lines, amounts scaled to planned servings, and contributions after pantry deductions.
 
 Our immediate focus is checking the released workflows in real use before choosing the next feature to build.
 
@@ -48,18 +47,16 @@ Fresh SQLite and Postgres installation and isolated backup/restore smoke tests h
 
 These are features we intend to build. Their order here does not indicate priority, and none has a promised release date.
 
-- **Shopping substitutions:** ask what could replace an ingredient directly from the shopping list, with recipe and dietary context carried through for review. Ingredient details are already built for the next release, as described above.
-- **Rearrange planned meals:** quickly move meals between days or swap them after automatic planning, potentially by dragging, with a touch and keyboard alternative. Preserve meal details and account for any existing shopping list.
+- **Swap planned meals:** exchange two meals directly while preserving their details and shopping-list state. Moving a meal to another day or the any-day pool already works.
 - **Offline recipes, plans, and shopping lists:** keep previously opened recipes, the week's plan, and shopping lists useful without a connection, with list check-offs syncing when you reconnect.
 - **Prep reminders:** help you remember to thaw ingredients, start a marinade, or begin cooking before dinner is due.
 - **More sign-in options:** add passkeys, authenticator-based two-step sign-in, and OIDC single sign-on so you can choose a sign-in method that fits your household or server.
 - **Webhooks:** let tools such as Home Assistant and n8n react when recipes, plans, lists, or pantry items change.
 - **MCP support:** let compatible external AI tools work with your household's recipes, plan, and list, with proposed changes reviewed before they are applied.
 - **Translations:** make the interface available beyond English, including the planned option to translate recipes as they are imported. Measurement conversion already works.
-- **Guided onboarding (in progress, not released):** clearer setup-code retrieval, password confirmation and operator recovery, household review, a persistent first-meal checklist, Help and Driver.js tours. Expand contextual explanations and complete device/host-manager acceptance. See [first-run setup](../../get-started/setup/).
 - **After-cooking pantry checks:** offer a checklist of ingredients that ran out, with an option to put them on the shopping list. Existing planned-meal deductions remain available.
 - **Server administration:** add automatic backups before migrations, a consolidated Problems page, an audit log, and a guided SQLite-to-Postgres transfer. Manual restore smoke tests and secret rotation already exist; they do not implement these additions.
-- **Distribution and project services:** add an Unraid template, a hosted app demo, and a telemetry receiver with public aggregate totals. The published documentation site and scripted homepage previews are already available.
+- **Distribution and project services:** add an Unraid template and a hosted app demo. The published documentation site and scripted homepage previews are already available.
 
 Today, Merran uses password sign-in and an English interface. Its [scoped API keys](../../api/) and [live events](../../api/live-events/) are available now; they are not webhook delivery or an MCP server. Cook timers are available, but scheduled prep notifications are not.
 

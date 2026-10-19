@@ -11,8 +11,8 @@ You need access to the deployment's files and container controls, and to databas
 
 Keep a copy of the application's complete data directory, configuration, and any externally supplied secrets.
 
-:::note[Development testing, not released yet]
-`MERRAN_DEV_SETUP=on` is a source-development flag for disposable setup tests, not an update or restore option. Each start uses a new temporary SQLite database and secret; the real data directory is untouched. It is refused in production and Docker. Unset the flag to return to your normal database. See [configuration](../configuration/#repeat-setup-during-development-not-released-yet).
+:::note[Development testing]
+`MERRAN_DEV_SETUP=on` is a source-development flag for disposable setup tests, not an update or restore option. Each start uses a new temporary SQLite database and secret; the real data directory is untouched. It is refused in production and Docker. Unset the flag to return to your normal database. See [configuration](../configuration/#repeat-setup-during-development).
 :::
 
 With the supplied SQLite Compose setup, stop Merran before copying **./data/app** so the database and its files form a consistent snapshot:
