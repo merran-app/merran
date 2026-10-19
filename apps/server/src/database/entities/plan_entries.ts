@@ -1,4 +1,9 @@
-import { MEALS, type MealShare, type Reason } from "@merran/shared"
+import {
+  MEALS,
+  type MealShare,
+  type Reason,
+  type MealRecipe,
+} from "@merran/shared"
 import { defineEntity, p, type InferEntity } from "@mikro-orm/core"
 import { householdFilter } from "../scope.ts"
 import { createdAt, day, id, updatedAt } from "./base.ts"
@@ -60,6 +65,8 @@ export const PlanEntry = defineEntity({
     /** When its ingredients went on the list. */
     listedAt: p.datetime().nullable(),
     pantryUsed: p.json<PantrySnapshot>().nullable(),
+    /** Shopping substitutions belong to this meal, including when the library changes. */
+    variants: p.json<MealRecipe[]>().nullable(),
     /** Why it was picked, when Fill the week or the autoplan picked it. */
     why: p.json<Reason[]>().nullable(),
     createdAt: createdAt(),

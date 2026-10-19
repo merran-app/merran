@@ -13,12 +13,23 @@ Implemented October 18, 2026, not released yet: List shows sent, ready and atten
 
 ## Ingredient purpose and substitutions while shopping
 
-Ingredient context is implemented October 18, 2026, not released yet: each shopping row has an info icon opened by tap or hover. It shows current recipe lines, amounts scaled to planned servings and recorded contributions after pantry deductions, including main dishes and sides. Manual additions can have no recipe sources. Contextual substitutions remain planned.
+Ingredient context and contextual shopping substitutions are implemented October 18, 2026, not released yet. Each shopping row has an info icon opened by tap or hover. It shows recipe lines, amounts scaled to planned servings and recorded contributions after pantry deductions, including main dishes and sides. Manual additions can have no recipe sources.
 
 - Show the contributing recipes/meals and quantities, including when several meals share one combined item. Distinguish manual additions and recurring buys where there is no recipe source.
 - The compact info popup fits the phone viewport without adding another line to each shopping row. Recipe changes and manual amount edits can differ from the recorded meal contributions.
-- Offer a contextual substitution action with the food, relevant recipes and household dietary constraints already supplied. Explain when AI configuration is needed.
-- Let the shopper review a proposed substitution and its scope before applying it. Work out how an accepted swap updates the list, planned meal and any saved recipe; do not silently rewrite the library recipe.
+- Shopping mode starts searching as soon as **Find a substitute** opens, using every contributing planned recipe, pantry and household dietary rules. One suggestion supplies a common replacement with amounts and instruction changes tailored to each recipe. Manual replacements work without AI; the AI setup explanation stays beside the suggestions (updated October 18, 2026).
+- Include all contributing recipes and planned meals by default, with main dishes and sides shown together rather than hidden behind a recipe picker. Preview each recipe's replacements, serving-scaled amounts and instruction changes before applying them together in one transaction with one Undo. Meals can be unchecked to leave their contribution unchanged. Reject incomplete AI suggestions rather than silently omitting a recipe.
+- Persist a recipe snapshot on each affected planned meal. Its ingredients and steps survive later library edits and are used by list calculations, the planned recipe view, cooking and pantry consumption. Planned meal links carry the entry id; cooking completion marks that exact entry. Library edits require an explicit checkbox and keep a recipe version. Changed variants have no inherited nutrition or cost estimate.
+- Apply and Undo are transactional. Recalculate only changed foods, release/reassign only those pantry reservations, preserve checked purchases and numeric manual remainders, and reject ambiguous hand-written quantities. Revision checks reject stale meal edits or Undo; cross-resource substitution endpoints require a signed-in household member. Suggestions never apply themselves.
+
+## Start shopping mode
+
+Decided and implemented October 18, 2026, not released yet. **Start shopping** opens a focused aisle view for the selected list. Bigger checkboxes, store focus and a compact progress header keep the trip usable on a phone. Reuse cooking's screen wake lock while the view is mounted, reacquiring it when the visible tab returns and releasing it on exit.
+
+- Trip focus, set-aside items and try-another-store choices are remembered on this device, scoped to the household. The underlying list, purchases and saved meal changes remain shared. This does not add offline list synchronization.
+- The shopping header scrolls with the list instead of staying pinned over items, keeping the phone viewport available for shopping (decided October 18, 2026).
+- **Couldn’t find it** offers **Set aside for this trip**, **Try [store] instead**, and **Find a substitute**. Deferred items leave the active view, stay in collapsible sections and can be restored. Setting aside never marks an item bought, removes its meal contribution or triggers a completion celebration.
+- **Finish shopping** reviews bought and outstanding items. **Finish trip** returns to the normal list with unresolved needs intact; **Put purchases away and finish** explicitly runs existing put-away behavior. Nothing is purchased or put away simply by exiting the mode.
 
 ## Rearrange meals after automatic planning
 
@@ -51,4 +62,4 @@ Decided October 18, 2026; built, not released yet. Reward finishing a shopping l
 
 ## Before implementation of the planned improvements
 
-For the remaining substitutions and direct meal swaps, confirm the interaction choices above and split implementation into independently reviewable changes. The original feedback record introduced no runtime changes; the shopping completion, ingredient-context, meal-moving, weekly-badge and celebration decisions above describe the subsequent implementation.
+Direct meal swaps remain planned. The original feedback record introduced no runtime changes; the shopping completion, shopping mode, substitutions, ingredient-context, meal-moving, weekly-badge and celebration decisions above describe the subsequent implementation.

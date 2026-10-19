@@ -105,17 +105,20 @@ export function CookView({
   recipe,
   paired,
   scale,
+  mealId,
 }: {
   recipe: Recipe
   /** A recipe it goes with, cooked with it: its lines first. */
   paired?: Recipe
   scale: number
+  mealId?: string
 }) {
   const { t } = useTranslation()
   const router = useRouter()
   const canGoBack = useCanGoBack()
   const navigate = useNavigate()
   const refresh = useRefreshRecipes()
+  const progressId = mealId ? `${recipe.id}:${mealId}` : recipe.id
   // Stand-ins used this time, from the recipe page or picked while cooking.
   const thisTime = useSwapsThisTime(recipe.id)
   const { swaps } = thisTime
@@ -140,7 +143,7 @@ export function CookView({
   const hasPrep = ingredients.length > 0
   const pages = steps.length + (hasPrep ? 1 : 0)
   const [resumed] = React.useState(() =>
-    loadProgress(recipe.id, scale, paired?.id ?? null)
+    loadProgress(progressId, scale, paired?.id ?? null)
   )
   const [page, setPage] = React.useState(() =>
     Math.min(resumed?.page ?? 0, Math.max(0, pages - 1))
@@ -201,7 +204,7 @@ export function CookView({
 
   React.useEffect(() => {
     saveProgress(
-      recipe.id,
+      progressId,
       page === 0 && ticks.ticked.size === 0
         ? null
         : {
@@ -212,7 +215,7 @@ export function CookView({
             savedAt: Date.now(),
           }
     )
-  }, [recipe.id, page, ticks.ticked, scale, paired?.id])
+  }, [progressId, page, ticks.ticked, scale, paired?.id])
 
   React.useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -238,12 +241,20 @@ export function CookView({
   async function finish() {
     setFinishing(true)
     try {
-      await unwrap(
-        api.POST("/api/recipes/{recipe}/made", {
-          params: { path: { recipe: recipe.id } },
-        })
-      )
-      saveProgress(recipe.id, null)
+      if (mealId)
+        await unwrap(
+          api.PATCH("/api/plan/entries/{entryId}", {
+            params: { path: { entryId: mealId } },
+            body: { status: "cooked" },
+          })
+        )
+      else
+        await unwrap(
+          api.POST("/api/recipes/{recipe}/made", {
+            params: { path: { recipe: recipe.id } },
+          })
+        )
+      saveProgress(progressId, null)
       // Swaps are for this time: next time starts as written.
       clearSwaps(recipe.id)
       await refresh()
@@ -735,6 +746,7 @@ export function CookView({
       </footer>
 
       <SwapDialog
+        mealId={mealId}
         recipe={recipe}
         line={swapping}
         factor={scale}

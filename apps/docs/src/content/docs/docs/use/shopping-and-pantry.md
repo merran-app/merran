@@ -63,6 +63,30 @@ Where a supported cart handoff recorded pack sizes, put-away can use purchased p
 Checking the last outstanding item on a list, or emptying a list with **Clear checked**, **Clear the list**, **Put away**, or **Put it all away**, plays a short shower of confetti, stars, or petals chosen at random. Pieces rain down across the screen, drifting and tumbling as they fall. Effects are silent and respect your device's reduced-motion preference. Partially clearing a list does not celebrate.
 :::
 
+## Start a shopping trip
+
+:::note[Not released yet]
+Choose **Start shopping** on **List** for a focused aisle view with larger checkboxes. Select your shopping list and optionally a store under **Shopping at**; **All stores** keeps the whole trip in view. No retailer connection is required. The mode requests that the screen stay awake while visible and shows whether that request is active. Your device may decline it.
+
+Check items off as you buy them. **Couldn’t find it** offers **Set aside for this trip**, **Try [store] instead**, or **Find a substitute**. Set-aside items stay needed on the household list and appear in a collapsed section with **Restore**. Try-another-store choices appear under **At another store**. They are not purchases. Trip focus and deferred choices are remembered for this household on this device; the list itself remains shared.
+
+The shopping header scrolls with the list so it does not cover items. Scroll back to the top to change lists or stores, or choose **Finish shopping** to review bought and outstanding items. **Finish trip** returns to the normal list, preserving unresolved needs. **Put purchases away and finish** explicitly puts checked purchases into the pantry. Ending the trip alone does not put anything away. Offline list synchronization is not added by this mode.
+:::
+
+### Replace an unavailable ingredient
+
+:::note[Not released yet]
+In shopping mode, choose **Couldn’t find it → Find a substitute**. The search starts automatically when household AI is configured. It includes every planned recipe needing this item, including sides. Choose one idea to fill replacements for all recipes, with amounts and cooking changes tailored to each dish. All contributing meals are selected under **Use for these planned meals**; uncheck a meal to keep its original ingredient.
+
+Use **Get substitution ideas** to search again, or type replacement lines for each recipe yourself. Enter amounts for each recipe as written; **Review the replacement** shows each selected meal's scaled amounts. **Adjust cooking instructions** lets you review or edit rewritten steps. Ingredient names in unchanged steps are updated where recognized; inspect preparation and cooking-time differences yourself. **Apply replacement** saves all selected recipes together, with one **Undo**.
+
+Choose **Apply replacement** after reviewing the quantities and instructions. Merran saves the variant for those planned meals and recalculates the changed shopping foods with pantry deductions. Other meals, checked purchases and numeric manual additions remain separate. Ambiguous hand-written amounts require review before applying. **Undo** is available after saving, provided the meal or optional library recipe has not changed since.
+
+The library recipe stays unchanged. When replacing a single recipe ingredient, you can select **Save this replacement to the library recipe too**; that explicit option keeps a version for reversal. Planned variants survive library edits; open the meal from **Plan** to see or cook its adjusted ingredients and steps. The library recipe's nutrition and cost estimates do not describe the modified meal.
+
+Items with no planned recipe can be replaced manually using one line that includes the amount. This changes that shopping item only, leaving recurring-buy definitions unchanged. No editable planned meal can mean the recipe changed, was deleted or its meal is no longer planned; review the item rather than assuming the recipe was updated.
+:::
+
 ## Optional store connections
 
 :::note[Not released yet: ingredient details]

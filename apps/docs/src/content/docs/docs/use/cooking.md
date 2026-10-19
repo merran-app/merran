@@ -17,6 +17,8 @@ These steps follow the current repository implementation, pending fresh-install 
 
 ## Open cook view and gather ingredients
 
+**Not released yet:** open a meal from **Plan** to use the ingredients and instructions saved by a shopping substitution, including adjusted sides. **Adjusted for this meal** identifies these variants. The library recipe remains separate, and its nutrition/cost estimates do not apply to the variation. Finishing from a planned-meal link marks that specific meal cooked and consumes its adjusted pantry requirements.
+
 1. Open a recipe and choose **Start cooking**, or choose **Start cooking** from a planned meal's menu.
 2. On **Get ready**, review the servings and ingredients. Tick each ingredient as you gather and measure it.
 3. Choose **Text size** to make the steps easier to read where needed.

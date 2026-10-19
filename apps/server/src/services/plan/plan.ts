@@ -10,6 +10,7 @@ import {
   weekStartOf,
   type Meal,
   type Reason,
+  type MealRecipe,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
@@ -80,6 +81,8 @@ function recipeSummary(recipe: Recipe | undefined | null) {
 /** A meal on the plan as the API shows it. Its recipes are loaded. */
 export function describeEntry(entry: PlanEntry) {
   const withRecipe = entry.withRecipe?.getEntity()
+  const main = recipeSummary(entry.recipe?.getEntity())
+  const variant = entry.variants?.find((value) => value.recipeId === main?.id)
   return {
     id: entry.id,
     date: entry.date,
@@ -87,20 +90,33 @@ export function describeEntry(entry: PlanEntry) {
     meal: entry.meal,
     position: entry.position,
     status: entry.status,
-    recipe: recipeSummary(entry.recipe?.getEntity()),
+    recipe:
+      main && variant
+        ? {
+            ...main,
+            name: variant.name,
+            servings: variant.servings,
+            calories: null,
+          }
+        : main,
     withRecipe:
       withRecipe && !withRecipe.deletedAt
         ? {
             id: withRecipe.id,
             slug: withRecipe.slug,
             name: withRecipe.name,
-            calories: withRecipe.nutrition?.calories ?? null,
+            calories: entry.variants?.some(
+              (value) => value.recipeId === withRecipe.id
+            )
+              ? null
+              : (withRecipe.nutrition?.calories ?? null),
           }
         : null,
     note: entry.note ?? null,
     servings: toNumber(entry.servings),
     why: entry.why ?? [],
     createdAt: entry.createdAt.toISOString(),
+    variants: entry.variants ?? [],
   }
 }
 
@@ -122,10 +138,13 @@ export function snapshotOf(entry: PlanEntry) {
     listedAt: entry.listedAt?.toISOString() ?? null,
     why: entry.why ?? null,
     cookedAt: entry.cookedAt?.toISOString() ?? null,
+    variants: entry.variants ?? [],
   }
 }
 
-export type EntrySnapshot = ReturnType<typeof snapshotOf>
+export type EntrySnapshot = Omit<ReturnType<typeof snapshotOf>, "variants"> & {
+  variants?: MealRecipe[]
+}
 
 /** Meals in the order a day has them. */
 export function sortEntries<
@@ -171,7 +190,7 @@ export async function listPlan(
   return sortEntries(entries.filter(shown)).map(describeEntry)
 }
 
-async function findEntry(em: EntityManager, entryId: string) {
+export async function findEntry(em: EntityManager, entryId: string) {
   const entry = UUID.test(entryId)
     ? await em.findOne(
         PlanEntry,
@@ -410,6 +429,7 @@ async function change(
     } else if (!recipe) {
       entry.recipe = null
       entry.withRecipe = null
+      entry.variants = null
     }
   }
   if (changes.note !== undefined) {
@@ -431,6 +451,10 @@ async function change(
   }
   if (changes.servings !== undefined) entry.servings = changes.servings
   if (changes.status !== undefined) setStatus(entry, changes.status)
+  const recipes = [entry.recipe?.id, entry.withRecipe?.id]
+  entry.variants =
+    entry.variants?.filter((recipe) => recipes.includes(recipe.recipeId)) ??
+    null
   checkShape(entry)
 }
 
@@ -647,6 +671,7 @@ export async function restoreEntries(
         listedAt: snapshot.listedAt ? new Date(snapshot.listedAt) : null,
         why: snapshot.why ?? null,
         cookedAt: cookedWhen(snapshot, entry, now),
+        variants: snapshot.variants ?? entry.variants ?? null,
       })
       made.push(...madeBy(entry))
       listing.push({ entry, was, now: shoppingFor(entry) })

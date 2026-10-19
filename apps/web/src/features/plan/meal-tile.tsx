@@ -42,6 +42,7 @@ export function cookSearch(entry: PlanEntry) {
       ? Math.round((entry.servings / own) * 1000) / 1000
       : 1
   return {
+    meal: entry.id,
     ...(scale !== 1 ? { scale } : {}),
     ...(entry.withRecipe ? { with: entry.withRecipe.slug } : {}),
   }
@@ -146,11 +147,19 @@ export function MealTile({
         <MealDragHandle entry={entry} />
       </div>
       <div className="grid min-w-0 flex-1 gap-0.5">
+        {entry.variants.length > 0 && (
+          <span className="text-xs font-medium text-primary">
+            {t("shopping.adjusted")}
+          </span>
+        )}
         {entry.recipe ? (
           <Link
             to="/recipes/$slug"
             params={{ slug: entry.recipe.slug }}
-            search={entry.withRecipe ? { with: entry.withRecipe.slug } : {}}
+            search={{
+              meal: entry.id,
+              ...(entry.withRecipe ? { with: entry.withRecipe.slug } : {}),
+            }}
             className={cn(
               "truncate font-medium hover:underline",
               skipped && "text-muted-foreground line-through"

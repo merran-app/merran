@@ -104,7 +104,10 @@ export function MealHero({
               <Link
                 to="/recipes/$slug"
                 params={{ slug: entry.recipe.slug }}
-                search={entry.withRecipe ? { with: entry.withRecipe.slug } : {}}
+                search={{
+                  meal: entry.id,
+                  ...(entry.withRecipe ? { with: entry.withRecipe.slug } : {}),
+                }}
                 className="hover:underline"
               >
                 {name}

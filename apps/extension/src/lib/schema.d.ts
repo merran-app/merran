@@ -1361,6 +1361,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/list/items/{itemId}/substitutions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recipes and planned meals behind a shopping substitution
+         * @description Signed-in household members only. Finds actual main-dish and side ingredient lines, scaled to planned servings, with saved meal variants and conflict tokens.
+         */
+        get: operations["shoppingSwapTargets"];
+        put?: never;
+        /**
+         * Apply a replacement to selected planned meals
+         * @description Signed-in household members only. Atomically saves meal-specific recipe snapshots and recalculates changed shopping foods with pantry deductions, preserving purchases and manual remainders. Library changes require saveToLibrary. Returns conditional Undo data.
+         */
+        post: operations["applyShoppingSwap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/items/{itemId}/substitutions/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find substitutions that work in a planned meal
+         * @description Signed-in household members only. Uses the household's AI swaps task, dietary rules and pantry with the actual saved meal ingredients and instructions. Nothing is applied automatically.
+         */
+        post: operations["suggestShoppingSwaps"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/list/lists": {
         parameters: {
             query?: never;
@@ -1475,6 +1519,26 @@ export interface paths {
          * @description A usual buy isn't offered again until it's next due. With an API key, it needs the `list: write` permission.
          */
         post: operations["skipUsualBuy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/substitutions/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo a shopping substitution
+         * @description Signed-in household members only. Restores meal variants and changed quantities if the meals and optional library recipe still match the returned Undo revisions. Bought items are preserved.
+         */
+        post: operations["undoShoppingSwap"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1844,7 +1908,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * One planned meal, including its saved cooking variants
+         * @description With an API key, it needs the `plan: read` permission.
+         */
+        get: operations["getPlanEntry"];
         put?: never;
         post?: never;
         /**
@@ -6309,6 +6377,325 @@ export interface components {
         };
         /**
          * @example {
+         *       "targets": [
+         *         {
+         *           "mealId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "mealName": "Lemon Chicken",
+         *           "date": "2026-10-15",
+         *           "anyDay": false,
+         *           "revision": "2026-10-15T18:30:00.000Z",
+         *           "recipe": {
+         *             "recipeId": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *             "name": "Lemon Chicken",
+         *             "servings": 4,
+         *             "basedOn": "2026-10-15T18:30:00.000Z",
+         *             "needs": [],
+         *             "ingredients": [
+         *               {
+         *                 "id": "0199e8b0-5a10-7a01-8b00-000000000011",
+         *                 "section": null,
+         *                 "text": "2 lb chicken thighs",
+         *                 "quantity": 2,
+         *                 "quantityMax": null,
+         *                 "unit": "pound",
+         *                 "food": "chicken thighs",
+         *                 "note": null,
+         *                 "mark": "needed"
+         *               },
+         *               {
+         *                 "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+         *                 "section": null,
+         *                 "text": "1 tbsp olive oil",
+         *                 "quantity": 1,
+         *                 "quantityMax": null,
+         *                 "unit": "tablespoon",
+         *                 "food": "olive oil",
+         *                 "note": null,
+         *                 "mark": "optional"
+         *               },
+         *               {
+         *                 "id": "0199e8b0-5a10-7a01-8b00-000000000013",
+         *                 "section": null,
+         *                 "text": "2 lemons, juiced",
+         *                 "quantity": 2,
+         *                 "quantityMax": null,
+         *                 "unit": null,
+         *                 "food": "lemons",
+         *                 "note": "juiced",
+         *                 "mark": "needed"
+         *               },
+         *               {
+         *                 "id": "0199e8b0-5a10-7a01-8b00-000000000014",
+         *                 "section": null,
+         *                 "text": "4 cloves garlic, smashed",
+         *                 "quantity": 4,
+         *                 "quantityMax": null,
+         *                 "unit": "clove",
+         *                 "food": "garlic",
+         *                 "note": "smashed",
+         *                 "mark": "swappable"
+         *               }
+         *             ],
+         *             "steps": [
+         *               {
+         *                 "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+         *                 "section": null,
+         *                 "text": "Heat the oven to 425°F."
+         *               },
+         *               {
+         *                 "id": "0199e8b0-5a10-7a01-8b00-000000000016",
+         *                 "section": null,
+         *                 "text": "Toss the chicken with the oil, lemon juice, garlic, salt and pepper."
+         *               },
+         *               {
+         *                 "id": "0199e8b0-5a10-7a01-8b00-000000000017",
+         *                 "section": null,
+         *                 "text": "Roast skin side up for 40 minutes, until crisp."
+         *               }
+         *             ]
+         *           },
+         *           "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000011",
+         *           "factor": 1,
+         *           "state": "example-state",
+         *           "canSaveToLibrary": true
+         *         }
+         *       ]
+         *     }
+         */
+        ShoppingSwapTargets: {
+            targets: {
+                mealId: string;
+                mealName: string;
+                date: string;
+                anyDay: boolean;
+                revision: string;
+                recipe: components["schemas"]["MealRecipe"];
+                ingredientId: string;
+                factor: number;
+                state: string;
+                canSaveToLibrary: boolean;
+            }[];
+        };
+        /** @description Ingredients and instructions saved for one planned meal; the library recipe stays separate. Nutrition must be recalculated for substitutions. */
+        MealRecipe: {
+            recipeId: string;
+            name: string;
+            servings: number | null;
+            basedOn: string;
+            needs: string[];
+            ingredients: (components["schemas"]["Ingredient"] & {
+                foodKey?: string | null;
+            })[];
+            steps: components["schemas"]["Step"][];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+         *       "section": null,
+         *       "text": "1 tbsp olive oil",
+         *       "quantity": 1,
+         *       "quantityMax": null,
+         *       "unit": "tablespoon",
+         *       "food": "olive oil",
+         *       "note": null,
+         *       "mark": "optional"
+         *     }
+         */
+        Ingredient: {
+            id: string;
+            section: string | null;
+            /** @description The line as written. */
+            text: string;
+            quantity: number | null;
+            quantityMax: number | null;
+            /** @example tablespoon */
+            unit: string | null;
+            food: string | null;
+            note: string | null;
+            /**
+             * @description What it is to the dish, as tidy up marked it: needed, swappable or optional. A dislike is left out of lines that aren't needed. None until marked.
+             * @enum {string|null}
+             */
+            mark: "needed" | "swappable" | "optional" | null;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+         *       "section": null,
+         *       "text": "Heat the oven to 425°F."
+         *     }
+         */
+        Step: {
+            id: string;
+            section: string | null;
+            text: string;
+        };
+        /**
+         * @example {
+         *       "undo": {
+         *         "listId": "0199e8b0-5a10-7a01-8b00-00000000001c",
+         *         "meals": [
+         *           {
+         *             "mealId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *             "expected": "2026-10-15T18:30:00.000Z",
+         *             "variants": []
+         *           }
+         *         ],
+         *         "library": null,
+         *         "manual": null
+         *       }
+         *     }
+         */
+        ShoppingSwapResult: {
+            undo: components["schemas"]["ShoppingSwapUndo"];
+        };
+        /**
+         * @example {
+         *       "listId": "0199e8b0-5a10-7a01-8b00-00000000001c",
+         *       "meals": [
+         *         {
+         *           "mealId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "expected": "2026-10-15T18:30:00.000Z",
+         *           "variants": []
+         *         }
+         *       ],
+         *       "library": null,
+         *       "manual": null
+         *     }
+         */
+        ShoppingSwapUndo: {
+            listId?: string;
+            meals: {
+                mealId: string;
+                expected: string;
+                variants: components["schemas"]["MealRecipe"][];
+            }[];
+            library: {
+                recipeId: string;
+                versionId: string;
+                expected: string;
+            } | null;
+            manual: {
+                snapshot: components["schemas"]["ListItemSnapshot"];
+                expected: string;
+            } | null;
+        };
+        /**
+         * @description Select linked planned meals. Each target may supply its own recipe, ingredient, state, lines and steps to replace a shared food across different recipes atomically. Without replacement, the top-level fields apply. With no targets, replace one manually added item using one ingredient line. Amounts are for each recipe as written. Saving to the library is explicit and restricted to a single recipe context.
+         * @example {
+         *       "recipeId": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *       "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000011",
+         *       "state": "example-state",
+         *       "targets": [
+         *         {
+         *           "mealId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "revision": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ],
+         *       "lines": [
+         *         "2 tbsp butter"
+         *       ],
+         *       "steps": [],
+         *       "saveToLibrary": false
+         *     }
+         */
+        ShoppingSwapInput: components["schemas"]["SaveSwapInput"] & {
+            recipeId?: string;
+            state?: string;
+            targets: {
+                /** Format: uuid */
+                mealId: string;
+                revision: string;
+                /**
+                 * @example {
+                 *       "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000012",
+                 *       "lines": [
+                 *         "1 tbsp butter"
+                 *       ],
+                 *       "steps": []
+                 *     }
+                 */
+                replacement?: components["schemas"]["SaveSwapInput"] & {
+                    recipeId: string;
+                    state: string;
+                };
+            }[];
+            /** @default false */
+            saveToLibrary: boolean;
+        };
+        /**
+         * @example {
+         *       "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000012",
+         *       "lines": [
+         *         "1 tbsp butter"
+         *       ],
+         *       "steps": []
+         *     }
+         */
+        SaveSwapInput: {
+            ingredientId: string;
+            lines: string[];
+            steps?: {
+                stepId: string;
+                /** @description The step, rewritten. */
+                text: string;
+            }[];
+        };
+        /**
+         * @example {
+         *       "swaps": []
+         *     }
+         */
+        ShoppingSwaps: {
+            swaps: (components["schemas"]["Swap"] & {
+                replacements?: (components["schemas"]["SaveSwapInput"] & {
+                    recipeId: string;
+                    state: string;
+                })[];
+            })[];
+        };
+        /**
+         * @example {
+         *       "lines": [
+         *         "1 cup Greek yogurt"
+         *       ],
+         *       "note": "Stir in off the heat so it doesn't split; a little tangier.",
+         *       "atHome": true,
+         *       "steps": []
+         *     }
+         */
+        Swap: {
+            /** @description Ingredient lines in its place, with amounts for the recipe as written. */
+            lines: string[];
+            /** @description How to use it, and how it changes the dish. */
+            note: string;
+            /** @description It's in the pantry. */
+            atHome: boolean;
+            /** @description Steps it changes, rewritten. Usually none. */
+            steps: {
+                stepId: string;
+                /** @description The step, rewritten. */
+                text: string;
+            }[];
+        };
+        /**
+         * @example {
+         *       "mealId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *       "recipeId": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *       "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000011",
+         *       "state": "example-state"
+         *     }
+         */
+        ShoppingSwapSuggestionInput: {
+            mealId: string;
+            recipeId: string;
+            ingredientId: string;
+            state: string;
+            /** @default false */
+            allRecipes: boolean;
+        };
+        /**
+         * @example {
          *       "lists": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-00000000001c",
@@ -6978,7 +7365,8 @@ export interface components {
          *               "label": "Taco night"
          *             }
          *           ],
-         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *           "createdAt": "2026-10-15T18:30:00.000Z",
+         *           "variants": []
          *         }
          *       ]
          *     }
@@ -7017,7 +7405,8 @@ export interface components {
          *           "label": "Taco night"
          *         }
          *       ],
-         *       "createdAt": "2026-10-15T18:30:00.000Z"
+         *       "createdAt": "2026-10-15T18:30:00.000Z",
+         *       "variants": []
          *     }
          */
         PlanEntry: {
@@ -7059,6 +7448,7 @@ export interface components {
             why: components["schemas"]["Reason"][];
             /** Format: date-time */
             createdAt: string;
+            variants: components["schemas"]["MealRecipe"][];
         };
         /** @enum {string} */
         Meal: "breakfast" | "lunch" | "dinner" | "snack";
@@ -7229,7 +7619,8 @@ export interface components {
          *             "label": "Taco night"
          *           }
          *         ],
-         *         "createdAt": "2026-10-15T18:30:00.000Z"
+         *         "createdAt": "2026-10-15T18:30:00.000Z",
+         *         "variants": []
          *       }
          *     }
          */
@@ -7298,7 +7689,8 @@ export interface components {
          *               "label": "Taco night"
          *             }
          *           ],
-         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *           "createdAt": "2026-10-15T18:30:00.000Z",
+         *           "variants": []
          *         }
          *       ]
          *     }
@@ -7360,7 +7752,8 @@ export interface components {
          *               "label": "Taco night"
          *             }
          *           ],
-         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *           "createdAt": "2026-10-15T18:30:00.000Z",
+         *           "variants": []
          *         }
          *       ],
          *       "before": [
@@ -7377,7 +7770,8 @@ export interface components {
          *           "servings": null,
          *           "listedAt": null,
          *           "why": null,
-         *           "cookedAt": null
+         *           "cookedAt": null,
+         *           "variants": []
          *         }
          *       ]
          *     }
@@ -7403,7 +7797,8 @@ export interface components {
          *       "servings": null,
          *       "listedAt": null,
          *       "why": null,
-         *       "cookedAt": null
+         *       "cookedAt": null,
+         *       "variants": []
          *     }
          */
         PlanEntrySnapshot: {
@@ -7427,6 +7822,7 @@ export interface components {
              * @description When it was marked cooked: put back cooked, its recipe and side were made then.
              */
             cookedAt?: string | null;
+            variants?: components["schemas"]["MealRecipe"][];
         };
         /**
          * @example {
@@ -7499,7 +7895,8 @@ export interface components {
          *           "servings": null,
          *           "listedAt": null,
          *           "why": null,
-         *           "cookedAt": null
+         *           "cookedAt": null,
+         *           "variants": []
          *         }
          *       ]
          *     }
@@ -7524,7 +7921,8 @@ export interface components {
          *           "servings": null,
          *           "listedAt": null,
          *           "why": null,
-         *           "cookedAt": null
+         *           "cookedAt": null,
+         *           "variants": []
          *         }
          *       ]
          *     }
@@ -8138,48 +8536,6 @@ export interface components {
             /** @description The servings it's for; it rescales when they change. */
             servings?: number;
         } | null;
-        /**
-         * @example {
-         *       "id": "0199e8b0-5a10-7a01-8b00-000000000012",
-         *       "section": null,
-         *       "text": "1 tbsp olive oil",
-         *       "quantity": 1,
-         *       "quantityMax": null,
-         *       "unit": "tablespoon",
-         *       "food": "olive oil",
-         *       "note": null,
-         *       "mark": "optional"
-         *     }
-         */
-        Ingredient: {
-            id: string;
-            section: string | null;
-            /** @description The line as written. */
-            text: string;
-            quantity: number | null;
-            quantityMax: number | null;
-            /** @example tablespoon */
-            unit: string | null;
-            food: string | null;
-            note: string | null;
-            /**
-             * @description What it is to the dish, as tidy up marked it: needed, swappable or optional. A dislike is left out of lines that aren't needed. None until marked.
-             * @enum {string|null}
-             */
-            mark: "needed" | "swappable" | "optional" | null;
-        };
-        /**
-         * @example {
-         *       "id": "0199e8b0-5a10-7a01-8b00-000000000015",
-         *       "section": null,
-         *       "text": "Heat the oven to 425°F."
-         *     }
-         */
-        Step: {
-            id: string;
-            section: string | null;
-            text: string;
-        };
         /**
          * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
@@ -9101,34 +9457,15 @@ export interface components {
         };
         /**
          * @example {
-         *       "lines": [
-         *         "1 cup Greek yogurt"
-         *       ],
-         *       "note": "Stir in off the heat so it doesn't split; a little tangier.",
-         *       "atHome": true,
-         *       "steps": []
-         *     }
-         */
-        Swap: {
-            /** @description Ingredient lines in its place, with amounts for the recipe as written. */
-            lines: string[];
-            /** @description How to use it, and how it changes the dish. */
-            note: string;
-            /** @description It's in the pantry. */
-            atHome: boolean;
-            /** @description Steps it changes, rewritten. Usually none. */
-            steps: {
-                stepId: string;
-                /** @description The step, rewritten. */
-                text: string;
-            }[];
-        };
-        /**
-         * @example {
          *       "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000012"
          *     }
          */
         StandInInput: {
+            /**
+             * Format: uuid
+             * @description For signed-in members, suggest against this planned meal's saved recipe variant.
+             */
+            mealId?: string;
             /** @example 0199e8b0-5a10-7a01-8b00-000000000012 */
             ingredientId: string;
         };
@@ -9251,24 +9588,6 @@ export interface components {
             recipe: components["schemas"]["Recipe"];
             /** @description The version of the recipe as it was, to restore to undo the swap. */
             undoVersionId: string | null;
-        };
-        /**
-         * @example {
-         *       "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000012",
-         *       "lines": [
-         *         "1 tbsp butter"
-         *       ],
-         *       "steps": []
-         *     }
-         */
-        SaveSwapInput: {
-            ingredientId: string;
-            lines: string[];
-            steps?: {
-                stepId: string;
-                /** @description The step, rewritten. */
-                text: string;
-            }[];
         };
         /**
          * @example {
@@ -14996,6 +15315,188 @@ export interface operations {
             };
         };
     };
+    shoppingSwapTargets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ingredient contexts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingSwapTargets"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Item not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    applyShoppingSwap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShoppingSwapInput"];
+            };
+        };
+        responses: {
+            /** @description Replacement applied. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingSwapResult"];
+                };
+            };
+            /** @description Invalid replacement. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Item or meal not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The list, meal or recipe changed; review again. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    suggestShoppingSwaps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShoppingSwapSuggestionInput"];
+            };
+        };
+        responses: {
+            /** @description Possible replacements. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingSwaps"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Context no longer available. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Meal changed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     saveLists: {
         parameters: {
             query?: never;
@@ -15260,6 +15761,68 @@ export interface operations {
             };
             /** @description Not allowed. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    undoShoppingSwap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShoppingSwapUndo"];
+            };
+        };
+        responses: {
+            /** @description Undone. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        done: boolean;
+                    };
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Item or meal no longer exists. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Someone changed it since. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16240,6 +16803,55 @@ export interface operations {
             };
             /** @description Not allowed. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getPlanEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Planned meal. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanEntry"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such meal. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

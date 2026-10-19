@@ -5,6 +5,7 @@ import {
   missingDiets,
   type HouseholdTastes,
   type MarkedLine,
+  type MealRecipe,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { generateText, Output } from "ai"
@@ -21,6 +22,8 @@ import {
   updateRecipe,
 } from "./recipes.ts"
 import { tagsOf } from "./tags.ts"
+import { findEntry } from "../plan/plan.ts"
+import { recipeForMeal } from "../plan/recipe-variants.ts"
 
 // Swapping an ingredient: AI suggests stand-ins that work in the recipe,
 // knowing what's at home and what the household avoids, and how the steps
@@ -100,12 +103,31 @@ export async function suggestSwaps(
     userId: string | null
     recipe: string
     ingredientId: string
+    context?: MealRecipe
+    mealId?: string
   }
 ): Promise<Swap[]> {
   const recipe = await findRecipe(em, options.recipe)
-  const line = recipe.ingredients
-    .getItems()
-    .find((item) => item.id === options.ingredientId)
+  const entry = options.mealId ? await findEntry(em, options.mealId) : null
+  if (
+    entry &&
+    entry.recipe?.id !== recipe.id &&
+    entry.withRecipe?.id !== recipe.id
+  )
+    throw new AppError(
+      "not_found",
+      "recipe_not_in_meal",
+      "That recipe is not part of this planned meal."
+    )
+  const context =
+    options.context ?? (entry ? recipeForMeal(entry, recipe) : undefined)
+  const line = context
+    ? context.ingredients
+        .map((line) => ({ ...line, rawText: line.text }))
+        .find((line) => line.id === options.ingredientId)
+    : recipe.ingredients
+        .getItems()
+        .find((item) => item.id === options.ingredientId)
   if (!line) {
     throw new AppError(
       "not_found",
@@ -118,14 +140,14 @@ export async function suggestSwaps(
     em.find(PantryItem, {}, { fields: ["name"], orderBy: { name: "asc" } }),
     tagsOf(em, [recipe.id]),
   ])
-  const steps = recipe.steps.getItems()
+  const steps = context?.steps ?? recipe.steps.getItems()
   const input = snapshotOf(recipe, tags.get(recipe.id) ?? [])
   const text = [
-    `Recipe: ${recipe.name}`,
-    toNumber(recipe.servings) ? `Serves ${toNumber(recipe.servings)}` : "",
+    `Recipe: ${context?.name ?? recipe.name}`,
+    `Serves ${context?.servings ?? toNumber(recipe.servings) ?? "unspecified"}`,
     "",
     "Ingredients:",
-    ...input.ingredients,
+    ...(context?.ingredients.map((line) => line.text) ?? input.ingredients),
     "",
     "Steps:",
     // Numbered, so a changed step can say which.
@@ -178,6 +200,116 @@ export async function suggestSwaps(
         avoidedIn(swap.lines, tastes.avoid).length === 0 &&
         missingDiets(dietsFor(swap.lines), tastes.diets).length === 0
     )
+    .slice(0, MOST)
+}
+
+/** One choice replaces the shared shopping food in every contributing recipe. */
+export async function suggestShoppingSwaps(
+  deps: AiDeps,
+  em: EntityManager,
+  options: {
+    householdId: string
+    userId: string | null
+    contexts: { recipe: MealRecipe; ingredientId: string; state: string }[]
+  }
+) {
+  const [tastes, pantry] = await Promise.all([
+    getTastes(em, options.householdId),
+    em.find(PantryItem, {}, { fields: ["name"], orderBy: { name: "asc" } }),
+  ])
+  const schema = z.object({
+    swaps: z.array(
+      z.object({
+        note: z.string(),
+        atHome: z.boolean(),
+        replacements: z.array(
+          z.object({
+            context: z.number().int(),
+            lines: z.array(z.string()),
+            steps: z.array(z.object({ step: z.number(), text: z.string() })),
+          })
+        ),
+      })
+    ),
+  })
+  const { output } = await useAi(
+    deps,
+    em,
+    {
+      householdId: options.householdId,
+      userId: options.userId,
+      task: "swaps",
+      needs: ["structured"],
+    },
+    (model) =>
+      generateText({
+        model,
+        system:
+          SYSTEM +
+          "\nThis is a shopping trip with several recipes needing the same unavailable food. Each suggestion must use a common replacement that works across ALL supplied contexts. Return one replacement per context, identified by its zero-based context number. Adapt amounts and rewrite steps separately for each recipe as written. Do not omit any context or use one recipe’s amounts or instructions for another.",
+        prompt: JSON.stringify({
+          contexts: options.contexts.map((context, index) => ({
+            context: index,
+            recipe: context.recipe.name,
+            servings: context.recipe.servings,
+            ingredients: context.recipe.ingredients.map((line) => line.text),
+            steps: context.recipe.steps.map((step, i) => ({
+              step: i + 1,
+              text: step.text,
+            })),
+            insteadOf: context.recipe.ingredients.find(
+              (line) => line.id === context.ingredientId
+            )?.text,
+          })),
+          atHome: pantry.map((item) => item.name),
+          dietaryRules: tastesText(tastes),
+        }),
+        output: Output.object({ schema, name: "shopping_swaps" }),
+        maxOutputTokens: Math.min(16000, 3000 + options.contexts.length * 1000),
+      })
+  )
+  return output.swaps
+    .flatMap((swap) => {
+      // Partial or duplicate model output must never silently omit a recipe.
+      if (
+        swap.replacements.length !== options.contexts.length ||
+        new Set(swap.replacements.map((value) => value.context)).size !==
+          options.contexts.length
+      )
+        return []
+      const replacements = swap.replacements.map((value) => {
+        const context = options.contexts[value.context]
+        if (!context) return null
+        const lines = value.lines
+          .map((line) => line.replace(/\s+/g, " ").trim().slice(0, 500))
+          .filter(Boolean)
+          .slice(0, 5)
+        if (
+          !lines.length ||
+          avoidedIn(lines, tastes.avoid).length ||
+          missingDiets(dietsFor(lines), tastes.diets).length
+        )
+          return null
+        return {
+          recipeId: context.recipe.recipeId,
+          ingredientId: context.ingredientId,
+          state: context.state,
+          lines,
+          steps: changedSteps(context.recipe.steps, value.steps),
+        }
+      })
+      if (replacements.some((value) => !value)) return []
+      const complete = replacements.filter((value) => value !== null)
+      return [
+        {
+          lines: complete[0]!.lines,
+          steps: complete[0]!.steps,
+          note: swap.note.replace(/\s+/g, " ").trim().slice(0, 300),
+          atHome: swap.atHome,
+          replacements: complete,
+        },
+      ]
+    })
     .slice(0, MOST)
 }
 
@@ -261,7 +393,7 @@ export async function saveSwap(
     marks,
   })
   const before = await em
-    .fork()
+    .fork({ keepTransactionContext: true })
     .findOne(
       RecipeVersion,
       { recipe: recipe.id },

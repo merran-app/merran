@@ -15,6 +15,10 @@ The separate password-recovery update adds public `POST /api/auth/password-reset
 
 ## Create a key
 
+:::note[Not released yet: shopping substitutions]
+`GET /api/plan/entries/{entryId}` includes saved meal-specific recipe variants and accepts `plan:read` keys. Shopping substitution context, suggestions, apply and Undo under `/api/list/items/{itemId}/substitutions` and `/api/list/substitutions/undo` require a signed-in household member because they span lists, plans, pantry allocations and optional library edits. Suggestions with `allRecipes: true` return replacements for every contributing recipe context. Apply accepts a `replacement` per target for recipe-specific amounts and instructions, saving them together with one Undo. Optional library updates require a single replacement context. Likewise, `mealId` on recipe stand-in requests is available to signed-in members only. A stale context or Undo returns `409`; missing or replaced list items can return `404`. Apply and Undo are transactional, and the response supplies conditional Undo data. Suggestions alone make no list or meal changes.
+:::
+
 Sign in to Merran and open your personal API key settings. Create a key for the intended household and grant only the permissions your integration needs. Store the returned secret securely.
 
 Keys are scoped to a household. A key's permissions determine which areas it can read or change. Routes without API-key support require a browser session instead; check each endpoint's security requirements.
