@@ -2,9 +2,9 @@
 
 A plan for one shared vocabulary of foods: what each one is called (in every language Merran speaks, and the ways recipes and regions say it), what it belongs to, and what Merran knows about it. Recipes, the list, the pantry, nutrition and the stores all ask it the same question: which food is this line about?
 
-Status: slice 1 built (October 17, 2026): about 450 foods, matching, brands, the corpus and the coverage report. Slices 2 to 4 are planned. It comes after the stores' costs and budget and before the Walmart cart, which searches by the same names. See [scope.md](scope.md).
+Status, reconciled October 19, 2026 for alpha.4: all four slices have implemented work, including the 705-food vocabulary, shared food facts, parent-kind matching, household aliases and AI food suggestions. Suggested sold units and direct manual selection of a recipe line's food remain unfinished, as noted below. See [scope.md](scope.md).
 
-Household alias ownership, decided October 19, 2026 (not released yet): persistence, lookup and deletion live in `apps/server/src/services/foods/aliases.ts`. Shopping-list teaching and rekeying remain in `services/list/`, so alias storage has no dependency on shopping operations. The shared parser and vocabulary stay in `packages/shared`. Behavior and matching rules are unchanged.
+Household alias ownership, decided October 19, 2026: persistence, lookup and deletion live in `apps/server/src/services/foods/aliases.ts`. Shopping-list teaching and rekeying remain in `services/list/`, so alias storage has no dependency on shopping operations. The shared parser and vocabulary stay in `packages/shared`. Behavior and matching rules are unchanged.
 
 ## Why
 

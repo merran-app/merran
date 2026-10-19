@@ -1,10 +1,10 @@
 # Shopping and planning feedback
 
-Recorded October 18, 2026 from using Merran with Fry's and automatic meal planning. This record tracks the resulting improvements and the work still planned; none is a commitment to a release. Completion celebrations below are built but not released yet. Track status in [features.md](features.md) and the public roadmap.
+Recorded October 18, 2026 from using Merran with Fry's and automatic meal planning. This record tracks the resulting improvements and the work still planned; none is a commitment to a release. Completion celebrations below are built and released in alpha.4. Track status in [features.md](features.md) and the public roadmap.
 
 ## Complete list items after sending to a store
 
-Implemented October 18, 2026, not released yet: List shows sent, ready and attention counts per store. After checkout, the shopper can mark unchanged, verified sent items bought, with Undo. Review and product finding stay over the list, using phone drawers and one desktop dialog.
+Implemented October 18, 2026, released in alpha.4: List shows sent, ready and attention counts per store. After checkout, the shopper can mark unchanged, verified sent items bought, with Undo. Review and product finding stay over the list, using phone drawers and one desktop dialog.
 
 - Decision: sending alone never checks items off. The explicit mark-bought action follows checkout; no automatic-completion preference is implemented.
 - Only successfully sent items should be eligible. Keep failed, unavailable, unsent and other-store items open, including after a partial send.
@@ -13,7 +13,7 @@ Implemented October 18, 2026, not released yet: List shows sent, ready and atten
 
 ## Ingredient purpose and substitutions while shopping
 
-Ingredient context and contextual shopping substitutions are implemented October 18, 2026, not released yet. Each shopping row has an info icon opened by tap or hover. It shows recipe lines, amounts scaled to planned servings and recorded contributions after pantry deductions, including main dishes and sides. Manual additions can have no recipe sources.
+Ingredient context and contextual shopping substitutions are implemented October 18, 2026, released in alpha.4. Each shopping row has an info icon opened by tap or hover. It shows recipe lines, amounts scaled to planned servings and recorded contributions after pantry deductions, including main dishes and sides. Manual additions can have no recipe sources.
 
 - Show the contributing recipes/meals and quantities, including when several meals share one combined item. Distinguish manual additions and recurring buys where there is no recipe source.
 - The compact info popup fits the phone viewport without adding another line to each shopping row. Recipe changes and manual amount edits can differ from the recorded meal contributions.
@@ -24,7 +24,7 @@ Ingredient context and contextual shopping substitutions are implemented October
 
 ## Start shopping mode
 
-Decided and implemented October 18, 2026, not released yet. **Start shopping** opens a focused aisle view for the selected list. Bigger checkboxes, store focus and a compact progress header keep the trip usable on a phone. Reuse cooking's screen wake lock while the view is mounted, reacquiring it when the visible tab returns and releasing it on exit.
+Decided and implemented October 18, 2026, released in alpha.4. **Start shopping** opens a focused aisle view for the selected list. Bigger checkboxes, store focus and a compact progress header keep the trip usable on a phone. Reuse cooking's screen wake lock while the view is mounted, reacquiring it when the visible tab returns and releasing it on exit.
 
 - Trip focus, set-aside items and try-another-store choices are remembered on this device, scoped to the household. The underlying list, purchases and saved meal changes remain shared. This does not add offline list synchronization.
 - The shopping header scrolls with the list instead of staying pinned over items, keeping the phone viewport available for shopping (decided October 18, 2026).
@@ -33,7 +33,7 @@ Decided and implemented October 18, 2026, not released yet. **Start shopping** o
 
 ## Rearrange meals after automatic planning
 
-Decided and implemented October 18, 2026, not released yet: a move handle on each weekly meal supports mouse, pen and touch dragging between days, meal types and the any-day pool. It also opens the destination picker by tap or keyboard. Keep **Move or change** and bulk **Move** available. Direct two-meal swaps remain planned.
+Decided and implemented October 18, 2026, released in alpha.4: a move handle on each weekly meal supports mouse, pen and touch dragging between days, meal types and the any-day pool. It also opens the destination picker by tap or keyboard. Keep **Move or change** and bulk **Move** available. Direct two-meal swaps remain planned.
 
 - Highlight valid destinations without shifting the layout. Scroll near the viewport edges to reach other days. Release outside a destination or press Escape to cancel. A drop back on the current slot does nothing; selection mode disables dragging.
 - Keep day headings, theme badges and calorie totals wrapping within the phone viewport. Meal tracks can shrink and long names truncate; drag hints stay within their targets so moving meals does not introduce horizontal page scrolling.
@@ -44,7 +44,7 @@ Decided and implemented October 18, 2026, not released yet: a move handle on eac
 
 ## See recipes already planned for the week
 
-Decided and implemented October 18, 2026, not released yet. Show **Already planned** in the recipe picker when a recipe is already on the destination week, and **Planned this week** on recipe-library cards for the household's current week.
+Decided and implemented October 18, 2026, released in alpha.4. Show **Already planned** in the recipe picker when a recipe is already on the destination week, and **Planned this week** on recipe-library cards for the household's current week.
 
 - Use the household's time zone and first day of the week. Adding to a future or past week checks that week; picking a side uses the meal's selected destination week.
 - Count main dishes and sides, dated meals and the any-day pool. Cooked entries still count toward variety for the week; skipped entries do not.
@@ -53,7 +53,7 @@ Decided and implemented October 18, 2026, not released yet. Show **Already plann
 
 ## Completion celebrations
 
-Decided October 18, 2026; built, not released yet. Reward finishing a shopping list or cooking with a randomly chosen shower of confetti, stars or petals. Pieces enter above the viewport at staggered times, fall through the full screen, and flutter and tumble independently; the shower clears within five seconds.
+Decided October 18, 2026; built, released in alpha.4. Reward finishing a shopping list or cooking with a randomly chosen shower of confetti, stars or petals. Pieces enter above the viewport at staggered times, fall through the full screen, and flutter and tumble independently; the shower clears within five seconds.
 
 - Celebrate after a successful action checks the last outstanding item on a list, empties a list through clearing or putting purchases away, or marks a recipe made or a planned meal cooked. Bulk actions can celebrate once too.
 - Do not celebrate merely opening an empty list, receiving a live update, undoing an action, or a failed request. Removing only some items is not finishing a list.

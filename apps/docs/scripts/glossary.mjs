@@ -12,10 +12,6 @@ title: Glossary
 description: The words Merran uses for planning, shopping and AI.
 ---
 
-:::note[Not released yet]
-The in-app **Help** menu, contextual explanations and guided tours described here are in development.
-:::
-
 Open **Help** in Merran to look up these terms or choose **Show me around this page**.
 
 ${Object.values(source.help.terms)

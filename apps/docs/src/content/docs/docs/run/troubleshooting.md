@@ -81,7 +81,7 @@ A queued scheduled job cannot be stopped from this screen. Stopping a scheduled 
 
 If due jobs remain waiting with no progress, look for “The job runner couldn't check for work” and database errors in the server logs. A job saying Merran does not know its kind may reflect a version mismatch; record the kind and image version before retrying or seeking help.
 
-## Email invitations are unavailable (not released yet)
+## Email invitations are unavailable
 
 If **Invite by email** says to ask the server administrator to configure Email and the public address, check both prerequisites:
 
@@ -90,7 +90,7 @@ If **Invite by email** says to ask the server administrator to configure Email a
 
 For the repository's Compose file, put the variable in `.env` beside `compose.yaml` and recreate the container with `docker compose up -d`. For self-contained host-manager stacks, put it in Merran's `environment` block and redeploy. For `pnpm dev`, `.env` is not automatically loaded by the API: [set the process environment and restart](../configuration/#source-development-environment). Reload the browser afterward. A localhost address works only on the computer opening that link.
 
-If an invitation is **Accepted by mail service** but missing from the inbox, check spam and the provider's dashboard. This status records SMTP acceptance, not final delivery. Temporary failures retry automatically; **Sending failed** allows **Resend email** after correcting the settings. Copyable invite links remain available without email. See [household invitations](../household-roles/#email-an-invitation-not-released-yet) for expiry, resend limits and cancellation.
+If an invitation is **Accepted by mail service** but missing from the inbox, check spam and the provider's dashboard. This status records SMTP acceptance, not final delivery. Temporary failures retry automatically; **Sending failed** allows **Resend email** after correcting the settings. Copyable invite links remain available without email. See [household invitations](../household-roles/#email-an-invitation) for expiry, resend limits and cancellation.
 
 ## A setting will not save
 
@@ -98,10 +98,10 @@ An environment override takes priority and locks the corresponding app setting. 
 
 ## Recovery and further help
 
-:::note[Not released yet]
-For a buried setup code, use `docker compose exec merran merran setup-code`, or **Where is my setup code?** on the setup page. For a forgotten password, `docker compose exec -it merran merran reset-password YOUR-USERNAME` prompts privately and revokes that account's sessions; SMTP is not required. These commands are in development and unavailable on older images. See [first-run setup](../../get-started/setup/) for version differences and interrupted-setup recovery.
+:::note[Available in alpha.4]
+For a buried setup code, use `docker compose exec merran merran setup-code`, or **Where is my setup code?** on the setup page. For a forgotten password, `docker compose exec -it merran merran reset-password YOUR-USERNAME` prompts privately and revokes that account's sessions; SMTP is not required. These commands are available in alpha.4; older images may not include them. See [first-run setup](../../get-started/setup/) for version differences and interrupted-setup recovery.
 
-The separate password-recovery update adds **Forgot your password?** on sign-in when Email and the public address are ready. Follow [password recovery](../configuration/#password-recovery-not-released-yet). A generic confirmation deliberately does not reveal whether an account exists. Check spam, provider status and **Settings → This server → Jobs** with the operator if mail does not arrive. Invalid/expired/used links require a fresh request; if you refreshed the reset form, reopen the email link because the token is cleared from the address bar. SMTP acceptance does not guarantee delivery. Account email verification is skipped; provider sending-domain verification still applies.
+Password recovery provides **Forgot your password?** on sign-in when Email and the public address are ready. Follow [password recovery](../configuration/#password-recovery). A generic confirmation deliberately does not reveal whether an account exists. Check spam, provider status and **Settings → This server → Jobs** with the operator if mail does not arrive. Invalid/expired/used links require a fresh request; if you refreshed the reset form, reopen the email link because the token is cleared from the address bar. SMTP acceptance does not guarantee delivery. Account email verification is skipped; provider sending-domain verification still applies.
 :::
 
 Use [updating, backups, and recovery](../updating-and-backups/) for a failed update, lost data, or a restore test. A household export is useful for portability but is not a complete server backup.

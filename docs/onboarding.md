@@ -2,11 +2,11 @@
 
 Source audit and proposed implementation plan, October 17, 2026. Requested after a fresh installation made the setup code hard to find, accepted a password without confirmation, did not offer telemetry, and provided no guided tour.
 
-The findings below record the source baseline before implementation. The implementation section records subsequent work in this checkout, not a published release. This work does not reproduce the originally reported deployment or establish why its telemetry question was absent.
+The findings below record the source baseline before implementation. The implementation section records subsequent work, now available in v0.1.0-alpha.4. This work does not reproduce the originally reported deployment or establish why its telemetry question was absent.
 
 ## Implementation
 
-Implemented October 17, 2026, not released yet:
+Implemented October 17, 2026, released in alpha.4:
 
 - A readiness log marker and grouped code, a restricted operator-readable setup-code file and retrieval command, restart/lockout guidance and sign-in recovery after an uncertain submission.
 - Atomic first-account, credentials and household creation with serializable isolation and a per-process claim guard. Password confirmation and visibility controls cover setup, joining and changes. The operator password-reset command uses hidden prompts and revokes sessions.
@@ -19,9 +19,9 @@ Remaining acceptance includes actual host-manager log viewers, real phones/table
 
 ## Development testing
 
-Email follow-up, October 18, 2026 (not released yet): household invitations support optional SMTP delivery with address-bound joining, styled HTML/plain-text messages, resend and cancellation. A separate password-reset change adds Forgot your password?, emailed single-use 30-minute links, password confirmation and session revocation. The first-run guide links to SMTP/public-URL setup and recovery. Source development must set MERRAN_PUBLIC_URL in the environment launching pnpm dev; its API does not automatically load .env. A test message verifies SMTP acceptance separately from the public origin required for email links. Operator recovery remains available without SMTP. Account email verification is skipped by the operator's October 18 decision. The audit baseline below records what was missing when that audit was made, not current implementation status.
+Email follow-up, October 18, 2026 (released in alpha.4): household invitations support optional SMTP delivery with address-bound joining, styled HTML/plain-text messages, resend and cancellation. A separate password-reset change adds Forgot your password?, emailed single-use 30-minute links, password confirmation and session revocation. The first-run guide links to SMTP/public-URL setup and recovery. Source development must set MERRAN_PUBLIC_URL in the environment launching pnpm dev; its API does not automatically load .env. A test message verifies SMTP acceptance separately from the public origin required for email links. Operator recovery remains available without SMTP. Account email verification is skipped by the operator's October 18 decision. The audit baseline below records what was missing when that audit was made, not current implementation status.
 
-Layout revision, October 18, 2026 (not released yet): setup uses a wider card with three paired rows on desktop (name/username, email/household, password/confirmation) and one column on phones. The setup code and collapsed help sit in a separate panel. Help expands below the code field across the panel's full width, with separately scrollable command examples on narrow screens. Password visibility controls are inside their inputs, preserving their full accessible names. The submit action and sign-in link share a compact desktop footer.
+Layout revision, October 18, 2026 (released in alpha.4): setup uses a wider card with three paired rows on desktop (name/username, email/household, password/confirmation) and one column on phones. The setup code and collapsed help sit in a separate panel. Help expands below the code field across the panel's full width, with separately scrollable command examples on narrow screens. Password visibility controls are inside their inputs, preserving their full accessible names. The submit action and sign-in link share a compact desktop footer.
 
 `MERRAN_DEV_SETUP=on` uses a fresh temporary SQLite database and secret each server start, ignoring the configured Postgres address and leaving the normal data directory untouched. It is rejected for production and Docker installs. It does not reopen claiming on an existing database. The temporary directory is printed at startup; a browser refresh preserves the current test, while restarting the process starts a new one. Unset the flag to return to normal data. Temporary test folders may be removed once their process is stopped; they are never server backups.
 

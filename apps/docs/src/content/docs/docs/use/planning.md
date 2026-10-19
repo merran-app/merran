@@ -17,7 +17,7 @@ These steps follow the current repository implementation, pending fresh-install 
 
 ## Add a meal and set servings
 
-**Not released yet:** the recipe picker shows **Already planned** for recipes already added to the week you are choosing meals for, including its any-day pool and sides. Cooked meals still count; skipped meals do not. This badge also appears when you **Pick a side**, using the week selected in **When**. You can still select a recipe again for an intentional repeat.
+the recipe picker shows **Already planned** for recipes already added to the week you are choosing meals for, including its any-day pool and sides. Cooked meals still count; skipped meals do not. This badge also appears when you **Pick a side**, using the week selected in **When**. You can still select a recipe again for an intentional repeat.
 
 1. Open **Plan** and use the week controls to choose your week.
 2. On a day, choose **Add breakfast**, **Add lunch**, **Add dinner**, or **Add a snack**.
@@ -60,7 +60,7 @@ Ideas come from your library, not an AI search. Recipes recently planned or made
 
 ## Change plans
 
-**Not released yet:** drag a meal's move handle (the arrow over its photo) from **This week, any day** to a day's meal, between days or meal types, or back to the pool. Mouse, pen and touch are supported; hold near the top or bottom of the screen to scroll. Drop outside a highlighted destination or press Escape to cancel. Expand past days with **Show** before moving a meal there.
+drag a meal's move handle (the arrow over its photo) from **This week, any day** to a day's meal, between days or meal types, or back to the pool. Mouse, pen and touch are supported; hold near the top or bottom of the screen to scroll. Drop outside a highlighted destination or press Escape to cancel. Expand past days with **Show** before moving a meal there.
 
 Dropping into an empty slot moves immediately. If a dated slot already has dishes, review them and choose **Move alongside** or **Cancel**. Existing dishes stay in place. The moved meal keeps its servings, side, note and cooked/skipped status; it can be moved regardless of the destination's theme night. Returning to the pool keeps its meal type.
 

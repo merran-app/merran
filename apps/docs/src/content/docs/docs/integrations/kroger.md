@@ -5,7 +5,7 @@ sidebar:
   order: 2
 ---
 
-Kroger integration is optional. It supports product searches, store prices, and adding selected products to a linked account's cart. It does not read the existing cart or complete checkout. These instructions follow the alpha.1 implementation; a real developer-account authorization and cart transfer have not yet been verified by the documentation audit.
+Kroger integration is optional. It supports product searches, store prices, and adding selected products to a linked account's cart. It does not read the existing cart or complete checkout. These instructions follow the alpha.4 implementation; a real developer-account authorization and cart transfer have not yet been verified by the documentation audit.
 
 ## Before you start
 
@@ -15,7 +15,7 @@ Choose a stable HTTPS address for Merran and set `MERRAN_PUBLIC_URL` before link
 
 ## Configure the developer app
 
-:::note[Not released yet]
+:::note[Available in alpha.4]
 The Kroger card includes **Create your Kroger app** steps, **Open Kroger developer portal**, and **Kroger setup guide** buttons beside the credentials.
 :::
 

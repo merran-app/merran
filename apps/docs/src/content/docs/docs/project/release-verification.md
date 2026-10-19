@@ -3,17 +3,21 @@ title: Release verification
 description: What was tested on the published alpha, and what still needs real-device or external-service verification.
 ---
 
-The application release **0.1.0-alpha.1** and the public documentation site are published. Publication is separate from verification of every deployment and integration. This record is dated **October 17, 2026**.
+The latest application release is **0.1.0-alpha.4**. This record was reconciled on **October 19, 2026**. The checks below retain their original dates, versions and environments: updating the guides does not establish that the alpha.4 published image was tested again. Publication is separate from verification of every deployment and integration.
 
-## Email development checks — October 18, 2026 (not released yet)
+## Operator deployment report — October 19, 2026
 
-These checks apply to the SMTP development branch, not the published image below. Automated invitation checks passed on SQLite and Postgres, covering address matching, account creation, queued delivery, retries, expiry, cancellation, resend, concurrent duplicate prevention and the household send limit. SMTP transport was mocked; no real email was sent by those tests. The HTML templates and their wiring passed 24 focused SQLite checks, including HTML escaping and rejecting unsafe links. Invitation and test-email browser previews were inspected at desktop width and a 375px reading width. Typechecks, formatting and the documentation build/link check passed.
+The operator reports running Merran on a TrueNAS server deployed through Dockge. Installation was straightforward, and everything used so far has worked. This report was provided during the alpha.4 documentation reconciliation. Exact TrueNAS/Dockge versions, image digest, database backend and individual workflows were not recorded, so it establishes practical installation and initial-use feedback rather than a full platform or integration test matrix.
 
-Real inbox rendering in mail clients, provider delivery and spam placement remain to verify. A browser preview or SMTP acceptance does not establish those results. See [email setup](../../run/configuration/#email-transport-not-released-yet) and [household invitations](../../run/household-roles/#email-an-invitation-not-released-yet).
+## Email development checks — October 18, 2026
 
-## Password-recovery follow-up — October 18, 2026 (not released yet)
+These checks ran on the SMTP development branch before release; the functionality is available in alpha.4. They do not retest the published image below. Automated invitation checks passed on SQLite and Postgres, covering address matching, account creation, queued delivery, retries, expiry, cancellation, resend, concurrent duplicate prevention and the household send limit. SMTP transport was mocked; no real email was sent by those tests. The HTML templates and their wiring passed 24 focused SQLite checks, including HTML escaping and rejecting unsafe links. Invitation and test-email browser previews were inspected at desktop width and a 375px reading width. Typechecks, formatting and the documentation build/link check passed.
 
-The separate password-reset branch adds request/complete screens and styled recovery mail. Focused SQLite and Postgres tests cover generic known/unknown-account responses, sealed queued payloads, expiry, single-use and concurrent consumption, persistent request limits, session revocation, invalidation after operator/account password changes, and SMTP retry/cleanup behavior. SMTP is mocked; live provider and inbox acceptance remain separate. A disposable browser preview confirmed the request form, generic confirmation and password/confirmation fields, and that the fragment token is removed from the address bar. No real email or real-account password change was performed by that preview. Account email verification is explicitly skipped by operator decision; provider sending-domain verification remains required where applicable.
+Real inbox rendering in mail clients, provider delivery and spam placement remain to verify. A browser preview or SMTP acceptance does not establish those results. See [email setup](../../run/configuration/#email-transport) and [household invitations](../../run/household-roles/#email-an-invitation).
+
+## Password-recovery follow-up — October 18, 2026
+
+Before release, the password-reset branch added request/complete screens and styled recovery mail. Focused SQLite and Postgres tests cover generic known/unknown-account responses, sealed queued payloads, expiry, single-use and concurrent consumption, persistent request limits, session revocation, invalidation after operator/account password changes, and SMTP retry/cleanup behavior. SMTP is mocked; live provider and inbox acceptance remain separate. A disposable browser preview confirmed the request form, generic confirmation and password/confirmation fields, and that the fragment token is removed from the address bar. No real email or real-account password change was performed by that preview. Account email verification is explicitly skipped by operator decision; provider sending-domain verification remains required where applicable.
 
 The full server regression passed 3,038 checks across SQLite and Postgres with two workers. Workspace typechecks, the web build, formatting, and the documentation build/link check passed. The initial unrestricted parallel test run exceeded existing five-second test timeouts under local load; no test timeout was increased.
 
@@ -37,7 +41,7 @@ These are smoke tests, not a complete UI acceptance suite or a backup guarantee 
 
 ## Runtime dependency hotfix — October 18, 2026
 
-Not released yet. A local Linux amd64 image built with the shared-package dependency fix passed the final-image imports. Removing the shared package's dependency links inside a disposable container reproduced the exact `ERR_MODULE_NOT_FOUND` error for `zod` in shared telemetry. The corrected image started against isolated fresh SQLite and Postgres 18 databases; `/api/health/ready` returned HTTP 200 with the matching database kind for both. Tests used temporary storage, with no existing household data mounted. ARM64 and published-release verification remain separate.
+The fix is included in alpha.4. A local Linux amd64 image built with the shared-package dependency fix passed the final-image imports. Removing the shared package's dependency links inside a disposable container reproduced the exact `ERR_MODULE_NOT_FOUND` error for `zod` in shared telemetry. The corrected image started against isolated fresh SQLite and Postgres 18 databases; `/api/health/ready` returned HTTP 200 with the matching database kind for both. Tests used temporary storage, with no existing household data mounted. ARM64 and published-release verification remain separate.
 
 ## Installation-guide follow-up — October 18, 2026
 
@@ -52,7 +56,7 @@ The homepage claim/comparison audit and fixes for all 14 recorded browser-QA fin
 ## Still to verify
 
 - Full first-week UI walkthrough against the release, including imports from representative real websites and background-job recovery.
-- ARM64 and another physical host, large-library recovery, externally managed Postgres, and stored real-provider credential recovery.
+- ARM64 and broader host coverage beyond the reported TrueNAS/Dockge installation, large-library recovery, externally managed Postgres, and stored real-provider credential recovery.
 - Extension installation, approval, imports, sidebar, and updates in Chrome, Edge, and Firefox; Firefox restart behavior on a real installation.
 - Android share targets and the iPhone/iPad Shortcut on devices.
 - Live Kroger authorization/product/cart transfer and experimental Walmart browser automation.

@@ -5,13 +5,13 @@ sidebar:
   order: 5
 ---
 
-Manual recipes, planning, lists, pantry tracking, and ordinary cook steps work without these additions. A server admin controls server modules; household settings and provider credentials determine which households can use them. These steps describe alpha.1's implementation. Live provider/media processing has not been verified in the release smoke test.
+Manual recipes, planning, lists, pantry tracking, and ordinary cook steps work without these additions. A server admin controls server modules; household settings and provider credentials determine which households can use them. These steps describe alpha.4's implementation. Live provider/media processing has not been verified in the release smoke test.
 
 ## Nutrition
 
 **Prerequisites:** recipes with ingredients and a meaningful serving count. Imported nutrition can be retained without configuring a provider. To calculate from food data, a server admin supplies a USDA FoodData Central key. Optional AI can estimate nutrition when configured; it is not required for the USDA path.
 
-:::note[Not released yet]
+:::note[Available in alpha.4]
 The Nutrition card includes **Get your USDA key** steps, **Get a free USDA key**, and **USDA API guide** buttons.
 :::
 
