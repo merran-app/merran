@@ -35,6 +35,7 @@ export function SwapDialog({
   onUse,
   onUndo,
   onOpenChange,
+  mealId,
 }: {
   recipe: Recipe
   /** The line to swap; the dialog shows while there is one. */
@@ -46,6 +47,7 @@ export function SwapDialog({
   /** Stops using a stand-in this time. */
   onUndo: (ingredientId: string) => void
   onOpenChange: (open: boolean) => void
+  mealId?: string
 }) {
   const { t } = useTranslation()
   const ai = useAiFor("swaps")
@@ -53,12 +55,12 @@ export function SwapDialog({
   const refresh = useRefreshRecipes()
   const [saving, setSaving] = React.useState<number | null>(null)
   const swaps = useQuery({
-    queryKey: ["stand-ins", recipe.id, recipe.updatedAt, line?.id],
+    queryKey: ["stand-ins", recipe.id, recipe.updatedAt, line?.id, mealId],
     queryFn: () =>
       unwrap(
         api.POST("/api/recipes/{recipe}/stand-ins", {
           params: { path: { recipe: recipe.id } },
-          body: { ingredientId: line!.id },
+          body: { ingredientId: line!.id, ...(mealId ? { mealId } : {}) },
         })
       ),
     enabled: Boolean(line) && ai.ready === true,
@@ -185,15 +187,17 @@ export function SwapDialog({
                   </div>
                 )}
                 <div className="flex flex-wrap justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={saving !== null}
-                    onClick={() => void save(swap, index)}
-                  >
-                    {saving === index && <Spinner data-icon="inline-start" />}
-                    {t("recipes.swaps.save")}
-                  </Button>
+                  {!mealId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={saving !== null}
+                      onClick={() => void save(swap, index)}
+                    >
+                      {saving === index && <Spinner data-icon="inline-start" />}
+                      {t("recipes.swaps.save")}
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     disabled={saving !== null}

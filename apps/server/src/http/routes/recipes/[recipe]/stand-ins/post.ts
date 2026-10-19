@@ -1,4 +1,5 @@
 import { createRoute } from "@hono/zod-openapi"
+import { AppError } from "../../../../../core/errors.ts"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { suggestSwaps } from "../../../../../services/recipes/swaps.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
@@ -39,11 +40,18 @@ const route = createRoute({
 export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
+    if (c.req.valid("json").mealId && c.var.apiKey)
+      throw new AppError(
+        "forbidden",
+        "api_key_not_allowed",
+        "Sign in to use planned meal substitutions."
+      )
     const swaps = await suggestSwaps(deps, em, {
       householdId,
       userId,
       recipe: c.req.valid("param").recipe,
       ingredientId: c.req.valid("json").ingredientId,
+      mealId: c.req.valid("json").mealId,
     })
     return c.json({ swaps }, 200)
   })

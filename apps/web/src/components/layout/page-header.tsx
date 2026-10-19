@@ -18,7 +18,10 @@ export function PageHeader({
         {description && <p className="text-muted-foreground">{description}</p>}
       </div>
       {actions && (
-        <div data-tour="page-actions" className="flex items-center gap-2">
+        <div
+          data-tour="page-actions"
+          className="flex min-w-0 flex-wrap items-center gap-2"
+        >
           {actions}
         </div>
       )}

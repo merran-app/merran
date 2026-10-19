@@ -1,3 +1,4 @@
+import substitutions from "./substitutions/index.ts"
 import type { AppDeps } from "../../../core/context.ts"
 import type { Router } from "../../router.ts"
 import get from "./get.ts"
@@ -22,4 +23,5 @@ export default (router: Router, deps: AppDeps) => {
   putAwayRoutes(router, deps)
   restoreRoutes(router, deps)
   usualRoutes(router, deps)
+  substitutions(router, deps)
 }

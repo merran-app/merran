@@ -40,7 +40,7 @@ const shopped = (entry: PlanEntry) =>
   hasRecipe(entry) && entry.status !== "skipped"
 
 /** What the household always has, which lists made from the plan leave off. */
-async function onHandOf(em: EntityManager, householdId: string) {
+export async function onHandOf(em: EntityManager, householdId: string) {
   const household = await em.findOneOrFail(Household, { id: householdId })
   return onHandTest(household.settings?.alwaysOnHand ?? DEFAULT_ON_HAND)
 }
@@ -77,62 +77,7 @@ export async function listMeals(
     needed
   )
 
-  let added = 0
-  let merged = 0
-  if (combined.length > 0) {
-    const waiting = await em.find(ShoppingItem, { checked: false })
-    const aisles = await aislesOf(em, householdId, combined)
-    const lists = await listsOf(
-      em,
-      householdId,
-      combined.map((item, index) => ({ name: item.name, aisle: aisles[index] }))
-    )
-    for (const [index, item] of combined.entries()) {
-      // The line of the same food it adds up with, in the same unit first:
-      // garlic cloves go with cloves, and with a head of garlic only when
-      // there's no line of cloves.
-      let match: ShoppingItem | undefined
-      let sum: ReturnType<typeof joinAmounts> = null
-      const sameUnitFirst = [...waiting].sort(
-        (a, b) => Number(b.unit === item.unit) - Number(a.unit === item.unit)
-      )
-      for (const row of sameUnitFirst) {
-        if (row.foodKey !== item.food || row.amountText) continue
-        sum = joinAmounts(
-          { quantity: toNumber(row.quantity), unit: row.unit ?? null },
-          item,
-          item.food
-        )
-        if (sum) {
-          match = row
-          break
-        }
-      }
-      if (match && sum) {
-        em.assign(match, {
-          quantity: sum.quantity,
-          unit: sum.unit,
-          forMeals: [...(match.forMeals ?? []), ...item.shares],
-        })
-        merged++
-      } else {
-        waiting.push(
-          em.create(ShoppingItem, {
-            household: householdId,
-            list: lists[index]!,
-            foodKey: item.food,
-            name: item.name,
-            quantity: item.quantity,
-            unit: item.unit,
-            aisle: aisles[index] ?? null,
-            source: "plan",
-            forMeals: item.shares,
-          })
-        )
-        added++
-      }
-    }
-  }
+  const { added, merged } = await addMealNeeds(em, householdId, combined)
   const now = new Date()
   for (const entry of meals) entry.listedAt = now
   await em.flush()
@@ -249,9 +194,12 @@ export async function relistRestored(
 export function shoppingFor(entry: PlanEntry) {
   if (!entry.listedAt || !entry.recipe || entry.status === "skipped")
     return null
-  return [entry.recipe.id, entry.withRecipe?.id, toNumber(entry.servings)].join(
-    " "
-  )
+  return [
+    entry.recipe.id,
+    entry.withRecipe?.id,
+    toNumber(entry.servings),
+    JSON.stringify(entry.variants ?? []),
+  ].join(" ")
 }
 
 /**
@@ -403,4 +351,73 @@ export async function addEveryWeek(em: EntityManager, householdId: string) {
   }
   await em.flush()
   return missing.length
+}
+
+/** Merge only new requirements, preserving purchases and unrelated rows. */
+export async function addMealNeeds(
+  em: EntityManager,
+  householdId: string,
+  combined: readonly import("@merran/shared").CombinedItem[],
+  listId?: string
+) {
+  let added = 0
+  let merged = 0
+  if (combined.length > 0) {
+    const waiting = await em.find(ShoppingItem, {
+      checked: false,
+      ...(listId ? { list: listId } : {}),
+    })
+    const aisles = await aislesOf(em, householdId, combined)
+    const lists = await listsOf(
+      em,
+      householdId,
+      combined.map((item, index) => ({ name: item.name, aisle: aisles[index] }))
+    )
+    for (const [index, item] of combined.entries()) {
+      // The line of the same food it adds up with, in the same unit first:
+      // garlic cloves go with cloves, and with a head of garlic only when
+      // there's no line of cloves.
+      let match: ShoppingItem | undefined
+      let sum: ReturnType<typeof joinAmounts> = null
+      const sameUnitFirst = [...waiting].sort(
+        (a, b) => Number(b.unit === item.unit) - Number(a.unit === item.unit)
+      )
+      for (const row of sameUnitFirst) {
+        if (row.foodKey !== item.food || row.amountText) continue
+        sum = joinAmounts(
+          { quantity: toNumber(row.quantity), unit: row.unit ?? null },
+          item,
+          item.food
+        )
+        if (sum) {
+          match = row
+          break
+        }
+      }
+      if (match && sum) {
+        em.assign(match, {
+          quantity: sum.quantity,
+          unit: sum.unit,
+          forMeals: [...(match.forMeals ?? []), ...item.shares],
+        })
+        merged++
+      } else {
+        waiting.push(
+          em.create(ShoppingItem, {
+            household: householdId,
+            list: listId ?? lists[index]!,
+            foodKey: item.food,
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+            aisle: aisles[index] ?? null,
+            source: "plan",
+            forMeals: item.shares,
+          })
+        )
+        added++
+      }
+    }
+  }
+  return { added, merged }
 }

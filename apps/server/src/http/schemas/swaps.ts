@@ -36,6 +36,10 @@ export const SwapsSchema = z
 
 export const StandInInputSchema = z
   .object({
+    mealId: z.uuid().optional().openapi({
+      description:
+        "For signed-in members, suggest against this planned meal's saved recipe variant.",
+    }),
     ingredientId: z.string().openapi({ example: IDS.ingredients[1] }),
   })
   .openapi("StandInInput", { example: { ingredientId: IDS.ingredients[1] } })

@@ -81,31 +81,66 @@ import { formatPrice, useCosts } from "@/features/stores/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { formatRelativeDate } from "@/lib/format"
 import { celebrate } from "@/lib/celebrations/celebrate"
+import { planEntryQuery, mealRecipe } from "@/features/plan/meal-recipe"
+import type { PlanEntry } from "@/features/plan/queries"
 
 type RecipePageSearch = {
+  meal?: string
   /** A recipe it goes with, shown with it. */
   with?: string
 }
 
 export const Route = createFileRoute("/_app/recipes/$slug/")({
-  validateSearch: (search: Record<string, unknown>): RecipePageSearch =>
-    typeof search.with === "string" && search.with ? { with: search.with } : {},
-  loader: ({ context, params }) => {
+  validateSearch: (search: Record<string, unknown>): RecipePageSearch => ({
+    ...(typeof search.with === "string" && search.with
+      ? { with: search.with }
+      : {}),
+    ...(typeof search.meal === "string" && search.meal
+      ? { meal: search.meal }
+      : {}),
+  }),
+  loaderDeps: ({ search }) => ({ meal: search.meal }),
+  loader: ({ context, params, deps }) => {
     // What's left out for the household's dislikes, as it comes.
     void context.queryClient.prefetchQuery(tastesQuery)
-    return context.queryClient.ensureQueryData(recipeQuery(params.slug))
+    return Promise.all([
+      context.queryClient.ensureQueryData(recipeQuery(params.slug)),
+      deps.meal
+        ? context.queryClient.ensureQueryData(planEntryQuery(deps.meal))
+        : null,
+    ])
   },
   component: RecipePage,
 })
 
 function RecipePage() {
+  const { t } = useTranslation()
   const { slug } = Route.useParams()
+  const { meal } = Route.useSearch()
+  const { data: planned } = useQuery({
+    ...planEntryQuery(meal ?? ""),
+    enabled: Boolean(meal),
+  })
   const { data: recipe } = useSuspenseQuery(recipeQuery(slug))
+  if (planned && planned.recipe?.id !== recipe.id)
+    return <p role="alert">{t("shopping.contextMismatch")}</p>
   // A fresh page, with its own servings and ticks, for each recipe.
-  return <RecipeView key={recipe.id} recipe={recipe} />
+  return (
+    <RecipeView
+      key={`${recipe.id}:${meal ?? ""}`}
+      recipe={mealRecipe(recipe, planned)}
+      planned={planned}
+    />
+  )
 }
 
-function RecipeView({ recipe }: { recipe: Recipe }) {
+function RecipeView({
+  recipe,
+  planned,
+}: {
+  recipe: Recipe
+  planned?: PlanEntry
+}) {
   const { t, i18n } = useTranslation()
   const costs = useCosts()
   const navigate = useNavigate()
@@ -124,6 +159,8 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   const paired =
     withSlug && pairedQuery.data?.id !== recipe.id
       ? pairedQuery.data
+        ? mealRecipe(pairedQuery.data, planned)
+        : undefined
       : undefined
   // Stand-ins used this time take their lines' places.
   const thisTime = useSwapsThisTime(recipe.id)
@@ -156,7 +193,13 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   const pairedTastes = useRecipeTastes(paired)
   const leftOut = mergeLeftOut(tastes, pairedTastes)
   const showWith = (slug: string | undefined) =>
-    void setSearch({ search: slug ? { with: slug } : {}, replace: true })
+    void setSearch({
+      search: {
+        ...(slug ? { with: slug } : {}),
+        ...(planned ? { meal: planned.id } : {}),
+      },
+      replace: true,
+    })
   const [showVersions, setShowVersions] = React.useState(false)
   const [showDiets, setShowDiets] = React.useState(false)
   const [tidying, setTidying] = React.useState(false)
@@ -193,14 +236,22 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   async function markMade() {
     setMarking(true)
     try {
-      queryClient.setQueryData(
-        recipeQuery(recipe.slug).queryKey,
+      if (planned)
         await unwrap(
-          api.POST("/api/recipes/{recipe}/made", {
-            params: { path: { recipe: recipe.id } },
+          api.PATCH("/api/plan/entries/{entryId}", {
+            params: { path: { entryId: planned.id } },
+            body: { status: "cooked" },
           })
         )
-      )
+      else
+        queryClient.setQueryData(
+          recipeQuery(recipe.slug).queryKey,
+          await unwrap(
+            api.POST("/api/recipes/{recipe}/made", {
+              params: { path: { recipe: recipe.id } },
+            })
+          )
+        )
       await refresh()
       toast.success(t("recipes.markedMade"))
       celebrate()
@@ -239,7 +290,9 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
     })
   }
 
-  const cost = costs.recipes.get(recipe.id)
+  const cost = planned?.variants.length
+    ? undefined
+    : costs.recipes.get(recipe.id)
   const money = (cents: number) =>
     formatPrice(cents, costs.currency, i18n.language)
   const facts = [
@@ -269,6 +322,11 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
 
   return (
     <article className="grid gap-8 pt-2 pb-6">
+      {planned?.variants.length ? (
+        <p role="status" className="rounded-xl border bg-secondary p-3 text-sm">
+          {t("shopping.adjustedHint")}
+        </p>
+      ) : null}
       <Link
         to="/recipes"
         className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -347,6 +405,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                   to="/recipes/$slug/cook"
                   params={{ slug: recipe.slug }}
                   search={{
+                    ...(planned ? { meal: planned.id } : {}),
                     ...(servings.changed
                       ? { scale: Math.round(servings.factor * 1000) / 1000 }
                       : {}),
@@ -543,7 +602,13 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               </p>
             </section>
           )}
-          <NutritionSection recipe={recipe} />
+          {planned?.variants.length ? (
+            <p className="text-sm text-muted-foreground">
+              {t("shopping.adjustedNutrition")}
+            </p>
+          ) : (
+            <NutritionSection recipe={recipe} />
+          )}
           <CookNotes recipe={recipe} />
           {recipe.sourceUrl && (
             <a
@@ -576,6 +641,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
       />
       <TidyDialog recipe={recipe} open={tidying} onOpenChange={setTidying} />
       <SwapDialog
+        mealId={planned?.id}
         recipe={recipe}
         line={swapping}
         factor={servings.factor}

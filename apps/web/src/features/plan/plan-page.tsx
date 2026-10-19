@@ -78,14 +78,18 @@ export function PlanPage({ week: asked }: { week?: string }) {
   const themes = useQuery(themesQuery).data?.themes ?? NO_THEMES
   // What the week's meals cost, where their recipes' costs are known.
   const costs = useCosts()
-  const weekCost = entries.reduce<number | null>((sum, entry) => {
-    const cost = entry.recipe ? costs.recipes.get(entry.recipe.id) : undefined
-    if (!cost || entry.status === "skipped") return sum
-    return (
-      (sum ?? 0) +
-      costFor(cost.total, entry.servings, entry.recipe?.servings ?? null)
-    )
-  }, null)
+  const weekCost = entries.some((entry) => entry.variants.length > 0)
+    ? null
+    : entries.reduce<number | null>((sum, entry) => {
+        const cost = entry.recipe
+          ? costs.recipes.get(entry.recipe.id)
+          : undefined
+        if (!cost || entry.status === "skipped") return sum
+        return (
+          (sum ?? 0) +
+          costFor(cost.total, entry.servings, entry.recipe?.servings ?? null)
+        )
+      }, null)
   const money = (cents: number) =>
     formatPrice(cents, costs.currency, i18n.language)
   const selection = useSelection()

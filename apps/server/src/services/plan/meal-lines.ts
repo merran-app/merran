@@ -3,6 +3,7 @@ import {
   pairingFactor,
   type AvoidedFood,
   type ListLine,
+  type MealRecipe,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import type {
@@ -39,20 +40,24 @@ export async function loadMealLines(
 }
 
 /** A recipe's lines in order, less what's left out. */
-function linesOf(recipe: Recipe, avoid: readonly AvoidedFood[]) {
-  const lines = recipe.ingredients
-    .getItems()
-    .sort((a, b) => a.position - b.position)
+function linesOf(
+  recipe: Recipe,
+  avoid: readonly AvoidedFood[],
+  variant?: MealRecipe
+) {
+  const lines = variant
+    ? variant.ingredients.map((line) => ({ ...line, rawText: line.text }))
+    : recipe.ingredients.getItems().sort((a, b) => a.position - b.position)
   const without = leftOutLines(
     {
-      name: recipe.name,
+      name: variant?.name ?? recipe.name,
       lines: lines.map((line) => line.rawText),
       marks: lines.map((line) => line.mark ?? null),
-      needs: recipe.needs,
+      needs: variant?.needs ?? recipe.needs,
     },
     avoid
   )
-  return lines.filter((_, index) => !without.has(index)) as RecipeIngredient[]
+  return lines.filter((_, index) => !without.has(index))
 }
 
 /** Whether a meal's recipe can be cooked: it has one, not in Recently deleted. */
@@ -69,32 +74,40 @@ export function hasRecipe(entry: PlanEntry) {
 export function mealLines(
   entry: PlanEntry,
   avoid: readonly AvoidedFood[] = []
-): ListLine[] {
+): (ListLine & { recipeId: string; ingredientId: string })[] {
   const recipe = entry.recipe!.getEntity()
-  const servings = toNumber(recipe.servings)
+  const variant = entry.variants?.find((value) => value.recipeId === recipe.id)
+  const servings = variant?.servings ?? toNumber(recipe.servings)
   const planned = toNumber(entry.servings)
   const factor = planned && servings ? planned / servings : 1
-  const lines: ListLine[] = linesOf(recipe, avoid).map((line) => ({
+  const lines = linesOf(recipe, avoid, variant).map((line) => ({
     text: line.rawText,
     factor,
     source: recipe.name,
     food: line.foodKey ?? null,
     meal: entry.id,
+    recipeId: recipe.id,
+    ingredientId: line.id,
   }))
   const side = entry.withRecipe?.getEntity()
   if (side && !side.deletedAt) {
+    const sideVariant = entry.variants?.find(
+      (value) => value.recipeId === side.id
+    )
     const sideFactor = pairingFactor(
       { servings },
-      { servings: toNumber(side.servings) },
+      { servings: sideVariant?.servings ?? toNumber(side.servings) },
       factor
     )
-    for (const line of linesOf(side, avoid)) {
+    for (const line of linesOf(side, avoid, sideVariant)) {
       lines.push({
         text: line.rawText,
         factor: sideFactor,
         source: side.name,
         food: line.foodKey ?? null,
         meal: entry.id,
+        recipeId: side.id,
+        ingredientId: line.id,
       })
     }
   }

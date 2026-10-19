@@ -58,6 +58,7 @@ export function ItemRow({
   find = null,
   prices = null,
   shopping,
+  trip = false,
 }: {
   item: ListItem
   selection: Selection
@@ -70,6 +71,7 @@ export function ItemRow({
    */
   prices?: RowPrices | null
   shopping?: ReactNode
+  trip?: boolean
 }) {
   const { t, i18n } = useTranslation()
   const actions = useListActions()
@@ -149,7 +151,7 @@ export function ItemRow({
         </span>
       ) : (
         <Checkbox
-          className="mt-0.5 size-6 shrink-0 rounded-md"
+          className={cn("mt-0.5 size-6 shrink-0 rounded-md", trip && "size-8")}
           checked={item.checked}
           aria-label={
             item.checked

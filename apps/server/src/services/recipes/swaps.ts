@@ -5,6 +5,7 @@ import {
   missingDiets,
   type HouseholdTastes,
   type MarkedLine,
+  type MealRecipe,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { generateText, Output } from "ai"
@@ -21,6 +22,8 @@ import {
   updateRecipe,
 } from "./recipes.ts"
 import { tagsOf } from "./tags.ts"
+import { findEntry } from "../plan/plan.ts"
+import { recipeForMeal } from "../plan/recipe-variants.ts"
 
 // Swapping an ingredient: AI suggests stand-ins that work in the recipe,
 // knowing what's at home and what the household avoids, and how the steps
@@ -100,12 +103,31 @@ export async function suggestSwaps(
     userId: string | null
     recipe: string
     ingredientId: string
+    context?: MealRecipe
+    mealId?: string
   }
 ): Promise<Swap[]> {
   const recipe = await findRecipe(em, options.recipe)
-  const line = recipe.ingredients
-    .getItems()
-    .find((item) => item.id === options.ingredientId)
+  const entry = options.mealId ? await findEntry(em, options.mealId) : null
+  if (
+    entry &&
+    entry.recipe?.id !== recipe.id &&
+    entry.withRecipe?.id !== recipe.id
+  )
+    throw new AppError(
+      "not_found",
+      "recipe_not_in_meal",
+      "That recipe is not part of this planned meal."
+    )
+  const context =
+    options.context ?? (entry ? recipeForMeal(entry, recipe) : undefined)
+  const line = context
+    ? context.ingredients
+        .map((line) => ({ ...line, rawText: line.text }))
+        .find((line) => line.id === options.ingredientId)
+    : recipe.ingredients
+        .getItems()
+        .find((item) => item.id === options.ingredientId)
   if (!line) {
     throw new AppError(
       "not_found",
@@ -118,14 +140,14 @@ export async function suggestSwaps(
     em.find(PantryItem, {}, { fields: ["name"], orderBy: { name: "asc" } }),
     tagsOf(em, [recipe.id]),
   ])
-  const steps = recipe.steps.getItems()
+  const steps = context?.steps ?? recipe.steps.getItems()
   const input = snapshotOf(recipe, tags.get(recipe.id) ?? [])
   const text = [
-    `Recipe: ${recipe.name}`,
-    toNumber(recipe.servings) ? `Serves ${toNumber(recipe.servings)}` : "",
+    `Recipe: ${context?.name ?? recipe.name}`,
+    `Serves ${context?.servings ?? toNumber(recipe.servings) ?? "unspecified"}`,
     "",
     "Ingredients:",
-    ...input.ingredients,
+    ...(context?.ingredients.map((line) => line.text) ?? input.ingredients),
     "",
     "Steps:",
     // Numbered, so a changed step can say which.
@@ -261,7 +283,7 @@ export async function saveSwap(
     marks,
   })
   const before = await em
-    .fork()
+    .fork({ keepTransactionContext: true })
     .findOne(
       RecipeVersion,
       { recipe: recipe.id },

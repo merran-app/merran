@@ -1,3 +1,4 @@
+import substitutions from "./substitutions/index.ts"
 import type { AppDeps } from "../../../../../core/context.ts"
 import type { Router } from "../../../../router.ts"
 import remove from "./delete.ts"
@@ -14,4 +15,5 @@ export default (router: Router, deps: AppDeps) => {
   namesRoutes(router, deps)
   sameAsRoutes(router, deps)
   detailsRoutes(router, deps)
+  substitutions(router, deps)
 }

@@ -166,6 +166,7 @@ export function useListActions() {
           ? t("list.putAwayDone", { count: done.stored })
           : t("list.putAwayCleared")
       )
+      return true
     },
 
     /** This is the same food as another thing on the list, from now on. */

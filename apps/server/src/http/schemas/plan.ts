@@ -2,6 +2,7 @@ import { z } from "@hono/zod-openapi"
 import { AVOID_LEVELS, DIETS, THEME_KINDS } from "@merran/shared"
 import { MEALS, PLAN_STATUSES } from "../../database/entities/index.ts"
 import { IDS, TIMES } from "./examples.ts"
+import { MealRecipeSchema } from "./meal-recipes.ts"
 
 // The week plan: meals on days, and the week's pool for any day.
 
@@ -81,6 +82,7 @@ const PLAN_ENTRY = {
   servings: null,
   why: [{ kind: "theme" as const, label: "Taco night" }],
   createdAt: TIMES.now,
+  variants: [],
 }
 
 const SNAPSHOT = {
@@ -97,6 +99,7 @@ const SNAPSHOT = {
   listedAt: null,
   why: null,
   cookedAt: null,
+  variants: [],
 }
 
 export const PlanEntrySchema = z
@@ -148,6 +151,7 @@ export const PlanEntrySchema = z
         "Why it was picked, when Fill the week picked it: none otherwise.",
     }),
     createdAt: z.iso.datetime(),
+    variants: z.array(MealRecipeSchema),
   })
   .openapi("PlanEntry", { example: PLAN_ENTRY })
 
@@ -173,6 +177,7 @@ export const PlanEntrySnapshotSchema = z
           "When it was marked cooked: put back cooked, its recipe and side were made then.",
       })
       .transform((value) => value ?? null),
+    variants: z.array(MealRecipeSchema).max(2).optional(),
   })
   .openapi("PlanEntrySnapshot", {
     description:

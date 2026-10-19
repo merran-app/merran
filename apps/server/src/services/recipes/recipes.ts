@@ -61,7 +61,7 @@ export function inHouseholdTransaction<T>(
   householdId: string,
   work: (tx: EntityManager) => Promise<T>
 ): Promise<T> {
-  return em.fork().transactional((tx) => {
+  return em.fork({ keepTransactionContext: true }).transactional((tx) => {
     tx.setFilterParams(HOUSEHOLD_FILTER, { householdId })
     return work(tx)
   })
@@ -536,7 +536,7 @@ export async function updateRecipe(
       recipeId: id.id,
     })
   }
-  return loadRecipe(em.fork(), id.id)
+  return loadRecipe(em.fork({ keepTransactionContext: true }), id.id)
 }
 
 export type RecipeListOptions = {

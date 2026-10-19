@@ -5319,6 +5319,23 @@
           "enumItems": [],
           "mappedType": "datetime"
         },
+        "variants": {
+          "name": "variants",
+          "type": "json",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
         "why": {
           "name": "why",
           "type": "json",

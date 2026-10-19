@@ -87,6 +87,8 @@ import { ListsDialog } from "./lists-dialog"
 import { listQuery, type List, type ListItem } from "./queries"
 import { useListActions } from "./use-list-actions"
 import { UsualBuys } from "./usual-buys"
+import { useShoppingTrip } from "./shopping/use-shopping-trip"
+import { ShoppingMode } from "./shopping/shopping-mode"
 
 /** Which list this device last had open. */
 const CHOSEN_LIST = "merran.list"
@@ -123,6 +125,7 @@ export function ListPage() {
   const selection = useSelection()
 
   const { data: household } = useQuery(householdQuery)
+  const trip = useShoppingTrip(household?.id)
   const { data: yours = [] } = useQuery(yourStoresQuery)
   const [finding, setFinding] = React.useState<Finding | null>(null)
   /**
@@ -145,7 +148,9 @@ export function ListPage() {
   const aisles = list.data?.aisles ?? []
   const all = list.data?.items ?? []
   const split = lists.length > 1
-  const current = lists.find((option) => option.id === chosen) ?? lists[0]
+  const current =
+    lists.find((option) => option.id === (trip.trip?.listId ?? chosen)) ??
+    lists[0]
   const [filter, setFilter] = React.useState<ShoppingFilter>("all")
   const [review, setReview] = React.useState<{
     store: string
@@ -276,6 +281,33 @@ export function ListPage() {
     )
   }
 
+  if (trip.trip && list.data)
+    return (
+      <>
+        <ShoppingMode
+          data={list.data}
+          controls={trip}
+          stores={yours}
+          assigned={
+            new Map(
+              progress.data?.items.map((item) => [
+                item.itemId,
+                shoppingStores.whereOf(item),
+              ])
+            )
+          }
+          onEdit={setEditing}
+        />
+        <EditItemDialog
+          item={editing}
+          items={all}
+          aisles={aisles}
+          lists={lists}
+          onClose={() => setEditing(null)}
+        />
+      </>
+    )
+
   return (
     <>
       <PageHeader
@@ -297,6 +329,15 @@ export function ListPage() {
             <SelectionHeader selection={selection} allIds={selectable} />
           ) : (
             <>
+              <Button
+                variant="outline"
+                disabled={!current || !household}
+                onClick={() => {
+                  if (current) trip.start(current.id)
+                }}
+              >
+                {t("shopping.start")}
+              </Button>
               {canSend && current && (
                 <Button
                   variant="outline"
