@@ -107,6 +107,8 @@ A person can belong to several households (say, their own and their parents'), w
 
 ## API keys
 
+October 19, 2026, not released yet: creating an API key, including **Use with an AI app**, opens in a drawer on mobile and a dialog on larger screens. The generated key and connection details stay in that same surface, with scrolling and phone safe-area spacing.
+
 People make their own keys for scripts, Home Assistant, the browser extension and the iPhone Shortcut. In the REFERENCE app every key had its owner's full rights; in Merran each key says what it can do.
 
 - **Merran's own,** not Better Auth's plugin (see [stack.md](stack.md#better-auth-instead-of-our-own-sign-in)): made and listed at `/api/auth/api-keys`, checked by the same `authenticate()` that reads session cookies.

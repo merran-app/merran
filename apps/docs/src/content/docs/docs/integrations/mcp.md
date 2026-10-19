@@ -5,6 +5,8 @@ description: Connect a compatible AI app to your household with an API key and r
 
 :::note[Not released yet]
 MCP is implemented after alpha.4. These instructions apply to builds containing this change.
+
+API key setup opens in a drawer on mobile and a dialog on larger screens. The generated key and connection details appear there after creation.
 :::
 
 Merran serves MCP over Streamable HTTP at `/mcp`. A compatible client can read the kitchen data you allow and suggest recipes, recipe edits, meals and shopping items. All MCP changes wait in **Recipes → Review**. The external app supplies its own model; these tools do not call a Merran AI provider.

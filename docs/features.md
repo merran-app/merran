@@ -206,7 +206,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
 | A documented public API (OpenAPI), with a reference page | Headline | Built | The web app uses the same API |
-| API keys with permissions, one household, rate limits | Key | Built | |
+| API keys with permissions, one household, rate limits | Key | Built | Not released yet: key creation and the generated-key screen use a drawer on mobile, including MCP setup; larger screens use a dialog. |
 | Live events stream | Detail | Built | |
 | Webhooks for Home Assistant, n8n and others | Key | Planned | |
 | MCP server for compatible external AI apps | Headline | Built | Not released yet: stateless /mcp with the official SDK, scoped bearer keys, shared assistant tools and proposals in Review. API-key setup instructions are in Settings. OAuth-only connectors and direct plan/list application remain future work ([decision](platform.md#mcp-server)) |

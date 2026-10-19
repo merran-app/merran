@@ -27,6 +27,15 @@ import {
   FieldDescription,
 } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { useActiveHousehold } from "@/features/auth/use-me"
 import { api, unwrap } from "@/lib/api/client"
 import { showFormError } from "@/lib/form-errors"
@@ -60,18 +69,26 @@ const DEFAULTS: Form = {
 /** Makes a key for the household in use, then shows it once. */
 export function NewApiKeyDialog({ mcp = false }: { mcp?: boolean }) {
   const { t } = useTranslation()
+  const phone = useIsMobile()
+  const Root = phone ? Drawer : Dialog
+  const Trigger = phone ? DrawerTrigger : DialogTrigger
   const [open, setOpen] = React.useState(false)
   const [key, setKey] = React.useState<string | null>(null)
+  const body = key ? (
+    <ShowKey value={key} mcp={mcp} phone={phone} />
+  ) : (
+    <NewKeyForm onMade={setKey} mcp={mcp} phone={phone} />
+  )
 
   return (
-    <Dialog
+    <Root
       open={open}
       onOpenChange={(next) => {
         setOpen(next)
         if (!next) setKey(null)
       }}
     >
-      <DialogTrigger
+      <Trigger
         render={
           <Button size="sm">
             <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
@@ -83,25 +100,34 @@ export function NewApiKeyDialog({ mcp = false }: { mcp?: boolean }) {
           </Button>
         }
       />
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
-        {key ? (
-          <ShowKey value={key} mcp={mcp} />
-        ) : (
-          <NewKeyForm onMade={setKey} mcp={mcp} />
-        )}
-      </DialogContent>
-    </Dialog>
+      {phone ? (
+        <DrawerContent className="max-h-[90dvh]">
+          <div className="grid min-h-0 gap-6 overflow-y-auto overscroll-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            {body}
+          </div>
+        </DrawerContent>
+      ) : (
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
+          {body}
+        </DialogContent>
+      )}
+    </Root>
   )
 }
 
 function NewKeyForm({
   onMade,
   mcp,
+  phone,
 }: {
   onMade: (key: string) => void
   mcp: boolean
+  phone: boolean
 }) {
   const { t } = useTranslation()
+  const Title = phone ? DrawerTitle : DialogTitle
+  const Description = phone ? DrawerDescription : DialogDescription
+  const Close = phone ? DrawerClose : DialogClose
   const household = useActiveHousehold()
   const queryClient = useQueryClient()
   const form = useForm<Form>({ defaultValues: DEFAULTS })
@@ -143,16 +169,16 @@ function NewKeyForm({
   return (
     <form onSubmit={onSubmit} noValidate className="grid gap-6">
       <DialogHeader>
-        <DialogTitle>
+        <Title>
           {t(
             mcp ? "settings.you.apiKeys.mcp.make" : "settings.you.apiKeys.make"
           )}
-        </DialogTitle>
-        <DialogDescription>
+        </Title>
+        <Description>
           {t("settings.you.apiKeys.makeDescription", {
             household: household?.name,
           })}
-        </DialogDescription>
+        </Description>
       </DialogHeader>
       <FieldGroup>
         {mcp && (
@@ -216,9 +242,9 @@ function NewKeyForm({
         </FieldSet>
       </FieldGroup>
       <DialogFooter>
-        <DialogClose render={<Button variant="outline" type="button" />}>
+        <Close render={<Button variant="outline" type="button" />}>
           {t("common.cancel")}
-        </DialogClose>
+        </Close>
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting && <Spinner />}
           {t("settings.you.apiKeys.makeSubmit")}
@@ -235,15 +261,24 @@ function levelsFor(area: Area): Access[] {
     : ["none", "read", "write"]
 }
 
-function ShowKey({ value, mcp }: { value: string; mcp: boolean }) {
+function ShowKey({
+  value,
+  mcp,
+  phone,
+}: {
+  value: string
+  mcp: boolean
+  phone: boolean
+}) {
   const { t } = useTranslation()
+  const Title = phone ? DrawerTitle : DialogTitle
+  const Description = phone ? DrawerDescription : DialogDescription
+  const Close = phone ? DrawerClose : DialogClose
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{t("settings.you.apiKeys.madeTitle")}</DialogTitle>
-        <DialogDescription>
-          {t("settings.you.apiKeys.madeDescription")}
-        </DialogDescription>
+        <Title>{t("settings.you.apiKeys.madeTitle")}</Title>
+        <Description>{t("settings.you.apiKeys.madeDescription")}</Description>
       </DialogHeader>
       <CopyField label={t("settings.you.apiKeys.key")} value={value} />
       {mcp && (
@@ -270,7 +305,7 @@ function ShowKey({ value, mcp }: { value: string; mcp: boolean }) {
         </>
       )}
       <DialogFooter>
-        <DialogClose render={<Button />}>{t("common.done")}</DialogClose>
+        <Close render={<Button />}>{t("common.done")}</Close>
       </DialogFooter>
     </>
   )
