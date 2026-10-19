@@ -3079,7 +3079,8 @@
     "swap": {
       "title": "Replace {{name}}",
       "hint": "Choose a replacement, review its quantities and instructions, then apply it.",
-      "recipe": "Which recipe needs a replacement?",
+      "allRecipes": "This replacement includes every planned recipe that needs this item. Review each recipe’s amounts and instructions below.",
+      "noIdeas": "No replacement worked across all these recipes. Try again or enter replacements for each recipe below.",
       "original": "Instead of {{line}}",
       "meals": "Use for these planned meals",
       "suggest": "Get substitution ideas",

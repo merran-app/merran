@@ -2,12 +2,15 @@ import { createRoute, z } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../../../core/context.ts"
 import { AppError } from "../../../../../../../core/errors.ts"
 import { shoppingSwapTargets } from "../../../../../../../services/list/substitutions/substitutions.ts"
-import { suggestSwaps } from "../../../../../../../services/recipes/swaps.ts"
+import {
+  suggestSwaps,
+  suggestShoppingSwaps,
+} from "../../../../../../../services/recipes/swaps.ts"
 import { inHousehold } from "../../../../../../middleware/auth.ts"
 import type { Router } from "../../../../../../router.ts"
 import { ItemParam } from "../../../../../../schemas/list.ts"
 import { IDS } from "../../../../../../schemas/examples.ts"
-import { SwapsSchema } from "../../../../../../schemas/swaps.ts"
+import { ShoppingSwapsSchema } from "../../../../../../schemas/shopping-swaps.ts"
 import {
   errorResponse,
   jsonResponse,
@@ -19,6 +22,7 @@ const Input = z
     recipeId: z.string(),
     ingredientId: z.string(),
     state: z.string(),
+    allRecipes: z.boolean().default(false),
   })
   .openapi("ShoppingSwapSuggestionInput", {
     example: {
@@ -44,7 +48,7 @@ const route = createRoute({
     },
   },
   responses: {
-    200: jsonResponse(SwapsSchema, "Possible replacements."),
+    200: jsonResponse(ShoppingSwapsSchema, "Possible replacements."),
     404: errorResponse("Context no longer available."),
     409: errorResponse("Meal changed."),
     ...SIGNED_IN_ERRORS,
@@ -73,13 +77,30 @@ export default (router: Router, deps: AppDeps) => {
       )
     return c.json(
       {
-        swaps: await suggestSwaps(deps, em, {
-          householdId,
-          userId,
-          recipe: input.recipeId,
-          ingredientId: input.ingredientId,
-          context: target.recipe,
-        }),
+        swaps: input.allRecipes
+          ? await suggestShoppingSwaps(deps, em, {
+              householdId,
+              userId,
+              contexts: [
+                ...new Map(
+                  targets.map((target) => [
+                    JSON.stringify([
+                      target.recipe.recipeId,
+                      target.ingredientId,
+                      target.state,
+                    ]),
+                    target,
+                  ])
+                ).values(),
+              ],
+            })
+          : await suggestSwaps(deps, em, {
+              householdId,
+              userId,
+              recipe: input.recipeId,
+              ingredientId: input.ingredientId,
+              context: target.recipe,
+            }),
       },
       200
     )

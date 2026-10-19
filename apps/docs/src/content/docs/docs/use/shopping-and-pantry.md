@@ -76,13 +76,13 @@ The shopping header scrolls with the list so it does not cover items. Scroll bac
 ### Replace an unavailable ingredient
 
 :::note[Not released yet]
-In shopping mode, choose **Couldn’t find it → Find a substitute**. Select the recipe ingredient when several main dishes or sides need the same food, then choose which planned meals to change under **Use for these planned meals**.
+In shopping mode, choose **Couldn’t find it → Find a substitute**. The search starts automatically when household AI is configured. It includes every planned recipe needing this item, including sides. Choose one idea to fill replacements for all recipes, with amounts and cooking changes tailored to each dish. All contributing meals are selected under **Use for these planned meals**; uncheck a meal to keep its original ingredient.
 
-Use **Get substitution ideas** if household AI is configured, or type replacement lines yourself. Enter amounts for the recipe as written; **Review the replacement** shows each selected meal's scaled amounts. **Adjust cooking instructions** lets you review or edit rewritten steps. Ingredient names in unchanged steps are updated where recognized; inspect preparation and cooking-time differences yourself.
+Use **Get substitution ideas** to search again, or type replacement lines for each recipe yourself. Enter amounts for each recipe as written; **Review the replacement** shows each selected meal's scaled amounts. **Adjust cooking instructions** lets you review or edit rewritten steps. Ingredient names in unchanged steps are updated where recognized; inspect preparation and cooking-time differences yourself. **Apply replacement** saves all selected recipes together, with one **Undo**.
 
 Choose **Apply replacement** after reviewing the quantities and instructions. Merran saves the variant for those planned meals and recalculates the changed shopping foods with pantry deductions. Other meals, checked purchases and numeric manual additions remain separate. Ambiguous hand-written amounts require review before applying. **Undo** is available after saving, provided the meal or optional library recipe has not changed since.
 
-The library recipe stays unchanged unless you select **Save this replacement to the library recipe too**. That explicit option keeps a version for reversal. Planned variants survive library edits; open the meal from **Plan** to see or cook its adjusted ingredients and steps. The library recipe's nutrition and cost estimates do not describe the modified meal.
+The library recipe stays unchanged. When replacing a single recipe ingredient, you can select **Save this replacement to the library recipe too**; that explicit option keeps a version for reversal. Planned variants survive library edits; open the meal from **Plan** to see or cook its adjusted ingredients and steps. The library recipe's nutrition and cost estimates do not describe the modified meal.
 
 Items with no planned recipe can be replaced manually using one line that includes the amount. This changes that shopping item only, leaving recurring-buy definitions unchanged. No editable planned meal can mean the recipe changed, was deleted or its meal is no longer planned; review the item rather than assuming the recipe was updated.
 :::

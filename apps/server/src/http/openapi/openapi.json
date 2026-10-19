@@ -5553,6 +5553,35 @@
                     },
                     "revision": {
                       "type": "string"
+                    },
+                    "replacement": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/SaveSwapInput"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "recipeId": {
+                              "type": "string"
+                            },
+                            "state": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "recipeId",
+                            "state"
+                          ]
+                        }
+                      ],
+                      "example": {
+                        "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000012",
+                        "lines": [
+                          "1 tbsp butter"
+                        ],
+                        "steps": []
+                      }
                     }
                   },
                   "required": [
@@ -5588,7 +5617,7 @@
           "steps": [],
           "saveToLibrary": false
         },
-        "description": "Select linked planned meals. With no targets, replace one manually added item using one ingredient line. Amounts are for the recipe as written; each meal is scaled separately. Saving to the library is explicit."
+        "description": "Select linked planned meals. Each target may supply its own recipe, ingredient, state, lines and steps to replace a shared food across different recipes atomically. Without replacement, the top-level fields apply. With no targets, replace one manually added item using one ingredient line. Amounts are for each recipe as written. Saving to the library is explicit and restricted to a single recipe context."
       },
       "SaveSwapInput": {
         "type": "object",
@@ -5640,13 +5669,62 @@
           "steps": []
         }
       },
-      "Swaps": {
+      "ShoppingSwaps": {
         "type": "object",
         "properties": {
           "swaps": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Swap"
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Swap"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "replacements": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/SaveSwapInput"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "recipeId": {
+                                "type": "string"
+                              },
+                              "state": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "recipeId",
+                              "state"
+                            ]
+                          }
+                        ],
+                        "example": {
+                          "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000012",
+                          "lines": [
+                            "1 tbsp butter"
+                          ],
+                          "steps": []
+                        }
+                      }
+                    }
+                  }
+                }
+              ],
+              "example": {
+                "lines": [
+                  "1 cup Greek yogurt"
+                ],
+                "note": "Stir in off the heat so it doesn't split; a little tangier.",
+                "atHome": true,
+                "steps": []
+              }
             }
           }
         },
@@ -5654,16 +5732,7 @@
           "swaps"
         ],
         "example": {
-          "swaps": [
-            {
-              "lines": [
-                "1 cup Greek yogurt"
-              ],
-              "note": "Stir in off the heat so it doesn't split; a little tangier.",
-              "atHome": true,
-              "steps": []
-            }
-          ]
+          "swaps": []
         }
       },
       "Swap": {
@@ -5735,6 +5804,10 @@
           },
           "state": {
             "type": "string"
+          },
+          "allRecipes": {
+            "type": "boolean",
+            "default": false
           }
         },
         "required": [
@@ -11105,6 +11178,32 @@
         ],
         "example": {
           "rating": 4
+        }
+      },
+      "Swaps": {
+        "type": "object",
+        "properties": {
+          "swaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Swap"
+            }
+          }
+        },
+        "required": [
+          "swaps"
+        ],
+        "example": {
+          "swaps": [
+            {
+              "lines": [
+                "1 cup Greek yogurt"
+              ],
+              "note": "Stir in off the heat so it doesn't split; a little tangier.",
+              "atHome": true,
+              "steps": []
+            }
+          ]
         }
       },
       "StandInInput": {
@@ -20532,7 +20631,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Swaps"
+                  "$ref": "#/components/schemas/ShoppingSwaps"
                 }
               }
             }

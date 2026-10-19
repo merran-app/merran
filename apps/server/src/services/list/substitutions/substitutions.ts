@@ -131,60 +131,94 @@ export async function applyShoppingSwap(
     }
     const { targets } = await shoppingSwapTargets(tx, itemId)
     const tastes = await getTastes(tx, householdId)
-    if (
-      avoidedIn(input.lines, tastes.avoid).length ||
-      missingDiets(dietsFor(input.lines), tastes.diets).length
+    const replacements = input.targets.map((selected) => ({
+      selected,
+      replacement: selected.replacement ?? {
+        recipeId: input.recipeId,
+        ingredientId: input.ingredientId,
+        state: input.state,
+        lines: input.lines,
+        steps: input.steps,
+      },
+    }))
+    const keys = replacements.map(({ selected, replacement }) =>
+      JSON.stringify([
+        selected.mealId,
+        replacement.recipeId,
+        replacement.ingredientId,
+      ])
     )
-      throw new AppError(
-        "invalid",
-        "unsuitable_swap",
-        "That replacement conflicts with the household's dietary rules."
+    if (new Set(keys).size !== keys.length) throw changed()
+    const entries: PlanEntry[] = []
+    const before: { mealId: string; variants: MealRecipe[] }[] = []
+    const matched = [] as {
+      target: (typeof targets)[number]
+      replacement: (typeof replacements)[number]["replacement"]
+    }[]
+    for (const { selected, replacement } of replacements) {
+      if (
+        avoidedIn(replacement.lines, tastes.avoid).length ||
+        missingDiets(dietsFor(replacement.lines), tastes.diets).length
       )
-    if (
-      new Set(input.targets.map((target) => target.mealId)).size !==
-      input.targets.length
-    )
-      throw changed()
-    const entries = [] as PlanEntry[]
-    const before = [] as { mealId: string; variants: MealRecipe[] }[]
-    const matched = [] as (typeof targets)[number][]
-    for (const selected of input.targets) {
+        throw new AppError(
+          "invalid",
+          "unsuitable_swap",
+          "That replacement conflicts with the household's dietary rules."
+        )
       const target = targets.find(
         (target) =>
           target.mealId === selected.mealId &&
-          target.recipe.recipeId === input.recipeId &&
-          target.ingredientId === input.ingredientId
+          target.recipe.recipeId === replacement.recipeId &&
+          target.ingredientId === replacement.ingredientId
       )
       if (
         !target ||
         selected.revision !== target.revision ||
-        input.state !== target.state
+        replacement.state !== target.state
       )
         throw changed()
-      const entry = await findEntry(tx, selected.mealId)
       if (
-        (input.steps ?? []).some(
+        (replacement.steps ?? []).some(
           (step) =>
             !target.recipe.steps.some((original) => original.id === step.stepId)
         )
       )
         throw changed()
-      entries.push(entry)
-      matched.push(target)
-      before.push({
-        mealId: entry.id,
-        variants: structuredClone(entry.variants ?? []),
-      })
+      if (!entries.some((entry) => entry.id === selected.mealId)) {
+        const entry = await findEntry(tx, selected.mealId)
+        entries.push(entry)
+        before.push({
+          mealId: entry.id,
+          variants: structuredClone(entry.variants ?? []),
+        })
+      }
+      matched.push({ target, replacement })
     }
+    const contexts = new Set(
+      matched.map(({ target, replacement }) =>
+        JSON.stringify([
+          target.recipe.recipeId,
+          target.ingredientId,
+          target.state,
+          replacement.lines,
+          replacement.steps ?? [],
+        ])
+      )
+    )
+    if (input.saveToLibrary && contexts.size !== 1) throw changed()
     const linesOf = await loadMealLines(tx, householdId, entries)
     const previous = entries.map((entry) => linesOf(entry))
-    for (const [index, entry] of entries.entries()) {
-      const target = matched[index]!
+    for (const { target, replacement } of matched) {
+      const entry = entries.find((entry) => entry.id === target.mealId)!
+      const current =
+        entry.variants?.find(
+          (recipe) => recipe.recipeId === target.recipe.recipeId
+        ) ?? target.recipe
       const variant = swapMealIngredient(
-        target.recipe,
-        input.ingredientId,
-        input.lines,
-        input.steps ?? []
+        current,
+        target.ingredientId,
+        replacement.lines,
+        replacement.steps ?? []
       )
       entry.variants = [
         ...(entry.variants ?? []).filter(
@@ -205,14 +239,16 @@ export async function applyShoppingSwap(
     )
     let library: Undo["library"] = null
     if (input.saveToLibrary) {
-      if (!matched.every((target) => target.canSaveToLibrary)) throw changed()
+      if (!matched.every(({ target }) => target.canSaveToLibrary))
+        throw changed()
+      const replacement = matched[0]!.replacement
       const saved = await saveSwap(tx, {
         householdId,
         userId,
-        recipe: input.recipeId!,
-        ingredientId: input.ingredientId,
-        lines: input.lines,
-        steps: input.steps,
+        recipe: replacement.recipeId!,
+        ingredientId: replacement.ingredientId,
+        lines: replacement.lines,
+        steps: replacement.steps,
       })
       if (saved.undoVersionId)
         library = {

@@ -6581,7 +6581,7 @@ export interface components {
             } | null;
         };
         /**
-         * @description Select linked planned meals. With no targets, replace one manually added item using one ingredient line. Amounts are for the recipe as written; each meal is scaled separately. Saving to the library is explicit.
+         * @description Select linked planned meals. Each target may supply its own recipe, ingredient, state, lines and steps to replace a shared food across different recipes atomically. Without replacement, the top-level fields apply. With no targets, replace one manually added item using one ingredient line. Amounts are for each recipe as written. Saving to the library is explicit and restricted to a single recipe context.
          * @example {
          *       "recipeId": "0199e8b0-5a10-7a01-8b00-000000000006",
          *       "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -6606,6 +6606,19 @@ export interface components {
                 /** Format: uuid */
                 mealId: string;
                 revision: string;
+                /**
+                 * @example {
+                 *       "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000012",
+                 *       "lines": [
+                 *         "1 tbsp butter"
+                 *       ],
+                 *       "steps": []
+                 *     }
+                 */
+                replacement?: components["schemas"]["SaveSwapInput"] & {
+                    recipeId: string;
+                    state: string;
+                };
             }[];
             /** @default false */
             saveToLibrary: boolean;
@@ -6630,20 +6643,16 @@ export interface components {
         };
         /**
          * @example {
-         *       "swaps": [
-         *         {
-         *           "lines": [
-         *             "1 cup Greek yogurt"
-         *           ],
-         *           "note": "Stir in off the heat so it doesn't split; a little tangier.",
-         *           "atHome": true,
-         *           "steps": []
-         *         }
-         *       ]
+         *       "swaps": []
          *     }
          */
-        Swaps: {
-            swaps: components["schemas"]["Swap"][];
+        ShoppingSwaps: {
+            swaps: (components["schemas"]["Swap"] & {
+                replacements?: (components["schemas"]["SaveSwapInput"] & {
+                    recipeId: string;
+                    state: string;
+                })[];
+            })[];
         };
         /**
          * @example {
@@ -6682,6 +6691,8 @@ export interface components {
             recipeId: string;
             ingredientId: string;
             state: string;
+            /** @default false */
+            allRecipes: boolean;
         };
         /**
          * @example {
@@ -9426,6 +9437,23 @@ export interface components {
         RecipeRatingInput: {
             /** @description From 1 to 5 stars, or null to clear it. */
             rating: number | null;
+        };
+        /**
+         * @example {
+         *       "swaps": [
+         *         {
+         *           "lines": [
+         *             "1 cup Greek yogurt"
+         *           ],
+         *           "note": "Stir in off the heat so it doesn't split; a little tangier.",
+         *           "atHome": true,
+         *           "steps": []
+         *         }
+         *       ]
+         *     }
+         */
+        Swaps: {
+            swaps: components["schemas"]["Swap"][];
         };
         /**
          * @example {
@@ -15428,7 +15456,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Swaps"];
+                    "application/json": components["schemas"]["ShoppingSwaps"];
                 };
             };
             /** @description Not signed in. */

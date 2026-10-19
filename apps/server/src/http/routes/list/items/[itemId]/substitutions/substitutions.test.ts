@@ -6,13 +6,76 @@ import {
   type TestClient,
 } from "../../../../../../test/app.ts"
 
+import {
+  fakeAiFetcher,
+  GOOD_KEYS,
+  mockAiModels,
+  type MockCall,
+} from "../../../../../../test/ai.ts"
+
+let shoppingPrompt: {
+  contexts: { context: number; recipe: string; insteadOf: string }[]
+  dietaryRules: string
+  atHome: string[]
+} | null = null
+const shoppingReply = (call: MockCall) => {
+  const messages = call.prompt as {
+    role: string
+    content: string | { text?: string }[]
+  }[]
+  const text = messages
+    .filter((message) => message.role === "user")
+    .flatMap((message) =>
+      typeof message.content === "string"
+        ? [message.content]
+        : message.content.map((part) => part.text ?? "")
+    )
+    .join("\n")
+  shoppingPrompt = JSON.parse(text)
+  const replacements = shoppingPrompt!.contexts.map((context) => ({
+    context: context.context,
+    lines: [
+      context.insteadOf.startsWith("2")
+        ? "2 cups green beans"
+        : "1 cup green beans",
+    ],
+    steps: [{ step: 1, text: "Cook the green beans." }],
+  }))
+  return JSON.stringify({
+    swaps: [
+      { note: "Green beans work in every dish.", atHome: true, replacements },
+      {
+        note: "Incomplete output must be dropped.",
+        atHome: false,
+        replacements: replacements.slice(0, 1),
+      },
+      {
+        note: "Duplicate context must be dropped.",
+        atHome: false,
+        replacements: [replacements[0], replacements[0]],
+      },
+      {
+        note: "Allergen must be dropped.",
+        atHome: false,
+        replacements: replacements.map((value) => ({
+          ...value,
+          lines: ["1 cup peanuts"],
+        })),
+      },
+    ],
+  })
+}
+
 let app: Awaited<ReturnType<typeof createTestApp>>["app"]
 let who: TestClient
 let close: () => Promise<void>
 let day: string
 let serial = 0
 beforeAll(async () => {
-  const setup = await createTestApp()
+  const setup = await createTestApp({
+    fetcher: fakeAiFetcher(),
+    ai: mockAiModels(undefined, [], undefined, shoppingReply),
+  })
   close = setup.close
   app = setup.app
   who = await setUpServer(setup.app, setup.setupCode)
@@ -324,4 +387,97 @@ test("keeps an adjusted side when replacing the main and drops it when removing 
   expect(
     (await (await who.get(`/api/plan/entries/${entry.id}`)).json()).variants
   ).toEqual([])
+})
+
+test("one suggestion covers different recipes and main/side contexts, with atomic Apply and Undo", async () => {
+  await who.post("/api/settings/server/ai/keys", {
+    provider: "anthropic",
+    key: GOOD_KEYS.anthropic,
+  })
+  await who.put("/api/households/current/tastes", {
+    avoid: [{ food: "peanut", level: "allergy", who: null }],
+    diets: [],
+    weeknightMinutes: null,
+  })
+  await who.post("/api/pantry/items", { text: "1 cup green beans" })
+  const main = await recipe()
+  const side = await recipe(["1 cup broccoli"])
+  const first = await meal(main.id, { servings: 8, withRecipe: side.id })
+  const second = await meal(side.id)
+  await list()
+  const broccoli = await item("broccoli")
+  const targets = (
+    await (await who.get(`/api/list/items/${broccoli.id}/substitutions`)).json()
+  ).targets
+  expect(targets).toHaveLength(3)
+  const context = targets[0]
+  const suggestions = await who.post(
+    `/api/list/items/${broccoli.id}/substitutions/suggest`,
+    {
+      mealId: context.mealId,
+      recipeId: context.recipe.recipeId,
+      ingredientId: context.ingredientId,
+      state: context.state,
+      allRecipes: true,
+    }
+  )
+  expect(suggestions.status, await suggestions.clone().text()).toBe(200)
+  const { swaps } = await suggestions.json()
+  expect(swaps).toHaveLength(1)
+  expect(swaps[0].replacements).toHaveLength(2)
+  expect(shoppingPrompt!.contexts).toHaveLength(2)
+  expect(shoppingPrompt!.dietaryRules).toContain("peanut")
+  expect(shoppingPrompt!.atHome).toContain("green beans")
+  const batch = targets.map((target: any) => ({
+    mealId: target.mealId,
+    revision: target.revision,
+    replacement: swaps[0].replacements.find(
+      (value: any) =>
+        value.recipeId === target.recipe.recipeId &&
+        value.ingredientId === target.ingredientId
+    ),
+  }))
+  const body = {
+    ingredientId: context.ingredientId,
+    lines: ["2 cups green beans"],
+    targets: batch,
+  }
+  const rejected = await who.post(
+    `/api/list/items/${broccoli.id}/substitutions`,
+    {
+      ...body,
+      targets: batch.map((target: any, index: number) =>
+        index === batch.length - 1 ? { ...target, revision: "stale" } : target
+      ),
+    }
+  )
+  expect(rejected.status).toBe(409)
+  expect(
+    (await (await who.get(`/api/plan/entries/${first.id}`)).json()).variants
+  ).toEqual([])
+  expect(await item("green beans")).toBeUndefined()
+  const applied = await who.post(
+    `/api/list/items/${broccoli.id}/substitutions`,
+    body
+  )
+  expect(applied.status, await applied.clone().text()).toBe(200)
+  expect(await item("broccoli")).toBeUndefined()
+  // Main (4 cups), side (2 cups) and second meal (1 cup), less 1 cup at home.
+  expect((await item("green beans")).quantity).toBe(6)
+  const saved = (await (await who.get(`/api/plan/entries/${first.id}`)).json())
+    .variants
+  expect(saved).toHaveLength(2)
+  expect(
+    saved.every((value: any) => value.steps[0].text === "Cook the green beans.")
+  ).toBe(true)
+  expect(
+    (await (await who.get(`/api/plan/entries/${second.id}`)).json()).variants
+  ).toHaveLength(1)
+  const { undo } = await applied.json()
+  expect(undo.meals).toHaveLength(2)
+  expect((await who.post("/api/list/substitutions/undo", undo)).status).toBe(
+    200
+  )
+  expect((await item("broccoli")).quantity).toBe(7)
+  expect(await item("green beans")).toBeUndefined()
 })

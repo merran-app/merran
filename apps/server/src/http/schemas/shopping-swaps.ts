@@ -1,7 +1,7 @@
 import { z } from "@hono/zod-openapi"
 import { MealRecipeSchema } from "./meal-recipes.ts"
 import { ListItemSnapshotSchema } from "./list.ts"
-import { SaveSwapInputSchema } from "./swaps.ts"
+import { SaveSwapInputSchema, SwapSchema } from "./swaps.ts"
 import { IDS, RECIPE, TIMES } from "./examples.ts"
 
 const CONTEXT = {
@@ -31,6 +31,21 @@ const UNDO = {
   manual: null,
 }
 
+export const ShoppingReplacementSchema = SaveSwapInputSchema.extend({
+  recipeId: z.string(),
+  state: z.string(),
+})
+
+export const ShoppingSwapsSchema = z
+  .object({
+    swaps: z.array(
+      SwapSchema.extend({
+        replacements: z.array(ShoppingReplacementSchema).optional(),
+      })
+    ),
+  })
+  .openapi("ShoppingSwaps", { example: { swaps: [] } })
+
 export const ShoppingTargetsSchema = z
   .object({
     targets: z.array(
@@ -54,12 +69,18 @@ export const ShoppingSwapInputSchema = SaveSwapInputSchema.extend({
   recipeId: z.string().optional(),
   state: z.string().optional(),
   targets: z
-    .array(z.object({ mealId: z.uuid(), revision: z.string() }))
+    .array(
+      z.object({
+        mealId: z.uuid(),
+        revision: z.string(),
+        replacement: ShoppingReplacementSchema.optional(),
+      })
+    )
     .max(100),
   saveToLibrary: z.boolean().default(false),
 }).openapi("ShoppingSwapInput", {
   description:
-    "Select linked planned meals. With no targets, replace one manually added item using one ingredient line. Amounts are for the recipe as written; each meal is scaled separately. Saving to the library is explicit.",
+    "Select linked planned meals. Each target may supply its own recipe, ingredient, state, lines and steps to replace a shared food across different recipes atomically. Without replacement, the top-level fields apply. With no targets, replace one manually added item using one ingredient line. Amounts are for each recipe as written. Saving to the library is explicit and restricted to a single recipe context.",
   example: {
     recipeId: IDS.lemonChicken,
     ingredientId: IDS.ingredients[0],
