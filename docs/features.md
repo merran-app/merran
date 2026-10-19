@@ -138,7 +138,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Select meals, repeat last week, clear the rest | Detail | Built | |
 | Leaning on sales | Key | Built | Module (stores): Fill the week and the weekly autoplan pick recipes with real deals at the household's Kroger store more, as much as its Lean on sales says (off, a little, a lot), and say so; Recipes has an On sale filter |
 | Deals worth having: a sale judged against price history | Key | Built | Module (stores): prices checked each morning and kept by day; each sale is the lowest in a while, a normal sale, or barely off what it usually costs, and only real deals count |
-| Quickly move or swap planned meals between days | Key | Planned | October 18 usage feedback: rearrange meals after automatic planning, explore drag-and-drop with a touch/keyboard alternative; preserve meal details and review shopping-list effects ([plan](shopping-and-planning-feedback.md#rearrange-meals-after-automatic-planning)) |
+| Quickly move planned meals between days and the any-day pool | Key | Built | Not released yet: drag by the move handle with a mouse, pen or touch, or activate it to choose a destination. Moves and Undo appear immediately, roll back on save failure, and preserve meal details and shopping-list state. Occupied slots offer Move alongside; direct swaps remain planned ([decision](shopping-and-planning-feedback.md#rearrange-meals-after-automatic-planning)) |
 | AI-ranked suggestions | Detail | Later | |
 
 ## Shopping and the pantry

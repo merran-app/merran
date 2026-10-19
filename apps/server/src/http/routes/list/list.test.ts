@@ -668,6 +668,32 @@ describe("the list follows the plan", () => {
     await clearAll()
   })
 
+  test("bulk moves into and out of the pool and Undo keep checked purchases and quantities", async () => {
+    const { chicken } = await planAndList()
+    const first = (await list())[0]!
+    await kyle.patch(`/api/list/items/${first.id}`, { checked: true })
+    const items = await list()
+    for (const destination of [
+      { date: day(0), anyDay: true, meal: "dinner" },
+      { date: day(4), anyDay: false, meal: "lunch" },
+    ]) {
+      const res = await kyle.post("/api/plan/entries/bulk", {
+        ids: [chicken],
+        action: "move",
+        ...destination,
+      })
+      expect(res.status).toBe(200)
+      const moved = await res.json()
+      expect(await list()).toEqual(items)
+      const restored = await kyle.post("/api/plan/restore", {
+        entries: moved.before,
+      })
+      expect(restored.status).toBe(200)
+      expect(await list()).toEqual(items)
+    }
+    await clearAll()
+  })
+
   test("leaves what's checked off, and what was there before", async () => {
     const typed = await type("1 lb ground beef")
     const { tacos } = await planAndList()

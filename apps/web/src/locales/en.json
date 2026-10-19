@@ -865,6 +865,18 @@
     "unskip": "Plan it again",
     "tonight": "Tonight",
     "change": "Move or change",
+    "moveFailed": "Couldn't save the move. The meal is back where it was.",
+    "undoMoveFailed": "Couldn't undo the move. The meal is still in its saved place.",
+    "drag": {
+      "move": "Move {{name}}",
+      "handleHint": "Drag to another meal, or choose a destination",
+      "pickedUp": "Moving {{name}}. Drop on a meal or the any-day pool. Press Escape to cancel.",
+      "dropPool": "Drop to move to any day",
+      "dropMeal": "Drop to move here",
+      "occupiedTitle": "This meal already has dishes",
+      "occupied": "{{when}} already has {{meals}}. Move {{name}} alongside them? Existing dishes will stay.",
+      "alongside": "Move alongside"
+    },
     "remove": "Remove",
     "undo": "Undo",
     "removed": "Took {{name}} off the plan.",

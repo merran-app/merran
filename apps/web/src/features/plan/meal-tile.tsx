@@ -29,6 +29,7 @@ import { useLongPress, type Selection } from "@/features/select/use-selection"
 import { cn } from "@/lib/utils"
 
 import { ChangeMealDialog } from "./change-meal-dialog"
+import { MealDragHandle } from "./drag/meal-drag"
 import { useHouseholdClock, type PlanEntry } from "./queries"
 import { usePlanActions } from "./use-plan-actions"
 import { splitWhy, useWhyText } from "./why"
@@ -123,24 +124,27 @@ export function MealTile({
       className="flex min-h-17 items-center gap-3 rounded-2xl bg-muted/50 p-2.5"
       {...press}
     >
-      {entry.recipe?.photo ? (
-        <img
-          src={entry.recipe.photo}
-          alt=""
-          className={cn(
-            "size-12 shrink-0 rounded-xl object-cover",
-            skipped && "opacity-50"
-          )}
-        />
-      ) : (
-        <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-          <HugeiconsIcon
-            icon={entry.recipe ? CookingPotIcon : NoteIcon}
-            strokeWidth={2}
-            className="size-5"
+      <div className="relative shrink-0">
+        {entry.recipe?.photo ? (
+          <img
+            src={entry.recipe.photo}
+            alt=""
+            className={cn(
+              "size-12 shrink-0 rounded-xl object-cover",
+              skipped && "opacity-50"
+            )}
           />
-        </span>
-      )}
+        ) : (
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+            <HugeiconsIcon
+              icon={entry.recipe ? CookingPotIcon : NoteIcon}
+              strokeWidth={2}
+              className="size-5"
+            />
+          </span>
+        )}
+        <MealDragHandle entry={entry} />
+      </div>
       <div className="grid min-w-0 flex-1 gap-0.5">
         {entry.recipe ? (
           <Link

@@ -9,6 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc",
+    "test": "node --test src/features/plan/drag/optimistic-move.test.ts",
     "api": "pnpm dlx --package openapi-typescript@7.13.0 --package typescript@5.9.3 openapi-typescript ../server/src/http/openapi/openapi.json --output src/lib/api/schema.d.ts",
     "check:contrast": "node scripts/check-contrast.mjs"
   },
