@@ -7,9 +7,9 @@ import type { Database } from "../../../database/orm.ts"
 import type { Fetcher } from "../../../services/fetch/public-fetch.ts"
 import { enqueue } from "../../../services/jobs/jobs.ts"
 import type { JobRunner } from "../../../services/jobs/runner.ts"
-import { siteData } from "../../../services/sites/data.ts"
-import { forgetRobots } from "../../../services/sites/robots.ts"
-import { PACE } from "../../../services/sites/shelf.ts"
+import { siteData } from "../../../services/recipes/discover/sites/data.ts"
+import { forgetRobots } from "../../../services/recipes/discover/sites/robots.ts"
+import { PACE } from "../../../services/recipes/discover/sites/shelf.ts"
 import { createTestApp, setUpServer, TestClient } from "../../../test/app.ts"
 
 const recipePage = (recipe: Record<string, unknown>) =>

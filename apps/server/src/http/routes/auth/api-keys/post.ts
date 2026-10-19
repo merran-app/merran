@@ -2,7 +2,7 @@ import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
 import { AppError } from "../../../../core/errors.ts"
 import { createApiKey } from "../../../../services/auth/api-keys.ts"
-import { roleIn } from "../../../../services/households.ts"
+import { roleIn } from "../../../../services/households/households.ts"
 import { inHousehold } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import {

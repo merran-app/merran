@@ -2,7 +2,7 @@ import { IsolationLevel } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
 import { Account, User } from "../../database/entities/index.ts"
 import { AppError } from "../../core/errors.ts"
-import { createHousehold } from "../households.ts"
+import { createHousehold } from "../households/households.ts"
 import type { Auth } from "./auth.ts"
 import type { NewAccount } from "./accounts.ts"
 

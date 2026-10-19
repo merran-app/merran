@@ -13,14 +13,9 @@ import { z } from "zod"
 import { AppError } from "../../core/errors.ts"
 import { PantryItem, RecipeVersion } from "../../database/entities/index.ts"
 import { useAi, type AiDeps } from "../ai/run.ts"
-import { getTastes } from "../plan/preferences.ts"
-import {
-  findRecipe,
-  markedLines,
-  snapshotOf,
-  toNumber,
-  updateRecipe,
-} from "./recipes.ts"
+import { getTastes } from "../households/tastes.ts"
+import { findRecipe, markedLines, snapshotOf, updateRecipe } from "./recipes.ts"
+import { toNumber } from "../../database/numbers.ts"
 import { tagsOf } from "./tags.ts"
 import { findEntry } from "../plan/plan.ts"
 import { recipeForMeal } from "../plan/recipe-variants.ts"

@@ -1,7 +1,10 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import type { ApiKeyPermissions } from "../../database/entities/index.ts"
 import { AppError } from "../../core/errors.ts"
-import { resolveActiveHousehold, type ActiveHousehold } from "../households.ts"
+import {
+  resolveActiveHousehold,
+  type ActiveHousehold,
+} from "../households/households.ts"
 import { API_KEY_PREFIX, verifyApiKey } from "./api-keys.ts"
 import type { Auth } from "./auth.ts"
 

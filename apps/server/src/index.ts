@@ -19,7 +19,7 @@ import { JobRunner } from "./services/jobs/runner.ts"
 import { rekeyFoodsSoon } from "./services/list/rekey.ts"
 import { createSettings } from "./services/settings/settings.ts"
 import { LocalFileStore } from "./services/storage/files.ts"
-import { createVideoTools } from "./services/video/tools.ts"
+import { createVideoTools } from "./services/recipes/import/video/tools.ts"
 import { checkUpdatesSoon } from "./modules/updates/check.ts"
 
 let config: Config

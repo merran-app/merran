@@ -3,13 +3,13 @@ import sharp from "sharp"
 import { AppError } from "../../../core/errors.ts"
 import type { Fetcher } from "../../fetch/public-fetch.ts"
 import type { FileStore } from "../../storage/files.ts"
-import { MAX_PHOTO_BYTES, removePhoto, storePhoto } from "../photos.ts"
+import { MAX_PHOTO_BYTES, removePhoto, storePhoto } from "../photos/photos.ts"
 import { createRecipe, loadRecipe } from "../recipes.ts"
 import { tidyAfterImport } from "../review/tidy-run.ts"
 import { readPage, type AiDeps } from "./ai-reader.ts"
 import { findBySourceUrl, isVideoLink, normalizeLink } from "./links.ts"
 import { readRecipeData } from "./recipe-data.ts"
-import { importVideo, type VideoDeps } from "./import-video.ts"
+import { importVideo, type VideoDeps } from "./video/import.ts"
 
 /** Photos smaller than this on their short side are icons or thumbnails. */
 const MIN_PHOTO_SIDE = 200

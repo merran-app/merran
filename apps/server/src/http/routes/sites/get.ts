@@ -1,6 +1,9 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../core/context.ts"
-import { languageOf, listSites } from "../../../services/sites/sites.ts"
+import {
+  languageOf,
+  listSites,
+} from "../../../services/recipes/discover/sites/sites.ts"
 import { inHousehold, openToKeys } from "../../middleware/auth.ts"
 import type { Router } from "../../router.ts"
 import { jsonResponse, SIGNED_IN_ERRORS } from "../../schemas/responses.ts"

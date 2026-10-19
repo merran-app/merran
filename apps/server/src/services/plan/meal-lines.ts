@@ -12,8 +12,8 @@ import type {
   RecipeIngredient,
 } from "../../database/entities/index.ts"
 import { NOT_DELETED_FILTER } from "../../database/scope.ts"
-import { toNumber } from "../recipes/recipes.ts"
-import { getTastes } from "./preferences.ts"
+import { toNumber } from "../../database/numbers.ts"
+import { getTastes } from "../households/tastes.ts"
 
 // What a planned meal takes: its recipe's ingredient lines, and its
 // side's, scaled to its servings, less what's left out for someone who

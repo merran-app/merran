@@ -3,7 +3,7 @@ import type { AppDeps } from "../../../../core/context.ts"
 import {
   describePhotoRun,
   startPhotoRun,
-} from "../../../../services/ai-photos/runs.ts"
+} from "../../../../services/recipes/photos/runs.ts"
 import { inHousehold, openToKeys } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import { PhotoRunSchema } from "../../../schemas/photos.ts"

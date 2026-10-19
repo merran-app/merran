@@ -1,5 +1,8 @@
 import { enqueue } from "../../services/jobs/jobs.ts"
-import { READ_SITES, READ_NOW_KEY } from "../../services/sites/read-job.ts"
+import {
+  READ_SITES,
+  READ_NOW_KEY,
+} from "../../services/recipes/discover/sites/read-job.ts"
 import type { Module } from "../module.ts"
 import { SITES } from "./settings.ts"
 

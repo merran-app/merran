@@ -9,13 +9,8 @@ import {
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { PantryItem } from "../../database/entities/index.ts"
-import {
-  available,
-  householdToday,
-  merged,
-  pantryMeals,
-  stillToCome,
-} from "./pantry.ts"
+import { available, merged, pantryMeals, stillToCome } from "./pantry.ts"
+import { householdToday } from "../households/clock.ts"
 
 // Counting on what's at home when meals go on the list. What a meal's
 // covered by is set aside for it, so the next meals listed don't count on

@@ -1,6 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
-import { getTastes } from "../../../../../services/plan/preferences.ts"
+import { getTastes } from "../../../../../services/households/tastes.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import { TastesSchema } from "../../../../schemas/plan.ts"

@@ -8,15 +8,12 @@ import { useAi, type AiDeps } from "../../ai/run.ts"
 import { resolveTask } from "../../ai/status.ts"
 import { enqueue } from "../../jobs/jobs.ts"
 import type { JobHandler } from "../../jobs/runner.ts"
-import { findRecipe, inHouseholdTransaction } from "../recipes.ts"
-import {
-  cleanLines,
-  describeProposal,
-  detailsOf,
-  sameList,
-  tidyView,
-  type ProposalView,
-} from "./tidy.ts"
+import { findRecipe } from "../recipes.ts"
+import { inHouseholdTransaction } from "../../../database/transactions.ts"
+import { cleanLines } from "../../proposals/text.ts"
+import { detailsOf, reviewSnapshot } from "./snapshot.ts"
+import { sameList } from "../../proposals/comparison.ts"
+import { describeProposal, type ProposalView } from "../../proposals/views.ts"
 
 // A note left after cooking ("5 minutes less in the oven", "needed more
 // salt") turned into a suggested change to the recipe, waiting in Review.
@@ -65,7 +62,7 @@ export async function proposeNoteEdit(
   }
 ): Promise<ProposalView | null> {
   const recipe = await findRecipe(em, options.recipe)
-  const { input } = await tidyView(em, recipe)
+  const { input } = await reviewSnapshot(em, recipe)
   const recipeText = [
     `Name: ${input.name}`,
     `Servings: ${input.servings ?? "not given"}`,

@@ -14,7 +14,7 @@ import {
   type PantrySnapshot,
   type PlanEntry,
 } from "../../database/entities/index.ts"
-import { householdAliases, householdKeys } from "../list/food-aliases.ts"
+import { householdAliases, householdKeys } from "../foods/aliases.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
 import { amountOf, measured, merged } from "./pantry.ts"
 

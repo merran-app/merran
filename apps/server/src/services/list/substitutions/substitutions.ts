@@ -20,15 +20,12 @@ import type {
 import { findEntry } from "../../plan/plan.ts"
 import { loadMealLines } from "../../plan/meal-lines.ts"
 import { recipeForMeal } from "../../plan/recipe-variants.ts"
-import { getTastes } from "../../plan/preferences.ts"
-import {
-  findRecipe,
-  inHouseholdTransaction,
-  updateRecipe,
-} from "../../recipes/recipes.ts"
+import { getTastes } from "../../households/tastes.ts"
+import { findRecipe, updateRecipe } from "../../recipes/recipes.ts"
+import { inHouseholdTransaction } from "../../../database/transactions.ts"
 import { saveSwap } from "../../recipes/swaps.ts"
 import { versionSnapshot } from "../../recipes/versions.ts"
-import { householdAliases, householdKeys } from "../food-aliases.ts"
+import { householdAliases, householdKeys } from "../../foods/aliases.ts"
 import { findItem, itemSnapshot, restoreItems } from "../list.ts"
 import { updateSwapQuantities } from "./quantities.ts"
 import { findList } from "../lists.ts"

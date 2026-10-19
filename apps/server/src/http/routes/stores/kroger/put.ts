@@ -1,6 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
-import { setKrogerStore } from "../../../../services/stores/connections.ts"
+import { setKrogerStore } from "../../../../services/stores/kroger/connection.ts"
 import { checkPricesSoon } from "../../../../services/stores/prices.ts"
 import { asHouseholdAdmin } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"

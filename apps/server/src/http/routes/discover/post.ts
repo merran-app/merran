@@ -1,6 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../core/context.ts"
-import { startDiscovery } from "../../../services/discover/discover.ts"
+import { startDiscovery } from "../../../services/recipes/discover/discover.ts"
 import { inHousehold, openToKeys } from "../../middleware/auth.ts"
 import type { Router } from "../../router.ts"
 import { DiscoverInputSchema, DiscoverySchema } from "../../schemas/discover.ts"

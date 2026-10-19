@@ -10,8 +10,8 @@ import { AppError } from "../../core/errors.ts"
 import { Household, User } from "../../database/entities/index.ts"
 import { forHousehold, HOUSEHOLD_FILTER } from "../../database/scope.ts"
 import { prepareAi } from "../ai/run.ts"
-import { householdToday } from "../pantry/pantry.ts"
-import { getTastes } from "../plan/preferences.ts"
+import { householdToday } from "../households/clock.ts"
+import { getTastes } from "../households/tastes.ts"
 import { addMessages, chatMessages, findChat } from "./chats.ts"
 import {
   filesIn,
@@ -21,7 +21,7 @@ import {
   type ChatFileType,
 } from "./files.ts"
 import { contextText, systemPrompt, type PageContext } from "./prompt.ts"
-import { assistantTools } from "./tools.ts"
+import { assistantTools } from "./tools/index.ts"
 
 // The assistant answering a message: the chat so far, what's on their
 // screen, and the tools, streamed back as AI SDK's UI message stream. The

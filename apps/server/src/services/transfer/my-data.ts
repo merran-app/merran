@@ -1,7 +1,7 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { ApiKey, CookNote, User } from "../../database/entities/index.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
-import { membershipsOf } from "../households.ts"
+import { membershipsOf } from "../households/households.ts"
 
 /** Everywhere, Recently deleted too: it's all theirs to see. */
 const EVERYWHERE = {

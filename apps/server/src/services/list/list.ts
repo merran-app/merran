@@ -16,8 +16,9 @@ import {
   WeeklyItem,
 } from "../../database/entities/index.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
-import { householdKeys } from "./food-aliases.ts"
-import { inHouseholdTransaction, toNumber } from "../recipes/recipes.ts"
+import { householdKeys } from "../foods/aliases.ts"
+import { inHouseholdTransaction } from "../../database/transactions.ts"
+import { toNumber } from "../../database/numbers.ts"
 import {
   aislesOf,
   describeAisle,

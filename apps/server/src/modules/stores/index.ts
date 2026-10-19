@@ -1,4 +1,4 @@
-import { forgetKrogerTokens } from "../../services/stores/kroger.ts"
+import { forgetKrogerTokens } from "../../services/stores/kroger/client.ts"
 import type { Settings } from "../../services/settings/settings.ts"
 import type { Module } from "../module.ts"
 import { STORE_SETTINGS } from "./settings.ts"

@@ -5,7 +5,7 @@ import { STORE_SETTINGS } from "../../../../../../modules/stores/settings.ts"
 import {
   appToken,
   forgetKrogerTokens,
-} from "../../../../../../services/stores/kroger.ts"
+} from "../../../../../../services/stores/kroger/client.ts"
 import { serverAdmin } from "../../../../../middleware/auth.ts"
 import type { Router } from "../../../../../router.ts"
 import {

@@ -8,7 +8,7 @@ import {
   ytDlpError,
   type VideoInfo,
   type VideoTools,
-} from "../../../../services/video/tools.ts"
+} from "../../../../services/recipes/import/video/tools.ts"
 import {
   fakeAiFetcher,
   GOOD_KEYS,

@@ -7,8 +7,8 @@ import {
   ShoppingItem,
   ShoppingList,
 } from "../../database/entities/index.ts"
-import { inHouseholdTransaction } from "../recipes/recipes.ts"
-import { householdKeys } from "./food-aliases.ts"
+import { inHouseholdTransaction } from "../../database/transactions.ts"
+import { householdKeys } from "../foods/aliases.ts"
 
 // A household's lists, for however it likes to sort what it buys (the
 // corner shop, a festival, the big monthly shop). Things go on the main

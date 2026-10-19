@@ -7,8 +7,9 @@ import {
   Tag,
 } from "../../database/entities/index.ts"
 import type { PairingsInput } from "../../http/schemas/recipes.ts"
-import { photoUrls } from "./photos.ts"
-import { findRecipe, toNumber, totalMinutes } from "./recipes.ts"
+import { photoUrls } from "./photos/photos.ts"
+import { findRecipe, totalMinutes } from "./recipes.ts"
+import { toNumber } from "../../database/numbers.ts"
 import { tagKey } from "./tags.ts"
 
 // "Goes with": a recipe pairs with particular recipes, or with every recipe

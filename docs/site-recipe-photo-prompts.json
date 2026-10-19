@@ -1,6 +1,6 @@
 {
   "method": "Built-in image generation; generated sample photography, not photographs of cooked/tested recipes.",
-  "styleSource": "apps/server/src/services/ai-photos/ai-photos.ts: STYLE_PROMPTS.marble and photoPrompt",
+  "styleSource": "apps/server/src/services/recipes/photos/prompts.ts: STYLE_PROMPTS.marble and photoPrompt",
   "date": "2026-10-17",
   "notes": "App default marble style and always-on exclusions. Sample descriptions based on homepage recipes; landscape composition added for website crops. WebP derivatives at 320x240 and 960x720.",
   "photos": [

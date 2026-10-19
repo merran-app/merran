@@ -209,7 +209,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | API keys with permissions, one household, rate limits | Key | Built | |
 | Live events stream | Detail | Built | |
 | Webhooks for Home Assistant, n8n and others | Key | Planned | |
-| MCP server for Claude Desktop, Claude Code and other AI apps | Headline | Planned | |
+| MCP server for Claude Desktop, Claude Code and other AI apps | Headline | Planned | Preparatory assistant tool split and shared proposal services (not released yet); MCP endpoint, permissions and external proposal handling remain planned |
 | OAuth so the ChatGPT and Claude apps can connect | Detail | Later | |
 | Household-owned API keys; OpenTelemetry; a Helm chart | Detail | Later | |
 

@@ -10,7 +10,7 @@ import {
 import type { Auth } from "../../services/auth/auth.ts"
 import { KeyRateLimit } from "../../services/auth/key-rate-limit.ts"
 import { authenticate } from "../../services/auth/session.ts"
-import { isAdminRole } from "../../services/households.ts"
+import { isAdminRole } from "../../services/households/households.ts"
 import { AppError } from "../../core/errors.ts"
 import {
   API_KEY_SECURITY,

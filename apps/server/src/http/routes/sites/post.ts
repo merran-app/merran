@@ -1,6 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../core/context.ts"
-import { followSite } from "../../../services/sites/sites.ts"
+import { followSite } from "../../../services/recipes/discover/sites/sites.ts"
 import { inHousehold, openToKeys } from "../../middleware/auth.ts"
 import type { Router } from "../../router.ts"
 import {

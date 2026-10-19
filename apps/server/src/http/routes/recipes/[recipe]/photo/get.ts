@@ -1,7 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi"
 import { AppError } from "../../../../../core/errors.ts"
 import type { AppDeps } from "../../../../../core/context.ts"
-import { readPhoto } from "../../../../../services/recipes/photos.ts"
+import { readPhoto } from "../../../../../services/recipes/photos/photos.ts"
 import { findRecipe } from "../../../../../services/recipes/recipes.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"

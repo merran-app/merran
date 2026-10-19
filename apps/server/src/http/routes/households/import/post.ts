@@ -1,7 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
 import { Session } from "../../../../database/entities/index.ts"
-import { createHousehold } from "../../../../services/households.ts"
+import { createHousehold } from "../../../../services/households/households.ts"
 import { describeJob } from "../../../../services/jobs/jobs.ts"
 import { startImport } from "../../../../services/transfer/import.ts"
 import {

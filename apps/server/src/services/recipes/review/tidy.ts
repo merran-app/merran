@@ -1,3 +1,7 @@
+import { reviewSnapshot, detailsOf } from "./snapshot.ts"
+import { sameList } from "../../proposals/comparison.ts"
+import { cleanLines } from "../../proposals/text.ts"
+import { type ProposalView, describeProposal } from "../../proposals/views.ts"
 import {
   foodInLine,
   foodKey,
@@ -7,8 +11,6 @@ import {
   isKnownFood,
   type MarkedLine,
   parseIngredient,
-  PROPOSAL_SECTIONS,
-  type RecipeDetails,
   TIDY_SECTIONS,
   type TidySection,
   type TidyValues,
@@ -19,19 +21,13 @@ import { z } from "zod"
 import { Proposal, Recipe } from "../../../database/entities/index.ts"
 import type { RecipeInput } from "../../../http/schemas/recipes.ts"
 import { useAi, type AiDeps } from "../../ai/run.ts"
-import {
-  findRecipe,
-  inHouseholdTransaction,
-  chosenFoods,
-  markedLines,
-  marksFrom,
-  snapshotOf,
-} from "../recipes.ts"
-import { listTags, tagKey, tagsOf } from "../tags.ts"
+import { findRecipe, marksFrom } from "../recipes.ts"
+import { inHouseholdTransaction } from "../../../database/transactions.ts"
+import { listTags, tagKey } from "../tags.ts"
 
 // Tidy up: the AI tidies a recipe, a section at a time, and what it
 // changes waits in the Review queue as a proposal. It never changes the
-// recipe itself (see proposals.ts for applying it).
+// recipe itself (see services/proposals for applying it).
 
 /**
  * What the model fills in. Null is "nothing to change", or "not asked".
@@ -130,31 +126,12 @@ function recipeText(input: RecipeInput, unknown: readonly string[] = []) {
     .join("\n")
 }
 
-/** Lines tidied, and kept to the editor's limits. */
-export const cleanLines = (values: string[], max: number, length: number) =>
-  values
-    .map((line) => line.replace(/\s+/g, " ").trim())
-    .filter(Boolean)
-    .slice(0, max)
-    .map((line) => line.slice(0, length))
-
-export const sameList = (a: readonly unknown[], b: readonly unknown[]) =>
-  JSON.stringify(a) === JSON.stringify(b)
-
 const minutes = (value: number | null) =>
   value !== null && value > 0 && value < 100_000 ? Math.round(value) : null
 
 /** Ingredient lines that are lines, not "# Section" headings. */
 const ingredientLines = (lines: readonly string[]) =>
   lines.filter((line) => !line.trim().startsWith("#"))
-
-/** A recipe's servings and times. */
-export const detailsOf = (input: RecipeInput): RecipeDetails => ({
-  servings: input.servings,
-  prepMinutes: input.prepMinutes,
-  cookMinutes: input.cookMinutes,
-  totalMinutes: input.totalMinutes,
-})
 
 /**
  * The model's answer against the recipe: only real changes. An empty list
@@ -315,43 +292,6 @@ export function linesToName(recipe: { input: RecipeInput; foods: FoodLine[] }) {
 /** A line's food, for matching marks to lines written differently. */
 const parseFood = (line: string) => parseIngredient(line).food
 
-/** A proposal as the API shows it. */
-export function describeProposal(proposal: Proposal) {
-  const recipe = proposal.recipe?.getEntity()
-  return {
-    id: proposal.id,
-    kind: proposal.kind,
-    status: proposal.status,
-    recipe:
-      recipe && proposal.recipe?.isInitialized()
-        ? { id: recipe.id, slug: recipe.slug, name: recipe.name }
-        : null,
-    summary: proposal.summary,
-    sections: PROPOSAL_SECTIONS.filter((section) => section in proposal.after),
-    note: proposal.note ?? null,
-    payload: proposal.payload ?? null,
-    chat: proposal.chat ?? null,
-    before: proposal.before,
-    after: proposal.after,
-    createdAt: proposal.createdAt.toISOString(),
-    resolvedAt: proposal.resolvedAt?.toISOString() ?? null,
-  }
-}
-export type ProposalView = ReturnType<typeof describeProposal>
-
-/**
- * A recipe as tidy up sees it: its editor lines, their marks, and the
- * foods lines were said to be.
- */
-export async function tidyView(em: EntityManager, recipe: Recipe) {
-  const tags = (await tagsOf(em, [recipe.id])).get(recipe.id) ?? []
-  return {
-    input: snapshotOf(recipe, tags),
-    marks: markedLines(recipe),
-    foods: chosenFoods(recipe),
-  }
-}
-
 /**
  * Has AI tidy a recipe, and keeps what it would change as a proposal in
  * the Review queue, in place of any earlier one for the recipe. Null when
@@ -371,7 +311,7 @@ export async function proposeTidy(
   }
 ): Promise<ProposalView | null> {
   const recipe = await findRecipe(em, options.recipe)
-  const current = await tidyView(em, recipe)
+  const current = await reviewSnapshot(em, recipe)
   // Foods only when there are lines to name.
   const unknown = linesToName(current)
   const sections = (

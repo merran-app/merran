@@ -5,7 +5,7 @@ import {
   assertOwnerRemains,
   findMember,
   isAdminRole,
-} from "../../../../../../services/households.ts"
+} from "../../../../../../services/households/households.ts"
 import { AppError } from "../../../../../../core/errors.ts"
 import { inHousehold } from "../../../../../middleware/auth.ts"
 import type { Router } from "../../../../../router.ts"

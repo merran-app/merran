@@ -1,8 +1,8 @@
 import { createRoute, z } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../../core/context.ts"
 import { AppError } from "../../../../../../core/errors.ts"
-import { findShelfRecipe } from "../../../../../../services/sites/sites.ts"
-import { shelfPhoto } from "../../../../../../services/sites/shelf.ts"
+import { findShelfRecipe } from "../../../../../../services/recipes/discover/sites/sites.ts"
+import { shelfPhoto } from "../../../../../../services/recipes/discover/sites/shelf.ts"
 import { inHousehold, openToKeys } from "../../../../../middleware/auth.ts"
 import type { Router } from "../../../../../router.ts"
 import {

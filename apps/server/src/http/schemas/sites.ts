@@ -1,5 +1,5 @@
 import { z } from "@hono/zod-openapi"
-import { COURSES } from "../../services/sites/data.ts"
+import { COURSES } from "../../services/recipes/discover/sites/data.ts"
 import { DiscoverySchema } from "./discover.ts"
 import { IDS, TIMES } from "./examples.ts"
 

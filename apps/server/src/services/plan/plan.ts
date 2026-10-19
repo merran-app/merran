@@ -1,12 +1,11 @@
+import { householdClock } from "../households/clock.ts"
 import {
   addDays,
-  clockIn,
   daysBetween,
   isDay,
   MEALS,
   mealOfTheHour,
   nextMeal,
-  plannedMeals,
   weekStartOf,
   type Meal,
   type Reason,
@@ -15,7 +14,6 @@ import {
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
 import {
-  Household,
   PlanEntry,
   Recipe,
   type PLAN_STATUSES,
@@ -23,12 +21,10 @@ import {
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { followPlan, shoppingFor } from "../list/meals.ts"
 import { followCooking } from "../pantry/cooking.ts"
-import { photoUrls } from "../recipes/photos.ts"
-import {
-  inHouseholdTransaction,
-  toNumber,
-  totalMinutes,
-} from "../recipes/recipes.ts"
+import { photoUrls } from "../recipes/photos/photos.ts"
+import { inHouseholdTransaction } from "../../database/transactions.ts"
+import { toNumber } from "../../database/numbers.ts"
+import { totalMinutes } from "../recipes/recipes.ts"
 
 // The week plan: meals on days, and the week's pool of meals for any day.
 // "Today" is always the household's, in its own time zone. The shopping
@@ -48,16 +44,6 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 /** Deleted recipes are loaded too, so their meals can be left out. */
 const WITH_DELETED = { filters: { [NOT_DELETED_FILTER]: false } }
 const POPULATE = ["recipe", "withRecipe"] as const
-
-/** The household's day and hour, the day its week starts, and the meals it plans. */
-export async function householdClock(em: EntityManager, householdId: string) {
-  const household = await em.findOneOrFail(Household, { id: householdId })
-  return {
-    ...clockIn(household.timeZone),
-    weekStartsOn: household.weekStartsOn,
-    meals: plannedMeals(household.settings?.meals),
-  }
-}
 
 /** A recipe that's in Recently deleted takes its meals off the plan until it's back. */
 const shown = (entry: PlanEntry) => {

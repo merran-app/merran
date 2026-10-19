@@ -153,6 +153,20 @@ An MCP server at `/mcp` (Streamable HTTP, through the official MCP TypeScript SD
 - **Using the MCP server spends no Merran AI money:** the outside app's model does the thinking.
 - **Later:** remote connectors in the ChatGPT and Claude apps need OAuth rather than a key. Better Auth's OAuth provider plugin could make Merran its own sign-in for them.
 
+Assistant tool organization, decided October 19, 2026 (not released yet): each tool lives in its own file under `services/assistant/tools/`, with shared schemas and recipe lookup helpers. The index binds the tools to a chat and owns proposal creation; individual tools receive only the database access, household identity and proposal callback they need. Receipt scanning keeps its chat attachments and AI dependencies explicit. This prepares tool reuse for MCP without adding an MCP endpoint or changing assistant behavior. MCP authentication, permissions, transport and external proposal handling remain planned.
+
+## Service ownership
+
+Decided October 19, 2026 (not released yet): organize services by the feature that owns their behavior. Recipe photos (storage, generation, prompts and runs) live in `services/recipes/photos/`; imports from other apps live in `recipes/import/apps/`; video importing and its external tools live together in `recipes/import/video/`. Receipt drafts and put-away live in `pantry/receipts/`. Recipe discovery lives in `recipes/discover/`; its sites, feeds, collections and bundled data live in `recipes/discover/sites/`.
+
+Household membership, tastes, taste formatting and clocks live in `services/households/`; theme nights remain in planning. Shared proposal creation, application, payloads and views live in `services/proposals/`, because proposals can change recipes, plans, lists and household tastes. Recipe-specific tidy-up and cooking-note suggestions remain in `recipes/review/`. Household transactions and database number conversion live in `database/transactions.ts` and `database/numbers.ts`.
+
+Further separation, decided October 19, 2026 (not released yet): `stores/basket/` owns shared basket items, package quantities, product selection and price recording; `stores/kroger/` owns its client, account connection and cart workflow, and `stores/walmart/` owns the extension-backed workflow. Shared store connection creation lives in `stores/store-connections.ts`. Shared helpers require an explicit retailer. Both retailers use the same amount formatting.
+
+Proposal text cleanup and comparison live in `proposals/`; recipe review snapshots and field details live in `recipes/review/snapshot.ts`, independent of AI tidy-up. Ordered-list comparison and comparison that ignores object-key order retain their existing semantics. Household food aliases live in `foods/aliases.ts`; list teaching retains merge/rekey orchestration. Pantry quantity helpers remain with pantry records and reservations; general amount arithmetic already lives in the shared package.
+
+AI infrastructure stays separate from the assistant. Nutrition, planning, shopping lists, pantry stock, retailer integration, incoming shares and full data transfers retain their separate responsibilities. These moves change internal organization only: routes, persisted data, permissions and user workflows stay the same. MCP remains planned.
+
 ## AI
 
 ### Providers
@@ -271,7 +285,7 @@ The Recipe sites module reads recipe sites' feeds in the background and keeps wh
 - **Seasons:** a collection with months shows only in them, moved by six months for a household in the southern hemisphere.
 - **Checked by itself:** the classics are opened again every week, and one that stops importing is hidden until it works again.
 - **Fitted to each household:** recipes against its allergies or diets are left out (one Merran can't read counts as having every allergy), recipes in its library are marked and go last, and a collection with fewer than four left is hidden. With AI, **Find more** runs Discover with the collection's theme and keeps what it finds with the collection, for that household.
-- **No calling home:** collections and suggested sites come with Merran's releases, in `apps/server/src/services/sites/data/<language>/`; the server never fetches them from the Merran project.
+- **No calling home:** collections and suggested sites come with Merran's releases, in `apps/server/src/services/recipes/discover/sites/data/<language>/`; the server never fetches them from the Merran project.
 
 ## The database
 

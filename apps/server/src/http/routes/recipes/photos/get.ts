@@ -1,6 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
-import { photoLibrary } from "../../../../services/ai-photos/runs.ts"
+import { photoLibrary } from "../../../../services/recipes/photos/runs.ts"
 import { inHousehold, openToKeys } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import { PhotoLibrarySchema } from "../../../schemas/photos.ts"

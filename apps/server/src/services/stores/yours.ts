@@ -8,9 +8,10 @@ import {
 } from "../../database/entities/index.ts"
 import { STORE_SETTINGS } from "../../modules/stores/settings.ts"
 import { findList } from "../list/lists.ts"
-import { amountOf, foodOf } from "./basket.ts"
-import { KROGER, krogerConnection, type StoreDeps } from "./connections.ts"
-import { krogerApp } from "./kroger.ts"
+import { amountOf, foodOf } from "./basket/items.ts"
+import { KROGER, krogerConnection } from "./kroger/connection.ts"
+import type { StoreDeps } from "./store-connections.ts"
+import { krogerApp } from "./kroger/client.ts"
 
 // The stores a household shops at (docs/platform.md, Stores): its Kroger
 // store and Walmart, which Merran can send to, and the stores it picked

@@ -5,7 +5,7 @@ import { AppError } from "../../../../core/errors.ts"
 import {
   MAX_RECEIPT_FILES,
   readReceipt,
-} from "../../../../services/receipts/receipts.ts"
+} from "../../../../services/pantry/receipts/receipts.ts"
 import { inHousehold, openToKeys } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import { ReceiptSchema } from "../../../schemas/receipts.ts"

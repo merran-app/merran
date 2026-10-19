@@ -34,7 +34,7 @@ Full UI first-week walkthrough; real website imports; interrupted jobs; real enc
 ## Guide evidence
 
 - Extension: released manifests, extension popup/sidebar/background, lib/merran.ts permissions, page extraction/actions, Walmart browser flow, web extension setup and locale strings.
-- Stores: module settings, services/stores/kroger.ts and connections.ts, store routes, web store pages/locales. Source confirms product.compact and cart.basic:write/profile.compact scopes; live portal authorization remains untested.
+- Stores: module settings, services/stores/kroger/client.ts and connection.ts, store routes, web store pages/locales. Source confirms product.compact and cart.basic:write/profile.compact scopes; live portal authorization remains untested.
 - Sharing: web features/share and server share route/service. Shortcut uses imports-write and multipart file input.
 - Media: module settings, UI cards/locales, video tools, photo/nutrition routes and voice services. Fixed UI sample prices are not promises in the guides.
 - API: release OpenAPI, auth middleware, key-rate-limit, list schemas, events route, executable example.

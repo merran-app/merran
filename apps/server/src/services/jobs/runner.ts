@@ -12,7 +12,7 @@ import type { AiModels, Transcriber } from "../ai/providers.ts"
 import type { Fetcher } from "../fetch/public-fetch.ts"
 import type { Settings } from "../settings/settings.ts"
 import type { FileStore } from "../storage/files.ts"
-import type { VideoTools } from "../video/tools.ts"
+import type { VideoTools } from "../recipes/import/video/tools.ts"
 import { enqueue, onJobAdded } from "./jobs.ts"
 
 // Merran's job runner (docs/stack.md, "A job runner of our own"): one

@@ -3,7 +3,7 @@ import type { Config } from "../core/config.ts"
 import type { AnySetting } from "../core/settings.ts"
 import type { Database } from "../database/orm.ts"
 import type { Settings } from "../services/settings/settings.ts"
-import type { VideoTools } from "../services/video/tools.ts"
+import type { VideoTools } from "../services/recipes/import/video/tools.ts"
 
 /** What a module can use to decide whether it's on, and to do its work. */
 export type ModuleContext = {

@@ -14,12 +14,12 @@ import {
   ShoppingItem,
   WeeklyItem,
 } from "../../database/entities/index.ts"
-import { householdToday } from "../pantry/pantry.ts"
-import { toNumber } from "../recipes/recipes.ts"
+import { householdToday } from "../households/clock.ts"
+import { toNumber } from "../../database/numbers.ts"
 import { aislesOf } from "./aisles.ts"
 import { describeItems } from "./list.ts"
 import { listsOf } from "./lists.ts"
-import { householdKeys } from "./food-aliases.ts"
+import { householdKeys } from "../foods/aliases.ts"
 
 // Usual buys: what the household gets every so often, learned from the
 // shopping it's put away, offered when it's due again. Not what's on the

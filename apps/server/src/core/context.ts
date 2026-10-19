@@ -13,7 +13,7 @@ import type { Fetcher } from "../services/fetch/public-fetch.ts"
 import type { JobRunner } from "../services/jobs/runner.ts"
 import type { Settings } from "../services/settings/settings.ts"
 import type { FileStore } from "../services/storage/files.ts"
-import type { VideoTools } from "../services/video/tools.ts"
+import type { VideoTools } from "../services/recipes/import/video/tools.ts"
 import type { Config } from "./config.ts"
 
 /** What the app is built from. Tests pass their own. */

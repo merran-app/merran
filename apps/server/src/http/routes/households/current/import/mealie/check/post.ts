@@ -1,7 +1,7 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../../../core/context.ts"
-import { alreadyFromMealie } from "../../../../../../../services/importers/job.ts"
-import { checkMealie } from "../../../../../../../services/importers/mealie/server.ts"
+import { alreadyFromMealie } from "../../../../../../../services/recipes/import/apps/job.ts"
+import { checkMealie } from "../../../../../../../services/recipes/import/apps/mealie/server.ts"
 import {
   asHouseholdAdmin,
   serverAdmin,

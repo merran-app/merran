@@ -1,7 +1,7 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
-import { needKrogerApp } from "../../../../../services/stores/connections.ts"
-import { locationsNear } from "../../../../../services/stores/kroger.ts"
+import { needKrogerApp } from "../../../../../services/stores/kroger/connection.ts"
+import { locationsNear } from "../../../../../services/stores/kroger/client.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import {

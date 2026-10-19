@@ -1,6 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
-import { discardReceipt } from "../../../../../services/receipts/receipts.ts"
+import { discardReceipt } from "../../../../../services/pantry/receipts/receipts.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import { ReceiptParam } from "../../../../schemas/receipts.ts"

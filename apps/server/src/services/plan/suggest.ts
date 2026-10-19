@@ -30,11 +30,12 @@ import {
   RecipeIngredient,
   RecipePairing,
 } from "../../database/entities/index.ts"
-import { householdKeys } from "../list/food-aliases.ts"
+import { householdKeys } from "../foods/aliases.ts"
 import { getPantry } from "../pantry/pantry.ts"
 import { decodeDiets } from "../recipes/diet-labels.ts"
-import { photoUrls } from "../recipes/photos.ts"
-import { toNumber, totalMinutes } from "../recipes/recipes.ts"
+import { photoUrls } from "../recipes/photos/photos.ts"
+import { toNumber } from "../../database/numbers.ts"
+import { totalMinutes } from "../recipes/recipes.ts"
 import { tagKey, tagsOf } from "../recipes/tags.ts"
 import type { SuggestBudget } from "../stores/costs.ts"
 import type { RecipeSale, SuggestSales } from "../stores/prices.ts"
