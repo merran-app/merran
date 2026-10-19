@@ -62,6 +62,8 @@ Text and photo controls appear only when AI is available. Video processing can t
 
 recipes opened from **Plan** include any shopping substitutions saved for that meal. The notice explains that the library recipe may differ. Open the recipe directly from **Recipes** to inspect the library version; permanent edits still change that library recipe.
 
+On wide screens, long descriptions are shortened in the recipe overview so the recipe details stay near the photo. The full description remains in **Edit**.
+
 cards show **Planned this week** when the recipe is on the household's current weekly plan, as a main dish or side, including the any-day pool. The badge follows the household's time zone and week-start setting. Cooked meals still count; skipped meals do not.
 
 1. Open a recipe and choose **Edit**.
