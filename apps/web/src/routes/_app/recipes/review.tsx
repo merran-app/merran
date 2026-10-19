@@ -166,9 +166,17 @@ function ProposalItem({
               </p>
             )}
             {!proposal.recipe && (
-              <p className="font-medium">{proposal.summary}</p>
+              <p className="font-medium">
+                {proposal.kind === "recipe"
+                  ? ((proposal.payload as { recipe?: { name?: string } })
+                      ?.recipe?.name ?? proposal.summary)
+                  : proposal.summary}
+              </p>
             )}
             <div className="flex flex-wrap gap-1">
+              <Badge variant="outline">
+                {t(`recipes.review.kinds.${proposal.kind}`)}
+              </Badge>
               {proposal.sections.map((section) => (
                 <Badge key={section} variant="secondary">
                   {t(`recipes.tidy.sections.${section}`)}
@@ -189,7 +197,7 @@ function ProposalItem({
             <ProposalReview proposal={proposal} className="px-4 pb-4" />
           ) : (
             <div className="px-4 pb-4">
-              <ProposalCard proposal={proposal} />
+              <ProposalCard proposal={proposal} expanded />
             </div>
           )}
         </CollapsibleContent>

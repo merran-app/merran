@@ -48,6 +48,14 @@ For a change, ask explicitly—for example, “Suggest dinners for Monday and Tu
 
 Recipe-section edits keep a version. If a selected section changed since the proposal was generated, Merran refuses that stale edit instead of overwriting it. Request a fresh suggestion after reviewing the current recipe. This conflict protection should not be assumed for every kind of proposal; inspect the current plan/list before adding older proposals.
 
+### Clearer previews (not released yet)
+
+On a recipe, **Review** and **Tidy up** open a bottom drawer on mobile and a dialog on larger screens. The mobile heading and **Close** button stay visible while you scroll through the options or suggested changes.
+
+In **Recipes → Review**, each proposal shows its type. Open a new recipe to read its servings, times, ingredients, numbered steps and notes directly. Ingredient and instruction section headings stay separate from the steps. In chat, choose **Review the full recipe** to open the same preview.
+
+Recipe edits group each changed line into one comparison: **Previously** beside **Suggested**, stacked on narrow screens. Rows are labeled **Changed**, **Added** or **Removed**, with separate counts above each section. **Not present** marks the empty side of an addition or removal. Unchanged lines are hidden initially; use **Show … unchanged lines** to see the full context, then **Hide unchanged lines** to focus on edits again. Descriptions and notes include removed text, and changed servings or times show both values; **Not set** means a value is empty. Select only the sections you want to apply.
+
 ## Review tidy-up and cooking-note suggestions
 
 1. Run **Tidy up** on a recipe, or enable **Tidy up new recipes** in household AI settings to generate suggestions after imports.

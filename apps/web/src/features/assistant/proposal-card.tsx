@@ -24,7 +24,16 @@ import { ProposalReview } from "@/features/recipes/tidy/proposal-review"
 import type { Proposal } from "@/features/recipes/tidy/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer"
+import { useIsMobile } from "@/hooks/use-mobile"
+
 import { proposalQuery } from "./queries"
+import { RecipePreview, type ProposedRecipe } from "./recipe-preview"
 
 type Ref = { id: string; slug: string; name: string }
 type Meal = {
@@ -50,8 +59,19 @@ const dayName = (date: string) => DAY.format(new Date(`${date}T12:00:00Z`))
  * A suggestion the assistant made, in the chat: what it would add, and
  * Apply or Dismiss. Nothing changes until it's applied.
  */
-export function ProposalCard({ proposal: first }: { proposal: Proposal }) {
+export function ProposalCard({
+  proposal: first,
+  expanded = false,
+}: {
+  proposal: Proposal
+  expanded?: boolean
+}) {
   const { t } = useTranslation()
+  const phone = useIsMobile()
+  const ReviewRoot = phone ? Drawer : Dialog
+  const ReviewContent = phone ? DrawerContent : DialogContent
+  const ReviewTitle = phone ? DrawerTitle : DialogTitle
+  const ReviewDescription = phone ? DrawerDescription : DialogDescription
   const queryClient = useQueryClient()
   const refreshRecipes = useRefreshRecipes()
   const { data: proposal = first } = useQuery({
@@ -131,11 +151,11 @@ export function ProposalCard({ proposal: first }: { proposal: Proposal }) {
   }
 
   return (
-    <div className="grid gap-2.5 rounded-2xl border bg-card p-3 text-sm">
+    <div className="@container grid gap-4 rounded-2xl bg-card p-3 text-sm">
       {proposal.kind !== "swap" && (
         <p className="font-medium">{proposal.summary}</p>
       )}
-      <CardBody proposal={proposal} payload={payload} />
+      <CardBody proposal={proposal} payload={payload} expanded={expanded} />
       <div className="flex flex-wrap items-center justify-end gap-2">
         <TermHelp term="proposals" />
         {proposal.status === "pending" ? (
@@ -189,23 +209,30 @@ export function ProposalCard({ proposal: first }: { proposal: Proposal }) {
           </span>
         )}
       </div>
-      <Dialog open={reviewing} onOpenChange={setReviewing}>
-        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+      <ReviewRoot open={reviewing} onOpenChange={setReviewing}>
+        <ReviewContent className="max-h-[90dvh] overflow-hidden p-4 sm:max-w-4xl">
           <DialogHeader>
-            <DialogTitle>{proposal.recipe?.name}</DialogTitle>
-            <DialogDescription>
+            <ReviewTitle>{proposal.recipe?.name}</ReviewTitle>
+            <ReviewDescription>
               {t("recipes.tidy.reviewDescription")}
-            </DialogDescription>
+            </ReviewDescription>
           </DialogHeader>
-          <ProposalReview
-            proposal={proposal}
-            onDone={() => {
-              setReviewing(false)
-              void refresh()
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+          <div className="min-h-0 overflow-y-auto overscroll-contain">
+            <ProposalReview
+              proposal={proposal}
+              onDone={() => {
+                setReviewing(false)
+                void refresh()
+              }}
+            />
+          </div>
+          {phone && (
+            <Button variant="outline" onClick={() => setReviewing(false)}>
+              {t("recipes.tidy.hide")}
+            </Button>
+          )}
+        </ReviewContent>
+      </ReviewRoot>
     </div>
   )
 }
@@ -248,8 +275,10 @@ function AppliedLink({
 function CardBody({
   proposal,
   payload,
+  expanded,
 }: {
   proposal: Proposal
+  expanded: boolean
   payload: Record<string, unknown>
 }) {
   const { t } = useTranslation()
@@ -303,73 +332,17 @@ function CardBody({
       )
     }
     case "recipe": {
-      const recipe = payload.recipe as {
-        name: string
-        ingredients: string[]
-        steps: string[]
-        description: string | null
-        notes: string | null
-        servings: number | null
-        prepMinutes: number | null
-        cookMinutes: number | null
-        totalMinutes: number | null
-        tags: string[]
-      }
+      const recipe = payload.recipe as ProposedRecipe
+      if (expanded) return <RecipePreview recipe={recipe} />
       return (
-        <div className="grid gap-1 text-muted-foreground">
-          <p className="font-medium text-foreground">{recipe.name}</p>
-          <p>
-            {t("assistant.cards.recipeSize", {
-              ingredients: recipe.ingredients.filter((l) => !l.startsWith("#"))
-                .length,
-              steps: recipe.steps.filter((l) => !l.startsWith("#")).length,
-            })}
-          </p>
-          <details className="mt-2">
-            <summary className="cursor-pointer font-medium text-foreground">
-              {t("assistant.cards.inspectRecipe")}
-            </summary>
-            <div className="mt-3 grid gap-3">
-              {recipe.description && (
-                <p className="whitespace-pre-line">{recipe.description}</p>
-              )}
-              {recipe.servings && (
-                <p>
-                  {t("recipes.serves", {
-                    count: recipe.servings,
-                    servings: recipe.servings,
-                  })}
-                </p>
-              )}
-              {recipe.tags.length > 0 && <p>{recipe.tags.join(" · ")}</p>}
-              {(["prepMinutes", "cookMinutes", "totalMinutes"] as const).map(
-                (field) =>
-                  recipe[field] !== null && recipe[field] !== undefined ? (
-                    <p key={field}>
-                      {t(`recipes.fields.${field}`)}: {recipe[field]}
-                    </p>
-                  ) : null
-              )}
-              <p className="font-medium">
-                {t("recipes.tidy.sections.ingredients")}
-              </p>
-              <ul className="grid gap-1">
-                {recipe.ingredients.map((line, i) => (
-                  <li key={i}>{line}</li>
-                ))}
-              </ul>
-              <p className="font-medium">{t("recipes.tidy.sections.steps")}</p>
-              <ol className="grid list-inside list-decimal gap-2">
-                {recipe.steps.map((step, i) => (
-                  <li key={i}>{step}</li>
-                ))}
-              </ol>
-              {recipe.notes && (
-                <p className="whitespace-pre-line">{recipe.notes}</p>
-              )}
-            </div>
-          </details>
-        </div>
+        <details>
+          <summary className="cursor-pointer font-medium">
+            {recipe.name} · {t("assistant.cards.inspectRecipe")}
+          </summary>
+          <div className="mt-3">
+            <RecipePreview recipe={recipe} />
+          </div>
+        </details>
       )
     }
     case "import": {

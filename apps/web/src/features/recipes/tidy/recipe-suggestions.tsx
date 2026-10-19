@@ -5,15 +5,9 @@ import * as React from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { useCapability } from "@/features/capabilities/queries"
 
+import { ReviewOverlay } from "./review-overlay"
 import { ProposalReview } from "./proposal-review"
 import { recipeProposalsQuery, type Proposal } from "./queries"
 
@@ -62,34 +56,30 @@ export function RecipeSuggestions({ recipeId }: { recipeId: string }) {
           </li>
         ))}
       </ul>
-      <Dialog
+      <ReviewOverlay
         open={open !== null}
         onOpenChange={(next) => {
           if (!next) setOpen(null)
         }}
+        title={
+          open?.kind === "note"
+            ? t("recipes.review.noteTitle")
+            : t("recipes.tidy.title", { name: open?.recipe?.name ?? "" })
+        }
+        description={
+          open?.kind === "note"
+            ? t("recipes.review.noteDescription")
+            : t("recipes.tidy.reviewDescription")
+        }
       >
-        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {open?.kind === "note"
-                ? t("recipes.review.noteTitle")
-                : t("recipes.tidy.title", { name: open?.recipe?.name ?? "" })}
-            </DialogTitle>
-            <DialogDescription>
-              {open?.kind === "note"
-                ? t("recipes.review.noteDescription")
-                : t("recipes.tidy.reviewDescription")}
-            </DialogDescription>
-          </DialogHeader>
-          {open && (
-            <ProposalReview
-              key={open.id}
-              proposal={open}
-              onDone={() => setOpen(null)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+        {open && (
+          <ProposalReview
+            key={open.id}
+            proposal={open}
+            onDone={() => setOpen(null)}
+          />
+        )}
+      </ReviewOverlay>
     </>
   )
 }
