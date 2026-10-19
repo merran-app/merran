@@ -164,8 +164,8 @@ The first deploy makes the DNS record and the certificate. `.app` is HTTPS-only 
 
 A new workflow, `.github/workflows/telemetry.yml`:
 
-- **Pull requests** are checked by CI like everything else: `check.yml` typechecks and formats it with the rest, and runs its tests.
-- **On a push to main** that touches `apps/telemetry/**`, the shared telemetry schema or versions, or the lockfile, and by hand: its tests again, then `pnpm --filter @merran/telemetry run deploy`, which applies the database's migrations (`wrangler d1 migrations apply merran-telemetry --remote`) and then deploys the Worker. Wrangler is the package's own, so no third-party action is needed. It runs in a GitHub environment, `telemetry`, holding `CLOUDFLARE_API_TOKEN` (allowed only to edit Workers, D1 and merran.app's Worker routes) and `CLOUDFLARE_ACCOUNT_ID`.
+- **Pull requests** are checked by CI when receiver, shared or global inputs change: `check.yml` runs a separate receiver job for formatting, typechecking and tests (selective CI, October 19, 2026).
+- **On a push to main** that touches `apps/telemetry/**`, `packages/shared/**`, root package/workspace/Node/TypeScript configuration, the dependency setup action, the lockfile or its workflow, and by hand: its tests again, then `pnpm --filter @merran/telemetry run deploy`, which applies the database's migrations (`wrangler d1 migrations apply merran-telemetry --remote`) and then deploys the Worker. Wrangler is the package's own, so no third-party action is needed. It runs in a GitHub environment, `telemetry`, holding `CLOUDFLARE_API_TOKEN` (allowed only to edit Workers, D1 and merran.app's Worker routes) and `CLOUDFLARE_ACCOUNT_ID`.
 - **Deployed on merge, not with Release** ([decision 5](#decisions)): the receiver has to accept a new field before a release sends it, so it should never be behind main.
 - **Off until it's set up:** the job runs only when the repository variable `TELEMETRY_DEPLOY` is `true`, so main doesn't fail before Cloudflare is ready.
 

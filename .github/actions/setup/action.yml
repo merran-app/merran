@@ -1,0 +1,36 @@
+name: Install workspace dependencies
+description: Set up Node and cache pnpm downloads before installing a package and its dependencies.
+inputs:
+  package:
+    description: Workspace package to install, including its dependencies
+    required: true
+  web-styles:
+    description: Include web dependencies needed by the root Prettier stylesheet
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: .nvmrc
+    - run: corepack enable
+      shell: bash
+    # pnpm must be available before setup-node can locate its store.
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
+    - run: |
+        filters=(--filter "${PACKAGE}..." --filter merran)
+        # Root Prettier loads apps/web/src/index.css even when formatting TS
+        # outside the web app, so its CSS imports must be installed too.
+        if [ "$WEB_STYLES" = "true" ]; then
+          filters+=(--filter @merran/web...)
+        fi
+        pnpm install --frozen-lockfile "${filters[@]}"
+      shell: bash
+      env:
+        PACKAGE: ${{ inputs.package }}
+        WEB_STYLES: ${{ inputs.web-styles }}
+        COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"

@@ -1,0 +1,33 @@
+name: Check public site
+
+on:
+  workflow_call:
+    inputs:
+      upload:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  ASTRO_TELEMETRY_DISABLED: "1"
+  SITE_URL: ${{ vars.SITE_URL || 'https://merran.app' }}
+  SITE_BASE: ${{ vars.SITE_BASE || '/' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          package: "@merran/docs"
+      - run: pnpm --filter @merran/docs typecheck
+      - run: pnpm --filter @merran/docs test
+      - run: pnpm exec prettier --check apps/docs
+      - run: pnpm docs:build
+      - if: inputs.upload
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: apps/docs/dist
