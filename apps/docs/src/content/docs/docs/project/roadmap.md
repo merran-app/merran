@@ -36,7 +36,7 @@ Start with [the guides](../../) and [integration setup](../../integrations/brows
 ## In progress (not released yet)
 
 - **MCP:** a bearer-key endpoint, shared assistant tools, connection setup and proposals in Review are implemented after alpha.4. All changes require review in this version. See [MCP setup](../../integrations/mcp/). Broader real-client acceptance and optional direct plan/list application remain separate work.
-- **Authentication and connected apps:** passkeys, authenticator-based two-step sign-in, external OIDC single sign-on, and OAuth connections for MCP and REST are implemented after alpha.4. They are opt-in; external provider, device and deployment acceptance remains to be verified. See [authentication setup](../../run/authentication/).
+- **Authentication and connected apps:** passkeys, authenticator-based two-step sign-in, external OIDC single sign-on, and OAuth connections for MCP and REST are implemented after alpha.4. They are opt-in. An operator confirmed MCP OAuth, recipe proposals and Bitwarden passkey sign-in on TrueNAS/Dockge; external OIDC, other devices and broader lifecycle checks remain. See [authentication setup](../../run/authentication/) and the [operator verification report](../release-verification/#operator-authentication-report--october-19-2026).
 
 ## Up next
 

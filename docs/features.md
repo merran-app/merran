@@ -56,7 +56,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Repeatable setup testing in an isolated development database | Detail | Built | Available in alpha.4: MERRAN_DEV_SETUP uses fresh temporary SQLite storage each start; refused in production and Docker |
 | Invite links, roles, open sign-up (off by default) | Key | Built | |
 | Export your own account's data | Detail | Built | |
-| Passkeys | Key | Built | Not released yet: opt-in WebAuthn, required user verification, account management and last-method protection ([authentication](authentication.md)) |
+| Passkeys | Key | Built | Not released yet: opt-in WebAuthn, required user verification, account management and last-method protection. Operator confirmed Bitwarden registration and sign-in after logout on TrueNAS/Dockge ([authentication](authentication.md)). |
 | Two-step sign-in | Detail | Built | Not released yet: TOTP enrollment, single-use recovery codes, operator recovery and mandatory administrator policy across sign-in methods |
 | Single sign-on (OIDC) | Key | Built | Not released yet: one operator-configured provider, explicit linking, optional account creation and password policy; no automatic email linking |
 | Household invitations by email (SMTP) | Detail | Built | Available in alpha.4: optional SMTP settings and test, address-bound seven-day invitations, queued delivery with retries, resend/cancel and provider-acceptance status; styled HTML with plain-text fallback; requires MERRAN_PUBLIC_URL |
@@ -210,7 +210,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Live events stream | Detail | Built | |
 | Webhooks for Home Assistant, n8n and others | Key | Planned | |
 | MCP server for compatible external AI apps | Headline | Built | Not released yet: stateless /mcp with the official SDK, scoped API keys or OAuth tokens, shared assistant tools and proposals in Review. Direct plan/list application remains future work ([decision](platform.md#mcp-server)) |
-| OAuth connections for MCP and REST clients | Key | Built | Not released yet: PKCE, discovery, dynamic and administrator client registration, household consent, separate resource audiences, rotating refresh tokens and connection revocation. External-client deployment acceptance remains to be done. General “Sign in with Merran” is excluded ([plan](authentication.md)). |
+| OAuth connections for MCP and REST clients | Key | Built | Not released yet: PKCE, discovery, dynamic and administrator client registration, household consent, separate resource audiences, rotating refresh tokens and connection revocation. Operator confirmed MCP OAuth and recipe proposals on TrueNAS/Dockge; REST clients and broader lifecycle checks remain. General “Sign in with Merran” is excluded ([plan](authentication.md)). |
 | Household-owned API keys; OpenTelemetry; a Helm chart | Detail | Later | |
 
 ## Research candidates — October 17, 2026
