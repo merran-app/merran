@@ -213,6 +213,61 @@ describe("meals on the plan", () => {
 })
 
 describe("several meals at once", () => {
+  test.each(["planned", "cooked", "skipped"])(
+    "moving a %s meal preserves its details and occupied dishes, with Undo",
+    async (status) => {
+      await clearAll()
+      const source = await add({
+        date: week,
+        anyDay: true,
+        meal: "dinner",
+        recipe: "tomato-soup",
+        withRecipe: "garlic-rice",
+        servings: 6,
+      })
+      await kyle.patch(`/api/plan/entries/${source.id}`, { status })
+      const existing = await add({
+        date: addDays(week, 1),
+        meal: "lunch",
+        note: "Eat out",
+      })
+      const res = await kyle.post("/api/plan/entries/bulk", {
+        ids: [source.id],
+        action: "move",
+        date: existing.date,
+        meal: existing.meal,
+        anyDay: false,
+      })
+      expect(res.status).toBe(200)
+      const moved = await res.json()
+      expect(moved.entries[0]).toMatchObject({
+        id: source.id,
+        date: existing.date,
+        anyDay: false,
+        meal: "lunch",
+        position: 1,
+        status,
+        servings: 6,
+        recipe: { slug: "tomato-soup" },
+        withRecipe: { slug: "garlic-rice" },
+      })
+      expect(
+        (await plan()).find((entry: { id: string }) => entry.id === existing.id)
+      ).toEqual(existing)
+      await kyle.post("/api/plan/restore", { entries: moved.before })
+      expect(
+        (await plan()).find((entry: { id: string }) => entry.id === source.id)
+      ).toMatchObject({
+        date: week,
+        anyDay: true,
+        meal: "dinner",
+        status,
+        servings: 6,
+        withRecipe: { slug: "garlic-rice" },
+      })
+    }
+  )
+
   test("change all together, and Undo puts them back", async () => {
     await clearAll()
     const a = await add({ date: today, meal: "dinner", recipe: "tomato-soup" })

@@ -60,6 +60,12 @@ Ideas come from your library, not an AI search. Recipes recently planned or made
 
 ## Change plans
 
+**Not released yet:** drag a meal's move handle (the arrow over its photo) from **This week, any day** to a day's meal, between days or meal types, or back to the pool. Mouse, pen and touch are supported; hold near the top or bottom of the screen to scroll. Drop outside a highlighted destination or press Escape to cancel. Expand past days with **Show** before moving a meal there.
+
+Dropping into an empty slot moves immediately. If a dated slot already has dishes, review them and choose **Move alongside** or **Cancel**. Existing dishes stay in place. The moved meal keeps its servings, side, note and cooked/skipped status; it can be moved regardless of the destination's theme night. Returning to the pool keeps its meal type.
+
+For a destination picker, tap the handle or focus it and press Enter, then select **When** and **Meal** and choose **Move**. Bulk **Move** remains available when selecting several meals. Moves appear immediately while saving; a failed save restores their previous locations and shows an error. Successful moves offer **Undo**, which also updates immediately. Moving meals preserves existing shopping quantities and checked items.
+
 Use a meal's menu to **Move or change**, **Skip**, or **Remove** it. **Plan it again** reverses a skip. **Repeat last week** in the week's menu can reuse meals without replacing already planned slots. Review servings and dates after repeating.
 
 Choose **Mark cooked** when a planned meal has been made. This can consume its pantry stock. **Not cooked yet** reverses that status and restores recorded pantry deductions. Avoid marking meals cooked simply to hide them; use **Skip** when you did not make them.

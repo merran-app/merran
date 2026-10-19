@@ -1,11 +1,19 @@
 import { useTranslation } from "react-i18next"
+import { weekStartOf } from "@merran/shared"
+import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { useRefreshRecipes } from "@/features/recipes/queries"
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
 import { celebrate } from "@/lib/celebrations/celebrate"
 
-import { suggest, type PlanEntry, type PlanSnapshot } from "./queries"
+import {
+  suggest,
+  useHouseholdClock,
+  type PlanEntry,
+  type PlanSnapshot,
+} from "./queries"
+import { optimisticMove, optimisticMoveUndo } from "./drag/optimistic-move"
 
 type NewEntry = Schemas["NewPlanEntry"]
 type Changes = Schemas["PlanEntryChanges"]
@@ -21,6 +29,8 @@ const UNDO_MS = 10_000
 export function usePlanActions() {
   const { t } = useTranslation()
   const refreshRecipes = useRefreshRecipes()
+  const queryClient = useQueryClient()
+  const { weekStartsOn } = useHouseholdClock()
 
   /** Work that might fail with a message to show. */
   async function attempt<T>(work: () => Promise<T>): Promise<T | null> {
@@ -49,17 +59,37 @@ export function usePlanActions() {
       )
     )
 
-  const restore = (entries: PlanSnapshot[]) =>
-    run(() => unwrap(api.POST("/api/plan/restore", { body: { entries } })))
+  const restore = async (entries: PlanSnapshot[], moved = false) => {
+    const rollback = moved
+      ? await optimisticMoveUndo(queryClient, entries)
+      : undefined
+    try {
+      const done = await run(() =>
+        unwrap(api.POST("/api/plan/restore", { body: { entries } }))
+      )
+      if (!done) rollback?.()
+      return done
+    } catch (error) {
+      rollback?.()
+      if (moved) {
+        toast.error(t("plan.undoMoveFailed"))
+        return null
+      }
+      throw error
+    }
+  }
 
   /**
    * Says what happened, with Undo putting things back as they were, for
    * long enough to find it.
    */
-  const undoable = (message: string, before: PlanSnapshot[]) =>
+  const undoable = (message: string, before: PlanSnapshot[], moved = false) =>
     toast.success(message, {
       duration: UNDO_MS,
-      action: { label: t("plan.undo"), onClick: () => void restore(before) },
+      action: {
+        label: t("plan.undo"),
+        onClick: () => void restore(before, moved),
+      },
     })
 
   const nameOf = (entry: Pick<PlanEntry, "recipe" | "note">) =>
@@ -159,9 +189,32 @@ export function usePlanActions() {
     },
 
     async bulk(ids: string[], action: Omit<Bulk, "ids">) {
-      const done = await run(() =>
-        unwrap(api.POST("/api/plan/entries/bulk", { body: { ids, ...action } }))
-      )
+      const rollback =
+        action.action === "move" && action.date
+          ? await optimisticMove(queryClient, ids, {
+              date: action.anyDay
+                ? weekStartOf(action.date, weekStartsOn)
+                : action.date,
+              anyDay: action.anyDay ?? false,
+              ...(action.meal ? { meal: action.meal } : {}),
+            })
+          : undefined
+      let done
+      try {
+        done = await run(() =>
+          unwrap(
+            api.POST("/api/plan/entries/bulk", { body: { ids, ...action } })
+          )
+        )
+      } catch (error) {
+        rollback?.()
+        if (action.action === "move") {
+          toast.error(t("plan.moveFailed"))
+          return false
+        }
+        throw error
+      }
+      if (!done) rollback?.()
       if (!done) return false
       const count = done.before.length
       if (
@@ -176,7 +229,8 @@ export function usePlanActions() {
           : action.action === "move"
             ? t("plan.bulk.moved", { count })
             : t("plan.bulk.marked", { count }),
-        done.before
+        done.before,
+        action.action === "move"
       )
       return true
     },

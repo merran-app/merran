@@ -44,6 +44,7 @@ import { AddMealDialog, type Slot } from "./add-meal-dialog"
 import { MoveMealsDialog } from "./change-meal-dialog"
 import { averageCalories } from "./calories"
 import { DayCard, PastDays, PoolCard } from "./day-card"
+import { MealDragProvider } from "./drag/meal-drag"
 import { FillWeekDialog } from "./fill-week-dialog"
 import { formatDay, formatWeek } from "./format"
 import { NextMealCard } from "./next-meal-card"
@@ -202,9 +203,9 @@ export function PlanPage({ week: asked }: { week?: string }) {
         }
       />
 
-      <div className="grid gap-5">
+      <div className="grid min-w-0 grid-cols-1 gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="icon"
@@ -251,8 +252,14 @@ export function PlanPage({ week: asked }: { week?: string }) {
             ))}
           </div>
         ) : (
-          <>
+          <MealDragProvider
+            key={week}
+            week={week}
+            entries={entries}
+            disabled={selection.selecting}
+          >
             <PoolCard
+              week={week}
               entries={pool}
               selection={selection}
               onAdd={() =>
@@ -294,7 +301,7 @@ export function PlanPage({ week: asked }: { week?: string }) {
                 }
               />
             ))}
-          </>
+          </MealDragProvider>
         )}
       </div>
 

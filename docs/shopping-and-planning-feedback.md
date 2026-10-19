@@ -22,12 +22,14 @@ Ingredient context is implemented October 18, 2026, not released yet: each shopp
 
 ## Rearrange meals after automatic planning
 
-After Fill the week or scheduled automatic planning, make it quick to move meals between days or swap two existing meals, keeping the chosen recipes rather than generating new suggestions.
+Decided and implemented October 18, 2026, not released yet: a move handle on each weekly meal supports mouse, pen and touch dragging between days, meal types and the any-day pool. It also opens the destination picker by tap or keyboard. Keep **Move or change** and bulk **Move** available. Direct two-meal swaps remain planned.
 
-- Explore dragging meals between days, with an equally usable menu/button alternative for touch and keyboard users.
-- Moving into an occupied slot needs an explicit swap or another clear choice; do not overwrite or lose a meal.
-- Preserve servings, paired recipes and notes. Decide how to handle cooked/skipped meals and theme-night mismatches.
-- Review the effect on an already-generated shopping list so moving meals does not duplicate ingredients or silently discard checked items.
+- Highlight valid destinations without shifting the layout. Scroll near the viewport edges to reach other days. Release outside a destination or press Escape to cancel. A drop back on the current slot does nothing; selection mode disables dragging.
+- Keep day headings, theme badges and calorie totals wrapping within the phone viewport. Meal tracks can shrink and long names truncate; drag hints stay within their targets so moving meals does not introduce horizontal page scrolling.
+- An empty slot accepts the move immediately. An occupied dated slot offers **Move alongside**, with the existing dishes named; cancel leaves everything where it was. Keep the pool's meal type when a dish returns to it.
+- Preserve entry identity, recipes, paired recipes, servings, notes and cooked/skipped status. Manual moves can miss theme nights, as **Move or change** already permits; they do not generate replacement recipes or reset cooking history.
+- Update cached week ranges optimistically for moves and their Undo, including the destination picker. A failed save rolls back only the affected locations, preserving unrelated changes and showing an error. Cancel in-flight range reads before moving so they cannot restore stale positions. Refresh from the server after success.
+- Reuse the transactional bulk move and its snapshot-based Undo. A date/meal-only change leaves shopping provenance, quantities, pantry reservations and checked purchases alone; it never generates another list.
 
 ## See recipes already planned for the week
 
@@ -49,4 +51,4 @@ Decided October 18, 2026; built, not released yet. Reward finishing a shopping l
 
 ## Before implementation of the planned improvements
 
-For the remaining substitutions and meal-rearranging work, confirm the interaction choices above, inspect ingredient provenance and Move or change behavior, and split implementation into independently reviewable changes. The original feedback record introduced no runtime changes; the shopping completion, ingredient-context and celebration decisions above describe the subsequent implementation.
+For the remaining substitutions and direct meal swaps, confirm the interaction choices above and split implementation into independently reviewable changes. The original feedback record introduced no runtime changes; the shopping completion, ingredient-context, meal-moving, weekly-badge and celebration decisions above describe the subsequent implementation.

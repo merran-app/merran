@@ -39,6 +39,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm --filter @merran/web check:contrast
       - run: pnpm --filter @merran/web build
+      - run: pnpm --filter @merran/web test
       # The web app's API types come from openapi.json, and its route tree
       # from its route files: both are committed, so both must be current.
       # The extension uses the same API types.

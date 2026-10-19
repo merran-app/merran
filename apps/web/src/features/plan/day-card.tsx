@@ -13,12 +13,13 @@ import { cn } from "@/lib/utils"
 import { formatMonthDay, formatShortWeekday, formatWeekday } from "./format"
 import { dayCalories } from "./calories"
 import { MealTile } from "./meal-tile"
+import { MealDropZone } from "./drag/meal-drag"
 import { NotFilledIcon, useNotFilled } from "./not-filled"
 import type { Meal, PlanEntry } from "./queries"
 
 /** The frame every part of the week sits in. */
 const FRAME =
-  "@container grid gap-3.5 rounded-3xl border bg-card p-5 text-card-foreground md:px-6"
+  "@container grid min-w-0 grid-cols-1 gap-3.5 rounded-3xl border bg-card p-5 text-card-foreground md:px-6"
 
 /** A small heading over a meal's dishes: "DINNER", with an (i) if it isn't filled for you. */
 function MealLabel({
@@ -87,21 +88,25 @@ export function DayCard({
         day < today && "opacity-75"
       )}
     >
-      <header className="flex items-baseline gap-2.5">
+      <header className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-1.5">
         <h2 id={id} className="text-xl font-semibold tracking-tight">
           {formatWeekday(day, i18n.language)}
         </h2>
-        <span className="text-sm text-muted-foreground">
+        <span className="shrink-0 text-sm text-muted-foreground">
           {formatMonthDay(day, i18n.language)}
         </span>
         {isToday && <Badge className="self-center">{t("plan.today")}</Badge>}
         {theme && (
-          <Badge variant="secondary" className="self-center">
-            {themeLabel(theme)}
+          <Badge
+            variant="secondary"
+            className="max-w-full self-center"
+            title={themeLabel(theme)}
+          >
+            <span className="truncate">{themeLabel(theme)}</span>
           </Badge>
         )}
         {calories && (
-          <span className="ml-auto text-sm text-muted-foreground tabular-nums">
+          <span className="ml-auto shrink-0 text-sm text-muted-foreground tabular-nums">
             {t(calories.partial ? "plan.caloriesMore" : "plan.calories", {
               count: calories.total,
               value: calories.total.toLocaleString(i18n.language),
@@ -120,7 +125,11 @@ export function DayCard({
       >
         {MEALS.map((meal) =>
           byMeal.has(meal) ? (
-            <div key={meal} className="grid basis-full content-start gap-1.5">
+            <MealDropZone
+              key={meal}
+              to={{ date: day, meal, anyDay: false }}
+              className="grid basis-full grid-cols-1 content-start gap-1.5"
+            >
               <div className="flex h-6 items-center justify-between">
                 <MealLabel meal={meal} notFilled={notFilled.includes(meal)} />
                 {!selection.selecting && (
@@ -134,7 +143,7 @@ export function DayCard({
                   </Button>
                 )}
               </div>
-              <ul className="grid gap-1.5">
+              <ul className="grid min-w-0 grid-cols-1 gap-1.5">
                 {byMeal.get(meal)!.map((entry) => (
                   <MealTile
                     key={entry.id}
@@ -143,11 +152,12 @@ export function DayCard({
                   />
                 ))}
               </ul>
-            </div>
+            </MealDropZone>
           ) : (
-            <div
+            <MealDropZone
               key={meal}
-              className="order-last grid content-start gap-1.5 @2xl:order-none"
+              to={{ date: day, meal, anyDay: false }}
+              className="order-last grid grid-cols-1 content-start gap-1.5 @2xl:order-none"
             >
               <MealLabel
                 meal={meal}
@@ -171,7 +181,7 @@ export function DayCard({
                   {t(`plan.add.${meal}`)}
                 </span>
               </Button>
-            </div>
+            </MealDropZone>
           )
         )}
       </div>
@@ -181,10 +191,12 @@ export function DayCard({
 
 /** The week's pool: meals for the week without a day yet. */
 export function PoolCard({
+  week,
   entries,
   selection,
   onAdd,
 }: {
+  week: string
   entries: PlanEntry[]
   selection: Selection
   onAdd: () => void
@@ -200,27 +212,29 @@ export function PoolCard({
         </h2>
         <p className="text-sm text-muted-foreground">{t("plan.poolHint")}</p>
       </header>
-      <ul className="grid gap-1.5 @2xl:grid-cols-2 @2xl:gap-3 @4xl:grid-cols-3">
-        {entries.map((entry) => (
-          <MealTile key={entry.id} entry={entry} selection={selection} />
-        ))}
-        {!selection.selecting && (
-          <li>
-            <Button
-              variant="outline"
-              className="h-17 w-full rounded-2xl border-dashed bg-transparent text-muted-foreground"
-              onClick={onAdd}
-            >
-              <HugeiconsIcon
-                icon={Add01Icon}
-                strokeWidth={2}
-                data-icon="inline-start"
-              />
-              {t("plan.addToPool")}
-            </Button>
-          </li>
-        )}
-      </ul>
+      <MealDropZone to={{ date: week, anyDay: true }}>
+        <ul className="grid min-w-0 grid-cols-1 gap-1.5 @2xl:grid-cols-2 @2xl:gap-3 @4xl:grid-cols-3">
+          {entries.map((entry) => (
+            <MealTile key={entry.id} entry={entry} selection={selection} />
+          ))}
+          {!selection.selecting && (
+            <li>
+              <Button
+                variant="outline"
+                className="h-17 w-full rounded-2xl border-dashed bg-transparent text-muted-foreground"
+                onClick={onAdd}
+              >
+                <HugeiconsIcon
+                  icon={Add01Icon}
+                  strokeWidth={2}
+                  data-icon="inline-start"
+                />
+                {t("plan.addToPool")}
+              </Button>
+            </li>
+          )}
+        </ul>
+      </MealDropZone>
     </section>
   )
 }

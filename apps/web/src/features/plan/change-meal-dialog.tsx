@@ -207,33 +207,37 @@ export function MoveMealsDialog({
   open,
   onOpenChange,
   onMoved,
+  initialWhen,
+  initialMeal,
 }: {
   ids: string[]
   week: string
   open: boolean
   onOpenChange: (open: boolean) => void
   onMoved: () => void
+  initialWhen?: string
+  initialMeal?: Meal
 }) {
   const { t } = useTranslation()
   const actions = usePlanActions()
-  const [when, setWhen] = React.useState(`any:${week}`)
-  const [meal, setMeal] = React.useState("")
+  const [when, setWhen] = React.useState(initialWhen ?? `any:${week}`)
+  const [meal, setMeal] = React.useState<string>(initialMeal ?? "")
   const [busy, setBusy] = React.useState(false)
 
   async function move() {
     const to = parseWhen(when)
     setBusy(true)
-    const moved = await actions.bulk(ids, {
+    const saving = actions.bulk(ids, {
       action: "move",
       date: to.date,
       anyDay: to.anyDay,
       ...(meal ? { meal: meal as Meal } : {}),
     })
+    // The cache moves the meals immediately; a failed save restores them.
+    onOpenChange(false)
+    onMoved()
+    await saving
     setBusy(false)
-    if (moved) {
-      onOpenChange(false)
-      onMoved()
-    }
   }
 
   return (
