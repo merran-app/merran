@@ -47,6 +47,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
 | Several households on one server, kept fully apart | Headline | Built | Proved by tests generated from the schema |
+| Settings grouped by owner and task, with section links | Detail | Built | Not released yet: You, Household, Import and export, and This server use the same section navigation; cards are grouped by what people are trying to change |
 | Belonging to more than one household, with a switcher | Key | Built | |
 | First-run setup with a code from the log | Detail | Built | Grouped readiness banner, retrieval and recovery guidance; new improvements released in alpha.4 ([onboarding.md](onboarding.md)) |
 | Clear setup-code retrieval and recovery from interrupted setup | Detail | Built | Available in alpha.4: operator setup-code command; atomic claiming, concurrent-submission guard and retry/sign-in guidance |

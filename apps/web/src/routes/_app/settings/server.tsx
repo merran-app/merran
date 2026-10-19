@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { meQuery } from "@/features/auth/queries"
 import {
@@ -7,6 +8,7 @@ import {
   ServerAiSpendCard,
 } from "@/features/ai/server-ai-cards"
 import { serverAiQuery } from "@/features/ai/queries"
+import { SettingsPage } from "@/features/settings/settings-page"
 import { AboutCard } from "@/features/server/about-card"
 import { AuthCard } from "@/features/server/auth-card"
 import { OAuthClientsCard } from "@/features/server/oauth-clients-card"
@@ -44,25 +46,79 @@ export const Route = createFileRoute("/_app/settings/server")({
 })
 
 function ServerSettings() {
+  const { t } = useTranslation()
+
   return (
-    <>
-      <AboutCard />
-      <AuthCard />
-      <OAuthClientsCard />
-      <ServerAiKeysCard />
-      <ServerAiPolicyCard />
-      <ServerAiSpendCard />
-      <VideoCard />
-      <NutritionCard />
-      <SitesCard />
-      <PhotosCard />
-      <VoiceCard />
-      <KrogerCard />
-      <WalmartCard />
-      <ErrorTrackingCard />
-      <EmailCard />
-      <TelemetryCard />
-      <JobsCard />
-    </>
+    <SettingsPage
+      groups={[
+        {
+          id: "server-overview",
+          title: t("settings.server.groups.overview.title"),
+          description: t("settings.server.groups.overview.description"),
+          content: <AboutCard />,
+        },
+        {
+          id: "access-and-email",
+          title: t("settings.server.groups.access.title"),
+          description: t("settings.server.groups.access.description"),
+          content: (
+            <>
+              <AuthCard />
+              <OAuthClientsCard />
+              <EmailCard />
+            </>
+          ),
+        },
+        {
+          id: "server-ai",
+          title: t("settings.server.groups.ai.title"),
+          description: t("settings.server.groups.ai.description"),
+          content: (
+            <>
+              <ServerAiKeysCard />
+              <ServerAiPolicyCard />
+              <ServerAiSpendCard />
+            </>
+          ),
+        },
+        {
+          id: "recipe-services",
+          title: t("settings.server.groups.recipes.title"),
+          description: t("settings.server.groups.recipes.description"),
+          content: (
+            <>
+              <VideoCard />
+              <NutritionCard />
+              <SitesCard />
+              <PhotosCard />
+              <VoiceCard />
+            </>
+          ),
+        },
+        {
+          id: "store-connections",
+          title: t("settings.server.groups.stores.title"),
+          description: t("settings.server.groups.stores.description"),
+          content: (
+            <>
+              <KrogerCard />
+              <WalmartCard />
+            </>
+          ),
+        },
+        {
+          id: "server-operations",
+          title: t("settings.server.groups.operations.title"),
+          description: t("settings.server.groups.operations.description"),
+          content: (
+            <>
+              <ErrorTrackingCard />
+              <TelemetryCard />
+              <JobsCard />
+            </>
+          ),
+        },
+      ]}
+    />
   )
 }

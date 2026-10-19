@@ -230,8 +230,32 @@
   },
   "settings": {
     "sections": "Settings sections",
+    "onThisPage": "On this page",
+    "description": "Choose who these settings apply to, then jump to the part you need.",
     "you": {
       "tab": "You",
+      "groups": {
+        "profile": {
+          "title": "Profile and appearance",
+          "description": "Your account details and how Merran looks on this device."
+        },
+        "security": {
+          "title": "Sign-in and security",
+          "description": "Ways to sign in and protect your account."
+        },
+        "connections": {
+          "title": "Connected apps and API keys",
+          "description": "Review access you have granted to other apps."
+        },
+        "devices": {
+          "title": "Devices and sharing",
+          "description": "Install Merran and send recipes or receipts from your devices."
+        },
+        "data": {
+          "title": "Your data",
+          "description": "Download a copy of your account data."
+        }
+      },
       "profile": {
         "title": "Profile",
         "description": "How you appear to your household.",
@@ -344,6 +368,28 @@
       }
     },
     "household": {
+      "groups": {
+        "details": {
+          "title": "Household details",
+          "description": "The shared name, region, time zone and other basics."
+        },
+        "people": {
+          "title": "People and households",
+          "description": "Members, invitations and other households."
+        },
+        "planning": {
+          "title": "Meal planning",
+          "description": "Set tastes, meals, themes and the weekly plan."
+        },
+        "recipes": {
+          "title": "Recipes and AI",
+          "description": "Choose AI models and work on nutrition or photos across the library."
+        },
+        "shopping": {
+          "title": "Shopping and stores",
+          "description": "Choose where this household shops and connect a store account."
+        }
+      },
       "yourStores": {
         "title": "Your stores",
         "description": "The stores you shop at, for Find on the list. Merran offers only these, however many it knows.",
@@ -586,6 +632,32 @@
     "lockedBy": "Set on the server, by {{env}}",
     "server": {
       "tab": "This server",
+      "groups": {
+        "overview": {
+          "title": "Server overview",
+          "description": "Version, installation and address details."
+        },
+        "access": {
+          "title": "Access and email",
+          "description": "Control sign-in, connected applications and outgoing email."
+        },
+        "ai": {
+          "title": "Shared AI",
+          "description": "Manage server keys, household access and server-key spending."
+        },
+        "recipes": {
+          "title": "Recipe services",
+          "description": "Configure imports, nutrition, recipe sites, photos and voice."
+        },
+        "stores": {
+          "title": "Store connections",
+          "description": "Set up the retailers households can use."
+        },
+        "operations": {
+          "title": "Operations",
+          "description": "Monitor jobs and choose how errors and telemetry are reported."
+        }
+      },
       "about": {
         "title": "This server",
         "description": "What's running, and where.",
@@ -819,6 +891,16 @@
     },
     "transfer": {
       "tab": "Import and export",
+      "groups": {
+        "household": {
+          "title": "Move a household",
+          "description": "Download a household archive or restore one from Merran."
+        },
+        "apps": {
+          "title": "Import from another app",
+          "description": "Bring recipes into this household from another meal planner."
+        }
+      },
       "export": {
         "title": "Export this household",
         "description": "A zip of its recipes, with their photos, versions, cooking notes and pairings, to keep or to move to another Merran. Recipes in Recently deleted, AI keys and other secrets stay behind.",

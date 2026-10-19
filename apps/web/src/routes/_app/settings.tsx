@@ -41,11 +41,14 @@ function SettingsLayout() {
   )
   return (
     <>
-      <PageHeader title={t("nav.settings")} />
+      <PageHeader
+        title={t("nav.settings")}
+        description={t("settings.description")}
+      />
       <nav
         data-tour="page-actions"
         aria-label={t("settings.sections")}
-        className="mb-6 flex w-fit gap-1 rounded-4xl bg-muted p-1"
+        className="mb-8 flex max-w-full flex-wrap gap-1 rounded-2xl bg-muted p-1"
       >
         {sections.map((section) => (
           <Link
@@ -54,7 +57,7 @@ function SettingsLayout() {
               section.only === "serverAdmin" ? "server-settings" : undefined
             }
             to={section.to}
-            className="rounded-4xl px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
             activeProps={{
               className: "bg-background text-foreground shadow-sm",
             }}
