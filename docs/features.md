@@ -112,7 +112,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Import from Paprika | Key | Built | |
 | Merran export and import of a whole household | Key | Built | |
 | Share to Merran from Android's share sheet or an iPhone Shortcut | Key | Built | Links, pages, photos, screenshots and PDFs; on Android, once installed from Merran's https address |
-| Tidy up: AI fixes a recipe, you review each change | Key | Built | AI; also marks which ingredients a recipe can do without, and names the food of lines Merran doesn't know, for the list |
+| Tidy up: AI fixes a recipe, you review each change | Key | Built | Not released yet: paired previous/proposed line comparisons with changed/added/removed counts, description and detail comparisons, and full recipe previews in Review; recipe Review and Tidy up open in mobile drawers while desktop keeps dialogs. AI; also marks which ingredients a recipe can do without, and names the food of lines Merran doesn't know, for the list |
 | Video links (TikTok, YouTube, Instagram, Facebook) | Headline | Built | Module, on by default: yt-dlp and ffmpeg (in the image) and AI; listens to videos without captions on an OpenAI key |
 | Follow recipe sites and see their newest recipes | Key | Built | Module, on by default; respects `robots.txt`; on Recipes and Today too |
 | Starter collections that fill themselves from recipe sites, fitted to your tastes | Key | Built | Module, on by default; a rule and a few classics per collection, in data files per language; Find more with AI |

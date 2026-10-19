@@ -4,19 +4,13 @@ import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { DialogFooter } from "@/components/ui/dialog"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { NeedsAi, useAiFor } from "@/features/ai/needs-ai"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
+import { ReviewOverlay } from "./review-overlay"
 import { ProposalReview } from "./proposal-review"
 import {
   recipeTidyQuery,
@@ -97,109 +91,102 @@ export function TidyDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>
-            {t("recipes.tidy.title", { name: recipe.name })}
-          </DialogTitle>
-          <DialogDescription>
-            {proposal
-              ? t("recipes.tidy.reviewDescription")
-              : t("recipes.tidy.description")}
-          </DialogDescription>
-        </DialogHeader>
-
-        {waiting.isPending ? (
-          <div className="flex justify-center py-8">
-            <Spinner />
-          </div>
-        ) : proposal ? (
-          <>
-            <ProposalReview
-              key={proposal.id}
-              proposal={proposal}
-              onDone={() => onOpenChange(false)}
-            />
-            <Button
-              variant="link"
-              className="justify-self-start px-0"
-              onClick={() => setAgain(true)}
-            >
-              {t("recipes.tidy.again")}
+    <ReviewOverlay
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t("recipes.tidy.title", { name: recipe.name })}
+      description={
+        proposal
+          ? t("recipes.tidy.reviewDescription")
+          : t("recipes.tidy.description")
+      }
+    >
+      {waiting.isPending ? (
+        <div className="flex justify-center py-8">
+          <Spinner />
+        </div>
+      ) : proposal ? (
+        <>
+          <ProposalReview
+            key={proposal.id}
+            proposal={proposal}
+            onDone={() => onOpenChange(false)}
+          />
+          <Button
+            variant="link"
+            className="justify-self-start px-0"
+            onClick={() => setAgain(true)}
+          >
+            {t("recipes.tidy.again")}
+          </Button>
+        </>
+      ) : fine ? (
+        <>
+          <p className="text-sm">{t("recipes.tidy.fine")}</p>
+          <DialogFooter>
+            <Button onClick={() => onOpenChange(false)}>
+              {t("recipes.tidy.done")}
             </Button>
-          </>
-        ) : fine ? (
-          <>
-            <p className="text-sm">{t("recipes.tidy.fine")}</p>
-            <DialogFooter>
-              <Button onClick={() => onOpenChange(false)}>
-                {t("recipes.tidy.done")}
-              </Button>
-            </DialogFooter>
-          </>
-        ) : (
-          <>
-            {ai.why && (
-              <NeedsAi
-                task="tidy"
-                why={ai.why}
-                onNavigate={() => onOpenChange(false)}
-              />
-            )}
-            <fieldset className="grid gap-2.5" disabled={busy}>
-              <legend className="mb-2 text-sm font-medium">
-                {t("recipes.tidy.what")}
-              </legend>
-              {SECTIONS.map((section) => (
-                <Field key={section} orientation="horizontal">
-                  <Checkbox
-                    id={`tidy-${section}`}
-                    checked={picked.has(section)}
-                    onCheckedChange={(checked) =>
-                      setPicked((now) => {
-                        const next = new Set(now)
-                        if (checked) next.add(section)
-                        else next.delete(section)
-                        return next
-                      })
-                    }
-                  />
-                  <FieldLabel
-                    htmlFor={`tidy-${section}`}
-                    className="font-normal"
-                  >
-                    {t(`recipes.tidy.options.${section}`)}
-                  </FieldLabel>
-                </Field>
-              ))}
-            </fieldset>
-            {error ? (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
+          </DialogFooter>
+        </>
+      ) : (
+        <>
+          {ai.why && (
+            <NeedsAi
+              task="tidy"
+              why={ai.why}
+              onNavigate={() => onOpenChange(false)}
+            />
+          )}
+          <fieldset className="grid gap-2.5" disabled={busy}>
+            <legend className="mb-2 text-sm font-medium">
+              {t("recipes.tidy.what")}
+            </legend>
+            {SECTIONS.map((section) => (
+              <Field key={section} orientation="horizontal">
+                <Checkbox
+                  id={`tidy-${section}`}
+                  checked={picked.has(section)}
+                  onCheckedChange={(checked) =>
+                    setPicked((now) => {
+                      const next = new Set(now)
+                      if (checked) next.add(section)
+                      else next.delete(section)
+                      return next
+                    })
+                  }
+                />
+                <FieldLabel htmlFor={`tidy-${section}`} className="font-normal">
+                  {t(`recipes.tidy.options.${section}`)}
+                </FieldLabel>
+              </Field>
+            ))}
+          </fieldset>
+          {error ? (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          ) : (
+            busy && (
+              <p aria-live="polite" className="text-sm text-muted-foreground">
+                {t("recipes.tidy.slow")}
               </p>
-            ) : (
-              busy && (
-                <p aria-live="polite" className="text-sm text-muted-foreground">
-                  {t("recipes.tidy.slow")}
-                </p>
-              )
-            )}
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => onOpenChange(false)}>
-                {t("recipes.tidy.cancel")}
-              </Button>
-              <Button
-                disabled={busy || picked.size === 0 || ai.ready === false}
-                onClick={() => void tidy()}
-              >
-                {busy && <Spinner data-icon="inline-start" />}
-                {busy ? t("recipes.tidy.tidying") : t("recipes.tidy.start")}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+            )
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>
+              {t("recipes.tidy.cancel")}
+            </Button>
+            <Button
+              disabled={busy || picked.size === 0 || ai.ready === false}
+              onClick={() => void tidy()}
+            >
+              {busy && <Spinner data-icon="inline-start" />}
+              {busy ? t("recipes.tidy.tidying") : t("recipes.tidy.start")}
+            </Button>
+          </DialogFooter>
+        </>
+      )}
+    </ReviewOverlay>
   )
 }

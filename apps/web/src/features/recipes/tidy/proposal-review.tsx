@@ -17,6 +17,8 @@ import {
   type TidyValues,
 } from "./queries"
 
+import { LineChanges } from "./line-changes"
+
 type Mark = "needed" | "swappable" | "optional"
 const MARKS: Mark[] = ["needed", "swappable", "optional"]
 
@@ -160,28 +162,27 @@ function SectionChange({
     case "ingredients":
     case "steps":
       return (
-        <BeforeAfter
-          tidied={tidied}
-          before={<Lines lines={before[section] ?? []} />}
-          after={<Lines lines={after[section] ?? []} />}
+        <LineChanges
+          before={before[section] ?? []}
+          after={after[section] ?? []}
         />
       )
     case "tags":
       return <TagChange before={before.tags ?? []} after={after.tags ?? []} />
     case "description":
-      return <p className="text-sm">{after.description}</p>
+      return (
+        <LineChanges
+          before={before.description ? [before.description] : []}
+          after={after.description ? [after.description] : []}
+        />
+      )
     case "details":
       return <DetailsChange before={before.details} after={after.details} />
     case "notes":
       return (
-        <BeforeAfter
-          tidied={tidied}
-          before={
-            <p className="text-sm whitespace-pre-line">
-              {before.notes || t("recipes.review.noNotes")}
-            </p>
-          }
-          after={<p className="text-sm whitespace-pre-line">{after.notes}</p>}
+        <LineChanges
+          before={before.notes ? before.notes.split("\n") : []}
+          after={after.notes ? after.notes.split("\n") : []}
         />
       )
     case "marks":
@@ -266,25 +267,6 @@ function BeforeAfter({
   )
 }
 
-/** Editor lines, "# Section" lines as headings. */
-function Lines({ lines }: { lines: readonly string[] }) {
-  return (
-    <ul className="grid gap-1 text-sm">
-      {lines.map((line, index) =>
-        line.trim().startsWith("#") ? (
-          <li key={index} className="pt-1 font-medium">
-            {line.replace(/^#+\s*/, "")}
-          </li>
-        ) : (
-          <li key={index} className="min-w-0 break-words">
-            {line}
-          </li>
-        )
-      )}
-    </ul>
-  )
-}
-
 function TagChange({
   before,
   after,
@@ -326,12 +308,17 @@ function DetailsChange({
   if (!after) return null
   const filled = (
     ["servings", "prepMinutes", "cookMinutes", "totalMinutes"] as const
-  ).filter((key) => after[key] !== null && before?.[key] !== after[key])
+  ).filter((key) => before?.[key] !== after[key])
   return (
-    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+    <ul className="grid gap-3 text-sm sm:grid-cols-2">
       {filled.map((key) => (
-        <li key={key}>
-          {t(`recipes.tidy.details.${key}`, { count: after[key] ?? 0 })}
+        <li key={key} className="rounded-xl border p-3">
+          <p className="mb-2 font-medium">{t(`recipes.fields.${key}`)}</p>
+          <BeforeAfter
+            tidied={false}
+            before={before?.[key] ?? t("recipes.review.notSet")}
+            after={after[key] ?? t("recipes.review.notSet")}
+          />
         </li>
       ))}
     </ul>
