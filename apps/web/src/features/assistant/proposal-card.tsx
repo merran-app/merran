@@ -307,6 +307,13 @@ function CardBody({
         name: string
         ingredients: string[]
         steps: string[]
+        description: string | null
+        notes: string | null
+        servings: number | null
+        prepMinutes: number | null
+        cookMinutes: number | null
+        totalMinutes: number | null
+        tags: string[]
       }
       return (
         <div className="grid gap-1 text-muted-foreground">
@@ -318,6 +325,50 @@ function CardBody({
               steps: recipe.steps.filter((l) => !l.startsWith("#")).length,
             })}
           </p>
+          <details className="mt-2">
+            <summary className="cursor-pointer font-medium text-foreground">
+              {t("assistant.cards.inspectRecipe")}
+            </summary>
+            <div className="mt-3 grid gap-3">
+              {recipe.description && (
+                <p className="whitespace-pre-line">{recipe.description}</p>
+              )}
+              {recipe.servings && (
+                <p>
+                  {t("recipes.serves", {
+                    count: recipe.servings,
+                    servings: recipe.servings,
+                  })}
+                </p>
+              )}
+              {recipe.tags.length > 0 && <p>{recipe.tags.join(" · ")}</p>}
+              {(["prepMinutes", "cookMinutes", "totalMinutes"] as const).map(
+                (field) =>
+                  recipe[field] !== null && recipe[field] !== undefined ? (
+                    <p key={field}>
+                      {t(`recipes.fields.${field}`)}: {recipe[field]}
+                    </p>
+                  ) : null
+              )}
+              <p className="font-medium">
+                {t("recipes.tidy.sections.ingredients")}
+              </p>
+              <ul className="grid gap-1">
+                {recipe.ingredients.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+              <p className="font-medium">{t("recipes.tidy.sections.steps")}</p>
+              <ol className="grid list-inside list-decimal gap-2">
+                {recipe.steps.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ol>
+              {recipe.notes && (
+                <p className="whitespace-pre-line">{recipe.notes}</p>
+              )}
+            </div>
+          </details>
         </div>
       )
     }

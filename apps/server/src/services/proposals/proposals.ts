@@ -63,16 +63,27 @@ export async function listProposals(
     limit = 50,
     offset = 0,
     recipe,
-  }: { limit?: number; offset?: number; recipe?: string } = {}
+    kinds,
+  }: {
+    limit?: number
+    offset?: number
+    recipe?: string
+    kinds?: Proposal["kind"][]
+  } = {}
 ) {
   const recipeId = recipe ? (await findRecipe(em, recipe)).id : null
   const [proposals, total] = await em.findAndCount(
     Proposal,
     {
       status: "pending",
+      ...(kinds ? { kind: { $in: kinds } } : {}),
       // The assistant's are shown in its chats, not here.
       chat: null,
-      recipe: recipeId ? recipeId : { deletedAt: null },
+      ...(recipeId
+        ? { recipe: recipeId }
+        : {
+            $or: [{ recipe: null }, { recipe: { deletedAt: null } }],
+          }),
     },
     {
       populate: ["recipe"],

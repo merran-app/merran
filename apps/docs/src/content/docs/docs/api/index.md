@@ -55,3 +55,9 @@ For permission examples, pagination, errors, rate limits, and a runnable script,
 - Your server's **/api/openapi.json**: schema for the version you actually run.
 
 This public site does not need your key. Use your own instance's explorer for authenticated requests. During alpha, the API may change between releases; prefer your running instance's schema when versions differ.
+
+## MCP and proposal permissions (not released yet)
+
+The separate `/mcp` endpoint uses Streamable HTTP and the same bearer keys as REST; it is not part of this REST OpenAPI document. See [MCP setup](../integrations/mcp/) for its tools and review workflow.
+
+Proposal REST routes retain their Recipes permission and additionally check the proposal's affected area: Plan for meals and tastes, Shopping list for list items, Imports for imports, and Recipes for recipe proposals. Listing omits kinds the key cannot read; reading a specific proposal requires read access, and applying or dismissing it requires write access. Browser sessions continue to review their household's proposals.

@@ -82,6 +82,10 @@ Review optional settings before enabling automatic work. Provider transmission, 
 
 There is no universal undo for all proposal types. Use the affected feature's normal editing controls; recipe versions help with recipe edits, while plan/list additions need to be corrected there. Deleting a chat does not undo applied changes.
 
+## External AI apps (not released yet)
+
+The MCP endpoint lets a compatible external app read permitted kitchen data and send proposals to **Recipes → Review**. Review now also handles proposed new recipes, meals and shopping items. Every MCP change waits for you to apply it; MCP calls do not use Merran AI credits. See [connecting an AI app](../../integrations/mcp/) for permissions and setup.
+
 ## Next steps
 
 [Plan your meals](../planning/), [edit recipes](../recipes/), or review [AI privacy and retained data](../../project/ai-privacy/).

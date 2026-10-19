@@ -1,6 +1,8 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { dismissProposal } from "../../../../../services/proposals/proposals.ts"
+import { getProposal } from "../../../../../services/proposals/proposals.ts"
+import { requireProposalPermission } from "../../../../../services/proposals/permissions.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import {
@@ -16,7 +18,8 @@ const route = createRoute({
   operationId: "dismissProposal",
   tags: ["Review"],
   summary: "Dismiss a suggestion",
-  description: "The recipe stays as it is.",
+  description:
+    "The suggestion is discarded without applying it. API keys additionally need write access to the affected area: plan for meals/tastes, list for shopping items, imports for imports, and recipes otherwise.",
   ...openToKeys("recipes", "write"),
   request: { params: ProposalParam },
   responses: {
@@ -30,6 +33,8 @@ const route = createRoute({
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, userId } = inHousehold(c)
+    const current = await getProposal(em, c.req.valid("param").proposalId)
+    requireProposalPermission(c.var.apiKey?.permissions, current.kind, "write")
     const proposal = await dismissProposal(em, {
       userId,
       proposalId: c.req.valid("param").proposalId,

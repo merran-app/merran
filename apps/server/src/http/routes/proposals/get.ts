@@ -1,6 +1,7 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../core/context.ts"
 import { listProposals } from "../../../services/proposals/proposals.ts"
+import { readableProposalKinds } from "../../../services/proposals/permissions.ts"
 import { inHousehold, openToKeys } from "../../middleware/auth.ts"
 import type { Router } from "../../router.ts"
 import { jsonResponse, SIGNED_IN_ERRORS } from "../../schemas/responses.ts"
@@ -16,7 +17,7 @@ const route = createRoute({
   tags: ["Review"],
   summary: "The Review queue",
   description:
-    "What AI suggests, waiting to be applied or dismissed, newest first, a page at a time.",
+    "Suggestions waiting to be applied or dismissed, newest first. API keys also need read permission for each proposal kind: plan for meals/tastes, list for shopping items, imports for imports, and recipes otherwise.",
   ...openToKeys("recipes", "read"),
   request: { query: ProposalListQuerySchema },
   responses: {
@@ -28,6 +29,14 @@ const route = createRoute({
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em } = inHousehold(c)
-    return c.json(await listProposals(em, c.req.valid("query")), 200)
+    return c.json(
+      await listProposals(em, {
+        ...c.req.valid("query"),
+        kinds: c.var.apiKey
+          ? readableProposalKinds(c.var.apiKey.permissions)
+          : undefined,
+      }),
+      200
+    )
   })
 }

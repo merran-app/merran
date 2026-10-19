@@ -5,6 +5,8 @@ import type { createProposal } from "../../proposals/proposals.ts"
 export type ToolContext = {
   fork: () => EntityManager
   householdId: string
+  /** MCP recipe readers may not have permission to see dietary preferences. */
+  includeTastes?: boolean
   propose: (
     options: Omit<
       Parameters<typeof createProposal>[1],

@@ -21,7 +21,7 @@ Merran's core needs nothing but Merran itself: it runs on SQLite out of the box,
 | **Single sign-on** | Signing in with Authentik, Authelia, Keycloak, Pocket ID, Google and the like | An OIDC provider | Off |
 | **Notifications** | Prep reminders and other pushes to phones | Nothing extra (Merran makes its own push keys); HTTPS | Off |
 | **Webhooks** | Telling other tools (Home Assistant, n8n) when things change | A household adding one | Off until one is added |
-| **MCP server** | Claude Desktop, Claude Code and other AI apps working with a household's recipes, plan and list | An API key | On when API keys are |
+| **MCP server** | Compatible bearer-token AI clients reading kitchen data and proposing changes (not released yet) | A scoped API key | Available alongside the API; no AI provider required |
 | **Error tracking** | Errors sent to the operator's own Sentry, GlitchTip or Bugsink | A DSN | Off |
 | **Metrics** | A Prometheus `/metrics` endpoint | Nothing | Off |
 | **Telemetry** | An anonymous daily summary sent to the Merran project | The server admin opting in | Off |
@@ -145,15 +145,19 @@ Household admins add them in Settings → Household → Webhooks, for Home Assis
 
 ### MCP server
 
-An MCP server at `/mcp` (Streamable HTTP, through the official MCP TypeScript SDK) lets Claude Desktop, Claude Code and any other MCP client work with a household's recipes, plan, list and pantry.
+An MCP server at `/mcp` (Streamable HTTP, through the official MCP TypeScript SDK) lets compatible bearer-token clients work with a household's recipes, plan, list and pantry. Implemented October 19, 2026, not released yet. OAuth-only connectors remain future work.
 
-- **Signed in with an API key,** so it can do only what the key allows, in the key's household. Settings → You → API keys has a **Use with an AI app** option that makes a key and shows the setup for Claude Desktop, Claude Code and others.
+- **Signed in with an API key,** so it can do only what the key allows, in the key's household. Settings → You → API keys has a **Use with an AI app** option that makes a key and shows its endpoint and Authorization value, with instructions for Claude Code and other compatible clients.
 - **The tools match the assistant's:** search and read recipes, the plan, the list and the pantry, then propose a new recipe, a recipe edit, meals or list items. The same service layer runs both.
-- **The AI proposes, people apply, here too.** Changes from an outside AI become proposals in Merran's Review queue, with a link back. A key can be allowed to apply list and plan changes straight away (adding milk to the list shouldn't need a review); recipe changes always wait.
+- **The AI proposes, people apply, here too.** Changes from an outside AI become proposals in Merran's Review queue, with a link back. The first version requires review for every change. Optional direct plan/list application remains a follow-up; recipe changes always wait through MCP. Regular API keys still retain their existing REST write permissions.
 - **Using the MCP server spends no Merran AI money:** the outside app's model does the thinking.
 - **Later:** remote connectors in the ChatGPT and Claude apps need OAuth rather than a key. Better Auth's OAuth provider plugin could make Merran its own sign-in for them.
 
-Assistant tool organization, decided October 19, 2026: each tool lives in its own file under `services/assistant/tools/`, with shared schemas and recipe lookup helpers. The index binds the tools to a chat and owns proposal creation; individual tools receive only the database access, household identity and proposal callback they need. Receipt scanning keeps its chat attachments and AI dependencies explicit. This prepares tool reuse for MCP without adding an MCP endpoint or changing assistant behavior. MCP authentication, permissions, transport and external proposal handling remain planned.
+Assistant tool organization, decided October 19, 2026: each tool lives in its own file under `services/assistant/tools/`, with shared schemas and recipe lookup helpers. The index binds the tools to a chat and owns proposal creation; individual tools receive only the database access, household identity and proposal callback they need. Receipt scanning keeps its chat attachments and AI dependencies explicit. The shared catalog now supplies the assistant and MCP with the same schemas and executors. Receipt scanning, web import, swaps and taste changes remain assistant-specific.
+
+MCP implementation decision, October 19, 2026: use @modelcontextprotocol/server 2.3.1 with its stateless legacy fallback and current protocol handler, one server per request, no sessions/subscriptions, and a 1 MiB body limit. Existing authentication rechecks expiry, revocation and membership and shares the key rate limit with REST. Browser Origins must match the configured public URL; cookie-only requests are refused. Tools are registered only when all their permissions are present. Recipe-only readers receive no household dietary details; those require plan:read, matching the tastes REST route. Every proposal has no chat, retains its creator, publishes a Review refresh and returns a review link. Review includes proposals without a recipe and renders the existing proposal cards for meals, lists and new recipes. REST proposal access also checks the affected area, in addition to its existing recipes permission. Public instructions mark this work unreleased; real-client and reverse-proxy acceptance is still separate from SDK integration tests.
+
+MCP validation, October 19, 2026: 1,572 SQLite tests passed, including 14 MCP integration checks, and 60 targeted Postgres checks passed across MCP, assistant, Review and API keys. The official MCP client and a legacy handshake both connected. Server/web typechecks, web production build, generated API-client equality, formatting and the docs build/link check passed (296 pages). An isolated browser preview with synthetic data checked recipe/meal/list cards, full recipe details and the scrollable API-key form. Real external AI app installation and deployment/proxy acceptance remain to verify.
 
 ## Service ownership
 
@@ -165,7 +169,7 @@ Further separation, decided October 19, 2026: `stores/basket/` owns shared baske
 
 Proposal text cleanup and comparison live in `proposals/`; recipe review snapshots and field details live in `recipes/review/snapshot.ts`, independent of AI tidy-up. Ordered-list comparison and comparison that ignores object-key order retain their existing semantics. Household food aliases live in `foods/aliases.ts`; list teaching retains merge/rekey orchestration. Pantry quantity helpers remain with pantry records and reservations; general amount arithmetic already lives in the shared package.
 
-AI infrastructure stays separate from the assistant. Nutrition, planning, shopping lists, pantry stock, retailer integration, incoming shares and full data transfers retain their separate responsibilities. These moves change internal organization only: routes, persisted data, permissions and user workflows stay the same. MCP remains planned.
+AI infrastructure stays separate from the assistant. Nutrition, planning, shopping lists, pantry stock, retailer integration, incoming shares and full data transfers retain their separate responsibilities. These moves change internal organization only: routes, persisted data, permissions and user workflows stay the same. MCP is implemented separately above; the refactor itself added no endpoint.
 
 ## AI
 

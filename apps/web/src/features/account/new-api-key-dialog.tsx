@@ -58,7 +58,7 @@ const DEFAULTS: Form = {
 }
 
 /** Makes a key for the household in use, then shows it once. */
-export function NewApiKeyDialog() {
+export function NewApiKeyDialog({ mcp = false }: { mcp?: boolean }) {
   const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
   const [key, setKey] = React.useState<string | null>(null)
@@ -75,18 +75,32 @@ export function NewApiKeyDialog() {
         render={
           <Button size="sm">
             <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
-            {t("settings.you.apiKeys.make")}
+            {t(
+              mcp
+                ? "settings.you.apiKeys.mcp.make"
+                : "settings.you.apiKeys.make"
+            )}
           </Button>
         }
       />
-      <DialogContent className="sm:max-w-lg">
-        {key ? <ShowKey value={key} /> : <NewKeyForm onMade={setKey} />}
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
+        {key ? (
+          <ShowKey value={key} mcp={mcp} />
+        ) : (
+          <NewKeyForm onMade={setKey} mcp={mcp} />
+        )}
       </DialogContent>
     </Dialog>
   )
 }
 
-function NewKeyForm({ onMade }: { onMade: (key: string) => void }) {
+function NewKeyForm({
+  onMade,
+  mcp,
+}: {
+  onMade: (key: string) => void
+  mcp: boolean
+}) {
   const { t } = useTranslation()
   const household = useActiveHousehold()
   const queryClient = useQueryClient()
@@ -129,7 +143,11 @@ function NewKeyForm({ onMade }: { onMade: (key: string) => void }) {
   return (
     <form onSubmit={onSubmit} noValidate className="grid gap-6">
       <DialogHeader>
-        <DialogTitle>{t("settings.you.apiKeys.make")}</DialogTitle>
+        <DialogTitle>
+          {t(
+            mcp ? "settings.you.apiKeys.mcp.make" : "settings.you.apiKeys.make"
+          )}
+        </DialogTitle>
         <DialogDescription>
           {t("settings.you.apiKeys.makeDescription", {
             household: household?.name,
@@ -137,6 +155,11 @@ function NewKeyForm({ onMade }: { onMade: (key: string) => void }) {
         </DialogDescription>
       </DialogHeader>
       <FieldGroup>
+        {mcp && (
+          <p className="text-sm text-muted-foreground">
+            {t("settings.you.apiKeys.mcp.permissions")}
+          </p>
+        )}
         {errors.root && (
           <Alert variant="destructive">
             <AlertDescription>{errors.root.message}</AlertDescription>
@@ -212,7 +235,7 @@ function levelsFor(area: Area): Access[] {
     : ["none", "read", "write"]
 }
 
-function ShowKey({ value }: { value: string }) {
+function ShowKey({ value, mcp }: { value: string; mcp: boolean }) {
   const { t } = useTranslation()
   return (
     <>
@@ -223,6 +246,29 @@ function ShowKey({ value }: { value: string }) {
         </DialogDescription>
       </DialogHeader>
       <CopyField label={t("settings.you.apiKeys.key")} value={value} />
+      {mcp && (
+        <>
+          <CopyField
+            label={t("settings.you.apiKeys.mcp.url")}
+            value={new URL("/mcp", window.location.origin).href}
+          />
+          <CopyField
+            label={t("settings.you.apiKeys.mcp.authorization")}
+            value={`Bearer ${value}`}
+          />
+          <p className="text-sm text-muted-foreground">
+            {t("settings.you.apiKeys.mcp.connect")}
+          </p>
+          <a
+            className="text-sm underline"
+            href="https://merran.app/docs/integrations/mcp/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t("settings.you.apiKeys.mcp.guide")}
+          </a>
+        </>
+      )}
       <DialogFooter>
         <DialogClose render={<Button />}>{t("common.done")}</DialogClose>
       </DialogFooter>

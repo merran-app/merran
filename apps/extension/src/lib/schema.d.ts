@@ -2018,7 +2018,7 @@ export interface paths {
         };
         /**
          * The Review queue
-         * @description What AI suggests, waiting to be applied or dismissed, newest first, a page at a time. With an API key, it needs the `recipes: read` permission.
+         * @description Suggestions waiting to be applied or dismissed, newest first. API keys also need read permission for each proposal kind: plan for meals/tastes, list for shopping items, imports for imports, and recipes otherwise. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["listProposals"];
         put?: never;
@@ -2038,7 +2038,7 @@ export interface paths {
         };
         /**
          * A suggestion
-         * @description Waiting, applied or dismissed. With an API key, it needs the `recipes: read` permission.
+         * @description Waiting, applied or dismissed. API keys additionally need read access to the affected area: plan for meals/tastes, list for shopping items, imports for imports, and recipes otherwise. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["getProposal"];
         put?: never;
@@ -2060,7 +2060,7 @@ export interface paths {
         put?: never;
         /**
          * Apply a suggestion
-         * @description Changes to a recipe apply the sections picked, as one change that keeps a version of how it was; the rest are skipped. A section changed since it was suggested is refused rather than overwritten, and the error says which. The assistant's other suggestions add what they say: a recipe, meals, things for the list, tastes, or a recipe from the web. With an API key, it needs the `recipes: write` permission.
+         * @description Changes to a recipe apply the sections picked, as one change that keeps a version of how it was; the rest are skipped. A section changed since it was suggested is refused rather than overwritten, and the error says which. The assistant's other suggestions add what they say: a recipe, meals, things for the list, tastes, or a recipe from the web. API keys additionally need write access to the affected area: plan for meals/tastes, list for shopping items, imports for imports, and recipes otherwise. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["applyProposal"];
         delete?: never;
@@ -2080,7 +2080,7 @@ export interface paths {
         put?: never;
         /**
          * Dismiss a suggestion
-         * @description The recipe stays as it is. With an API key, it needs the `recipes: write` permission.
+         * @description The suggestion is discarded without applying it. API keys additionally need write access to the affected area: plan for meals/tastes, list for shopping items, imports for imports, and recipes otherwise. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["dismissProposal"];
         delete?: never;

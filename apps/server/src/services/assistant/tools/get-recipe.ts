@@ -10,17 +10,19 @@ import type { ToolContext } from "./context.ts"
 export function getRecipeTool({
   fork,
   householdId,
-}: Pick<ToolContext, "fork" | "householdId">) {
+  includeTastes = true,
+}: Pick<ToolContext, "fork" | "householdId" | "includeTastes">) {
   return tool({
-    description:
-      "One recipe from the library, by its id or name: its lines, steps and notes, and what the household's tastes make of it.",
+    description: includeTastes
+      ? "One recipe from the library, by its id or name: its lines, steps and notes, and what the household's tastes make of it."
+      : "One recipe from the library, by its id or name: its lines, steps and notes. Dietary preferences require Plan read access.",
     inputSchema: z.object({ recipe: z.string() }),
     execute: async ({ recipe: ref }) => {
       const em = fork()
       const recipe = await lookupRecipe(em, ref)
       const tags = (await tagsOf(em, [recipe.id])).get(recipe.id) ?? []
       const input = snapshotOf(recipe, tags)
-      const tastes = await getTastes(em, householdId)
+      const tastes = includeTastes ? await getTastes(em, householdId) : null
       const lines = recipe.ingredients.getItems()
       const check = checkTastes(
         {
@@ -29,7 +31,7 @@ export function getRecipeTool({
           marks: lines.map((line) => line.mark ?? null),
           needs: recipe.needs,
         },
-        tastes.avoid
+        tastes?.avoid ?? []
       )
       return {
         id: recipe.id,
@@ -46,17 +48,21 @@ export function getRecipeTool({
         notes: input.notes,
         rating: recipe.rating ?? null,
         lastMade: recipe.lastMadeAt?.toISOString().slice(0, 10) ?? null,
-        doesntSuit: check.ruledOut.map((item) => item.food),
-        ...(check.unchecked.length > 0
+        ...(includeTastes
           ? {
-              cantRead:
-                "Merran can't read its ingredients to check them, so it may have anything in doesntSuit.",
+              doesntSuit: check.ruledOut.map((item) => item.food),
+              ...(check.unchecked.length > 0
+                ? {
+                    cantRead:
+                      "Merran can't read its ingredients to check them, so it may have anything in doesntSuit.",
+                  }
+                : {}),
+              leftOut: check.leaveOut.map((item) => ({
+                food: item.food,
+                for: item.who ?? "the household",
+              })),
             }
           : {}),
-        leftOut: check.leaveOut.map((item) => ({
-          food: item.food,
-          for: item.who ?? "the household",
-        })),
       }
     },
   })

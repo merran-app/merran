@@ -42,7 +42,10 @@ export function ApiKeysCard() {
           {t("settings.you.apiKeys.description")}
         </CardDescription>
         <CardAction>
-          <NewApiKeyDialog />
+          <div className="flex flex-wrap gap-2">
+            <NewApiKeyDialog />
+            <NewApiKeyDialog mcp />
+          </div>
         </CardAction>
       </CardHeader>
       <CardContent>

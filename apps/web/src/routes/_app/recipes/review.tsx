@@ -26,6 +26,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { householdQuery, isAdminRole } from "@/features/household/queries"
+import { ProposalCard } from "@/features/assistant/proposal-card"
 import { ProposalReview } from "@/features/recipes/tidy/proposal-review"
 import {
   runGoing,
@@ -164,6 +165,9 @@ function ProposalItem({
                 {t("recipes.review.fromNoteLabel")}
               </p>
             )}
+            {!proposal.recipe && (
+              <p className="font-medium">{proposal.summary}</p>
+            )}
             <div className="flex flex-wrap gap-1">
               {proposal.sections.map((section) => (
                 <Badge key={section} variant="secondary">
@@ -179,7 +183,15 @@ function ProposalItem({
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-          <ProposalReview proposal={proposal} className="px-4 pb-4" />
+          {proposal.kind === "tidy" ||
+          proposal.kind === "note" ||
+          proposal.kind === "edit" ? (
+            <ProposalReview proposal={proposal} className="px-4 pb-4" />
+          ) : (
+            <div className="px-4 pb-4">
+              <ProposalCard proposal={proposal} />
+            </div>
+          )}
         </CollapsibleContent>
       </Collapsible>
     </li>
