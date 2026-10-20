@@ -5,9 +5,7 @@ sidebar:
   order: 4
 ---
 
-:::note[Not released yet]
-These features were added after alpha.4. Use a build containing the authentication changes before following this guide.
-:::
+Passkeys, authenticators, external single sign-on and OAuth connections are available in alpha.5.
 
 Passwords and API keys continue to work by default. Passkeys, authenticator enrollment, external single sign-on and OAuth connections are opt-in. All methods use the same Merran account and household permissions.
 

@@ -7,7 +7,7 @@ sidebar:
 
 Merran is in alpha. This roadmap describes our direction, not a delivery schedule: priorities and scope can change as we learn from people using it. The released features below are available now; planned and exploratory work has no promised release date.
 
-The feature baseline is [v0.1.0-alpha.4](https://github.com/merran-app/merran/releases/tag/v0.1.0-alpha.4). See the [release verification record](../release-verification/) for what we have tested and what still needs checking.
+The last published release is [v0.1.0-alpha.4](https://github.com/merran-app/merran/releases/tag/v0.1.0-alpha.4). The alpha.5 additions below are prepared for the next release. See the [release verification record](../release-verification/) for what we have tested and what still needs checking.
 
 **Last reviewed:** October 19, 2026. Implementation status is separate from device and provider acceptance.
 
@@ -33,10 +33,11 @@ Alpha.4 also includes:
 
 Start with [the guides](../../) and [integration setup](../../integrations/browser-extension/). The [release verification record](../release-verification/) separates implementation from the device and provider checks still to do.
 
-## In progress (not released yet)
+## In alpha.5
 
-- **MCP:** a bearer-key endpoint, shared assistant tools, connection setup and proposals in Review are implemented after alpha.4. All changes require review in this version. See [MCP setup](../../integrations/mcp/). Broader real-client acceptance and optional direct plan/list application remain separate work.
-- **Authentication and connected apps:** passkeys, authenticator-based two-step sign-in, external OIDC single sign-on, and OAuth connections for MCP and REST are implemented after alpha.4. They are opt-in. An operator confirmed MCP OAuth, recipe proposals and Bitwarden passkey sign-in on TrueNAS/Dockge; external OIDC, other devices and broader lifecycle checks remain. See [authentication setup](../../run/authentication/) and the [operator verification report](../release-verification/#operator-authentication-report--october-19-2026).
+- **MCP:** connect a compatible AI app with a scoped API key or OAuth, let it read permitted kitchen data and send recipe, meal and list suggestions to Review. Every MCP change needs a person to apply it. See [MCP setup](../../integrations/mcp/). Optional direct plan/list application remains future work.
+- **Authentication and connected apps:** opt-in passkeys, authenticator-based two-step sign-in, one external OIDC provider, and household-scoped OAuth connections for MCP and REST. An operator confirmed MCP OAuth, recipe proposals and Bitwarden passkey sign-in on TrueNAS/Dockge; other providers, devices and lifecycle checks remain. See [authentication setup](../../run/authentication/) and the [operator verification report](../release-verification/#operator-authentication-report--october-19-2026).
+- **Everyday app improvements:** clearer before-and-after proposal previews, grouped settings with section links, and bottom drawers for forms and confirmations on phones.
 
 ## Up next
 
@@ -61,7 +62,7 @@ These are features we intend to build. Their order here does not indicate priori
 - **Server administration:** add automatic backups before migrations, a consolidated Problems page, an audit log, and a guided SQLite-to-Postgres transfer. Manual restore smoke tests and secret rotation already exist; they do not implement these additions.
 - **Distribution and project services:** add an Unraid template and a hosted app demo. The published documentation site and scripted homepage previews are already available.
 
-Today, Merran uses password sign-in and an English interface. Its [scoped API keys](../../api/) and [live events](../../api/live-events/) are available now; they are not webhook delivery or an MCP server. Cook timers are available, but scheduled prep notifications are not.
+Password sign-in remains the default, with the additional alpha.5 methods available when an operator enables them. The interface remains English-only. [Scoped API keys](../../api/), [MCP](../../integrations/mcp/) and [live events](../../api/live-events/) do not provide webhook delivery. Cook timers are available, but scheduled prep notifications are not.
 
 Installing Merran on a home screen does not provide offline data access: the current service worker receives shared files, while recipes, plans, and lists still need the server. Likewise, localization infrastructure is present, but English is the only bundled interface language.
 

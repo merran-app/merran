@@ -9,7 +9,7 @@ The latest application release is **0.1.0-alpha.4**. This record was reconciled 
 
 The operator reports running Merran on a TrueNAS server deployed through Dockge. Installation was straightforward, and everything used so far has worked. This report was provided during the alpha.4 documentation reconciliation. Exact TrueNAS/Dockge versions, image digest, database backend and individual workflows were not recorded, so it establishes practical installation and initial-use feedback rather than a full platform or integration test matrix.
 
-## Authentication development checks — October 19, 2026 (not released)
+## Authentication development checks — October 19, 2026 (before alpha.5)
 
 The authentication branch adds opt-in passkeys, TOTP and recovery codes, external OIDC sign-in and OAuth access for MCP and REST. Automated SQLite and Postgres tests cover signed WebAuthn assertions with an independent virtual authenticator, required user verification and origin binding, TOTP enrollment and single-use recovery, OIDC state/nonce and explicit linking, and OAuth consent, PKCE, resource separation, refresh rotation and revocation. Provider responses and authenticator hardware are simulated; no live identity-provider account or physical passkey was used.
 
@@ -25,7 +25,7 @@ After deploying the merged authentication changes on TrueNAS through Dockge, the
 - Receiving recipe proposals based on previous conversations and meals.
 - Registering a passkey with Bitwarden, signing out, and signing back in using that passkey.
 
-Applying the proposals and opening their review links were not explicitly confirmed. The application image digest, database backend, AI client version, browser, Bitwarden version and host versions were not recorded. This verifies the reported workflows in one deployment; it does not establish a tagged release or compatibility with every client and device.
+Applying the proposals and opening their review links were not explicitly confirmed. The application image digest, database backend, AI client version, browser, Bitwarden version and host versions were not recorded. This verifies the reported workflows in one deployment; at the time of the report, it did not establish a tagged release or compatibility with every client and device.
 
 External OIDC sign-in, TOTP and recovery, hardware security keys, non-MCP REST OAuth, token refresh and revocation, and authentication persistence through restart/restore still need deployment verification.
 

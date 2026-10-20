@@ -69,7 +69,7 @@ cards show **Planned this week** when the recipe is on the household's current w
 1. Open a recipe and choose **Edit**.
 2. Correct the name, original link, servings, times, ingredients, or steps. Use **Notes** for lasting tips and substitutions.
 3. Under **Tags**, type a tag and press Enter or type a comma. Add a rating if useful.
-4. Choose **Save**. Leaving with unsaved edits prompts you before discarding them. **Not released yet:** the confirmation opens as a bottom drawer on phones, with **Cancel** and **Leave without saving**.
+4. Choose **Save**. Leaving with unsaved edits prompts you before discarding them. In alpha.5, the confirmation opens as a bottom drawer on phones, with **Cancel** and **Leave without saving**.
 
 **Expected result:** the saved recipe opens with your changes. **More → Versions** lets you inspect earlier versions and **Go back**; restoring also keeps the current version in history.
 
@@ -77,7 +77,7 @@ On **Recipes**, use **Search recipes**, tags, **Filters**, and **Sort by** to fi
 
 **Delete** moves a recipe to **Recently deleted** for 30 days. **Put back** restores it during that period. **Delete for good** and **Empty** are permanent.
 
-Optional **Tidy up** uses AI and asks you to review suggested changes. **Not released yet:** on mobile, **Tidy up** and a recipe’s **Review** button open a bottom drawer with a fixed heading and **Close** button; larger screens keep the dialog. Treat imported or inferred diet labels, nutrition, and costs as information to check: they depend on recognizable ingredients and available data, and are not guaranteed for every recipe.
+Optional **Tidy up** uses AI and asks you to review suggested changes. In alpha.5, **Tidy up** and a recipe’s **Review** button open a bottom drawer on mobile with a fixed heading and **Close** button; larger screens keep the dialog. Treat imported or inferred diet labels, nutrition, and costs as information to check: they depend on recognizable ingredients and available data, and are not guaranteed for every recipe.
 
 ## Scale servings and change units
 

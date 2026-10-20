@@ -23,11 +23,11 @@ Sign in to Merran and open your personal API key settings. Create a key for the 
 
 Keys are scoped to a household. A key's permissions determine which areas it can read or change. Routes without API-key support require a browser session instead; check each endpoint's security requirements.
 
-:::note[Not released yet]
+:::note[Available in alpha.5]
 Requests with a malformed `Authorization` header return `401` with code `invalid_authorization`, even when a valid browser session cookie is also present. Omit the header to use a browser session, or supply a valid bearer key or OAuth access token.
 :::
 
-## OAuth connections (not released yet)
+## OAuth connections
 
 OAuth-enabled servers also accept `Authorization: Bearer mro_…` on routes that support delegated access. Register an application in **Settings → This server → OAuth applications**, then use authorization code with S256 PKCE and the `https://meals.example.com/api` resource. Permissions use scopes such as `recipes:read` and `list:write`; `offline_access` requests a rotating refresh token. The person chooses one household and approves the permissions. REST write scopes permit direct changes.
 
@@ -68,7 +68,7 @@ For permission examples, pagination, errors, rate limits, and a runnable script,
 
 This public site does not need your key. Use your own instance's explorer for authenticated requests. During alpha, the API may change between releases; prefer your running instance's schema when versions differ.
 
-## MCP and proposal permissions (not released yet)
+## MCP and proposal permissions
 
 The separate `/mcp` endpoint uses Streamable HTTP and the same bearer keys as REST; it is not part of this REST OpenAPI document. See [MCP setup](../integrations/mcp/) for its tools and review workflow.
 

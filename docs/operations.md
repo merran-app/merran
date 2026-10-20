@@ -160,7 +160,7 @@ Docs for each common way in: a Cloudflare Tunnel (in the compose file), Tailscal
 - **The update check** (the Update check module) asks GitHub for Merran's releases (not commits, as the REFERENCE app did) every 6 hours, and a minute after Merran starts. A server on a pre-release hears about newer pre-releases too; one on a release only about releases; a build that isn't a release (from source, or `edge`) isn't checked. The server admin sees an Update badge in the sidebar and the account menu, and Settings → This server shows the release notes and the commands for their install method, with **Look now**. `MERRAN_UPDATE_CHECK=false` turns it off; only the request for the releases is sent.
 - **Support:** the latest minor version gets fixes. Security fixes go to the latest minor of the current major.
 
-### Selective CI — October 19, 2026 (not released yet)
+### Selective CI — October 19, 2026
 
 CI always starts, then `.github/scripts/changes.mjs` selects jobs from the complete Git diff. PRs use the merge base; pushes compare the previous and current commit. Renames include both paths and deletions count. An unavailable initial base runs all checks; a failed diff fails CI. Unknown paths, shared-package changes and global configuration changes select all checks conservatively.
 
@@ -206,7 +206,7 @@ docker compose exec merran merran db copy --to postgres://merran:<password>@db:5
 
 ## Authentication recovery and rollout
 
-Decided October 19, 2026, not released: authentication methods and OAuth are opt-in. Configure a stable HTTPS public origin before relying on passkeys or remote OAuth. Keep the database and matching server secret in the same backup; `merran rotate-secret` now re-encrypts authenticator secrets, recovery codes, OIDC tokens and OAuth client secrets together with existing encrypted settings.
+Decided October 19, 2026, for alpha.5: authentication methods and OAuth are opt-in. Configure a stable HTTPS public origin before relying on passkeys or remote OAuth. Keep the database and matching server secret in the same backup; `merran rotate-secret` now re-encrypts authenticator secrets, recovery codes, OIDC tokens and OAuth client secrets together with existing encrypted settings.
 
 `merran reset-two-factor username-or-email` removes a lost authenticator and revokes sessions and OAuth connections. It preserves passkeys and does not bypass mandatory administrator assurance on the next sign-in. `merran reset-password` can establish a recovery password for an SSO-only person; restore password sign-in policy if it was disabled. See [authentication.md](authentication.md) and the public authentication guide for recovery and grant lifetime behavior.
 

@@ -7,7 +7,7 @@ sidebar:
 
 A default SQLite installation needs no external services. Configure optional features as you begin using them.
 
-Passkeys, authenticators, external OIDC sign-in and OAuth connections are **not released yet**. Their environment settings, account-linking policy and recovery commands are described in [Authentication and connected apps](../authentication/).
+Passkeys, authenticators, external OIDC sign-in and OAuth connections are available in alpha.5. Their environment settings, account-linking policy and recovery commands are described in [Authentication and connected apps](../authentication/).
 
 Use the [generated settings reference](../settings-reference/) for the registered keys, environment variables, scopes, types, defaults, and choices. It is generated from source definitions each site build; it does not read your deployment's values.
 
@@ -53,7 +53,7 @@ Open **Settings → This server** to configure modules such as AI, stores, nutri
 
 Some settings belong to the household or account rather than the server. Use household settings for shared household preferences and personal settings for your own preferences.
 
-The checked-out app groups each Settings page into sections with an **On this page** list for jumping to one. This navigation is not released yet, so the installed app may still show a single list of cards.
+In alpha.5, each Settings page groups its controls into sections with an **On this page** list for jumping to one.
 
 | Page                  | Find here                                                                                                                                    |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
