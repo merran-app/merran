@@ -12,6 +12,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   costFor,
   addDays,
+  DEFAULT_MEAL_TIMES,
   dayOfWeek,
   NO_THEMES,
   weekDays,
@@ -41,6 +42,10 @@ import {
 } from "@/features/select/use-selection"
 
 import { AddMealDialog, type Slot } from "./add-meal-dialog"
+import {
+  calendarSettingsQuery,
+  calendarSlotTimesQuery,
+} from "./calendar-queries"
 import { MoveMealsDialog } from "./change-meal-dialog"
 import { averageCalories } from "./calories"
 import { DayCard, PastDays, PoolCard } from "./day-card"
@@ -74,6 +79,9 @@ export function PlanPage({ week: asked }: { week?: string }) {
   useAssistantPage({ week })
   const days = weekDays(week)
   const plan = useQuery(planQuery(week, addDays(week, 6)))
+  const calendarSettings = useQuery(calendarSettingsQuery).data
+  const calendarSlots =
+    useQuery(calendarSlotTimesQuery(week, addDays(week, 6))).data?.slots ?? []
   const entries = plan.data?.entries ?? []
   const themes = useQuery(themesQuery).data?.themes ?? NO_THEMES
   // What the week's meals cost, where their recipes' costs are known.
@@ -294,6 +302,8 @@ export function PlanPage({ week: asked }: { week?: string }) {
                 today={clock.today}
                 theme={themes[dayOfWeek(day)] ?? null}
                 entries={onDay(day)}
+                calendarTimes={calendarSettings?.times ?? DEFAULT_MEAL_TIMES}
+                calendarOverrides={calendarSlots}
                 selection={selection}
                 onAdd={(meal) =>
                   setAdding({

@@ -1861,6 +1861,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/plan/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Calendar times and your subscription links */
+        get: operations["getCalendarSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change household calendar times or enable the feed */
+        patch: operations["updateCalendarSettings"];
+        trace?: never;
+    };
+    "/api/plan/calendar/feed/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a meal calendar subscription
+         * @description The URL token alone grants read access to meal names and notes. Keep it private. Calendar clients control refresh timing.
+         */
+        get: operations["getCalendarFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/calendar/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a private calendar subscription URL
+         * @description The URL is shown once. Anyone with it can read the household meal calendar until it is revoked.
+         */
+        post: operations["createCalendarLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/calendar/links/{linkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke one of your calendar links */
+        delete: operations["revokeCalendarLink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/calendar/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One-off meal times for a date range
+         * @description With an API key, it needs the `plan: read` permission.
+         */
+        get: operations["getCalendarSlotTimes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/calendar/slots/{date}/{meal}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set one day's meal time
+         * @description With an API key, it needs the `plan: write` permission.
+         */
+        put: operations["setCalendarSlotTime"];
+        post?: never;
+        /**
+         * Use the default time for this day's meal
+         * @description With an API key, it needs the `plan: write` permission.
+         */
+        delete: operations["resetCalendarSlotTime"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/plan/next": {
         parameters: {
             query?: never;
@@ -8188,6 +8307,122 @@ export interface components {
             meals: components["schemas"]["Meal"][];
             /** @description Whether it puts what the week needs on the list too. */
             addToList: boolean;
+        };
+        /**
+         * @example {
+         *       "enabled": true,
+         *       "times": {
+         *         "breakfast": {
+         *           "start": "08:00",
+         *           "minutes": 30
+         *         },
+         *         "lunch": {
+         *           "start": "12:00",
+         *           "minutes": 45
+         *         },
+         *         "dinner": {
+         *           "start": "18:00",
+         *           "minutes": 60
+         *         },
+         *         "snack": {
+         *           "start": "15:00",
+         *           "minutes": 30
+         *         }
+         *       },
+         *       "publicUrlReady": true,
+         *       "links": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000000a",
+         *           "createdAt": "2026-10-19T18:00:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        CalendarSettings: {
+            enabled: boolean;
+            times: components["schemas"]["CalendarMealTimes"];
+            publicUrlReady: boolean;
+            links: components["schemas"]["CalendarLink"][];
+        };
+        CalendarMealTimes: {
+            /**
+             * @example {
+             *       "start": "18:00",
+             *       "minutes": 60
+             *     }
+             */
+            breakfast: {
+                start: string;
+                minutes: number;
+            };
+            /**
+             * @example {
+             *       "start": "18:00",
+             *       "minutes": 60
+             *     }
+             */
+            lunch: {
+                start: string;
+                minutes: number;
+            };
+            /**
+             * @example {
+             *       "start": "18:00",
+             *       "minutes": 60
+             *     }
+             */
+            dinner: {
+                start: string;
+                minutes: number;
+            };
+            /**
+             * @example {
+             *       "start": "18:00",
+             *       "minutes": 60
+             *     }
+             */
+            snack: {
+                start: string;
+                minutes: number;
+            };
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000a",
+         *       "createdAt": "2026-10-19T18:00:00.000Z"
+         *     }
+         */
+        CalendarLink: {
+            id: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000a",
+         *       "createdAt": "2026-10-19T18:00:00.000Z",
+         *       "url": "https://merran.example.com/api/plan/calendar/feed/example-secret-token"
+         *     }
+         */
+        NewCalendarLink: components["schemas"]["CalendarLink"] & {
+            /** Format: uri */
+            url: string;
+        };
+        /**
+         * @example {
+         *       "date": "2026-10-19",
+         *       "meal": "dinner",
+         *       "start": "19:30",
+         *       "minutes": 60
+         *     }
+         */
+        CalendarSlotTime: {
+            /** Format: date */
+            date: string;
+            /** @enum {string} */
+            meal: "breakfast" | "lunch" | "dinner" | "snack";
+            start: string;
+            minutes: number;
         };
         /**
          * @example {
@@ -17313,6 +17548,362 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AutoplanRun"];
                 };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getCalendarSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Calendar settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarSettings"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateCalendarSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    enabled?: boolean;
+                    times?: components["schemas"]["CalendarMealTimes"];
+                };
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarSettings"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getCalendarFeed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current iCalendar feed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/calendar": string;
+                };
+            };
+            /** @description No active subscription. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many calendar requests. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createCalendarLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewCalendarLink"];
+                };
+            };
+            /** @description No public URL is configured. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    revokeCalendarLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                linkId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such link. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getCalendarSlotTimes: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Overrides. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        slots: components["schemas"]["CalendarSlotTime"][];
+                    };
+                };
+            };
+            /** @description Invalid range. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    setCalendarSlotTime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+                meal: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    start: string;
+                    minutes: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarSlotTime"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    resetCalendarSlotTime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                date: string;
+                meal: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reset. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Not signed in. */
             401: {

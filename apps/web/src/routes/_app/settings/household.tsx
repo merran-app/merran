@@ -15,6 +15,7 @@ import { useActiveHousehold, useMe } from "@/features/auth/use-me"
 import { HouseholdAiCard } from "@/features/ai/household-ai-card"
 import { householdAiQuery } from "@/features/ai/queries"
 import { AutoplanCard } from "@/features/household/autoplan-card"
+import { CalendarCard } from "@/features/household/calendar-card"
 import { DetailsCard } from "@/features/household/details-card"
 import { InvitesCard } from "@/features/household/invites-card"
 import { MembersCard } from "@/features/household/members-card"
@@ -35,6 +36,7 @@ import {
 import { TastesCard } from "@/features/household/tastes-card"
 import { ThemeNightsCard } from "@/features/household/theme-nights-card"
 import { autoplanQuery } from "@/features/plan/queries"
+import { calendarSettingsQuery } from "@/features/plan/calendar-queries"
 import { SettingsPage } from "@/features/settings/settings-page"
 
 /** How linking a Kroger account went, when Kroger sends someone back. */
@@ -59,6 +61,7 @@ export const Route = createFileRoute("/_app/settings/household")({
     if (!active) return
     await Promise.all([
       queryClient.ensureQueryData(householdQuery),
+      queryClient.ensureQueryData(calendarSettingsQuery),
       queryClient.ensureQueryData(membersQuery),
       queryClient.ensureQueryData(tastesQuery),
       isAdminRole(active.role) && queryClient.ensureQueryData(themesQuery),
@@ -106,6 +109,7 @@ function HouseholdSettings() {
               content: (
                 <>
                   {canManage && <PlanningCard />}
+                  <CalendarCard canManage={canManage} />
                   <TastesCard />
                   {canManage && <ThemeNightsCard />}
                   {canManage && <AutoplanCard />}

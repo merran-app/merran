@@ -12,7 +12,10 @@ export function requestLogger(logger: Logger): MiddlewareHandler<AppEnv> {
     log.info(
       {
         method: c.req.method,
-        path: c.req.path,
+        // A calendar feed URL is itself a credential; keep it out of logs.
+        path: c.req.path.startsWith("/api/plan/calendar/feed/")
+          ? "/api/plan/calendar/feed/[redacted]"
+          : c.req.path,
         status: c.res.status,
         ms: Math.round(performance.now() - started),
       },

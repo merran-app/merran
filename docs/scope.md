@@ -250,3 +250,5 @@ Authentication round, October 19, 2026 (alpha.5): passkeys, two-step sign-in, ex
 ## Research candidates — October 17, 2026
 
 Saved menus, prepared-meal/freezer portions, iCalendar subscriptions, minimum-stock reminders, recipe-only share links and print/cookbook views were added to public Exploring after comparing official documentation from similar apps with Merran's source. These are not added to the 0.1 commitments or build order. See [roadmap-research.md](roadmap-research.md) for evidence, suggested first slices and tradeoffs.
+
+Calendar subscriptions received a [scoped plan](calendar-subscriptions.md) on October 19, 2026. Implementation has started locally, outside the 0.1 commitments. It is not released and has no release target.
