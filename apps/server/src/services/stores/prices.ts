@@ -284,6 +284,10 @@ export async function checkPrices(
     if (now) {
       row.product = now
       refreshed++
+    } else if (row.chosen) {
+      // Keep the household's pick, but ask for attention when Kroger no
+      // longer returns that product at this location.
+      row.product = { ...row.product, inStock: false }
     } else if (!row.chosen) {
       // Merran's pick that the store doesn't carry now, or that isn't food
       // (a lipstick called Tomato Girl): looked for again.

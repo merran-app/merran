@@ -16,6 +16,7 @@ export type ListPrices = Schemas["ListPrices"]
 export type ItemPrice = ListPrices["items"][string]
 export type YourStore = Schemas["YourStores"]["stores"][number]
 export type SendPlan = Schemas["SendPlan"]
+export type ProductMappings = Schemas["ProductMappings"]
 
 /** The household's stores with an API: its Kroger, and the linked account. */
 export const storesQuery = queryOptions({
@@ -73,6 +74,12 @@ export const yourStoresQuery = queryOptions({
   queryKey: ["stores", "yours"],
   queryFn: async () => (await unwrap(api.GET("/api/stores/yours"))).stores,
   staleTime: 5 * 60_000,
+})
+
+/** Foods and the products this household buys for them at each store. */
+export const productMappingsQuery = queryOptions({
+  queryKey: ["stores", "products"],
+  queryFn: () => unwrap(api.GET("/api/stores/products")),
 })
 
 /** Send's plan for a list: which stores each thing on it is picked at. */

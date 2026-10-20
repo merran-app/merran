@@ -13805,6 +13805,380 @@
           }
         }
       },
+      "ProductMappings": {
+        "type": "object",
+        "properties": {
+          "stores": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "connected": {
+                  "type": "boolean"
+                },
+                "searchable": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "key",
+                "name",
+                "connected",
+                "searchable"
+              ]
+            }
+          },
+          "aisles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "key": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "key",
+                "name"
+              ]
+            }
+          },
+          "foods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "food": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "aisle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "products": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "store": {
+                        "type": "string"
+                      },
+                      "product": {
+                        "$ref": "#/components/schemas/StoreProduct"
+                      },
+                      "chosen": {
+                        "type": "boolean"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "store",
+                      "product",
+                      "chosen",
+                      "updatedAt"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "food",
+                "name",
+                "aisle",
+                "products"
+              ]
+            }
+          }
+        },
+        "required": [
+          "stores",
+          "aisles",
+          "foods"
+        ],
+        "example": {
+          "stores": [
+            {
+              "key": "kroger",
+              "name": "Fry's",
+              "connected": true,
+              "searchable": true
+            }
+          ],
+          "aisles": [
+            {
+              "id": "produce-id",
+              "key": "produce",
+              "name": "Produce"
+            }
+          ],
+          "foods": [
+            {
+              "food": "milk",
+              "name": "milk",
+              "aisle": null,
+              "products": [
+                {
+                  "store": "kroger",
+                  "product": {
+                    "id": "0001111041700",
+                    "upc": "0001111041700",
+                    "name": "Kroger 2% Reduced Fat Milk",
+                    "brand": "Kroger",
+                    "size": "1 gal",
+                    "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+                    "price": 349,
+                    "salePrice": 299,
+                    "saleEnds": "2026-10-21",
+                    "currency": "USD",
+                    "aisle": "Dairy",
+                    "inStock": true,
+                    "url": "https://www.frysfood.com/p/milk/0001111041700"
+                  },
+                  "chosen": true,
+                  "updatedAt": "2026-10-01T17:30:00.000Z"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "ProductMapping": {
+        "type": "object",
+        "properties": {
+          "food": {
+            "type": "string"
+          },
+          "store": {
+            "type": "string"
+          },
+          "product": {
+            "$ref": "#/components/schemas/StoreProduct"
+          },
+          "chosen": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "food",
+          "store",
+          "product",
+          "chosen",
+          "updatedAt"
+        ],
+        "example": {
+          "food": "milk",
+          "store": "kroger",
+          "product": {
+            "id": "0001111041700",
+            "upc": "0001111041700",
+            "name": "Kroger 2% Reduced Fat Milk",
+            "brand": "Kroger",
+            "size": "1 gal",
+            "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+            "price": 349,
+            "salePrice": 299,
+            "saleEnds": "2026-10-21",
+            "currency": "USD",
+            "aisle": "Dairy",
+            "inStock": true,
+            "url": "https://www.frysfood.com/p/milk/0001111041700"
+          },
+          "chosen": true,
+          "updatedAt": "2026-10-01T17:30:00.000Z"
+        }
+      },
+      "SaveProductMapping": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "food": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 150
+              },
+              "productId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              }
+            },
+            "required": [
+              "food",
+              "productId"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "food": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 150
+              },
+              "product": {
+                "$ref": "#/components/schemas/WalmartProduct"
+              }
+            },
+            "required": [
+              "food",
+              "product"
+            ]
+          }
+        ],
+        "example": {
+          "food": "milk",
+          "productId": "0001111041700"
+        }
+      },
+      "WalmartProduct": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9A-Za-z]{1,64}$"
+          },
+          "upc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "brand": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 120
+          },
+          "size": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 60
+          },
+          "image": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000,
+            "pattern": "^https:\\/\\/"
+          },
+          "price": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 10000000
+          },
+          "salePrice": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 10000000
+          },
+          "saleEnds": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Walmart's pages don't say, so the extension sends null."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "USD"
+            ]
+          },
+          "aisle": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 60
+          },
+          "inStock": {
+            "type": "boolean"
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000,
+            "pattern": "^https:\\/\\/www\\.walmart\\.com\\/"
+          }
+        },
+        "required": [
+          "id",
+          "upc",
+          "name",
+          "brand",
+          "size",
+          "image",
+          "price",
+          "salePrice",
+          "saleEnds",
+          "currency",
+          "aisle",
+          "inStock",
+          "url"
+        ],
+        "example": {
+          "id": "10450114",
+          "upc": null,
+          "name": "Great Value 2% Reduced Fat Milk, Gallon, 128 fl oz",
+          "brand": "Great Value",
+          "size": "128 fl oz",
+          "image": "https://i5.walmartimages.com/seo/milk.jpeg",
+          "price": 327,
+          "salePrice": null,
+          "saleEnds": null,
+          "currency": "USD",
+          "aisle": null,
+          "inStock": true,
+          "url": "https://www.walmart.com/ip/10450114"
+        }
+      },
       "YourStores": {
         "type": "object",
         "properties": {
@@ -14585,127 +14959,6 @@
               ]
             }
           ]
-        }
-      },
-      "WalmartProduct": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^[0-9A-Za-z]{1,64}$"
-          },
-          "upc": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 20
-          },
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 300
-          },
-          "brand": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 120
-          },
-          "size": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 60
-          },
-          "image": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 1000,
-            "pattern": "^https:\\/\\/"
-          },
-          "price": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "minimum": 0,
-            "maximum": 10000000
-          },
-          "salePrice": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "minimum": 0,
-            "maximum": 10000000
-          },
-          "saleEnds": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date",
-            "description": "Walmart's pages don't say, so the extension sends null."
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "USD"
-            ]
-          },
-          "aisle": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 60
-          },
-          "inStock": {
-            "type": "boolean"
-          },
-          "url": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 1000,
-            "pattern": "^https:\\/\\/www\\.walmart\\.com\\/"
-          }
-        },
-        "required": [
-          "id",
-          "upc",
-          "name",
-          "brand",
-          "size",
-          "image",
-          "price",
-          "salePrice",
-          "saleEnds",
-          "currency",
-          "aisle",
-          "inStock",
-          "url"
-        ],
-        "example": {
-          "id": "10450114",
-          "upc": null,
-          "name": "Great Value 2% Reduced Fat Milk, Gallon, 128 fl oz",
-          "brand": "Great Value",
-          "size": "128 fl oz",
-          "image": "https://i5.walmartimages.com/seo/milk.jpeg",
-          "price": 327,
-          "salePrice": null,
-          "saleEnds": null,
-          "currency": "USD",
-          "aisle": null,
-          "inStock": true,
-          "url": "https://www.walmart.com/ip/10450114"
         }
       },
       "WalmartOptions": {
@@ -31015,6 +31268,234 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/products": {
+      "get": {
+        "operationId": "getProductMappings",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Foods and products the household buys at its stores",
+        "description": "Foods used in recipes, lists, the pantry or purchases, plus existing mappings. Products are kept separately for each connected store. With an API key, it needs the `list: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "list:read",
+        "responses": {
+          "200": {
+            "description": "The household's foods and products.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductMappings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/products/{store}": {
+      "put": {
+        "operationId": "saveProductMapping",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Choose what the household buys for a food at one store",
+        "description": "A product selected here is used on future lists for the same household food, whether or not it is on a list now. Kroger takes a product ID; Walmart takes a product read by the extension. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "kroger",
+                "walmart"
+              ],
+              "example": "kroger"
+            },
+            "required": true,
+            "name": "store",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "food": "milk",
+                "productId": "0001111041700"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/SaveProductMapping"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The saved product.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductMapping"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The Kroger product isn't at this store.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The store isn't available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "forgetProductMapping",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Forget the selected product for one food at one store",
+        "description": "A future basket can suggest another product. Other stores and past sent-cart records stay as they are. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "kroger",
+                "walmart"
+              ],
+              "example": "kroger"
+            },
+            "required": true,
+            "name": "store",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150,
+              "example": "milk"
+            },
+            "required": true,
+            "name": "food",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Forgotten."
           },
           "401": {
             "description": "Not signed in.",

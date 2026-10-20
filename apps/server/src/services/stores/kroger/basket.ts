@@ -186,11 +186,31 @@ export async function pickKrogerProduct(
   em: EntityManager,
   options: { householdId: string; itemId: string; productId: string }
 ) {
-  const { app, connection, location } = await ready(deps, em)
+  const { connection } = await ready(deps, em)
   const item = await em.findOne(ShoppingItem, { id: options.itemId })
   if (!item) {
     throw new AppError("not_found", "item_not_found", "That isn't on the list.")
   }
+  const row = await saveKrogerProduct(deps, em, {
+    householdId: options.householdId,
+    food: foodOf(item),
+    productId: options.productId,
+  })
+  const sales = await judgeSales(
+    em,
+    [row.product],
+    await householdToday(em, options.householdId)
+  )
+  return lineFor(item, row, connection, sales)
+}
+
+/** Save a person's product for a food, whether or not it is on a list. */
+export async function saveKrogerProduct(
+  deps: BasketDeps,
+  em: EntityManager,
+  options: { householdId: string; food: string; productId: string }
+) {
+  const { app, location } = await ready(deps, em)
   const [product] = await productsById(deps.fetcher, app, {
     ids: [options.productId],
     location,
@@ -202,25 +222,19 @@ export async function pickKrogerProduct(
       "That product isn't at the household's store."
     )
   }
-  const food = foodOf(item)
   const row =
-    (await em.findOne(StoreProduct, { store: KROGER, food })) ??
+    (await em.findOne(StoreProduct, { store: KROGER, food: options.food })) ??
     em.create(StoreProduct, {
       household: options.householdId,
       store: KROGER,
-      food,
+      food: options.food,
       product,
     })
   row.product = product
   row.chosen = true
   await em.flush()
   await recordPrices(em, options.householdId, [product], KROGER)
-  const sales = await judgeSales(
-    em,
-    [product],
-    await householdToday(em, options.householdId)
-  )
-  return lineFor(item, row, connection, sales)
+  return row
 }
 
 /**

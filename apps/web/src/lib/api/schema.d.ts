@@ -3636,6 +3636,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stores/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Foods and products the household buys at its stores
+         * @description Foods used in recipes, lists, the pantry or purchases, plus existing mappings. Products are kept separately for each connected store. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["getProductMappings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stores/products/{store}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Choose what the household buys for a food at one store
+         * @description A product selected here is used on future lists for the same household food, whether or not it is on a list now. Kroger takes a product ID; Walmart takes a product read by the extension. With an API key, it needs the `list: write` permission.
+         */
+        put: operations["saveProductMapping"];
+        post?: never;
+        /**
+         * Forget the selected product for one food at one store
+         * @description A future basket can suggest another product. Other stores and past sent-cart records stay as they are. With an API key, it needs the `list: write` permission.
+         */
+        delete: operations["forgetProductMapping"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stores/yours": {
         parameters: {
             query?: never;
@@ -11541,6 +11585,160 @@ export interface components {
          *           "name": "Fry's",
          *           "connected": true,
          *           "searchable": true
+         *         }
+         *       ],
+         *       "aisles": [
+         *         {
+         *           "id": "produce-id",
+         *           "key": "produce",
+         *           "name": "Produce"
+         *         }
+         *       ],
+         *       "foods": [
+         *         {
+         *           "food": "milk",
+         *           "name": "milk",
+         *           "aisle": null,
+         *           "products": [
+         *             {
+         *               "store": "kroger",
+         *               "product": {
+         *                 "id": "0001111041700",
+         *                 "upc": "0001111041700",
+         *                 "name": "Kroger 2% Reduced Fat Milk",
+         *                 "brand": "Kroger",
+         *                 "size": "1 gal",
+         *                 "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+         *                 "price": 349,
+         *                 "salePrice": 299,
+         *                 "saleEnds": "2026-10-21",
+         *                 "currency": "USD",
+         *                 "aisle": "Dairy",
+         *                 "inStock": true,
+         *                 "url": "https://www.frysfood.com/p/milk/0001111041700"
+         *               },
+         *               "chosen": true,
+         *               "updatedAt": "2026-10-01T17:30:00.000Z"
+         *             }
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        ProductMappings: {
+            stores: {
+                key: string;
+                name: string;
+                connected: boolean;
+                searchable: boolean;
+            }[];
+            aisles: {
+                id: string;
+                key: string | null;
+                name: string;
+            }[];
+            foods: {
+                food: string;
+                name: string;
+                aisle: string | null;
+                products: {
+                    store: string;
+                    product: components["schemas"]["StoreProduct"];
+                    chosen: boolean;
+                    /** Format: date-time */
+                    updatedAt: string;
+                }[];
+            }[];
+        };
+        /**
+         * @example {
+         *       "food": "milk",
+         *       "store": "kroger",
+         *       "product": {
+         *         "id": "0001111041700",
+         *         "upc": "0001111041700",
+         *         "name": "Kroger 2% Reduced Fat Milk",
+         *         "brand": "Kroger",
+         *         "size": "1 gal",
+         *         "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+         *         "price": 349,
+         *         "salePrice": 299,
+         *         "saleEnds": "2026-10-21",
+         *         "currency": "USD",
+         *         "aisle": "Dairy",
+         *         "inStock": true,
+         *         "url": "https://www.frysfood.com/p/milk/0001111041700"
+         *       },
+         *       "chosen": true,
+         *       "updatedAt": "2026-10-01T17:30:00.000Z"
+         *     }
+         */
+        ProductMapping: {
+            food: string;
+            store: string;
+            product: components["schemas"]["StoreProduct"];
+            chosen: boolean;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /**
+         * @example {
+         *       "food": "milk",
+         *       "productId": "0001111041700"
+         *     }
+         */
+        SaveProductMapping: {
+            food: string;
+            productId: string;
+        } | {
+            food: string;
+            product: components["schemas"]["WalmartProduct"];
+        };
+        /**
+         * @example {
+         *       "id": "10450114",
+         *       "upc": null,
+         *       "name": "Great Value 2% Reduced Fat Milk, Gallon, 128 fl oz",
+         *       "brand": "Great Value",
+         *       "size": "128 fl oz",
+         *       "image": "https://i5.walmartimages.com/seo/milk.jpeg",
+         *       "price": 327,
+         *       "salePrice": null,
+         *       "saleEnds": null,
+         *       "currency": "USD",
+         *       "aisle": null,
+         *       "inStock": true,
+         *       "url": "https://www.walmart.com/ip/10450114"
+         *     }
+         */
+        WalmartProduct: {
+            id: string;
+            upc: string | null;
+            name: string;
+            brand: string | null;
+            size: string | null;
+            image: string | null;
+            price: number | null;
+            salePrice: number | null;
+            /**
+             * Format: date
+             * @description Walmart's pages don't say, so the extension sends null.
+             */
+            saleEnds: string | null;
+            /** @enum {string} */
+            currency: "USD";
+            aisle: string | null;
+            inStock: boolean;
+            url: string | null;
+        };
+        /**
+         * @example {
+         *       "stores": [
+         *         {
+         *           "key": "kroger",
+         *           "name": "Fry's",
+         *           "connected": true,
+         *           "searchable": true
          *         },
          *         {
          *           "key": "costco",
@@ -11950,43 +12148,6 @@ export interface components {
                 itemId: string;
                 products: components["schemas"]["WalmartProduct"][];
             }[];
-        };
-        /**
-         * @example {
-         *       "id": "10450114",
-         *       "upc": null,
-         *       "name": "Great Value 2% Reduced Fat Milk, Gallon, 128 fl oz",
-         *       "brand": "Great Value",
-         *       "size": "128 fl oz",
-         *       "image": "https://i5.walmartimages.com/seo/milk.jpeg",
-         *       "price": 327,
-         *       "salePrice": null,
-         *       "saleEnds": null,
-         *       "currency": "USD",
-         *       "aisle": null,
-         *       "inStock": true,
-         *       "url": "https://www.walmart.com/ip/10450114"
-         *     }
-         */
-        WalmartProduct: {
-            id: string;
-            upc: string | null;
-            name: string;
-            brand: string | null;
-            size: string | null;
-            image: string | null;
-            price: number | null;
-            salePrice: number | null;
-            /**
-             * Format: date
-             * @description Walmart's pages don't say, so the extension sends null.
-             */
-            saleEnds: string | null;
-            /** @enum {string} */
-            currency: "USD";
-            aisle: string | null;
-            inStock: boolean;
-            url: string | null;
         };
         /**
          * @example {
@@ -23059,6 +23220,152 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ListPrices"];
                 };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getProductMappings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The household's foods and products. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductMappings"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    saveProductMapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                store: "kroger" | "walmart";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "food": "milk",
+                 *       "productId": "0001111041700"
+                 *     }
+                 */
+                "application/json": components["schemas"]["SaveProductMapping"];
+            };
+        };
+        responses: {
+            /** @description The saved product. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductMapping"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The Kroger product isn't at this store. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The store isn't available. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    forgetProductMapping: {
+        parameters: {
+            query: {
+                food: string;
+            };
+            header?: never;
+            path: {
+                store: "kroger" | "walmart";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forgotten. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Not signed in. */
             401: {

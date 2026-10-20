@@ -33,6 +33,7 @@ import { listQuery } from "@/features/list/queries"
 import { ApiError } from "@/lib/api/client"
 
 import { sendPlanQuery, type SendPlan } from "./queries"
+import { storeForItem, type StoreChoices } from "./store-choice"
 
 /** Left out of this send: bought somewhere else, say. */
 const OUT = "out"
@@ -40,21 +41,14 @@ const OUT = "out"
 type Item = SendPlan["items"][number]
 
 /** What the person changed on this page, kept while the tab's open. */
-type Choices = {
-  /** Where things not picked at any store go. */
-  rest: string | null
-  /** Where each thing goes, when it isn't where it would. */
-  where: Record<string, string>
-}
-
-const savedChoices = (list: string): Choices => {
+const savedChoices = (list: string): StoreChoices => {
   try {
     const saved = sessionStorage.getItem(`merran.send.${list}`)
-    if (saved) return JSON.parse(saved) as Choices
+    if (saved) return JSON.parse(saved) as StoreChoices
   } catch {
     // Not kept in this tab; no harm.
   }
-  return { rest: null, where: {} }
+  return { rest: null, order: null, where: {} }
 }
 
 /**
@@ -132,11 +126,9 @@ function Plan({ list, plan }: { list: string; plan: SendPlan }) {
     .sort((a, b) => b.count - a.count)[0]?.key
   const rest =
     choices.rest && keys.includes(choices.rest) ? choices.rest : busiest
-  const whereOf = (item: Item) => {
-    const said = choices.where[item.itemId]
-    if (said === OUT || (said && keys.includes(said))) return said
-    return pickedAt(item) ?? rest ?? OUT
-  }
+  const order =
+    choices.order && keys.includes(choices.order) ? choices.order : null
+  const whereOf = (item: Item) => storeForItem(item, keys, choices, rest) ?? OUT
   const move = (item: Item, where: string) =>
     setChoices((was) => ({
       ...was,
@@ -172,7 +164,45 @@ function Plan({ list, plan }: { list: string; plan: SendPlan }) {
 
   return (
     <div className="grid gap-4 pb-24">
-      {keys.length > 1 && unpicked > 0 && (
+      {keys.length > 1 && (
+        <div className="grid gap-2 rounded-2xl border p-4">
+          <p className="font-medium">{t("list.shopping.orderFrom")}</p>
+          <Select
+            items={[
+              { value: "mixed", label: t("list.shopping.mixedOrder") },
+              ...plan.stores.map((store) => ({
+                value: store.key,
+                label: store.name,
+              })),
+            ]}
+            value={order ?? "mixed"}
+            onValueChange={(value) =>
+              setChoices((was) => ({
+                ...was,
+                order: value === "mixed" ? null : String(value),
+              }))
+            }
+          >
+            <SelectTrigger
+              aria-label={t("list.shopping.orderFrom")}
+              className="w-56"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="mixed">
+                {t("list.shopping.mixedOrder")}
+              </SelectItem>
+              {plan.stores.map((store) => (
+                <SelectItem key={store.key} value={store.key}>
+                  {store.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      {keys.length > 1 && !order && unpicked > 0 && (
         <div className="grid gap-2 rounded-2xl border p-4">
           <p className="font-medium">
             {t("send.restTitle", { count: unpicked })}
@@ -200,6 +230,18 @@ function Plan({ list, plan }: { list: string; plan: SendPlan }) {
       {parts.map((part) => {
         const out = part.key === OUT
         const sent = part.items.filter((item) => item.sent.includes(part.key))
+        const missing = part.items.filter(
+          (item) =>
+            !item.sent.length &&
+            !item.products.some((product) => product.store === part.key)
+        )
+        const unavailable = part.items.filter(
+          (item) =>
+            !item.sent.length &&
+            item.products.some(
+              (product) => product.store === part.key && !product.inStock
+            )
+        )
         const to = part.key === "kroger" ? "/list/kroger" : "/list/walmart"
         return (
           <Card key={part.key}>
@@ -259,6 +301,16 @@ function Plan({ list, plan }: { list: string; plan: SendPlan }) {
                 </CardAction>
               )}
             </CardHeader>
+            {!out && (missing.length > 0 || unavailable.length > 0) && (
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  {t("list.shopping.productNeeds", {
+                    missing: missing.length,
+                    unavailable: unavailable.length,
+                  })}
+                </p>
+              </CardContent>
+            )}
             <CardContent>
               <ul className="grid divide-y">
                 {part.items.map((item) => (

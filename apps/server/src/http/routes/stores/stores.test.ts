@@ -155,6 +155,16 @@ const PRODUCTS: Record<string, FakeProduct[]> = {
       regular: 5.49,
     },
   ],
+  rice: [
+    {
+      productId: "rice1",
+      upc: "0001111000099",
+      description: "Kroger Long Grain Rice",
+      brand: "Kroger",
+      size: "2 lb",
+      regular: 2.99,
+    },
+  ],
 }
 const ALL = Object.values(PRODUCTS).flat()
 
@@ -590,6 +600,119 @@ describe("Kroger", () => {
       (one: { itemId: string }) => one.itemId === eggs
     )
     expect(line).toMatchObject({ suggested: false, product: { id: "eggs3" } })
+  })
+
+  test("prepares a food at two stores without a list, scoped to the household", async () => {
+    const krogerPick = await kyle.put("/api/stores/products/kroger", {
+      food: "rice",
+      productId: "rice1",
+    })
+    expect(krogerPick.status, await krogerPick.clone().text()).toBe(200)
+    expect(await krogerPick.json()).toMatchObject({
+      food: "rice",
+      store: "kroger",
+      product: { id: "rice1" },
+      chosen: true,
+    })
+
+    await kyle.patch("/api/settings/server", { "stores.walmart": true })
+    const walmartProduct = {
+      id: "rice2",
+      upc: null,
+      name: "Great Value Long Grain Rice",
+      brand: "Great Value",
+      size: "2 lb",
+      image: null,
+      price: 248,
+      salePrice: null,
+      saleEnds: null,
+      currency: "USD",
+      aisle: null,
+      inStock: true,
+      url: "https://www.walmart.com/ip/rice2",
+    }
+    const walmartPick = await kyle.put("/api/stores/products/walmart", {
+      food: "rice",
+      product: walmartProduct,
+    })
+    expect(walmartPick.status, await walmartPick.clone().text()).toBe(200)
+
+    const mappings = async () =>
+      (await (await kyle.get("/api/stores/products")).json()) as {
+        aisles: { id: string; key: string | null; name: string }[]
+        foods: {
+          food: string
+          aisle: string | null
+          products: { store: string; product: { id: string } }[]
+        }[]
+      }
+    const get = async () => (await mappings()).foods
+    const rice = (await get()).find((food) => food.food === "rice")
+    const initialAisles = (await mappings()).aisles
+    expect(rice?.aisle).toBe(
+      initialAisles.find((aisle) => aisle.key === "pantry")?.id
+    )
+    expect(rice?.products).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          store: "kroger",
+          product: expect.objectContaining({ id: "rice1" }),
+        }),
+        expect.objectContaining({
+          store: "walmart",
+          product: expect.objectContaining({ id: "rice2" }),
+        }),
+      ])
+    )
+
+    const added = await kyle.post("/api/list/items", { text: "2 lb rice" })
+    expect(added.status).toBe(201)
+    const itemId = (await added.json()).id as string
+    const produce = initialAisles.find((aisle) => aisle.key === "produce")!.id
+    expect(
+      (await kyle.patch(`/api/list/items/${itemId}`, { aisle: produce })).status
+    ).toBe(200)
+    expect((await get()).find((food) => food.food === "rice")?.aisle).toBe(
+      produce
+    )
+    const krogerBasket = await (
+      await kyle.get("/api/stores/kroger/basket")
+    ).json()
+    expect(
+      krogerBasket.lines.find(
+        (line: { itemId: string }) => line.itemId === itemId
+      )
+    ).toMatchObject({ suggested: false, product: { id: "rice1" } })
+    const walmartBasket = await (
+      await kyle.get("/api/stores/walmart/basket")
+    ).json()
+    expect(
+      walmartBasket.lines.find(
+        (line: { itemId: string }) => line.itemId === itemId
+      )
+    ).toMatchObject({ suggested: false, product: { id: "rice2" } })
+
+    const home = (await (await kyle.get("/api/households/current")).json()).id
+    const other = await kyle.post("/api/households", { name: "Other shoppers" })
+    expect(other.status).toBe(201)
+    expect((await get()).some((food) => food.food === "rice")).toBe(false)
+    await kyle.delete("/api/stores/products/kroger?food=rice")
+    await kyle.post("/api/auth/organization/set-active", {
+      organizationId: home,
+    })
+    expect(
+      (await get()).find((food) => food.food === "rice")?.products
+    ).toHaveLength(2)
+
+    await kyle.delete(`/api/list/items/${itemId}`)
+    expect(
+      (await kyle.delete("/api/stores/products/kroger?food=rice")).status
+    ).toBe(204)
+    expect(
+      (await kyle.delete("/api/stores/products/walmart?food=rice")).status
+    ).toBe(204)
+    expect((await get()).some((food) => food.food === "rice")).toBe(false)
+    await kyle.patch("/api/settings/server", { "stores.walmart": false })
   })
 
   test("sends what's ticked to the linked account's cart, by barcode", async () => {

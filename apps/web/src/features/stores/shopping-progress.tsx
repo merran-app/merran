@@ -12,6 +12,7 @@ import {
 import { useListActions } from "@/features/list/use-list-actions"
 import { ShoppingReview } from "./shopping-review"
 import type { SendPlan } from "./queries"
+import { storeForItem, type StoreChoices } from "./store-choice"
 
 export { ShoppingStatus } from "./shopping-status"
 
@@ -20,8 +21,7 @@ export type ShoppingFilter = "all" | "attention" | "sent"
 
 /** Use the same store choices as the older Send page, including left-out items. */
 export function useShoppingStores(list: string, plan: SendPlan | undefined) {
-  type Choices = { rest: string | null; where: Record<string, string> }
-  const remembered = React.useMemo<Choices>(() => {
+  const remembered = React.useMemo<StoreChoices>(() => {
     try {
       const saved = sessionStorage.getItem(`merran.send.${list}`)
       if (saved) {
@@ -32,9 +32,11 @@ export function useShoppingStores(list: string, plan: SendPlan | undefined) {
     } catch {
       /* This device needn't remember a store. */
     }
-    return { rest: null, where: {} }
+    return { rest: null, order: null, where: {} }
   }, [list])
-  const [overrides, setOverrides] = React.useState<Record<string, Choices>>({})
+  const [overrides, setOverrides] = React.useState<
+    Record<string, StoreChoices>
+  >({})
   const choices = overrides[list] ?? remembered
   const stores = plan?.stores ?? []
   const keys = stores.map((store) => store.key)
@@ -45,10 +47,12 @@ export function useShoppingStores(list: string, plan: SendPlan | undefined) {
   )[0]?.key
   const rest =
     choices.rest && keys.includes(choices.rest) ? choices.rest : busiest
-  const whereOf = (item: ShoppingItemProgress) => {
-    const said = choices.where[item.itemId]
-    if (said === "out" || keys.includes(said ?? "")) return said
-    return item.picked.find((key) => keys.includes(key)) ?? rest
+  const order =
+    choices.order && keys.includes(choices.order) ? choices.order : null
+  const whereOf = (item: ShoppingItemProgress) =>
+    storeForItem(item, keys, choices, rest)
+  function chooseOrder(store: string | null) {
+    save({ ...choices, order: store })
   }
   function chooseRest(rest: string) {
     const next = { ...choices, rest }
@@ -57,7 +61,7 @@ export function useShoppingStores(list: string, plan: SendPlan | undefined) {
   function move(itemId: string, store: string) {
     save({ ...choices, where: { ...choices.where, [itemId]: store } })
   }
-  function save(next: Choices) {
+  function save(next: StoreChoices) {
     setOverrides((was) => ({ ...was, [list]: next }))
     try {
       sessionStorage.setItem(`merran.send.${list}`, JSON.stringify(next))
@@ -65,7 +69,7 @@ export function useShoppingStores(list: string, plan: SendPlan | undefined) {
       /* Not remembered. */
     }
   }
-  return { rest, whereOf, chooseRest, move }
+  return { rest, order, whereOf, chooseOrder, chooseRest, move }
 }
 
 export function needsAttention(
@@ -83,6 +87,8 @@ export function ShoppingProgress({
   plan,
   whereOf,
   rest,
+  order,
+  onOrder,
   onRest,
   filter,
   onFilter,
@@ -92,6 +98,8 @@ export function ShoppingProgress({
   plan: SendPlan
   whereOf: (item: ShoppingItemProgress) => string | undefined
   rest: string | undefined
+  order: string | null
+  onOrder: (store: string | null) => void
   onRest: (store: string) => void
   filter: ShoppingFilter
   onFilter: (filter: ShoppingFilter) => void
@@ -114,19 +122,27 @@ export function ShoppingProgress({
         <h2 className="text-lg font-semibold">{t("list.shopping.title")}</h2>
         {plan.stores.length > 1 && (
           <div className="grid gap-1 text-xs text-muted-foreground">
-            <span>{t("list.shopping.defaultStore")}</span>
+            <span>{t("list.shopping.orderFrom")}</span>
             <Select
-              items={storeOptions}
-              value={rest ?? null}
-              onValueChange={(value) => value && onRest(String(value))}
+              items={[
+                { value: "mixed", label: t("list.shopping.mixedOrder") },
+                ...storeOptions,
+              ]}
+              value={order ?? "mixed"}
+              onValueChange={(value) =>
+                onOrder(value === "mixed" ? null : String(value))
+              }
             >
               <SelectTrigger
-                aria-label={t("list.shopping.defaultStore")}
+                aria-label={t("list.shopping.orderFrom")}
                 className="w-48"
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="mixed">
+                  {t("list.shopping.mixedOrder")}
+                </SelectItem>
                 {storeOptions.map((store) => (
                   <SelectItem key={store.value} value={store.value}>
                     {store.label}
@@ -138,6 +154,30 @@ export function ShoppingProgress({
         )}
       </div>
       <p className="text-sm text-muted-foreground">{t("list.shopping.hint")}</p>
+      {plan.stores.length > 1 && !order && (
+        <div className="grid gap-1 text-xs text-muted-foreground">
+          <span>{t("list.shopping.defaultStore")}</span>
+          <Select
+            items={storeOptions}
+            value={rest ?? null}
+            onValueChange={(value) => value && onRest(String(value))}
+          >
+            <SelectTrigger
+              aria-label={t("list.shopping.defaultStore")}
+              className="w-48"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {storeOptions.map((store) => (
+                <SelectItem key={store.value} value={store.value}>
+                  {store.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         {plan.stores.map((store) => {
           // Once sent, keep it at that store even if a newer product was picked elsewhere.
@@ -150,6 +190,18 @@ export function ShoppingProgress({
           const sent = items.filter((item) => item.sent.includes(store.key))
           const ready = items.filter(
             (item) => !item.sent.length && !needsAttention(item, store.key)
+          )
+          const missing = items.filter(
+            (item) =>
+              !item.sent.length &&
+              !item.products.some((product) => product.store === store.key)
+          )
+          const unavailable = items.filter(
+            (item) =>
+              !item.sent.length &&
+              item.products.some(
+                (product) => product.store === store.key && !product.inStock
+              )
           )
           const attention = items.filter((item) =>
             needsAttention(item, store.key)
@@ -170,6 +222,14 @@ export function ShoppingProgress({
                   attention: attention.length,
                 })}
               </p>
+              {(missing.length > 0 || unavailable.length > 0) && (
+                <p className="text-sm text-muted-foreground">
+                  {t("list.shopping.productNeeds", {
+                    missing: missing.length,
+                    unavailable: unavailable.length,
+                  })}
+                </p>
+              )}
               <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
