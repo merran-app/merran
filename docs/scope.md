@@ -173,6 +173,10 @@ Each phase ends with something that runs and can be tried, on `edge` images. 0.1
 
 **Done when:** a Mealie library comes in with photos, a recipe is cooked start to finish on a tablet, and a household export imports cleanly into another server.
 
+October 19, 2026: cook view groups servings, hands-free, timer and text-size controls in the header, below Exit and the recipe title on phones and alongside them on desktop. On phones, servings sit on the left and the other controls sit on the right; on desktop, a small gap separates servings from the actions. Save to plan appears below the controls on phones when servings change. The secondary Get ready/step and Screen stays on line is omitted; the content and step navigation already show progress. Ingredient amounts change in place without restarting steps or timers. For a planned meal, Save to plan updates its servings and linked shopping amounts; Done cooking saves an unsaved serving change with the cooked status. Exit saves an unsaved planned change before leaving. An unplanned recipe's change applies only to that cook session and does not rewrite the recipe.
+
+October 19, 2026: a cook can put any instruction step on hold from the bottom bar beside Next and continue to the next one. On phones, the bar uses two even columns: Back and Ingredients above Hold this step and Next; on larger screens the buttons share one row. Held steps remain listed above the recipe and marked in the step navigation; the cook can return to one and clear its hold from the same bottom bar. Holds are saved with this browser's cooking progress for the same 12 hours, and Start over clears them. Finishing with any holds remaining asks the cook to return to one or finish anyway. A hold is a reminder, separate from timers, and does not change the recipe or plan.
+
 ### Phase 3: Plan, list and pantry
 
 - The week, the pool of meals, what's next, Fill the week with a reason for each pick, theme nights, tastes and rules (dislikes left out rather than ruled out), the autoplan

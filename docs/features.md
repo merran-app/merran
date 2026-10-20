@@ -92,7 +92,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
-| Cook view for the kitchen counter: get ready, ingredients per step, big text | Headline | Built | |
+| Cook view for the kitchen counter: get ready, ingredients per step, big text | Headline | Built | Not released yet: change servings in cook view without losing your place; a planned meal's new count is saved to the plan. Put a step on hold, keep it visible while cooking ahead, and return before finishing. |
 | Kitchen timers from the steps | Key | Built | |
 | Screen stays on, and your place is kept | Detail | Built | |
 | Random celebrations when shopping or cooking is finished | Detail | Built | Available in alpha.4: falling showers of confetti, stars or petals after successful list completion/clearing and marking a meal made or cooked; respects reduced motion ([decision](shopping-and-planning-feedback.md#completion-celebrations)) |
