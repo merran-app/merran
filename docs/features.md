@@ -10,7 +10,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 - **Key:** worth its own section or screenshot on a feature page.
 - **Detail:** belongs in a feature list or the docs, not a headline.
 
-**Status** (reconciled October 19, 2026 against v0.1.0-alpha.4; see [roadmap audit](site-roadmap-audit.md))
+**Status** (reconciled October 19, 2026 for v0.1.0-alpha.5; see the earlier [roadmap audit](site-roadmap-audit.md))
 
 - **Built:** works in the rewrite today.
 - **Building:** started in the rewrite, not finished.
@@ -34,7 +34,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Background jobs that survive restarts, with a jobs page | Detail | Built | |
 | Problems page for the server admin | Detail | Planned | |
 | Update badge when a new release is out | Detail | Built | GitHub's releases every 6 hours (pre-releases for a server on one), a badge for the server admin in the sidebar and account menu, the notes and update commands in Settings, This server |
-| Prebuilt, signed images; releases with notes | Detail | Built | A Release workflow run with a version: images for amd64 and arm64, signed with cosign, with an SBOM and provenance; the extension's zips; notes drafted by Release Drafter from each pull request's title (`feat:`, `fix:`...), under a heading for each kind, with highlights written by hand; selective CI (October 19, not released yet) publishes `edge` for image-affecting changes on main and skips application builds for site-only documentation changes; see [operations](operations.md#selective-ci--october-19-2026-not-released-yet) |
+| Prebuilt, signed images; releases with notes | Detail | Built | A Release workflow run with a version: images for amd64 and arm64, signed with cosign, with an SBOM and provenance; the extension's zips; notes drafted by Release Drafter from each pull request's title (`feat:`, `fix:`...), under a heading for each kind, with highlights written by hand; selective CI in alpha.5 publishes `edge` for image-affecting changes on main and skips application builds for site-only documentation changes; see [operations](operations.md#selective-ci--october-19-2026) |
 | Automatic backups before migrations | Detail | Planned | Manual backups and restores are available; startup migration currently calls the migrator directly |
 | Docker shared runtime dependency verification | Key | Built | Final-image imports verify shared code and telemetry dependencies before CI or release images can be published; workspace dependency links are copied into the runtime image |
 | Release installation and backup/restore smoke tests | Detail | Built | SQLite and Postgres tests recorded in [site-release-verification.md](site-release-verification.md); automated restore coverage in CI remains planned |
@@ -47,7 +47,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
 | Several households on one server, kept fully apart | Headline | Built | Proved by tests generated from the schema |
-| Settings grouped by owner and task, with section links | Detail | Built | Not released yet: You, Household, Import and export, and This server use the same section navigation; cards are grouped by what people are trying to change |
+| Settings grouped by owner and task, with section links | Detail | Built | Available in alpha.5: You, Household, Import and export, and This server use the same section navigation; cards are grouped by what people are trying to change |
 | Belonging to more than one household, with a switcher | Key | Built | |
 | First-run setup with a code from the log | Detail | Built | Grouped readiness banner, retrieval and recovery guidance; new improvements released in alpha.4 ([onboarding.md](onboarding.md)) |
 | Clear setup-code retrieval and recovery from interrupted setup | Detail | Built | Available in alpha.4: operator setup-code command; atomic claiming, concurrent-submission guard and retry/sign-in guidance |
@@ -57,9 +57,9 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Repeatable setup testing in an isolated development database | Detail | Built | Available in alpha.4: MERRAN_DEV_SETUP uses fresh temporary SQLite storage each start; refused in production and Docker |
 | Invite links, roles, open sign-up (off by default) | Key | Built | |
 | Export your own account's data | Detail | Built | |
-| Passkeys | Key | Built | Not released yet: opt-in WebAuthn, required user verification, account management and last-method protection. Operator confirmed Bitwarden registration and sign-in after logout on TrueNAS/Dockge ([authentication](authentication.md)). |
-| Two-step sign-in | Detail | Built | Not released yet: TOTP enrollment, single-use recovery codes, operator recovery and mandatory administrator policy across sign-in methods |
-| Single sign-on (OIDC) | Key | Built | Not released yet: one operator-configured provider, explicit linking, optional account creation and password policy; no automatic email linking |
+| Passkeys | Key | Built | Available in alpha.5: opt-in WebAuthn, required user verification, account management and last-method protection. Operator confirmed Bitwarden registration and sign-in after logout on TrueNAS/Dockge ([authentication](authentication.md)). |
+| Two-step sign-in | Detail | Built | Available in alpha.5: TOTP enrollment, single-use recovery codes, operator recovery and mandatory administrator policy across sign-in methods |
+| Single sign-on (OIDC) | Key | Built | Available in alpha.5: one operator-configured provider, explicit linking, optional account creation and password policy; no automatic email linking |
 | Household invitations by email (SMTP) | Detail | Built | Available in alpha.4: optional SMTP settings and test, address-bound seven-day invitations, queued delivery with retries, resend/cancel and provider-acceptance status; styled HTML with plain-text fallback; requires MERRAN_PUBLIC_URL |
 | Password reset by email | Detail | Built | Available in alpha.4: optional SMTP recovery with styled, single-use 30-minute links, durable delivery, rate limits, password confirmation and session revocation; operator recovery remains available |
 | Account email verification | Detail | Skipped | Decided October 18, 2026: unnecessary for the intended self-hosted deployment; no verification email or verified-email sign-in requirement. Provider sending-domain verification is separate |
@@ -113,7 +113,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Import from Paprika | Key | Built | |
 | Merran export and import of a whole household | Key | Built | |
 | Share to Merran from Android's share sheet or an iPhone Shortcut | Key | Built | Links, pages, photos, screenshots and PDFs; on Android, once installed from Merran's https address |
-| Tidy up: AI fixes a recipe, you review each change | Key | Built | Not released yet: paired previous/proposed line comparisons with changed/added/removed counts, description and detail comparisons, and full recipe previews in Review; recipe Review and Tidy up open in mobile drawers while desktop keeps dialogs. AI; also marks which ingredients a recipe can do without, and names the food of lines Merran doesn't know, for the list |
+| Tidy up: AI fixes a recipe, you review each change | Key | Built | Available in alpha.5: paired previous/proposed line comparisons with changed/added/removed counts, description and detail comparisons, and full recipe previews in Review; recipe Review and Tidy up open in mobile drawers while desktop keeps dialogs. AI; also marks which ingredients a recipe can do without, and names the food of lines Merran doesn't know, for the list |
 | Video links (TikTok, YouTube, Instagram, Facebook) | Headline | Built | Module, on by default: yt-dlp and ffmpeg (in the image) and AI; listens to videos without captions on an OpenAI key |
 | Follow recipe sites and see their newest recipes | Key | Built | Module, on by default; respects `robots.txt`; on Recipes and Today too |
 | Starter collections that fill themselves from recipe sites, fitted to your tastes | Key | Built | Module, on by default; a rule and a few classics per collection, in data files per language; Find more with AI |
@@ -193,13 +193,13 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
 | Today: the next meal, the rest of the week, ideas for tonight | Headline | Built | |
-| Made for phone, tablet and desktop | Key | Built | Not released yet: forms, confirmations and other overlays that use dialogs open as bottom drawers on phones; larger screens keep dialogs. |
+| Made for phone, tablet and desktop | Key | Built | Available in alpha.5: forms, confirmations and other overlays that use dialogs open as bottom drawers on phones; larger screens keep dialogs. |
 | Install to the home screen | Detail | Built | |
 | Three palettes, light and dark, per person | Detail | Built | |
 | Settings for the server, the household and you, kept apart | Detail | Built | |
 | Notifications and prep reminders: thaw the chicken, start the marinade | Key | Planned | Module |
 | Works offline: recipes you've opened, this week's plan, the list | Key | Planned | |
-| Guided tours, ⓘ explanations, a glossary and a Help menu | Key | Built | Available in alpha.4: core-page Driver.js tours start on first visit with remembered skip/disable choices; assistant orientation, Help replay and contextual explanations share the public glossary. Not released yet: replay waits for Help's mobile drawer to finish closing; real-device acceptance remains ([onboarding.md](onboarding.md#3-driverjs-and-help)) |
+| Guided tours, ⓘ explanations, a glossary and a Help menu | Key | Built | Available in alpha.4: core-page Driver.js tours start on first visit with remembered skip/disable choices; assistant orientation, Help replay and contextual explanations share the public glossary. In alpha.5, replay waits for Help's mobile drawer to finish closing; real-device acceptance remains ([onboarding.md](onboarding.md#3-driverjs-and-help)) |
 | Translations, with units, aisles, stores and currency by country | Key | Planned | |
 
 ## For developers and integrations
@@ -207,11 +207,11 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
 | A documented public API (OpenAPI), with a reference page | Headline | Built | The web app uses the same API |
-| API keys with permissions, one household, rate limits | Key | Built | Not released yet: key creation and the generated-key screen use a drawer on mobile, including MCP setup; larger screens use a dialog. |
+| API keys with permissions, one household, rate limits | Key | Built | Available in alpha.5: key creation and the generated-key screen use a drawer on mobile, including MCP setup; larger screens use a dialog. |
 | Live events stream | Detail | Built | |
 | Webhooks for Home Assistant, n8n and others | Key | Planned | |
-| MCP server for compatible external AI apps | Headline | Built | Not released yet: stateless /mcp with the official SDK, scoped API keys or OAuth tokens, shared assistant tools and proposals in Review. Direct plan/list application remains future work ([decision](platform.md#mcp-server)) |
-| OAuth connections for MCP and REST clients | Key | Built | Not released yet: PKCE, discovery, dynamic and administrator client registration, household consent, separate resource audiences, rotating refresh tokens and connection revocation. Operator confirmed MCP OAuth and recipe proposals on TrueNAS/Dockge; REST clients and broader lifecycle checks remain. General “Sign in with Merran” is excluded ([plan](authentication.md)). |
+| MCP server for compatible external AI apps | Headline | Built | Available in alpha.5: stateless /mcp with the official SDK, scoped API keys or OAuth tokens, shared assistant tools and proposals in Review. Direct plan/list application remains future work ([decision](platform.md#mcp-server)) |
+| OAuth connections for MCP and REST clients | Key | Built | Available in alpha.5: PKCE, discovery, dynamic and administrator client registration, household consent, separate resource audiences, rotating refresh tokens and connection revocation. Operator confirmed MCP OAuth and recipe proposals on TrueNAS/Dockge; REST clients and broader lifecycle checks remain. General “Sign in with Merran” is excluded ([plan](authentication.md)). |
 | Household-owned API keys; OpenTelemetry; a Helm chart | Detail | Later | |
 
 ## Research candidates — October 17, 2026

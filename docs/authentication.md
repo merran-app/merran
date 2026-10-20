@@ -4,13 +4,13 @@ Decided October 19, 2026. This round covers passwords, passkeys, authenticator-b
 
 ## Status
 
-Implemented, not released. Browser sessions, API keys and OAuth credentials are distinct. Passkeys, TOTP and recovery codes, one operator-configured OIDC provider, and OAuth authorization-code connections for MCP and REST are available behind opt-in settings. Automated protocol tests run on SQLite and Postgres. The operator has also reported successful MCP OAuth use and Bitwarden passkey sign-in on TrueNAS through Dockge; broader provider, device and lifecycle checks remain.
+Included in alpha.5. Browser sessions, API keys and OAuth credentials are distinct. Passkeys, TOTP and recovery codes, one operator-configured OIDC provider, and OAuth authorization-code connections for MCP and REST are available behind opt-in settings. Automated protocol tests run on SQLite and Postgres. The operator has also reported successful MCP OAuth use and Bitwarden passkey sign-in on TrueNAS through Dockge; broader provider, device and lifecycle checks remain.
 
 ### Operator verification — October 19, 2026
 
 After deploying the merged authentication changes, the operator confirmed connecting an external AI client through MCP OAuth and receiving recipe proposals based on previous conversations and meals. They also registered a passkey in Bitwarden, signed out, and signed back in with that passkey.
 
-This is an operator report, separate from automated protocol tests. Applying proposals and opening their review links were not explicitly confirmed. Exact application image, client, browser, Bitwarden and host versions, and the database backend were not recorded. This does not establish a tagged release or verify external OIDC, TOTP/recovery, hardware security keys, non-MCP REST OAuth, refresh/revocation, or restart/restore behavior in that deployment.
+This is an operator report, separate from automated protocol tests. Applying proposals and opening their review links were not explicitly confirmed. Exact application image, client, browser, Bitwarden and host versions, and the database backend were not recorded. At the time of the report, it did not establish a tagged release or verify external OIDC, TOTP/recovery, hardware security keys, non-MCP REST OAuth, refresh/revocation, or restart/restore behavior in that deployment.
 
 ## Identity and authorization
 
@@ -57,7 +57,7 @@ Current lifetime decision, October 19, 2026: delegated access also requires the 
 2. Sign-in methods, account linking, recovery and operator policy. Verify each allowed method and each forbidden bypass.
 3. OAuth provider, consent, connection management, MCP discovery and REST authentication.
 
-Each stage updates internal plans, public documentation marked unreleased, generated API clients, settings references and any schema migrations. MikroORM remains the single migration authority for SQLite and Postgres.
+Each stage updates internal plans, public documentation, generated API clients, settings references and any schema migrations. MikroORM remains the single migration authority for SQLite and Postgres.
 
 Acceptance includes:
 

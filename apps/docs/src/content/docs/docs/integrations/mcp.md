@@ -3,17 +3,13 @@ title: Connect an AI app with MCP
 description: Connect a compatible AI app with OAuth or an API key and review its suggestions in Merran.
 ---
 
-:::note[Not released yet]
-MCP is implemented after alpha.4. These instructions apply to builds containing this change.
-
-API key setup opens in a drawer on mobile and a dialog on larger screens. The generated key and connection details appear there after creation.
-:::
+Available in alpha.5. API key setup opens in a drawer on mobile and a dialog on larger screens. The generated key and connection details appear there after creation.
 
 Merran serves MCP over Streamable HTTP at `/mcp`. A compatible client can read the kitchen data you allow and suggest recipes, recipe edits, meals and shopping items. All MCP changes wait in **Recipes → Review**. The external app supplies its own model; these tools do not call a Merran AI provider.
 
 ## Connect with OAuth
 
-On builds containing the authentication changes, an operator can enable `MERRAN_AUTH_OAUTH=true` and set `MERRAN_PUBLIC_URL` to the server's stable HTTPS address. Restart the server after changing these settings.
+An operator can enable `MERRAN_AUTH_OAUTH=true` and set `MERRAN_PUBLIC_URL` to the server's stable HTTPS address. Restart the server after changing these settings.
 
 Enter `https://meals.example.com/mcp` in a client that supports MCP OAuth discovery and dynamic client registration. Sign into Merran, choose the household, and review the permissions before choosing **Allow access**. The app receives an MCP-only token. Its write permissions create proposals; this token cannot make direct REST changes.
 
@@ -43,7 +39,7 @@ Use `/mcp` in Claude Code to check the connection. Keep the key out of shared pr
 
 ### Other clients
 
-Use the same URL and bearer header in clients that accept API keys. For clients that require OAuth, enable OAuth and use the connection flow above. Check the client's supported authentication methods and your running Merran version; the original MCP implementation supported API keys only.
+Use the same URL and bearer header in clients that accept API keys. For clients that require OAuth, enable OAuth and use the connection flow above. Check the client's supported authentication methods and your running Merran version.
 
 ## Tools and permissions
 
@@ -71,7 +67,7 @@ MCP requests are limited to 300 per minute per credential. API keys share that a
 | 403 with `invalid_origin`                     | A browser client's Origin must match `MERRAN_PUBLIC_URL`. Native clients normally omit Origin.                                                |
 | A tool is missing                             | Check the key's area permissions, including Recipes read access for meal proposals.                                                           |
 | A suggestion was returned but nothing changed | Open **Recipes → Review**. Proposing never applies it.                                                                                        |
-| The connection asks for OAuth                 | Enable OAuth on a build containing the authentication changes; see the OAuth setup above.                                                     |
+| The connection asks for OAuth                 | Enable OAuth and see the OAuth setup above.                                                                                                   |
 | 429                                           | Wait for the `Retry-After` interval. REST and MCP share the key's allowance.                                                                  |
 | A connection was interrupted                  | Check Review before asking again. A completed proposal may exist even if the client missed its response; retries can create another proposal. |
 

@@ -35,8 +35,8 @@ A household export is not a full server backup: it does not replace accounts, se
 
 ## Update a Compose installation
 
-:::note[Not released yet: development image builds]
-The `edge` image will be published after checks pass for changes affecting the application image on main. Documentation-only changes will not publish another image. The `next` and versioned release channels are unchanged.
+:::note[Development image builds]
+The `edge` image is published after checks pass for changes affecting the application image on main. Documentation-only changes do not publish another image. The `next` and versioned release channels are unchanged.
 :::
 
 If using the project Compose file's optional database, voice or tunnel, keep the matching `COMPOSE_PROFILES` value in `.env` (for example `postgres,voice`), or pass the same `--profile` flags when pulling and starting. The self-contained host-manager stacks have no profiles. Postgres backups need both a database dump and app files; Kokoro does not replace either. See [the complete installation examples](../../get-started/install/#optional-services-with-compose).
@@ -75,6 +75,6 @@ Keep an isolated restore off public traffic and prevent it from making unwanted 
 
 ## Next steps
 
-Authentication changes after alpha.4 also store passkeys, encrypted authenticators and OAuth grants in the database. Preserve the matching server secret and public hostname when restoring. Use the documented [authentication recovery and rotation commands](../authentication/#operator-recovery-and-backups); do not replace the secret file by hand.
+Alpha.5 also stores passkeys, encrypted authenticators and OAuth grants in the database. Preserve the matching server secret and public hostname when restoring. Use the documented [authentication recovery and rotation commands](../authentication/#operator-recovery-and-backups); do not replace the secret file by hand.
 
 For failed startup or migrations, missing data, and job errors, follow [troubleshooting](../troubleshooting/). Check [configuration](../configuration/) and the [settings reference](../settings-reference/) when moving an installation to a new address or host.

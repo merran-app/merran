@@ -48,7 +48,7 @@ For a change, ask explicitly—for example, “Suggest dinners for Monday and Tu
 
 Recipe-section edits keep a version. If a selected section changed since the proposal was generated, Merran refuses that stale edit instead of overwriting it. Request a fresh suggestion after reviewing the current recipe. This conflict protection should not be assumed for every kind of proposal; inspect the current plan/list before adding older proposals.
 
-### Clearer previews (not released yet)
+### Clearer previews in alpha.5
 
 On a recipe, **Review** and **Tidy up** open a bottom drawer on mobile and a dialog on larger screens. The mobile heading and **Close** button stay visible while you scroll through the options or suggested changes.
 
@@ -90,7 +90,7 @@ Review optional settings before enabling automatic work. Provider transmission, 
 
 There is no universal undo for all proposal types. Use the affected feature's normal editing controls; recipe versions help with recipe edits, while plan/list additions need to be corrected there. Deleting a chat does not undo applied changes.
 
-## External AI apps (not released yet)
+## External AI apps
 
 The MCP endpoint lets a compatible external app read permitted kitchen data and send proposals to **Recipes → Review**. Review now also handles proposed new recipes, meals and shopping items. Every MCP change waits for you to apply it; MCP calls do not use Merran AI credits. See [connecting an AI app](../../integrations/mcp/) for permissions and setup.
 
