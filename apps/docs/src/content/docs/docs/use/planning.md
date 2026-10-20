@@ -26,6 +26,8 @@ the recipe picker shows **Already planned** for recipes already added to the wee
 
 **Expected result:** the meal appears in its day and meal slot. Leaving servings empty uses the recipe's count. Meal servings determine ingredient amounts for shopping; changing the recipe page's display alone is not a change to this plan entry.
 
+Not released yet: if you notice the wrong count after opening cook view, change **Servings** in the header and choose **Save to plan**. **Done cooking** or **Exit** also saves an unsaved planned serving change.
+
 For flexibility, use **Add a meal** under **This week, any day**. Choose **Tonight** when you are ready to put it on today's plan, or **Move or change** to choose another day. A note can reserve a meal without adding recipe ingredients to the shopping list.
 
 ## Set theme nights

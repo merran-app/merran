@@ -63,14 +63,19 @@ function CookPage() {
   const pairing = paired && paired.id !== recipe.id ? paired : undefined
   if (entry && entry.recipe?.id !== recipe.id)
     return <p role="alert">{t("shopping.contextMismatch")}</p>
+  const cookingRecipe = mealRecipe(recipe, entry)
+  const cookingScale =
+    entry?.servings != null && cookingRecipe.servings
+      ? entry.servings / cookingRecipe.servings
+      : scale
   // Fresh for each recipe, pairing and scale, picking up where that was left.
   return (
     <CookView
       key={`${recipe.id}-${pairing?.id ?? ""}-${scale}-${meal ?? ""}`}
-      recipe={mealRecipe(recipe, entry)}
+      recipe={cookingRecipe}
       paired={pairing ? mealRecipe(pairing, entry) : undefined}
       mealId={entry?.id}
-      scale={scale}
+      scale={cookingScale}
     />
   )
 }

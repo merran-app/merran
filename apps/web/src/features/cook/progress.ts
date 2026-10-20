@@ -1,9 +1,10 @@
 import * as React from "react"
 
-/** Where cooking got to: the page, and the ingredients ticked off. */
+/** Where cooking got to: the page, ingredients ticked off, and steps to revisit. */
 export type Progress = {
   page: number
   ticked: string[]
+  held: string[]
   scale: number
   /** The recipe it was cooked with, if any. */
   with: string | null
@@ -33,7 +34,13 @@ export function loadProgress(
     ) {
       return null
     }
-    return saved
+    // Older saved sessions have no held steps.
+    return {
+      ...saved,
+      held: Array.isArray(saved.held)
+        ? saved.held.filter((id): id is string => typeof id === "string")
+        : [],
+    }
   } catch {
     return null
   }

@@ -4,6 +4,8 @@ import {
   Cancel01Icon,
   Mic01Icon,
   MinusSignCircleIcon,
+  MinusSignIcon,
+  PlusSignIcon,
   TextFontIcon,
   Timer02Icon,
   VolumeHighIcon,
@@ -21,11 +23,22 @@ import {
   type CookCommand,
   type UnitSystem,
 } from "@merran/shared"
+import { useQueryClient } from "@tanstack/react-query"
 import { useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -66,6 +79,7 @@ import {
 } from "@/features/recipes/swaps/this-time"
 import { mergeLeftOut, useRecipeTastes } from "@/features/recipes/use-tastes"
 import { useUnitSystem } from "@/features/recipes/use-unit-system"
+import { planEntryQuery } from "@/features/plan/meal-recipe"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
 import { celebrate } from "@/lib/celebrations/celebrate"
@@ -118,6 +132,16 @@ export function CookView({
   const canGoBack = useCanGoBack()
   const navigate = useNavigate()
   const refresh = useRefreshRecipes()
+  const queryClient = useQueryClient()
+  const baseServings = recipe.servings
+  const [amount, setAmount] = React.useState(
+    baseServings ? baseServings * scale : scale
+  )
+  const [savedAmount, setSavedAmount] = React.useState(amount)
+  const [savingServings, setSavingServings] = React.useState(false)
+  const currentScale = baseServings ? amount / baseServings : amount
+  const servingsChanged = amount !== savedAmount
+  const servingStep = amount <= 2 ? 0.5 : 1
   const progressId = mealId ? `${recipe.id}:${mealId}` : recipe.id
   // Stand-ins used this time, from the recipe page or picked while cooking.
   const thisTime = useSwapsThisTime(recipe.id)
@@ -125,11 +149,11 @@ export function CookView({
   const aiOn = useCapability("ai")
   const [swapping, setSwapping] = React.useState<Line | null>(null)
   const swapped = React.useMemo(() => withSwaps(recipe, swaps), [recipe, swaps])
-  const both = paired ? pairRecipes(swapped.recipe, paired, scale) : null
+  const both = paired ? pairRecipes(swapped.recipe, paired, currentScale) : null
   const ingredients = both?.ingredients ?? swapped.recipe.ingredients
   const steps = both?.steps ?? swapped.recipe.steps
   /** How much each line is scaled: a pairing has its own amount. */
-  const factorOf = (lineId: string) => both?.factors.get(lineId) ?? scale
+  const factorOf = (lineId: string) => both?.factors.get(lineId) ?? currentScale
   /** Lines left out for someone who doesn't like them. */
   const leftOut = mergeLeftOut(
     useRecipeTastes(swapped.recipe),
@@ -143,15 +167,22 @@ export function CookView({
   const hasPrep = ingredients.length > 0
   const pages = steps.length + (hasPrep ? 1 : 0)
   const [resumed] = React.useState(() =>
-    loadProgress(progressId, scale, paired?.id ?? null)
+    loadProgress(progressId, currentScale, paired?.id ?? null)
   )
   const [page, setPage] = React.useState(() =>
     Math.min(resumed?.page ?? 0, Math.max(0, pages - 1))
   )
+  const [heldIds, setHeldIds] = React.useState(
+    () =>
+      new Set(
+        resumed?.held.filter((id) => steps.some((step) => step.id === id))
+      )
+  )
+  const [reviewHolds, setReviewHolds] = React.useState(false)
   const ticks = useTicks(resumed?.ticked)
   const [system, setSystem] = useUnitSystem()
   const [textSize, setTextSize] = useTextSize()
-  const screenOn = useWakeLock()
+  useWakeLock()
   const [finishing, setFinishing] = React.useState(false)
   const [asking, setAsking] = React.useState(false)
   const swipe = React.useRef<{ x: number; y: number } | null>(null)
@@ -161,6 +192,9 @@ export function CookView({
   const step = onPrep ? undefined : steps[stepIndex]
   const next = onPrep ? undefined : steps[stepIndex + 1]
   const isLast = page >= pages - 1
+  const heldSteps = steps.flatMap((step, index) =>
+    heldIds.has(step.id) ? [{ step, page: index + (hasPrep ? 1 : 0) }] : []
+  )
   const highlighted = React.useMemo(() => {
     if (!step) return new Set<string>()
     // Cooked with a pairing, a step only uses its own recipe's ingredients.
@@ -175,7 +209,7 @@ export function CookView({
   const stepLeftOut = stepLines.filter((line) => leftOut.has(line.id))
   const cooking: Cooking = {
     slug: recipe.slug,
-    scale,
+    scale: currentScale,
     ...(paired ? { with: paired.slug } : {}),
   }
   const showUnits = convertible(ingredients)
@@ -185,10 +219,31 @@ export function CookView({
     [pages]
   )
 
+  function holdStep() {
+    if (!step) return
+    setHeldIds((current) => new Set(current).add(step.id))
+    if (!isLast) go(page + 1)
+  }
+
+  function clearHold(stepId: string) {
+    setHeldIds((current) => {
+      const next = new Set(current)
+      next.delete(stepId)
+      return next
+    })
+  }
+
   // Picked up where it was left: say so, with a way back to the start.
   const { clear } = ticks
   React.useEffect(() => {
-    if (!resumed || resumed.page === 0) return
+    if (
+      !resumed ||
+      (resumed.page === 0 &&
+        resumed.ticked.length === 0 &&
+        resumed.held.length === 0)
+    ) {
+      return
+    }
     toast(t("cook.resumed"), {
       id: "cook-resumed",
       position: "top-center",
@@ -197,6 +252,7 @@ export function CookView({
         onClick: () => {
           setPage(0)
           clear()
+          setHeldIds(new Set())
         },
       },
     })
@@ -205,17 +261,18 @@ export function CookView({
   React.useEffect(() => {
     saveProgress(
       progressId,
-      page === 0 && ticks.ticked.size === 0
+      page === 0 && ticks.ticked.size === 0 && heldIds.size === 0
         ? null
         : {
             page,
             ticked: [...ticks.ticked],
-            scale,
+            held: [...heldIds],
+            scale: currentScale,
             with: paired?.id ?? null,
             savedAt: Date.now(),
           }
     )
-  }, [progressId, page, ticks.ticked, scale, paired?.id])
+  }, [progressId, page, ticks.ticked, heldIds, currentScale, paired?.id])
 
   React.useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -233,31 +290,70 @@ export function CookView({
   }, [go, page])
 
   /** Back where cooking started from: the recipe, or wherever it was. */
-  function leave() {
+  async function leave() {
+    if (mealId && servingsChanged && !(await saveServings())) return
     if (canGoBack) router.history.back()
     else void navigate({ to: "/recipes/$slug", params: { slug: recipe.slug } })
   }
 
+  async function saveServings() {
+    if (!mealId || !baseServings || !servingsChanged) return true
+    setSavingServings(true)
+    try {
+      const changed = await unwrap(
+        api.PATCH("/api/plan/entries/{entryId}", {
+          params: { path: { entryId: mealId } },
+          body: { servings: amount },
+        })
+      )
+      queryClient.setQueryData(planEntryQuery(mealId).queryKey, changed)
+      setSavedAmount(amount)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["plan"] }),
+        queryClient.invalidateQueries({ queryKey: ["list"] }),
+        queryClient.invalidateQueries({ queryKey: ["pantry"] }),
+      ])
+      return true
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error
+      toast.error(error.message)
+      return false
+    } finally {
+      setSavingServings(false)
+    }
+  }
+
   async function finish() {
+    if (finishing || savingServings) return
     setFinishing(true)
     try {
-      if (mealId)
-        await unwrap(
+      if (mealId) {
+        const changed = await unwrap(
           api.PATCH("/api/plan/entries/{entryId}", {
             params: { path: { entryId: mealId } },
-            body: { status: "cooked" },
+            body: {
+              status: "cooked",
+              ...(servingsChanged && baseServings ? { servings: amount } : {}),
+            },
           })
         )
-      else
+        queryClient.setQueryData(planEntryQuery(mealId).queryKey, changed)
+        setSavedAmount(amount)
+      } else {
         await unwrap(
           api.POST("/api/recipes/{recipe}/made", {
             params: { path: { recipe: recipe.id } },
           })
         )
+      }
       saveProgress(progressId, null)
       // Swaps are for this time: next time starts as written.
       clearSwaps(recipe.id)
       await refresh()
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["list"] }),
+        queryClient.invalidateQueries({ queryKey: ["pantry"] }),
+      ])
       toast.success(t("cook.made"))
       celebrate()
       // Then "How did it go?", and back where cooking started.
@@ -268,6 +364,14 @@ export function CookView({
     } finally {
       setFinishing(false)
     }
+  }
+
+  function requestFinish() {
+    if (heldSteps.length > 0) {
+      setReviewHolds(true)
+      return
+    }
+    void finish()
   }
 
   // Hands-free: commands by voice, and each page read aloud.
@@ -359,7 +463,7 @@ export function CookView({
             break
           }
           setHandsFree(false)
-          void finish()
+          requestFinish()
           break
       }
     },
@@ -392,7 +496,7 @@ export function CookView({
   const list = (size: "default" | "lg") => (
     <IngredientList
       lines={ingredients}
-      factor={scale}
+      factor={currentScale}
       factorOf={factorOf}
       system={system}
       ticks={ticks}
@@ -405,12 +509,16 @@ export function CookView({
       size={size}
     />
   )
-  const servings = recipe.servings ? recipe.servings * scale : null
+  const servings = baseServings ? amount : null
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
-      <header className="flex flex-wrap items-center gap-3 px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 md:px-8">
-        <Button variant="outline" onClick={leave}>
+      <header className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 md:px-8 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
+        <Button
+          variant="outline"
+          onClick={() => void leave()}
+          disabled={savingServings || finishing}
+        >
           <HugeiconsIcon
             icon={Cancel01Icon}
             strokeWidth={2}
@@ -418,43 +526,86 @@ export function CookView({
           />
           {t("cook.exit")}
         </Button>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-heading text-lg font-semibold">{name}</p>
-          <p className="text-sm text-muted-foreground">
-            {onPrep
-              ? t("cook.getReady")
-              : steps.length > 0
-                ? t("cook.stepOf", {
-                    step: stepIndex + 1,
-                    count: steps.length,
-                  })
-                : t("cook.noSteps")}
-            {screenOn && ` · ${t("cook.screenOn")}`}
-          </p>
-        </div>
-        {/* Before the buttons, so starting a timer doesn't move them. On
-            phones the timers take a row of their own below. */}
-        <TimerChips className="order-last w-full sm:order-none sm:w-auto" />
-        <div className="flex items-center gap-2">
-          {handsFreeSupported() && (
-            <Button
-              variant={handsFree ? "default" : "outline"}
-              size="icon"
-              aria-pressed={handsFree}
-              aria-label={t("cook.handsFree.label")}
-              title={t("cook.handsFree.title")}
-              onClick={toggleHandsFree}
-            >
-              <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} />
-            </Button>
+        <p className="min-w-0 truncate font-heading text-lg font-semibold">
+          {name}
+        </p>
+        <div className="col-span-2 flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 lg:col-span-1 lg:justify-end lg:gap-x-3">
+          {baseServings != null && baseServings > 0 && (
+            <div className="flex shrink-0 items-center gap-1">
+              <span className="sr-only">{t("cook.servings")}</span>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                aria-label={t("recipes.fewerServings")}
+                disabled={savingServings || finishing || amount <= 0.25}
+                onClick={() =>
+                  setAmount((value) => Math.max(0.25, value - servingStep))
+                }
+              >
+                <HugeiconsIcon icon={MinusSignIcon} strokeWidth={2} />
+              </Button>
+              <span
+                className="min-w-18 text-center text-sm font-medium tabular-nums"
+                aria-live="polite"
+              >
+                {t("recipes.servings", {
+                  count: amount,
+                  servings: formatServings(amount),
+                })}
+              </span>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                aria-label={t("recipes.moreServings")}
+                disabled={savingServings || finishing || amount >= 1000}
+                onClick={() =>
+                  setAmount((value) => Math.min(1000, value + servingStep))
+                }
+              >
+                <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+              </Button>
+            </div>
           )}
-          <NewTimerButton cooking={cooking} />
-          <TextSizeMenu value={textSize} onChange={setTextSize} />
+          {baseServings != null &&
+            baseServings > 0 &&
+            mealId &&
+            (servingsChanged || savingServings) && (
+              <div className="order-last w-full lg:order-none lg:w-auto">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={savingServings || finishing}
+                  onClick={() => void saveServings()}
+                >
+                  {savingServings
+                    ? t("cook.savingServings")
+                    : t("cook.saveServings")}
+                </Button>
+              </div>
+            )}
+          <div className="ml-auto flex items-center gap-1.5">
+            {handsFreeSupported() && (
+              <Button
+                variant={handsFree ? "default" : "outline"}
+                size="icon"
+                aria-pressed={handsFree}
+                aria-label={t("cook.handsFree.label")}
+                title={t("cook.handsFree.title")}
+                onClick={toggleHandsFree}
+              >
+                <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} />
+              </Button>
+            )}
+            <NewTimerButton cooking={cooking} />
+            <TextSizeMenu value={textSize} onChange={setTextSize} />
+          </div>
         </div>
+        {/* Countdowns take their own row so starting one does not shift the controls. */}
+        <TimerChips className="col-span-2 justify-center lg:col-span-3 lg:justify-end" />
         {handsFree && (
           <div
             role="status"
-            className="order-last flex w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-secondary px-3 py-2 text-sm"
+            className="col-span-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-secondary px-3 py-2 text-sm lg:col-span-3"
           >
             <span className="flex items-center gap-2 font-medium">
               <span
@@ -490,7 +641,12 @@ export function CookView({
               aria-label={
                 hasPrep && i === 0
                   ? t("cook.goToReady")
-                  : t("cook.goToStep", { step: i + (hasPrep ? 0 : 1) })
+                  : t(
+                      heldIds.has(steps[i - (hasPrep ? 1 : 0)]?.id ?? "")
+                        ? "cook.goToHeldStep"
+                        : "cook.goToStep",
+                      { step: i + (hasPrep ? 0 : 1) }
+                    )
               }
               aria-current={i === page ? "step" : undefined}
               onClick={() => go(i)}
@@ -502,14 +658,45 @@ export function CookView({
               <span
                 className={cn(
                   "block h-1.5 rounded-full transition-colors",
-                  i <= page
-                    ? "bg-primary"
-                    : "bg-border group-hover:bg-muted-foreground/40"
+                  heldIds.has(steps[i - (hasPrep ? 1 : 0)]?.id ?? "")
+                    ? "bg-highlight"
+                    : i <= page
+                      ? "bg-primary"
+                      : "bg-border group-hover:bg-muted-foreground/40"
                 )}
               />
             </button>
           ))}
         </nav>
+      )}
+
+      {heldSteps.length > 0 && (
+        <aside className="mx-4 mt-2 grid gap-2 rounded-2xl bg-secondary p-3 md:mx-8">
+          <p className="text-sm font-semibold">
+            {t("cook.heldCount", { count: heldSteps.length })}
+          </p>
+          <ul className="grid gap-1">
+            {heldSteps.map(({ step: heldStep, page: heldPage }) => (
+              <li key={heldStep.id} className="min-w-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="max-w-full justify-start"
+                  onClick={() => go(heldPage)}
+                >
+                  <span className="shrink-0 font-semibold">
+                    {t("cook.stepNumber", {
+                      step: heldPage + (hasPrep ? 0 : 1),
+                    })}
+                  </span>
+                  <span className="truncate text-left font-normal">
+                    {stepWords(t, convertTemperatures(heldStep.text, system))}
+                  </span>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </aside>
       )}
 
       <main
@@ -693,10 +880,11 @@ export function CookView({
         </section>
       </main>
 
-      <footer className="sticky bottom-0 flex items-center justify-between gap-3 border-t bg-background/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur md:px-8">
+      <footer className="sticky bottom-0 grid grid-cols-2 items-center gap-2 border-t bg-background/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur sm:flex sm:justify-between md:px-8">
         <Button
           size="lg"
           variant="outline"
+          className={cn("w-full sm:w-auto", step && !hasPrep && "col-span-2")}
           onClick={() => go(page - 1)}
           disabled={page === 0}
         >
@@ -711,7 +899,11 @@ export function CookView({
           <Sheet>
             <SheetTrigger
               render={
-                <Button size="lg" variant="secondary" className="md:hidden" />
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="w-full sm:w-auto md:hidden"
+                />
               }
             >
               {t("recipes.fields.ingredients")}
@@ -729,27 +921,91 @@ export function CookView({
             </SheetContent>
           </Sheet>
         )}
-        {isLast ? (
-          <Button size="lg" onClick={() => void finish()} disabled={finishing}>
-            {t("cook.done")}
-          </Button>
-        ) : (
-          <Button size="lg" onClick={() => go(page + 1)}>
-            {onPrep ? t("cook.start") : t("cook.next")}
-            <HugeiconsIcon
-              icon={ArrowRight02Icon}
-              strokeWidth={2}
-              data-icon="inline-end"
-            />
-          </Button>
-        )}
+        <div
+          className={cn(
+            "gap-2 sm:ml-auto sm:flex sm:items-center",
+            step
+              ? "col-span-2 grid grid-cols-2"
+              : "col-start-2 flex justify-end"
+          )}
+        >
+          {step && (
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full sm:w-auto"
+              onClick={() =>
+                heldIds.has(step.id) ? clearHold(step.id) : holdStep()
+              }
+            >
+              {heldIds.has(step.id)
+                ? t("cook.doneWithStep")
+                : t("cook.holdStep")}
+            </Button>
+          )}
+          {isLast ? (
+            <Button
+              size="lg"
+              className="w-full sm:w-auto"
+              onClick={requestFinish}
+              disabled={finishing || savingServings}
+            >
+              {t("cook.done")}
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              className="w-full sm:w-auto"
+              onClick={() => go(page + 1)}
+            >
+              {onPrep ? t("cook.start") : t("cook.next")}
+              <HugeiconsIcon
+                icon={ArrowRight02Icon}
+                strokeWidth={2}
+                data-icon="inline-end"
+              />
+            </Button>
+          )}
+        </div>
       </footer>
+
+      <AlertDialog open={reviewHolds} onOpenChange={setReviewHolds}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("cook.heldCount", { count: heldSteps.length })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("cook.heldBeforeFinish", { count: heldSteps.length })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                const first = heldSteps[0]
+                if (first) go(first.page)
+              }}
+            >
+              {t("cook.returnToHeldStep")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="secondary"
+              onClick={() => {
+                setReviewHolds(false)
+                void finish()
+              }}
+            >
+              {t("cook.finishAnyway")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <SwapDialog
         mealId={mealId}
         recipe={recipe}
         line={swapping}
-        factor={scale}
+        factor={currentScale}
         system={system}
         onUse={thisTime.use}
         onUndo={thisTime.undo}
