@@ -389,6 +389,10 @@ Carried over from the REFERENCE app, plus what a public project needs:
 - **Starter collections and suggested sites** are data files per language, open to contributions.
 - **Nutrition:** USDA at first. Open Food Facts and national food databases can be added as nutrition sources later.
 
+## Mobile overlays
+
+October 19, 2026, not released yet: forms, confirmations and other content opened through the web app's shared dialog components use a bottom drawer below 768px. The drawer can be dismissed by swiping down or tapping outside and keeps long content scrollable above the phone's safe area. At 768px and above, the same actions keep their existing dialogs. Screen-specific mobile drawers for assistant review, shopping and recipe work remain in place.
+
 ## Help and guided tours
 
 Implementation status, October 17, 2026: [Setup and first-use experience](onboarding.md). Core-page tours, assistant orientation, Help replay, a shared glossary and contextual explanations are implemented and released in alpha.4. Real-device acceptance and the optional What's new tour system below remain planned. The same record covers implemented password confirmation, operator recovery, atomic claiming, household review and first-meal progress.

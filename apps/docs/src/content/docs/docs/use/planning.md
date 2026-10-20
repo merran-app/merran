@@ -45,7 +45,7 @@ Themes are not absolute restrictions: if no eligible recipe fits a theme, Merran
 3. Review each proposed meal and its reason. Use **Something else for…** to try another idea or **Leave…empty** to omit a slot.
 4. Choose **Add … meals** to put the remaining ideas on the plan.
 
-**Expected result:** selected ideas fill empty slots from today onward. Existing dated meals stay in place, and nothing is added by merely opening the dialog.
+**Expected result:** selected ideas fill empty slots from today onward. Existing dated meals stay in place, and nothing is added by merely opening the panel. **Not released yet:** this and other forms or confirmations open in a bottom drawer on phones; larger screens use a dialog.
 
 Ideas come from your library, not an AI search. Recipes recently planned or made are excluded around a two-week window. Tags help identify breakfast, lunch, and snack recipes; recipes tagged as sauces or other meal components are not suggested alone. Household tastes and weeknight time limits can narrow the choices. Pantry ingredients, ratings, and optional store price information influence selection. A budget is a preference based on known costs, not a guaranteed spending cap.
 

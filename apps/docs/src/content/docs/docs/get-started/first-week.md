@@ -13,6 +13,8 @@ On **Today**, **Your first meal** shows four numbered step cards and a progress 
 
 Expand **Optional connections and server care** for module status and setup links. **Enabled** and **Off** describe configuration; they do not confirm that a provider connection works. **For your household** groups **Household settings**, recipe imports, **AI setup**, and **Use Merran on your phone**. Server administrators also see **For your server**, with **Server settings** and **Backups and recovery**.
 
+**Not released yet:** forms and confirmations throughout Merran open as bottom drawers on phones. On larger screens they remain dialogs.
+
 ## 1. Add a recipe
 
 Open **Recipes** and add a recipe manually or import a recipe URL. Review the imported ingredients, servings, and steps before relying on them. A site that blocks automated requests may need another import method.
