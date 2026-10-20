@@ -404,6 +404,27 @@
         "save": "Save",
         "saved": "Saved."
       },
+      "calendar": {
+        "title": "Calendar subscriptions",
+        "description": "Show dated meals in a calendar app. Meal times use this household's time zone.",
+        "enable": "Let members subscribe to this household's meal calendar",
+        "usualTimes": "Usual meal times",
+        "startTime": "Start time",
+        "duration": "Duration (minutes)",
+        "timeZoneHint": "Change one day's meal time on the Plan page.",
+        "disableWarning": "Saving with subscriptions off revokes every calendar link for this household.",
+        "save": "Save calendar settings",
+        "saved": "Calendar settings saved.",
+        "privacy": "A subscription link shows meal names and notes to anyone who has it. Recipe links still require a Merran sign-in.",
+        "publicUrlNeeded": "Ask the server administrator to set MERRAN_PUBLIC_URL to an address your calendar app can reach.",
+        "createLink": "Create subscription link",
+        "newLink": "Your calendar link",
+        "shownOnce": "Copy this link now. Merran shows it only once; if it is lost, revoke it and make another.",
+        "created": "Created {{date}}",
+        "revoke": "Revoke",
+        "revoked": "Calendar link revoked.",
+        "refreshHint": "Add the link as a subscribed calendar. Changes made in Merran appear when your calendar app refreshes it. Calendar-side edits do not change Merran."
+      },
       "none": "You're not in a household",
       "noneHint": "Ask someone in a household for an invite link.",
       "roles": {
@@ -977,6 +998,17 @@
   },
   "plan": {
     "title": "Plan",
+    "calendarTime": {
+      "change": "Change {{meal}} time",
+      "title": "Meal time",
+      "description": "All dishes in this day's {{meal}} share this calendar time.",
+      "start": "Starts at",
+      "minutes": "Minutes",
+      "save": "Save time",
+      "saved": "Meal time saved.",
+      "reset": "Use usual time",
+      "resetDone": "Using the usual meal time."
+    },
     "weekLabel": "{{label}}, {{range}}",
     "filled": "<b>{{filled}}</b> of {{total}} meals planned",
     "selectMeals": "Select meals",

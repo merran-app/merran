@@ -222,7 +222,7 @@ These are exploratory additions from [roadmap research](roadmap-research.md), no
 |---|---|---|---|
 | Saved meal plans and menus | Key | Later | Exploring; Save named plans such as a busy week, camping trip, or holiday dinner and reuse them with new dates and serving counts. Goes beyond Repeat last week. |
 | Prepared meals and freezer portions | Key | Later | Exploring; Track portions of food already cooked, when they were made or frozen, and schedule them without buying the original ingredients again. Goes beyond storage locations and leftover notes. |
-| Meal-plan calendar subscriptions | Key | Later | Exploring; Opt in to a read-only iCalendar feed for external calendar apps, with revocable links and recipe references; refresh timing depends on the calendar app. |
+| Meal-plan calendar subscriptions | Key | Building | Not released yet; [plan](calendar-subscriptions.md). Household meal times and one-day overrides, grouped calendar events with recipe links, and revocable read-only subscriptions are implemented locally. Calendar-client acceptance remains. Calendar-side edits do not change Merran. |
 | Minimum-stock reminders | Key | Later | Exploring; Set a desired stock level and review suggested top-ups based on measured pantry quantities. Complements recurring buys and staples. |
 | Recipe sharing outside the household | Key | Later | Exploring; Share one recipe through a revocable read-only link without inviting the recipient to the household. Must preserve household isolation. |
 | Print-friendly recipes, plans and cookbooks | Detail | Later | Exploring; Print a clean recipe, shopping list or meal plan; later assemble selected recipes into a family cookbook using print/PDF export. Complements structured data export. |

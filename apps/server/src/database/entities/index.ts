@@ -19,6 +19,7 @@ export * from "./two_factors.ts"
 // One file per table, named after the table.
 
 import { Account } from "./accounts.ts"
+import { CalendarSubscription } from "./calendar_subscriptions.ts"
 import { AiKey } from "./ai_keys.ts"
 import { AiUsage } from "./ai_usage.ts"
 import { ApiKey } from "./api_keys.ts"
@@ -41,6 +42,7 @@ import { PasswordReset } from "./password_resets.ts"
 import { Job } from "./jobs.ts"
 import { PantryItem } from "./pantry_items.ts"
 import { PlanEntry } from "./plan_entries.ts"
+import { PlanSlotTime } from "./plan_slot_times.ts"
 import { Proposal } from "./proposals.ts"
 import { Purchase } from "./purchases.ts"
 import { Receipt } from "./receipts.ts"
@@ -67,6 +69,7 @@ import { Verification } from "./verifications.ts"
 import { WeeklyItem } from "./weekly_items.ts"
 
 export * from "./accounts.ts"
+export * from "./calendar_subscriptions.ts"
 export * from "./ai_keys.ts"
 export * from "./ai_usage.ts"
 export * from "./api_keys.ts"
@@ -89,6 +92,7 @@ export * from "./password_resets.ts"
 export * from "./jobs.ts"
 export * from "./pantry_items.ts"
 export * from "./plan_entries.ts"
+export * from "./plan_slot_times.ts"
 export * from "./proposals.ts"
 export * from "./purchases.ts"
 export * from "./receipts.ts"
@@ -126,6 +130,7 @@ export const entities = [
   Passkey,
   TwoFactor,
   Account,
+  CalendarSubscription,
   AiKey,
   AiUsage,
   ApiKey,
@@ -148,6 +153,7 @@ export const entities = [
   Job,
   PantryItem,
   PlanEntry,
+  PlanSlotTime,
   Proposal,
   Purchase,
   Receipt,

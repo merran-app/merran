@@ -1,6 +1,11 @@
 import { Add01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { MEALS, themeLabel, type NightTheme } from "@merran/shared"
+import {
+  MEALS,
+  themeLabel,
+  type MealTimes,
+  type NightTheme,
+} from "@merran/shared"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { TermHelp } from "@/features/onboarding/term-help"
@@ -13,6 +18,7 @@ import { cn } from "@/lib/utils"
 import { formatMonthDay, formatShortWeekday, formatWeekday } from "./format"
 import { dayCalories } from "./calories"
 import { MealTile } from "./meal-tile"
+import { MealTimeDialog } from "./meal-time-dialog"
 import { MealDropZone } from "./drag/meal-drag"
 import { NotFilledIcon, useNotFilled } from "./not-filled"
 import type { Meal, PlanEntry } from "./queries"
@@ -58,6 +64,8 @@ export function DayCard({
   today,
   theme,
   entries,
+  calendarTimes,
+  calendarOverrides,
   selection,
   onAdd,
 }: {
@@ -66,6 +74,13 @@ export function DayCard({
   /** Dinner's theme that night. */
   theme: NightTheme | null
   entries: PlanEntry[]
+  calendarTimes: MealTimes
+  calendarOverrides: {
+    date: string
+    meal: Meal
+    start: string
+    minutes: number
+  }[]
   selection: Selection
   onAdd: (meal: Meal) => void
 }) {
@@ -132,16 +147,32 @@ export function DayCard({
             >
               <div className="flex h-6 items-center justify-between">
                 <MealLabel meal={meal} notFilled={notFilled.includes(meal)} />
-                {!selection.selecting && (
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    aria-label={t(`plan.add.${meal}`)}
-                    onClick={() => onAdd(meal)}
-                  >
-                    <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
-                  </Button>
-                )}
+                <div className="flex items-center gap-1">
+                  {!selection.selecting && (
+                    <MealTimeDialog
+                      date={day}
+                      meal={meal}
+                      time={
+                        calendarOverrides.find(
+                          (slot) => slot.date === day && slot.meal === meal
+                        ) ?? calendarTimes[meal]
+                      }
+                      overridden={calendarOverrides.some(
+                        (slot) => slot.date === day && slot.meal === meal
+                      )}
+                    />
+                  )}
+                  {!selection.selecting && (
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label={t(`plan.add.${meal}`)}
+                      onClick={() => onAdd(meal)}
+                    >
+                      <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
+                    </Button>
+                  )}
+                </div>
               </div>
               <ul className="grid min-w-0 grid-cols-1 gap-1.5">
                 {byMeal.get(meal)!.map((entry) => (

@@ -60,6 +60,14 @@ Ideas come from your library, not an AI search. Recipes recently planned or made
 
 **Expected result:** Merran fills the next week's eligible empty meals using the same library-based suggestions. This does not require AI and does not send anything to a store cart. The server must be running to process the job; after downtime, it can catch up for the remaining part of the intended week.
 
+## Not released yet: subscribe to the meal calendar
+
+The calendar subscription is being built and is not in the current release. Once available, a household admin can open **Settings → Household → Meal planning → Calendar subscriptions**, turn on **Let members subscribe to this household's meal calendar**, set each meal's **Start time** and **Duration (minutes)** under **Usual meal times**, then choose **Save calendar settings**. The server administrator must set `MERRAN_PUBLIC_URL` to an address the calendar app can reach.
+
+Each member can choose **Create subscription link**, copy **Your calendar link**, and add it as a subscribed calendar in their calendar app. The link is shown only when created; **Revoke** stops future reads, and a replacement link can be created. Anyone holding the link can see meal names and notes. Recipe links still require a Merran sign-in.
+
+On **Plan**, select a dated meal's time to change **Starts at** and **Minutes** for that day, or choose **Use usual time** to reset it. All dishes in the day's meal share that time. Meals in **This week, any day** have no calendar event until dated; skipped meals are omitted. Merran changes appear when the calendar app refreshes its subscription. Editing or deleting an event in the calendar app does not change Merran.
+
 ## Change plans
 
 drag a meal's move handle (the arrow over its photo) from **This week, any day** to a day's meal, between days or meal types, or back to the pool. Mouse, pen and touch are supported; hold near the top or bottom of the screen to scroll. Drop outside a highlighted destination or press Escape to cancel. Expand past days with **Show** before moving a meal there.

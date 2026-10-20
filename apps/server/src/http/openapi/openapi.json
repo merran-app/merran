@@ -7713,6 +7713,242 @@
           "addToList": true
         }
       },
+      "CalendarSettings": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "times": {
+            "$ref": "#/components/schemas/CalendarMealTimes"
+          },
+          "publicUrlReady": {
+            "type": "boolean"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarLink"
+            }
+          }
+        },
+        "required": [
+          "enabled",
+          "times",
+          "publicUrlReady",
+          "links"
+        ],
+        "example": {
+          "enabled": true,
+          "times": {
+            "breakfast": {
+              "start": "08:00",
+              "minutes": 30
+            },
+            "lunch": {
+              "start": "12:00",
+              "minutes": 45
+            },
+            "dinner": {
+              "start": "18:00",
+              "minutes": 60
+            },
+            "snack": {
+              "start": "15:00",
+              "minutes": 30
+            }
+          },
+          "publicUrlReady": true,
+          "links": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000000a",
+              "createdAt": "2026-10-19T18:00:00.000Z"
+            }
+          ]
+        }
+      },
+      "CalendarMealTimes": {
+        "type": "object",
+        "properties": {
+          "breakfast": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "string",
+                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "minutes": {
+                "type": "integer",
+                "minimum": 15,
+                "maximum": 240
+              }
+            },
+            "required": [
+              "start",
+              "minutes"
+            ],
+            "example": {
+              "start": "18:00",
+              "minutes": 60
+            }
+          },
+          "lunch": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "string",
+                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "minutes": {
+                "type": "integer",
+                "minimum": 15,
+                "maximum": 240
+              }
+            },
+            "required": [
+              "start",
+              "minutes"
+            ],
+            "example": {
+              "start": "18:00",
+              "minutes": 60
+            }
+          },
+          "dinner": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "string",
+                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "minutes": {
+                "type": "integer",
+                "minimum": 15,
+                "maximum": 240
+              }
+            },
+            "required": [
+              "start",
+              "minutes"
+            ],
+            "example": {
+              "start": "18:00",
+              "minutes": 60
+            }
+          },
+          "snack": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "string",
+                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "minutes": {
+                "type": "integer",
+                "minimum": 15,
+                "maximum": 240
+              }
+            },
+            "required": [
+              "start",
+              "minutes"
+            ],
+            "example": {
+              "start": "18:00",
+              "minutes": 60
+            }
+          }
+        },
+        "required": [
+          "breakfast",
+          "lunch",
+          "dinner",
+          "snack"
+        ]
+      },
+      "CalendarLink": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000000a",
+          "createdAt": "2026-10-19T18:00:00.000Z"
+        }
+      },
+      "NewCalendarLink": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarLink"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "required": [
+              "url"
+            ]
+          }
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000000a",
+          "createdAt": "2026-10-19T18:00:00.000Z",
+          "url": "https://merran.example.com/api/plan/calendar/feed/example-secret-token"
+        }
+      },
+      "CalendarSlotTime": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "meal": {
+            "type": "string",
+            "enum": [
+              "breakfast",
+              "lunch",
+              "dinner",
+              "snack"
+            ]
+          },
+          "start": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "minutes": {
+            "type": "integer",
+            "minimum": 15,
+            "maximum": 240
+          }
+        },
+        "required": [
+          "date",
+          "meal",
+          "start",
+          "minutes"
+        ],
+        "example": {
+          "date": "2026-10-19",
+          "meal": "dinner",
+          "start": "19:30",
+          "minutes": 60
+        }
+      },
       "WhatsNext": {
         "type": "object",
         "properties": {
@@ -22677,6 +22913,562 @@
             }
           }
         }
+      }
+    },
+    "/api/plan/calendar": {
+      "get": {
+        "operationId": "getCalendarSettings",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Calendar times and your subscription links",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Calendar settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateCalendarSettings",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Change household calendar times or enable the feed",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "times": {
+                    "$ref": "#/components/schemas/CalendarMealTimes"
+                  }
+                },
+                "example": {
+                  "enabled": true
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/calendar/feed/{token}": {
+      "get": {
+        "operationId": "getCalendarFeed",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Read a meal calendar subscription",
+        "description": "The URL token alone grants read access to meal names and notes. Keep it private. Calendar clients control refresh timing.",
+        "security": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current iCalendar feed.",
+            "content": {
+              "text/calendar": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active subscription.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many calendar requests.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/calendar/links": {
+      "post": {
+        "operationId": "createCalendarLink",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Create a private calendar subscription URL",
+        "description": "The URL is shown once. Anyone with it can read the household meal calendar until it is revoked.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewCalendarLink"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No public URL is configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/calendar/links/{linkId}": {
+      "delete": {
+        "operationId": "revokeCalendarLink",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Revoke one of your calendar links",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000000a"
+            },
+            "required": true,
+            "name": "linkId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Revoked."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such link.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/calendar/slots": {
+      "get": {
+        "operationId": "getCalendarSlotTimes",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "One-off meal times for a date range",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "plan:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-19"
+            },
+            "required": true,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-25"
+            },
+            "required": true,
+            "name": "to",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Overrides.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "slots": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CalendarSlotTime"
+                      }
+                    }
+                  },
+                  "required": [
+                    "slots"
+                  ],
+                  "example": {
+                    "slots": [
+                      {
+                        "date": "2026-10-19",
+                        "meal": "dinner",
+                        "start": "19:30",
+                        "minutes": 60
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid range.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "With an API key, it needs the `plan: read` permission."
+      }
+    },
+    "/api/plan/calendar/slots/{date}/{meal}": {
+      "put": {
+        "operationId": "setCalendarSlotTime",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Set one day's meal time",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "2026-10-19"
+            },
+            "required": true,
+            "name": "date",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "dinner"
+            },
+            "required": true,
+            "name": "meal",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "start": {
+                    "type": "string",
+                    "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "minutes": {
+                    "type": "integer",
+                    "minimum": 15,
+                    "maximum": 240
+                  }
+                },
+                "required": [
+                  "start",
+                  "minutes"
+                ],
+                "example": {
+                  "start": "18:00",
+                  "minutes": 60
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarSlotTime"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "With an API key, it needs the `plan: write` permission."
+      },
+      "delete": {
+        "operationId": "resetCalendarSlotTime",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Use the default time for this day's meal",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "2026-10-19"
+            },
+            "required": true,
+            "name": "date",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "dinner"
+            },
+            "required": true,
+            "name": "meal",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Reset."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "With an API key, it needs the `plan: write` permission."
       }
     },
     "/api/plan/next": {

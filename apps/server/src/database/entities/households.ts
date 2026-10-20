@@ -4,6 +4,7 @@ import type {
   AutoplanSettings,
   HouseholdTastes,
   Meal,
+  MealTimes,
   WeekThemes,
 } from "@merran/shared"
 import { defineEntity, p, type InferEntity } from "@mikro-orm/core"
@@ -35,6 +36,12 @@ export type HouseholdSettings = {
   /** Dinner's theme each weekday, Sunday first. */
   themes?: WeekThemes
   weeklyBudget?: { amount: number; currency: string } | null
+  /** Calendar feed and its default local event times. */
+  calendar?: {
+    enabled: boolean
+    times: MealTimes
+    namespace: string
+  }
 }
 
 /**
