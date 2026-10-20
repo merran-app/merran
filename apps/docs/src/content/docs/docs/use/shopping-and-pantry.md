@@ -124,6 +124,8 @@ For Kroger-family cart handoff:
 :::note[Not released yet: usual products]
 **List → More → Usual products** and **Settings → Household → Your stores → Manage usual products** open a page for preparing product choices before shopping. Search foods from your recipes, lists, pantry and purchases, or search Merran's known foods. For each connected store, choose, change or forget the product you buy. A Fry's choice and a Walmart choice for the same food stay separate. Walmart product search requires the extension and a usable Walmart tab. Stores that only offer search links do not save a product.
 
+Foods are grouped into collapsible aisle sections. Each heading shows how many foods need a product at the selected store. Search opens matching sections, and **Needs a product** narrows the list.
+
 When shopping with multiple connected stores, **Order from** on List or Send chooses one store for unsent items; **Across stores** uses the existing split. Merran uses the product saved at the selected store and shows how many items still need a product or have an unavailable one there. You can still route or leave out individual items. Items already sent stay with their original store. Review the cart at the retailer before checkout; selecting a store does not buy or put away anything.
 :::
 

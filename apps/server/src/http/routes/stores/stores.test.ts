@@ -637,12 +637,21 @@ describe("Kroger", () => {
     })
     expect(walmartPick.status, await walmartPick.clone().text()).toBe(200)
 
-    const get = async () =>
-      (await (await kyle.get("/api/stores/products")).json()).foods as {
-        food: string
-        products: { store: string; product: { id: string } }[]
-      }[]
+    const mappings = async () =>
+      (await (await kyle.get("/api/stores/products")).json()) as {
+        aisles: { id: string; key: string | null; name: string }[]
+        foods: {
+          food: string
+          aisle: string | null
+          products: { store: string; product: { id: string } }[]
+        }[]
+      }
+    const get = async () => (await mappings()).foods
     const rice = (await get()).find((food) => food.food === "rice")
+    const initialAisles = (await mappings()).aisles
+    expect(rice?.aisle).toBe(
+      initialAisles.find((aisle) => aisle.key === "pantry")?.id
+    )
     expect(rice?.products).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -659,6 +668,13 @@ describe("Kroger", () => {
     const added = await kyle.post("/api/list/items", { text: "2 lb rice" })
     expect(added.status).toBe(201)
     const itemId = (await added.json()).id as string
+    const produce = initialAisles.find((aisle) => aisle.key === "produce")!.id
+    expect(
+      (await kyle.patch(`/api/list/items/${itemId}`, { aisle: produce })).status
+    ).toBe(200)
+    expect((await get()).find((food) => food.food === "rice")?.aisle).toBe(
+      produce
+    )
     const krogerBasket = await (
       await kyle.get("/api/stores/kroger/basket")
     ).json()

@@ -220,10 +220,14 @@ export const ProductMappingsSchema = z
         searchable: z.boolean(),
       })
     ),
+    aisles: z.array(
+      z.object({ id: z.string(), key: z.string().nullable(), name: z.string() })
+    ),
     foods: z.array(
       z.object({
         food: z.string(),
         name: z.string(),
+        aisle: z.string().nullable(),
         products: z.array(
           z.object({
             store: z.string(),
@@ -240,10 +244,12 @@ export const ProductMappingsSchema = z
       stores: [
         { key: "kroger", name: "Fry's", connected: true, searchable: true },
       ],
+      aisles: [{ id: "produce-id", key: "produce", name: "Produce" }],
       foods: [
         {
           food: "milk",
           name: "milk",
+          aisle: null,
           products: [
             {
               store: "kroger",

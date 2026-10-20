@@ -13834,6 +13834,31 @@
               ]
             }
           },
+          "aisles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "key": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "key",
+                "name"
+              ]
+            }
+          },
           "foods": {
             "type": "array",
             "items": {
@@ -13844,6 +13869,12 @@
                 },
                 "name": {
                   "type": "string"
+                },
+                "aisle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "products": {
                   "type": "array",
@@ -13876,6 +13907,7 @@
               "required": [
                 "food",
                 "name",
+                "aisle",
                 "products"
               ]
             }
@@ -13883,6 +13915,7 @@
         },
         "required": [
           "stores",
+          "aisles",
           "foods"
         ],
         "example": {
@@ -13894,10 +13927,18 @@
               "searchable": true
             }
           ],
+          "aisles": [
+            {
+              "id": "produce-id",
+              "key": "produce",
+              "name": "Produce"
+            }
+          ],
           "foods": [
             {
               "food": "milk",
               "name": "milk",
+              "aisle": null,
               "products": [
                 {
                   "store": "kroger",

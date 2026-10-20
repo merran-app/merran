@@ -1,6 +1,7 @@
 import {
   foodKeyIn,
   foodName,
+  guessAisle,
   householdKey,
   lineFoods,
   shoppingName,
@@ -13,8 +14,10 @@ import {
   RecipeIngredient,
   ShoppingItem,
   StoreProduct,
+  FoodPlacement,
 } from "../../database/entities/index.ts"
 import { householdAliases } from "../foods/aliases.ts"
+import { householdAisles } from "../list/aisles.ts"
 import { yourStores } from "./yours.ts"
 import type { StoreDeps } from "./store-connections.ts"
 
@@ -63,13 +66,33 @@ export async function productMappings(
     }
   }
 
+  const aisles = await householdAisles(em, householdId)
+  const placements = await em.find(FoodPlacement, {
+    foodKey: { $in: [...foods.keys()] },
+  })
+  const aisleById = new Map(aisles.map((aisle) => [aisle.id, aisle]))
+  const aisleByKey = new Map(aisles.map((aisle) => [aisle.key, aisle]))
+  const placed = new Map(
+    placements.map((placement) => [placement.foodKey, placement.aisle?.id])
+  )
+
   return {
     stores,
+    aisles: aisles.map((aisle) => ({
+      id: aisle.id!,
+      key: aisle.key ?? null,
+      name: aisle.name,
+    })),
     foods: [...foods]
       .sort((a, b) => a[1].localeCompare(b[1]))
       .map(([food, name]) => ({
         food,
         name,
+        aisle:
+          aisleById.get(placed.get(food) ?? "")?.id ??
+          aisleByKey.get(guessAisle(food))?.id ??
+          aisleByKey.get("other")?.id ??
+          null,
         products: mappings
           .filter((mapping) => mapping.food === food)
           .map((mapping) => ({

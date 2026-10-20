@@ -1,6 +1,16 @@
-import { ArrowLeft01Icon, Search01Icon } from "@hugeicons/core-free-icons"
+import {
+  ArrowDown01Icon,
+  ArrowLeft01Icon,
+  Search01Icon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { findFood, foodKey, foodName, foodsToChoose } from "@merran/shared"
+import {
+  findFood,
+  foodKey,
+  foodName,
+  foodsToChoose,
+  guessAisle,
+} from "@merran/shared"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import * as React from "react"
@@ -11,6 +21,11 @@ import { PageHeader } from "@/components/layout/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -65,7 +80,12 @@ export function ProductMappingsPage() {
               `${foodName(key)} ${key}`.toLocaleLowerCase().includes(term)
           )
           .slice(0, 20)
-          .map((key) => ({ food: key, name: foodName(key), products: [] }))
+          .map((key) => ({
+            food: key,
+            name: foodName(key),
+            aisle: null,
+            products: [],
+          }))
       : []
   const customKey = foodKey(search)
   const custom =
@@ -73,20 +93,47 @@ export function ProductMappingsPage() {
     customKey &&
     !byFood.has(customKey) &&
     !known.some((food) => food.food === customKey)
-      ? [{ food: customKey, name: search.trim(), products: [] }]
+      ? [{ food: customKey, name: search.trim(), aisle: null, products: [] }]
       : []
-  const shown = [...matches, ...known, ...custom].filter((food) => {
-    if (!missing) return true
-    const visible =
-      store === "all" ? stores : stores.filter((one) => one.key === store)
-    return visible.some(
+  const shownStores =
+    store === "all" ? stores : stores.filter((one) => one.key === store)
+  const needsProduct = (food: Food) =>
+    shownStores.some(
       (one) =>
         !food.products.some(
           (mapping) => mapping.store === one.key && mapping.chosen
         )
     )
+  const shown = [...matches, ...known, ...custom].filter((food) => {
+    return !missing || needsProduct(food)
   })
-  const visible = shown.slice(0, 100)
+  const aisles = data?.aisles ?? []
+  const aisleByKey = new Map(
+    aisles.flatMap((aisle) =>
+      aisle.key ? [[aisle.key, aisle.id] as const] : []
+    )
+  )
+  const aisleOf = (food: Food) =>
+    food.aisle ??
+    aisleByKey.get(guessAisle(food.food)) ??
+    aisleByKey.get("other")
+  const sections = aisles
+    .map((aisle) => ({
+      ...aisle,
+      foods: shown.filter((food) => aisleOf(food) === aisle.id),
+    }))
+    .filter((aisle) => aisle.foods.length > 0)
+  const unassigned = shown.filter(
+    (food) => !aisles.some((aisle) => aisle.id === aisleOf(food))
+  )
+  if (unassigned.length > 0) {
+    sections.push({
+      id: "unassigned",
+      key: null,
+      name: t("stores.mappings.unassigned"),
+      foods: unassigned,
+    })
+  }
 
   async function forget(food: Food, store: Store) {
     const key = `${food.food}:${store.key}`
@@ -214,83 +261,109 @@ export function ProductMappingsPage() {
             </p>
           ) : (
             <div className="grid gap-3">
-              {visible.map((food) => (
-                <Card key={food.food}>
-                  <CardHeader>
-                    <CardTitle>{food.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid gap-3 md:grid-cols-2">
-                    {stores
-                      .filter((one) => store === "all" || one.key === store)
-                      .map((one) => {
-                        const mapping = food.products.find(
-                          (product) => product.store === one.key
-                        )
-                        return (
-                          <div
-                            key={one.key}
-                            className="grid gap-3 rounded-xl border p-3"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-medium">{one.name}</span>
-                              {mapping && (
-                                <Badge variant="secondary">
-                                  {mapping.chosen
-                                    ? t("stores.mappings.yourPick")
-                                    : t("stores.mappings.suggestion")}
-                                </Badge>
-                              )}
-                            </div>
-                            {mapping ? (
-                              <div className="flex min-w-0 items-center gap-2">
-                                <ProductSummary
-                                  product={mapping.product}
-                                  today={today}
-                                />
-                              </div>
-                            ) : (
-                              <p className="text-sm text-muted-foreground">
-                                {t("stores.mappings.none")}
-                              </p>
-                            )}
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setPicking({ food, store: one })}
+              {sections.map((aisle) => (
+                <Collapsible
+                  key={`${aisle.id}:${Boolean(term)}`}
+                  defaultOpen={Boolean(term)}
+                  className="rounded-2xl border bg-card"
+                >
+                  <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:px-5">
+                    <span className="min-w-0">
+                      <span className="block font-semibold">{aisle.name}</span>
+                      <span className="block text-sm text-muted-foreground">
+                        {t("stores.mappings.aisleFoodCount", {
+                          count: aisle.foods.length,
+                        })}
+                        {" · "}
+                        {aisle.foods.some(needsProduct)
+                          ? t("stores.mappings.aisleNeeds", {
+                              count: aisle.foods.filter(needsProduct).length,
+                            })
+                          : t("stores.mappings.aisleReady")}
+                      </span>
+                    </span>
+                    <HugeiconsIcon
+                      icon={ArrowDown01Icon}
+                      strokeWidth={2}
+                      className="size-4 shrink-0 transition-transform group-data-[panel-open]:rotate-180"
+                    />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="grid gap-3 border-t p-3 sm:p-4">
+                    {aisle.foods.map((food) => (
+                      <Card key={food.food}>
+                        <CardHeader>
+                          <CardTitle>{food.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-3 md:grid-cols-2">
+                          {shownStores.map((one) => {
+                            const mapping = food.products.find(
+                              (product) => product.store === one.key
+                            )
+                            return (
+                              <div
+                                key={one.key}
+                                className="grid gap-3 rounded-xl border p-3"
                               >
-                                {t(
-                                  mapping
-                                    ? "stores.mappings.change"
-                                    : "stores.mappings.choose"
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="font-medium">
+                                    {one.name}
+                                  </span>
+                                  {mapping && (
+                                    <Badge variant="secondary">
+                                      {mapping.chosen
+                                        ? t("stores.mappings.yourPick")
+                                        : t("stores.mappings.suggestion")}
+                                    </Badge>
+                                  )}
+                                </div>
+                                {mapping ? (
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <ProductSummary
+                                      product={mapping.product}
+                                      today={today}
+                                    />
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">
+                                    {t("stores.mappings.none")}
+                                  </p>
                                 )}
-                              </Button>
-                              {mapping && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  disabled={
-                                    forgetting === `${food.food}:${one.key}`
-                                  }
-                                  onClick={() => void forget(food, one)}
-                                >
-                                  {t("stores.mappings.forget")}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
-                  </CardContent>
-                </Card>
+                                <div className="flex flex-wrap gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      setPicking({ food, store: one })
+                                    }
+                                  >
+                                    {t(
+                                      mapping
+                                        ? "stores.mappings.change"
+                                        : "stores.mappings.choose"
+                                    )}
+                                  </Button>
+                                  {mapping && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      disabled={
+                                        forgetting === `${food.food}:${one.key}`
+                                      }
+                                      onClick={() => void forget(food, one)}
+                                    >
+                                      {t("stores.mappings.forget")}
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
               ))}
-              {shown.length > visible.length && (
-                <p className="text-center text-sm text-muted-foreground">
-                  {t("stores.mappings.moreResults", {
-                    count: shown.length - visible.length,
-                  })}
-                </p>
-              )}
             </div>
           )}
         </div>

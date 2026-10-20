@@ -11587,10 +11587,18 @@ export interface components {
          *           "searchable": true
          *         }
          *       ],
+         *       "aisles": [
+         *         {
+         *           "id": "produce-id",
+         *           "key": "produce",
+         *           "name": "Produce"
+         *         }
+         *       ],
          *       "foods": [
          *         {
          *           "food": "milk",
          *           "name": "milk",
+         *           "aisle": null,
          *           "products": [
          *             {
          *               "store": "kroger",
@@ -11624,9 +11632,15 @@ export interface components {
                 connected: boolean;
                 searchable: boolean;
             }[];
+            aisles: {
+                id: string;
+                key: string | null;
+                name: string;
+            }[];
             foods: {
                 food: string;
                 name: string;
+                aisle: string | null;
                 products: {
                     store: string;
                     product: components["schemas"]["StoreProduct"];
