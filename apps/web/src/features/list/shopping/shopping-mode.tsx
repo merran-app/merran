@@ -2,6 +2,13 @@ import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useWakeLock } from "@/features/cook/use-wake-lock"
 import { useSelection } from "@/features/select/use-selection"
 import type { YourStore } from "@/features/stores/queries"
@@ -72,8 +79,14 @@ export function ShoppingMode({
         .sort((a, b) => collator.compare(a.name, b.name)),
     }))
     .filter((group) => group.items.length)
-  const selectClass =
-    "min-h-11 min-w-0 max-w-full rounded-xl border bg-background px-3 text-sm"
+  const listOptions = data.lists.map((list) => ({
+    value: list.id,
+    label: list.name,
+  }))
+  const storeOptions = [
+    { value: "", label: t("shopping.allStores") },
+    ...stores.map((store) => ({ value: store.key, label: store.name })),
+  ]
   function setAside(item: ListItem) {
     controls.aside(item.id)
     setTrouble(null)
@@ -94,33 +107,48 @@ export function ShoppingMode({
           </Button>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <select
-            className={selectClass}
-            aria-label={t("shopping.list")}
+          <Select
+            items={listOptions}
             value={trip.listId}
-            onChange={(event) =>
-              controls.update({ listId: event.target.value })
-            }
+            onValueChange={(value) => {
+              if (value !== null) controls.update({ listId: value })
+            }}
           >
-            {data.lists.map((list) => (
-              <option key={list.id} value={list.id}>
-                {list.name}
-              </option>
-            ))}
-          </select>
-          <select
-            className={selectClass}
-            aria-label={t("shopping.store")}
+            <SelectTrigger
+              aria-label={t("shopping.list")}
+              className="min-h-11 w-full min-w-0"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {listOptions.map((list) => (
+                <SelectItem key={list.value} value={list.value}>
+                  {list.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            items={storeOptions}
             value={trip.store}
-            onChange={(event) => controls.update({ store: event.target.value })}
+            onValueChange={(value) => {
+              if (value !== null) controls.update({ store: value })
+            }}
           >
-            <option value="">{t("shopping.allStores")}</option>
-            {stores.map((store) => (
-              <option key={store.key} value={store.key}>
-                {store.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger
+              aria-label={t("shopping.store")}
+              className="min-h-11 w-full min-w-0"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {storeOptions.map((store) => (
+                <SelectItem key={store.value} value={store.value}>
+                  {store.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <p className="text-sm text-muted-foreground" role="status">
           {t("shopping.progress", {
