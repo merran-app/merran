@@ -1,6 +1,6 @@
 # Store product mappings
 
-Proposed October 19, 2026. This is a plan, not a built feature.
+Implemented October 19, 2026 on the feature branch; not released yet. The page and shopping-day choice below are built for Kroger and experimental Walmart. Link-only stores still provide search links without saved products.
 
 ## Why
 
@@ -8,7 +8,7 @@ Today a household picks a product from a shopping-list item or store review. Mer
 
 ## The page
 
-Add **Usual products**, a household page reached from **List** and **Settings → Household → Your stores**. It works without a current shopping list. Show foods the household has used in recipes, lists, pantry, purchases or existing product picks; do not load or search every retailer product on opening. Search also finds a food from Merran's vocabulary, including one the household has not used yet. For an unknown household food, let the person enter its name and show the food key Merran will use before saving. Use the same household food identity and aliases as the list, so a product chosen here is the one Send uses later.
+Add **Usual products**, a household page reached from **List** and **Settings → Household → Your stores**. It works without a current shopping list. Show foods the household has used in recipes, lists, pantry, purchases or existing product picks; do not load or search every retailer product on opening. Search also finds a food from Merran's vocabulary, including one the household has not used yet. For an unknown household food, let the person enter its name. Use the same household food identity and aliases as the list, so a product chosen here is the one Send uses later.
 
 Each food row shows its name and one cell per connected store, stacked by store on phones. A cell shows the selected product's name, package size, last known price and availability when known, and whether it was **Your pick** or **Merran's suggestion**. Empty cells say **Choose product**. A store filter, food search and **Needs a product** filter keep the page usable for a large recipe library. Opening a cell searches that retailer and lets the person choose, replace or forget a product. On phones the picker is a drawer; on larger screens it is a dialog. A saved product stays selected until a person changes or forgets it; a later automatic search never replaces it. Saving one store's product does not change another store's product.
 
@@ -26,7 +26,7 @@ The order choice is per trip/list, not a permanent preferred store on every food
 
 - Add household-scoped read and write endpoints under `/stores/products`, keyed by food and store rather than shopping-item ID. Derive recipe foods through the same parser and household aliases used for the list, instead of treating every raw ingredient line as a separate food. Return selected and suggested products separately, with the source and last known price/availability. Keep `list:read` and `list:write` API-key permissions consistent with the existing store product endpoints. Reuse store-specific validation and price recording from the basket services. Do not rely on a fabricated shopping item to save a mapping.
 - Reuse `store_products` and its unique household/store/food constraint. No new table is needed for one product per food per store. A data migration should not be needed unless implementation finds a field that cannot be represented there.
-- Extract a shared picker that accepts a food and store, so List, review and Usual products use the same search and save behavior. Keep Walmart's extension requirements explicit. Invalidate store, list, basket, cost and price queries affected by a changed pick.
+- Share each retailer's product validation and saving between list picks and Usual products. Keep Walmart's extension requirements explicit. Invalidate store and list queries affected by a changed pick.
 - Extend Send's choice state with an explicit order store. An explicit store wins over the current newest-pick default for unsent items; item-level overrides still win over the order store. The selected store's own product must be used in its basket. Preserve sent-item routing and snapshots.
 - Add labels to `apps/web/src/locales/en.json`, document the workflow in the public shopping guide, regenerate OpenAPI and both clients for the new endpoints, and update this plan and `docs/features.md` as work lands. The public guide must mark the feature as not released until it ships.
 

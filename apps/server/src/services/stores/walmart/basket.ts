@@ -199,24 +199,15 @@ export async function pickWalmartProduct(
   em: EntityManager,
   options: { householdId: string; itemId: string; product: Product }
 ) {
-  await needWalmart(deps)
   const item = await em.findOne(ShoppingItem, { id: options.itemId })
   if (!item) {
     throw new AppError("not_found", "item_not_found", "That isn't on the list.")
   }
-  const food = foodOf(item)
-  const row =
-    (await em.findOne(StoreProduct, { store: WALMART, food })) ??
-    em.create(StoreProduct, {
-      household: options.householdId,
-      store: WALMART,
-      food,
-      product: options.product,
-    })
-  row.product = options.product
-  row.chosen = true
-  await em.flush()
-  await recordPrices(em, options.householdId, [options.product], WALMART)
+  const row = await saveWalmartProduct(deps, em, {
+    householdId: options.householdId,
+    food: foodOf(item),
+    product: options.product,
+  })
   const connection = await connectionOf(em, options.householdId, WALMART)
   const sales = await judgeSales(
     em,
@@ -225,6 +216,28 @@ export async function pickWalmartProduct(
     WALMART
   )
   return lineFor(item, row, connection, sales)
+}
+
+/** Save a person's Walmart product for a food, with or without a list item. */
+export async function saveWalmartProduct(
+  deps: StoreDeps,
+  em: EntityManager,
+  options: { householdId: string; food: string; product: Product }
+) {
+  await needWalmart(deps)
+  const row =
+    (await em.findOne(StoreProduct, { store: WALMART, food: options.food })) ??
+    em.create(StoreProduct, {
+      household: options.householdId,
+      store: WALMART,
+      food: options.food,
+      product: options.product,
+    })
+  row.product = options.product
+  row.chosen = true
+  await em.flush()
+  await recordPrices(em, options.householdId, [options.product], WALMART)
+  return row
 }
 
 /**

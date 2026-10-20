@@ -210,6 +210,90 @@ export const ProductsSchema = z
   .object({ products: z.array(ProductSchema) })
   .openapi("StoreProducts", { example: { products: [PRODUCT] } })
 
+export const ProductMappingsSchema = z
+  .object({
+    stores: z.array(
+      z.object({
+        key: z.string(),
+        name: z.string(),
+        connected: z.boolean(),
+        searchable: z.boolean(),
+      })
+    ),
+    foods: z.array(
+      z.object({
+        food: z.string(),
+        name: z.string(),
+        products: z.array(
+          z.object({
+            store: z.string(),
+            product: ProductSchema,
+            chosen: z.boolean(),
+            updatedAt: z.iso.datetime(),
+          })
+        ),
+      })
+    ),
+  })
+  .openapi("ProductMappings", {
+    example: {
+      stores: [
+        { key: "kroger", name: "Fry's", connected: true, searchable: true },
+      ],
+      foods: [
+        {
+          food: "milk",
+          name: "milk",
+          products: [
+            {
+              store: "kroger",
+              product: PRODUCT,
+              chosen: true,
+              updatedAt: TIMES.created,
+            },
+          ],
+        },
+      ],
+    },
+  })
+
+export const MappingStoreParam = z.object({
+  store: z.enum(["kroger", "walmart"]).openapi({
+    param: { name: "store", in: "path" },
+    example: "kroger",
+  }),
+})
+
+export const MappingFoodQuery = z.object({
+  food: z
+    .string()
+    .trim()
+    .min(1)
+    .max(150)
+    .openapi({
+      param: { name: "food", in: "query" },
+      example: "milk",
+    }),
+})
+
+export const ProductMappingSchema = z
+  .object({
+    food: z.string(),
+    store: z.string(),
+    product: ProductSchema,
+    chosen: z.boolean(),
+    updatedAt: z.iso.datetime(),
+  })
+  .openapi("ProductMapping", {
+    example: {
+      food: "milk",
+      store: "kroger",
+      product: PRODUCT,
+      chosen: true,
+      updatedAt: TIMES.created,
+    },
+  })
+
 export const BasketQuery = z.object({
   items: z
     .string()

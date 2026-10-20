@@ -25,6 +25,7 @@ import { Route as AuthorizeHouseholdRouteImport } from './routes/authorize.house
 import { Route as JoinTokenRouteImport } from './routes/join/$token'
 import { Route as AppListIndexRouteImport } from './routes/_app/list/index'
 import { Route as AppListKrogerRouteImport } from './routes/_app/list/kroger'
+import { Route as AppListProductsRouteImport } from './routes/_app/list/products'
 import { Route as AppListSendRouteImport } from './routes/_app/list/send'
 import { Route as AppListWalmartRouteImport } from './routes/_app/list/walmart'
 import { Route as AppPantryIndexRouteImport } from './routes/_app/pantry/index'
@@ -123,6 +124,11 @@ const AppListIndexRoute = AppListIndexRouteImport.update({
 const AppListKrogerRoute = AppListKrogerRouteImport.update({
   id: '/list/kroger',
   path: '/list/kroger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppListProductsRoute = AppListProductsRouteImport.update({
+  id: '/list/products',
+  path: '/list/products',
   getParentRoute: () => AppRoute,
 } as any)
 const AppListSendRoute = AppListSendRouteImport.update({
@@ -248,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/join/$token': typeof JoinTokenRoute
   '/authorize/': typeof AuthorizeIndexRoute
   '/list/kroger': typeof AppListKrogerRoute
+  '/list/products': typeof AppListProductsRoute
   '/list/send': typeof AppListSendRoute
   '/list/walmart': typeof AppListWalmartRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
@@ -284,6 +291,7 @@ export interface FileRoutesByTo {
   '/join/$token': typeof JoinTokenRoute
   '/authorize': typeof AuthorizeIndexRoute
   '/list/kroger': typeof AppListKrogerRoute
+  '/list/products': typeof AppListProductsRoute
   '/list/send': typeof AppListSendRoute
   '/list/walmart': typeof AppListWalmartRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
@@ -324,6 +332,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/authorize/': typeof AuthorizeIndexRoute
   '/_app/list/kroger': typeof AppListKrogerRoute
+  '/_app/list/products': typeof AppListProductsRoute
   '/_app/list/send': typeof AppListSendRoute
   '/_app/list/walmart': typeof AppListWalmartRoute
   '/_app/recipes/deleted': typeof AppRecipesDeletedRoute
@@ -363,6 +372,7 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/authorize/'
     | '/list/kroger'
+    | '/list/products'
     | '/list/send'
     | '/list/walmart'
     | '/recipes/deleted'
@@ -399,6 +409,7 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/authorize'
     | '/list/kroger'
+    | '/list/products'
     | '/list/send'
     | '/list/walmart'
     | '/recipes/deleted'
@@ -438,6 +449,7 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/authorize/'
     | '/_app/list/kroger'
+    | '/_app/list/products'
     | '/_app/list/send'
     | '/_app/list/walmart'
     | '/_app/recipes/deleted'
@@ -587,6 +599,13 @@ declare module '@tanstack/react-router' {
       path: '/list/kroger'
       fullPath: '/list/kroger'
       preLoaderRoute: typeof AppListKrogerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/list/products': {
+      id: '/_app/list/products'
+      path: '/list/products'
+      fullPath: '/list/products'
+      preLoaderRoute: typeof AppListProductsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/list/send': {
@@ -765,6 +784,7 @@ interface AppRouteChildren {
   AppShareRoute: typeof AppShareRoute
   AppIndexRoute: typeof AppIndexRoute
   AppListKrogerRoute: typeof AppListKrogerRoute
+  AppListProductsRoute: typeof AppListProductsRoute
   AppListSendRoute: typeof AppListSendRoute
   AppListWalmartRoute: typeof AppListWalmartRoute
   AppRecipesDeletedRoute: typeof AppRecipesDeletedRoute
@@ -788,6 +808,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppShareRoute: AppShareRoute,
   AppIndexRoute: AppIndexRoute,
   AppListKrogerRoute: AppListKrogerRoute,
+  AppListProductsRoute: AppListProductsRoute,
   AppListSendRoute: AppListSendRoute,
   AppListWalmartRoute: AppListWalmartRoute,
   AppRecipesDeletedRoute: AppRecipesDeletedRoute,

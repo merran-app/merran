@@ -52,6 +52,22 @@ export const WalmartProductSchema = z
   })
   .openapi("WalmartProduct", { example: WALMART_PRODUCT })
 
+/** A product saved without a shopping item: Kroger ID or a Walmart page result. */
+export const SaveProductMappingSchema = z
+  .union([
+    z.object({
+      food: z.string().trim().min(1).max(150),
+      productId: z.string().min(1).max(40),
+    }),
+    z.object({
+      food: z.string().trim().min(1).max(150),
+      product: WalmartProductSchema,
+    }),
+  ])
+  .openapi("SaveProductMapping", {
+    example: { food: "milk", productId: "0001111041700" },
+  })
+
 const LINE = {
   itemId: IDS.listItems[0]!,
   name: "milk",

@@ -121,6 +121,12 @@ For Kroger-family cart handoff:
 
 **Walmart cart filling is experimental and off by default.** It requires the server admin to enable it and the Merran browser extension to operate a Walmart tab. It may stop for a retailer verification check. Other stores may offer search links only; do not assume they support cart filling or live prices.
 
+:::note[Not released yet: usual products]
+**List → More → Usual products** and **Settings → Household → Your stores → Manage usual products** open a page for preparing product choices before shopping. Search foods from your recipes, lists, pantry and purchases, or search Merran's known foods. For each connected store, choose, change or forget the product you buy. A Fry's choice and a Walmart choice for the same food stay separate. Walmart product search requires the extension and a usable Walmart tab. Stores that only offer search links do not save a product.
+
+When shopping with multiple connected stores, **Order from** on List or Send chooses one store for unsent items; **Across stores** uses the existing split. Merran uses the product saved at the selected store and shows how many items still need a product or have an unavailable one there. You can still route or leave out individual items. Items already sent stay with their original store. Review the cart at the retailer before checkout; selecting a store does not buy or put away anything.
+:::
+
 ### Optional receipt import
 
 With AI receipt reading available, choose **Pantry → Scan a receipt**, then take a photo, choose files, or paste receipt text. Choose **Read it**, review names and amounts, select the food to keep, and choose **Add … to the pantry**. Review the items that will come off the list before confirming. Receipt reading can make mistakes and may incur provider charges; it is an alternative to manual put-away, so avoid recording the same purchase twice.

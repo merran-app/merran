@@ -47,9 +47,16 @@ function withKey(key: string, method: string, path: string, body?: unknown) {
  * id; and the query a route can't do without, from its examples.
  */
 const pathOf = (path: string, operation: Operation) => {
-  const filled = path.replace(/\{(\w+)\}/g, (_, name: string) =>
-    name === "recipe" ? "lemon-chicken" : IDS.lemonChicken
-  )
+  const filled = path.replace(/\{(\w+)\}/g, (_, name: string) => {
+    const param = operation.parameters?.find(
+      (one) => one.in === "path" && one.name === name
+    )
+    return String(
+      param?.example ??
+        param?.schema?.example ??
+        (name === "recipe" ? "lemon-chicken" : IDS.lemonChicken)
+    )
+  })
   const query = new URLSearchParams(
     (operation.parameters ?? [])
       .filter((param) => param.in === "query" && param.required)

@@ -15,6 +15,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import { storeSearch } from "@merran/shared"
 import { useQuery } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import * as React from "react"
 import { Trans, useTranslation } from "react-i18next"
 
@@ -397,6 +398,11 @@ export function ListPage() {
                   <DropdownMenuItem onClick={() => setFoods(true)}>
                     {t("list.foods")}
                   </DropdownMenuItem>
+                  {yours.some((store) => store.connected) && (
+                    <DropdownMenuItem render={<Link to="/list/products" />}>
+                      {t("stores.mappings.title")}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     disabled={got.length === 0}
@@ -447,6 +453,8 @@ export function ListPage() {
                 plan={progress.data}
                 whereOf={shoppingStores.whereOf}
                 rest={shoppingStores.rest}
+                order={shoppingStores.order}
+                onOrder={shoppingStores.chooseOrder}
                 onRest={shoppingStores.chooseRest}
                 filter={filter}
                 onFilter={setFilter}

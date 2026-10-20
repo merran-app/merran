@@ -2,11 +2,13 @@ import { Tick02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { storesFor } from "@merran/shared"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -90,6 +92,14 @@ export function YourStoresCard() {
                 </Badge>
               ))}
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="justify-self-start"
+              render={<Link to="/list/products" />}
+            >
+              {t("stores.mappings.manage")}
+            </Button>
           </div>
         )}
         <div className="grid gap-2">
