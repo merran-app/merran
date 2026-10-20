@@ -12,6 +12,7 @@ import {
   CardContent,
 } from "@/components/ui/card"
 import { TextField } from "@/components/form/text-field"
+import { SelectField } from "@/components/form/select-field"
 import { CopyField } from "@/components/form/copy-field"
 import { Button } from "@/components/ui/button"
 
@@ -104,17 +105,15 @@ export function OAuthClientsCard() {
             type="url"
             required
           />
-          <label className="grid gap-2">
-            {t("auth.oauth.resource")}
-            <select
-              className="rounded-md border bg-background p-2"
-              value={resource}
-              onChange={(event) => setResource(event.target.value)}
-            >
-              <option value="mcp">{t("auth.oauth.mcpInterface")}</option>
-              <option value="api">{t("auth.oauth.apiInterface")}</option>
-            </select>
-          </label>
+          <SelectField
+            label={t("auth.oauth.resource")}
+            value={resource}
+            onChange={setResource}
+            options={[
+              { value: "mcp", label: t("auth.oauth.mcpInterface") },
+              { value: "api", label: t("auth.oauth.apiInterface") },
+            ]}
+          />
           <Button type="submit" disabled={busy}>
             {t("auth.oauth.register")}
           </Button>

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { AuthLayout } from "@/components/layout/auth-layout"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { SelectField } from "@/components/form/select-field"
 import { meQuery } from "./queries"
 
 /** Only signed parameters go back to the provider; local UI state stays separate. */
@@ -107,20 +108,15 @@ export function AuthorizationPage({
           </p>
         )}
         <p className="font-medium break-all">{client?.name ?? clientId}</p>
-        <label className="grid gap-2">
-          {t("auth.oauth.household")}
-          <select
-            className="w-full rounded-md border bg-background p-2 text-foreground"
-            value={selected}
-            onChange={(e) => setHousehold(e.target.value)}
-          >
-            {me.households.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          label={t("auth.oauth.household")}
+          value={selected}
+          onChange={setHousehold}
+          options={me.households.map((household) => ({
+            value: household.id,
+            label: household.name,
+          }))}
+        />
         {!chooseHousehold && (
           <>
             <p>
