@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/merran-app/merran/security/advisories/new
+    about: Tell us about a vulnerability privately, not in a public issue.
+  - name: Read the docs
+    url: https://merran.app/docs/
+    about: Installing, running and using Merran, with troubleshooting for common problems.

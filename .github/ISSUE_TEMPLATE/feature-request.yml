@@ -1,0 +1,27 @@
+name: Feature request
+description: An idea for something Merran could do.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. The [roadmap](https://merran.app/docs/project/roadmap/) shows what's planned already. If your idea is there, tell us anyway: knowing which problems matter to people helps us choose what comes next.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would it solve?
+      description: What gets in the way when you plan, shop or cook? Start with the problem rather than the feature, so there's room for more than one way to solve it.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: How do you handle it today?
+      description: In Merran, in another app, on paper, or not at all.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like Merran to do?
+      description: If you have a way to solve it in mind, describe it here.

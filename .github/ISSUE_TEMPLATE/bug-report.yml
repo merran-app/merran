@@ -1,0 +1,66 @@
+name: Bug report
+description: Something in Merran isn't working as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for letting us know. A few details help us see what you saw.
+
+        Leave out keys, passwords, invitation links, your `.env` and anything personal: issues are public. For a security problem, [report it privately](https://github.com/merran-app/merran/security/advisories/new) instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include any error message word for word. You can paste or drop in screenshots too.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How do we make it happen?
+      description: The steps from the start, so we can try it ourselves.
+      placeholder: |
+        1. Open a recipe
+        2. Tap Plan it
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Merran's version
+      description: A server admin can see it in Settings → This server → Server overview. Or give the image tag you run.
+      placeholder: 0.1.0-alpha.6
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How do you run it?
+      options:
+        - With the Docker image
+        - From the source code
+    validations:
+      required: true
+  - type: dropdown
+    id: database
+    attributes:
+      label: Which database?
+      options:
+        - SQLite
+        - Postgres
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: If the server logged anything when it happened (`docker compose logs merran`), paste it here. Take out setup codes, addresses and anything personal first.
+      render: text

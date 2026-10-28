@@ -1,0 +1,35 @@
+name: Store request
+description: A store Merran doesn't know yet.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merran can find the things on your list at any store with a search page on its site. Tell us about one it's missing, and we'll add it to Settings → Household → Your stores.
+  - type: input
+    id: store
+    attributes:
+      label: Which store?
+      placeholder: Costco
+    validations:
+      required: true
+  - type: input
+    id: countries
+    attributes:
+      label: Which countries is it in?
+      placeholder: US, Canada
+    validations:
+      required: true
+  - type: input
+    id: search
+    attributes:
+      label: Its search page
+      description: Search the store's site for milk and paste the address of the results page.
+      placeholder: https://www.costco.com/s?keyword=milk
+    validations:
+      required: true
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else?
+      description: If you'd like more than search, such as prices or sending the list to its cart, say so here.

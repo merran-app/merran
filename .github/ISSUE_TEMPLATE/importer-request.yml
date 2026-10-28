@@ -1,0 +1,29 @@
+name: Importer request
+description: Another app to move your recipes from.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merran imports recipes from links, text, photos and PDFs, and moves whole collections from Mealie, Paprika and other Merran servers. Tell us which app you'd like to move from.
+
+        Please don't attach your own export: it can hold personal data, and issues are public.
+  - type: input
+    id: app
+    attributes:
+      label: Which app?
+      placeholder: Tandoor
+    validations:
+      required: true
+  - type: textarea
+    id: export
+    attributes:
+      label: How does it export your recipes?
+      description: What it gives you (a .zip, JSON, a backup file, an API) and how you get it. A link to the app's own help page about exporting is ideal.
+    validations:
+      required: true
+  - type: textarea
+    id: keep
+    attributes:
+      label: What matters most to bring across?
+      description: Photos, notes, ratings, collections, meal plans... and roughly how many recipes you have.
