@@ -120,6 +120,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Imports in your language: a recipe from another language translated as it comes in | Key | Planned | AI; a setting, with the app's translations |
 | Discover: find recipes for any theme with AI | Key | Built | AI, with web search; each page is opened first, so they all import |
 | Browser extension: import a page, right-click, the list in a side panel | Key | Built | Chrome, Edge, Firefox; even sites that turn servers away or need a sign-in; in the stores with 0.1 |
+| Import from sites that turn servers away, through your own FlareSolverr | Detail | Planned | Module, off until the server admin gives FlareSolverr's address; only for imports a person asks for, including phone shares and the API, never feed reads or photos ([plan](flaresolverr-imports.md), [#51](https://github.com/merran-app/merran/issues/51)) |
 | Tandoor import | Detail | Later | |
 
 ## Planning
