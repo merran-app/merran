@@ -5,7 +5,6 @@ import {
   foodKey,
   subtractAmounts,
   type Amount,
-  type MealShare,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import {
@@ -13,6 +12,7 @@ import {
   PantryItem,
   type PantrySnapshot,
   type PlanEntry,
+  type SetAside,
 } from "../../database/entities/index.ts"
 import { householdAliases, householdKeys } from "../foods/aliases.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
@@ -43,7 +43,7 @@ export async function useForMeals(
     /** Each row as it was, the first time this meal touched it. */
     const before = new Map<
       string,
-      { amount: Amount; amountText: string | null; share: MealShare | null }
+      { amount: Amount; amountText: string | null; share: SetAside | null }
     >()
     const touch = (row: PantryItem) => {
       if (!before.has(row.id))

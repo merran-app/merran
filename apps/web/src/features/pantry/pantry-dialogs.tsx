@@ -3,9 +3,11 @@ import * as React from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -14,10 +16,12 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { useForMeals } from "@/features/list/use-for-meals"
 import { useHouseholdClock } from "@/features/plan/queries"
 
 import { STORAGE_PLACES, type PantryItem, type StoragePlace } from "./queries"
-import { usePantryActions } from "./use-pantry-actions"
+import { usePantryActions, type PutBack } from "./use-pantry-actions"
+import { useDayLabel } from "./use-soon"
 
 /** Fridge, freezer or cupboard, as toggles. */
 function PlacePicker({
@@ -265,5 +269,115 @@ export function UseByDialog({
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+/**
+ * Things just used up that meals on the list counted on: which go back on
+ * the list. None are picked to start, so nothing goes on unless chosen.
+ */
+export function PutBackDialog({
+  choices,
+  onClose,
+}: {
+  choices: PutBack[] | null
+  onClose: () => void
+}) {
+  return (
+    <Dialog
+      open={choices !== null}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        {choices && <PutBackChoices choices={choices} onDone={onClose} />}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function PutBackChoices({
+  choices,
+  onDone,
+}: {
+  choices: PutBack[]
+  onDone: () => void
+}) {
+  const { t } = useTranslation()
+  const forMeals = useForMeals()
+  const dayLabel = useDayLabel()
+  const [picked, setPicked] = React.useState<ReadonlySet<string>>(new Set())
+
+  function pick(id: string, on: boolean) {
+    setPicked((was) => {
+      const next = new Set(was)
+      if (on) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }
+
+  function putOnList() {
+    const chosen = choices.filter((choice) => picked.has(choice.item.id))
+    onDone()
+    void forMeals.putOnList(
+      { removed: chosen.map((choice) => choice.before) },
+      t("pantry.putBack.doneSome", { count: chosen.length })
+    )
+  }
+
+  /** "2 lb for Tacos, Tue": how much each meal on the list needs back. */
+  const forWhat = (item: PantryItem) =>
+    item.meals
+      .filter((meal) => meal.onList)
+      .map((meal) => {
+        const which = t("pantry.putBack.meal", {
+          name: meal.name,
+          day: dayLabel(meal.date),
+        })
+        return meal.amount
+          ? t("pantry.putBack.amountFor", { amount: meal.amount, meal: which })
+          : which
+      })
+      .join(", ")
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>{t("pantry.putBack.title")}</DialogTitle>
+        <DialogDescription>{t("pantry.putBack.description")}</DialogDescription>
+      </DialogHeader>
+      <ul className="grid gap-3">
+        {choices.map(({ item }) => (
+          <li key={item.id}>
+            <Field orientation="horizontal">
+              <Checkbox
+                id={`put-back-${item.id}`}
+                checked={picked.has(item.id)}
+                onCheckedChange={(on) => pick(item.id, on === true)}
+              />
+              <FieldLabel
+                htmlFor={`put-back-${item.id}`}
+                className="grid gap-0.5 font-normal"
+              >
+                <span className="font-medium">{item.name}</span>
+                <span className="text-sm text-muted-foreground">
+                  {forWhat(item)}
+                </span>
+              </FieldLabel>
+            </Field>
+          </li>
+        ))}
+      </ul>
+      <DialogFooter>
+        <Button variant="outline" onClick={onDone}>
+          {t("pantry.putBack.notNow")}
+        </Button>
+        <Button disabled={picked.size === 0} onClick={putOnList}>
+          {t("pantry.putBack.putSome", { count: picked.size })}
+        </Button>
+      </DialogFooter>
+    </>
   )
 }

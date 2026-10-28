@@ -1,13 +1,9 @@
-import {
-  MEALS,
-  type MealShare,
-  type Reason,
-  type MealRecipe,
-} from "@merran/shared"
+import { MEALS, type Reason, type MealRecipe } from "@merran/shared"
 import { defineEntity, p, type InferEntity } from "@mikro-orm/core"
 import { householdFilter } from "../scope.ts"
 import { createdAt, day, id, updatedAt } from "./base.ts"
 import { householdRef } from "./households.ts"
+import type { SetAside } from "./pantry_items.ts"
 import { Recipe } from "./recipes.ts"
 
 // The meals a household can plan; shared with the web app.
@@ -31,7 +27,7 @@ export type PantrySnapshot = {
   storedIn: "fridge" | "freezer" | "cupboard" | null
   useBy: string | null
   /** What was set aside for the meal, set aside again when it's put back. */
-  share: MealShare | null
+  share: SetAside | null
   /** Used up, so it went from the pantry. */
   removed: boolean
   createdAt: string

@@ -1,11 +1,12 @@
 import {
   combineLines,
+  covers,
   formatAmount,
   joinAmounts,
   scaleIngredient,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
-import { PlanEntry } from "../../database/entities/index.ts"
+import { PantryItem, PlanEntry } from "../../database/entities/index.ts"
 import { NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
 import { toNumber } from "../../database/numbers.ts"
@@ -31,6 +32,13 @@ export async function itemDetails(em: EntityManager, itemId: string) {
       : []
   const aliases = await householdAliases(em)
   const linesOf = await loadMealLines(em, item.household.id, entries)
+  // What's at home that covers the food: what the list counted on.
+  const pantry =
+    entries.length > 0
+      ? (await em.find(PantryItem, {})).filter((row) =>
+          covers(row.foodKey, item.foodKey!)
+        )
+      : []
   const amount = { quantity: toNumber(item.quantity), unit: item.unit ?? null }
   const meals = entries.filter(hasRecipe).flatMap((entry) => {
     // Manual edits can change the row's unit. Match its recorded meal shares,
@@ -62,6 +70,13 @@ export async function itemDetails(em: EntityManager, itemId: string) {
         listedAmounts: contributions.map((share) =>
           formatAmount(share.quantity, share.unit)
         ),
+        atHome: pantry
+          .flatMap((row) => row.forMeals ?? [])
+          .flatMap((share) =>
+            share.meal === entry.id && share.counted
+              ? [formatAmount(share.counted.quantity, share.counted.unit)]
+              : []
+          ),
         lines,
       },
     ]

@@ -75,6 +75,7 @@ import { initials } from "@/lib/initials"
 import { cn } from "@/lib/utils"
 
 import { AddFromPlanDialog } from "./add-from-plan-dialog"
+import { CoveredAtHome } from "./covered-at-home"
 import { ItemRow, type RowFind, type RowPrices } from "./item-row"
 import {
   AisleDialog,
@@ -640,6 +641,14 @@ export function ListPage() {
               </section>
             )}
           </>
+        )}
+
+        {!list.isPending && !selection.selecting && (
+          <CoveredAtHome
+            list={split ? current?.id : undefined}
+            withOnHand={!split || current?.id === lists[0]?.id}
+            onChangeOnHand={() => setOnHand(true)}
+          />
         )}
       </div>
 

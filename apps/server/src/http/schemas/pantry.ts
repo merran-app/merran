@@ -40,6 +40,9 @@ const ITEM = {
       name: "Lemon Chicken",
       date: "2026-10-17",
       status: "planned" as const,
+      onList: true,
+      amount: "2 lb",
+      short: null,
     },
   ],
   useSoon: { kind: "soon" as const, date: "2026-10-18" },
@@ -56,7 +59,14 @@ const SNAPSHOT = {
   aisle: IDS.aisles[1],
   storedIn: "fridge" as const,
   useBy: "2026-10-18",
-  forMeals: [{ meal: IDS.planEntry, quantity: 2, unit: "pound" }],
+  forMeals: [
+    {
+      meal: IDS.planEntry,
+      quantity: 2,
+      unit: "pound",
+      counted: { quantity: 2, unit: "pound" },
+    },
+  ],
   createdAt: TIMES.now,
 }
 
@@ -81,6 +91,17 @@ export const PantryItemSchema = z
           name: z.string(),
           date: Day,
           status: z.enum(PLAN_STATUSES),
+          onList: z.boolean().openapi({
+            description:
+              "The meal's on the shopping list and still to come: using this up leaves it short.",
+          }),
+          amount: z.string().openapi({
+            description: 'How much is set aside for it: "2 lb", or empty.',
+          }),
+          short: z.string().nullable().openapi({
+            description:
+              "How much of that isn't there any more, for a meal on the list: what to put back on it.",
+          }),
         })
       )
       .openapi({ description: "The planned meals it's set aside for." }),
@@ -168,6 +189,16 @@ export const PantrySnapshotSchema = z
           meal: z.string(),
           quantity: z.number().nullable(),
           unit: z.string().nullable(),
+          counted: z
+            .object({
+              quantity: z.number().nullable(),
+              unit: z.string().nullable(),
+            })
+            .optional()
+            .openapi({
+              description:
+                "How much of it was counted on when the meal went on the list, keeping that much off the list.",
+            }),
         })
       )
       .max(100)

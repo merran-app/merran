@@ -108,6 +108,15 @@ export function ItemInfo({ item }: { item: ListItem }) {
                           .join(" + "),
                       })}
                     </p>
+                    {meal.atHome.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {t("list.details.atHome", {
+                          amount: meal.atHome
+                            .map((amount) => amount || t("list.details.some"))
+                            .join(" + "),
+                        })}
+                      </p>
+                    )}
                   </section>
                 ))}
               </>

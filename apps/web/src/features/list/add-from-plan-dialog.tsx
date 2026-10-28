@@ -1,5 +1,6 @@
 import { addDays } from "@merran/shared"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useNavigate } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -18,6 +19,7 @@ import { formatMonthDay, formatShortWeekday } from "@/features/plan/format"
 import { useHouseholdClock } from "@/features/plan/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
+import { COVERED_HASH } from "./covered-at-home"
 import { fromPlanQuery, listQuery } from "./queries"
 
 /**
@@ -56,6 +58,7 @@ function AddFromPlan({
   onDone: () => void
 }) {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const clock = useHouseholdClock()
   const nextWeek = addDays(clock.thisWeek, 7)
@@ -101,6 +104,15 @@ function AddFromPlan({
             ]
               .filter(Boolean)
               .join(" ") || undefined,
+          // What was left off, and why, is under the list.
+          action:
+            done.inPantry.length > 0 || done.onHand.length > 0
+              ? {
+                  label: t("list.plan.seeCovered"),
+                  onClick: () =>
+                    void navigate({ to: "/list", hash: COVERED_HASH }),
+                }
+              : undefined,
         }
       )
       onDone()

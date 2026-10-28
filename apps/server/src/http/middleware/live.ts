@@ -17,8 +17,12 @@ const CHANGES: [RegExp, LiveArea[]][] = [
   ],
   // The list follows the plan, and cooking uses up the pantry.
   [/^\/api\/plan(\/|$)/, ["plan", "list", "pantry"]],
-  // Shopping put away goes in the pantry; listing meals sets food aside.
-  [/^\/api\/list\/(put-away|from-plan)$/, ["list", "pantry"]],
+  // Shopping put away goes in the pantry; listing meals sets food aside,
+  // and what isn't at home after all comes off it.
+  [
+    /^\/api\/list\/(put-away|from-plan|for-meals|covered\/[^/]+\/not-at-home)$/,
+    ["list", "pantry"],
+  ],
   [/^\/api\/list(\/|$)/, ["list"]],
   // Product choices and cart transfers change shopping progress on every device.
   [/^\/api\/stores(\/|$)/, ["list"]],

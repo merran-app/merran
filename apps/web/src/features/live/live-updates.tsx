@@ -21,7 +21,8 @@ const REFRESH: Record<string, QueryKey[]> = {
     ["stores", "kroger", "basket"],
     ["stores", "walmart", "basket"],
   ],
-  pantry: [["pantry"]],
+  // What's at home is what the list counts on.
+  pantry: [["pantry"], ["list", "covered"]],
   // What AI suggests for recipes is in Review.
   recipes: [["recipes"], ["tags"], ["review"]],
   household: [["household"]],

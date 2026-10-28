@@ -21,6 +21,7 @@ import {
   PantryItem,
   PlanEntry,
   STORAGE_PLACES,
+  type SetAside,
 } from "../../database/entities/index.ts"
 import { householdKeys } from "../foods/aliases.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
@@ -40,13 +41,19 @@ export type PantryMealInfo = {
   id: string
   name: string
   date: string
+  anyDay: boolean
   status: PlanEntry["status"]
+  /** On the list: what it needs was put on it, or counted on at home. */
+  listed: boolean
 }
 
-/** The planned meals things at home are set aside for, by id. */
+/**
+ * The planned meals things at home are set aside for, by id: things there
+ * now, or as they were.
+ */
 export async function pantryMeals(
   em: EntityManager,
-  items: readonly PantryItem[]
+  items: readonly { forMeals?: readonly MealShare[] | null }[]
 ) {
   const ids = [
     ...new Set(
@@ -66,7 +73,9 @@ export async function pantryMeals(
         id: entry.id,
         name: entry.recipe?.getEntity().name ?? entry.note ?? "",
         date: entry.date,
+        anyDay: entry.anyDay,
         status: entry.status,
+        listed: entry.listedAt !== null && entry.listedAt !== undefined,
       },
     ])
   )
@@ -75,6 +84,13 @@ export async function pantryMeals(
 /** Whether a meal is still to come, so what's set aside for it stays set aside. */
 export const stillToCome = (meal: PantryMealInfo | undefined, today: string) =>
   meal?.status === "planned" && meal.date >= weekBefore(today)
+
+/**
+ * Whether a meal is on the list and still to come, so what it's short of
+ * at home belongs on the list.
+ */
+export const onTheList = (meal: PantryMealInfo | undefined, today: string) =>
+  Boolean(meal?.listed) && stillToCome(meal, today)
 
 /** A week's pool is dated to its first day, up to six days before today. */
 const weekBefore = (today: string) => {
@@ -111,6 +127,48 @@ export function available(
   return left
 }
 
+/**
+ * What meals on the list it's set aside for are short of, when there's
+ * less of it than is set aside for meals still to come: the earliest
+ * meals get what's there first. Nothing when there's no telling how much
+ * there is.
+ */
+export function shortOf(
+  item: PantryItem,
+  meals: ReadonlyMap<string, PantryMealInfo>,
+  today: string
+) {
+  if (!measured(item)) return []
+  const dateOf = (share: SetAside) => meals.get(share.meal)?.date ?? ""
+  const shares = (item.forMeals ?? [])
+    .filter((share) => stillToCome(meals.get(share.meal), today))
+    .sort((a, b) => dateOf(a).localeCompare(dateOf(b)))
+  let left = amountOf(item)
+  const short: MealShare[] = []
+  for (const share of shares) {
+    const rest = subtractAmounts(left, share, item.foodKey)
+    if (!rest) continue
+    if (rest.quantity >= -0.001) {
+      left = rest
+      continue
+    }
+    // What's there goes to this meal, and the rest of its share is short.
+    const missing = subtractAmounts(share, left, item.foodKey)
+    left = { quantity: 0, unit: left.unit }
+    if (!missing || missing.quantity <= 0.001) continue
+    if (onTheList(meals.get(share.meal), today))
+      short.push({ meal: share.meal, ...missing })
+  }
+  return short
+}
+
+/** Shares' amounts as they show, added with "+" when they don't add up. */
+const amountsOf = (shares: readonly MealShare[]) =>
+  shares
+    .map((share) => formatAmount(share.quantity, share.unit))
+    .filter(Boolean)
+    .join(" + ")
+
 /** Something at home as the API shows it. */
 function describeItem(
   item: PantryItem,
@@ -119,12 +177,14 @@ function describeItem(
   today: string
 ) {
   const quantity = toNumber(item.quantity)
-  const forMeals = [
-    ...new Set((item.forMeals ?? []).map((share) => share.meal)),
-  ].flatMap((id) => {
-    const meal = meals.get(id)
-    return meal ? [meal] : []
-  })
+  const shares = item.forMeals ?? []
+  const short = shortOf(item, meals, today)
+  const forMeals = [...new Set(shares.map((share) => share.meal))].flatMap(
+    (id) => {
+      const meal = meals.get(id)
+      return meal ? [meal] : []
+    }
+  )
   return {
     id: item.id,
     name: item.name,
@@ -135,7 +195,18 @@ function describeItem(
     storedIn: item.storedIn ?? null,
     aisle: item.aisle?.id ?? null,
     useBy: item.useBy ?? null,
-    meals: forMeals,
+    meals: forMeals.map((meal) => {
+      const mine = (share: MealShare) => share.meal === meal.id
+      return {
+        id: meal.id,
+        name: meal.name,
+        date: meal.date,
+        status: meal.status,
+        onList: onTheList(meal, today),
+        amount: amountsOf(shares.filter(mine)),
+        short: amountsOf(short.filter(mine)) || null,
+      }
+    }),
     useSoon: whyUseSoon(
       {
         useBy: item.useBy ?? null,
@@ -203,7 +274,7 @@ export type Stock = {
   aisle: Aisle | null
   storedIn: StoragePlace | null
   useBy: string | null
-  forMeals: MealShare[]
+  forMeals: SetAside[]
 }
 
 /**
@@ -268,16 +339,34 @@ export async function store(
   })
 }
 
-/** Each meal's shares as one, where they add up. */
-export function merged(shares: readonly MealShare[]) {
-  const out: MealShare[] = []
+/**
+ * Each meal's shares as one, where they add up, and so do how much of
+ * each was counted on.
+ */
+export function merged(shares: readonly SetAside[]) {
+  const out: SetAside[] = []
   for (const share of shares) {
     const index = out.findIndex((other) => other.meal === share.meal)
-    const sum = index === -1 ? null : addAmounts(out[index]!, share)
-    if (index !== -1 && sum) out[index] = { meal: share.meal, ...sum }
+    const other = out[index]
+    const sum = other ? addAmounts(other, share) : null
+    const counted = other ? countedTogether(other, share) : null
+    if (sum && counted) out[index] = { meal: share.meal, ...sum, ...counted }
     else out.push({ ...share })
   }
   return out
+}
+
+/**
+ * How much of two shares was counted on, added up: nothing when neither
+ * was, and null when the two don't add up.
+ */
+function countedTogether(a: SetAside, b: SetAside) {
+  if (!a.counted || !b.counted) {
+    const counted = a.counted ?? b.counted
+    return counted ? { counted } : {}
+  }
+  const sum = addAmounts(a.counted, b.counted)
+  return sum ? { counted: sum } : null
 }
 
 /** Where a new thing at home goes, and its use-by guess: from its aisle. */
