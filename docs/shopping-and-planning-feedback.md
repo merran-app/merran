@@ -70,18 +70,24 @@ Planned October 28, 2026; not built. Putting meals on the list counts on what's 
   - `merged()` keeps the two origins apart for the same meal rather than adding them together;
   - cooking takes, and puts back on Undo, all of a meal's shares on a row, not only the first;
   - the pantry's Undo snapshot (`PantrySnapshot`) keeps the origin instead of stripping it.
-- **Not at home.** Each row has **Not at home** for when the pantry is wrong. It marks that pantry item used up and puts what was counted on for meals on the list back on the list, with Undo. Marking a set-aside item **Used up** on the Pantry page, or lowering its amount, still puts nothing back on the list (see below).
+- **Not at home.** Each row has **Not at home** for when the pantry is wrong. It marks that pantry item used up and puts what was counted on for meals on the list back on the list, with Undo. It doesn't ask first: you're already looking at the list when you press it.
+- **Used up asks about meals on the list (decided October 28, 2026).** Today, using up something set aside for a meal, or lowering its amount, drops the set-aside and puts nothing back on the list, so the meal quietly comes up short. Putting it back by itself would suit olive oil, but not carrots used in something else, so it asks. It asks only when the item is set aside for a meal on the list that's still to come, whether counted on or bought for it; using up anything else stays as it is.
+  - **One item:** the "Used up carrots." toast says "Was for Tacos, Tue" and adds **Put on the list** beside **Undo**. Ignoring it adds nothing.
+  - **Several at once** (select and **Used up**, **Toss the 3 past their date** under **Use soon**, or **Clear the pantry**): the toast says how many were for meals on the list and offers **Choose**. That opens a drawer on phones, or a dialog on larger screens, listing each food with its amount and meal. Each has a checkbox, unticked to start, and the buttons are **Put on the list** and **Not now**. Clearing the pantry never fills the list unless you pick what goes on.
+  - **Lowering How much** below what's set aside asks the same way, for the shortfall only.
+  - **What goes on the list** is that meal's share as a line for that meal, so cooking, changing or taking off the meal handles it like any planned line. Putting it on the list has its own Undo, and undoing the used up also takes off what it put on the list.
+  - Cooking a meal can use stock set aside for another meal and leave that one short. That's not covered here.
 - **The info popup and the toast.** A line's info popup adds how much was at home for each meal, next to **Recorded for this meal after pantry**. The **Add from plan** toast keeps its message and adds **See what's covered**, which opens the section.
-- **The API.** `GET /api/list/covered`, which needs both list and pantry read, and the Not at home action with its Undo. Regenerate OpenAPI and the web and extension types.
+- **The API.** `GET /api/list/covered`, which needs both list and pantry read. The Not at home action, with its Undo. Removing and changing pantry items, one or several, say which meals on the list they leave short, and an action puts the chosen shares on the list. Regenerate OpenAPI and the web and extension types.
 - **Tests.** Server tests cover:
   - full and partial cover;
   - each way meals reach the list;
   - bought shares left out;
   - cooking and its Undo;
-  - Not at home and its Undo.
-- **Docs.** The labels go in `en.json`. Update the site's shopping guide (**Create a list from the plan** and **Understand quantities and deductions**) and this feature's row in [features.md](features.md).
-
-Open for review: whether using up or lowering stock that meals count on should put the shortfall back on the list by itself. That would close the **Used up** gap everywhere, but clearing the pantry would then fill the list. This plan only does it explicitly, through **Not at home**.
+  - Not at home and its Undo;
+  - the shortfall reported for used up, cleared and lowered items, and only for meals on the list still to come;
+  - putting chosen shares on the list, and its Undo.
+- **Docs.** The labels go in `en.json`. Update the site's shopping guide (**Create a list from the plan**, **Understand quantities and deductions**, and the pantry steps for **Used up** and **How much**) and this feature's row in [features.md](features.md).
 
 ## Before implementation of the planned improvements
 
