@@ -26,7 +26,7 @@ the recipe picker shows **Already planned** for recipes already added to the wee
 
 **Expected result:** the meal appears in its day and meal slot. Leaving servings empty uses the recipe's count. Meal servings determine ingredient amounts for shopping; changing the recipe page's display alone is not a change to this plan entry.
 
-Not released yet: if you notice the wrong count after opening cook view, change **Servings** in the header and choose **Save to plan**. **Done cooking** or **Exit** also saves an unsaved planned serving change.
+From alpha.6, if you notice the wrong count after opening cook view, change **Servings** in the header and choose **Save to plan**. **Done cooking** or **Exit** also saves an unsaved planned serving change.
 
 For flexibility, use **Add a meal** under **This week, any day**. Choose **Tonight** when you are ready to put it on today's plan, or **Move or change** to choose another day. A note can reserve a meal without adding recipe ingredients to the shopping list.
 
@@ -60,9 +60,9 @@ Ideas come from your library, not an AI search. Recipes recently planned or made
 
 **Expected result:** Merran fills the next week's eligible empty meals using the same library-based suggestions. This does not require AI and does not send anything to a store cart. The server must be running to process the job; after downtime, it can catch up for the remaining part of the intended week.
 
-## Not released yet: subscribe to the meal calendar
+## Subscribe to the meal calendar
 
-The calendar subscription is being built and is not in the current release. Once available, a household admin can open **Settings → Household → Meal planning → Calendar subscriptions**, turn on **Let members subscribe to this household's meal calendar**, set each meal's **Start time** and **Duration (minutes)** under **Usual meal times**, then choose **Save calendar settings**. The server administrator must set `MERRAN_PUBLIC_URL` to an address the calendar app can reach.
+Available from alpha.6. A household admin can open **Settings → Household → Meal planning → Calendar subscriptions**, turn on **Let members subscribe to this household's meal calendar**, set each meal's **Start time** and **Duration (minutes)** under **Usual meal times**, then choose **Save calendar settings**. The server administrator must set `MERRAN_PUBLIC_URL` to an address the calendar app can reach.
 
 Each member can choose **Create subscription link**, copy **Your calendar link**, and add it as a subscribed calendar in their calendar app. The link is shown only when created; **Revoke** stops future reads, and a replacement link can be created. Anyone holding the link can see meal names and notes. Recipe links still require a Merran sign-in.
 

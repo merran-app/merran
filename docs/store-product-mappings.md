@@ -1,6 +1,6 @@
 # Store product mappings
 
-Implemented October 19, 2026 on the feature branch; not released yet. The page and shopping-day choice below are built for Kroger and experimental Walmart. Link-only stores still provide search links without saved products.
+Implemented October 19, 2026; released in alpha.6. The page and shopping-day choice below are built for Kroger and experimental Walmart. Link-only stores still provide search links without saved products.
 
 ## Why
 

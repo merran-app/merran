@@ -3,7 +3,13 @@ title: Release verification
 description: What was tested on the published alpha, and what still needs real-device or external-service verification.
 ---
 
-The latest application release is **0.1.0-alpha.4**. This record was reconciled on **October 19, 2026**. The checks below retain their original dates, versions and environments: updating the guides does not establish that the alpha.4 published image was tested again. Publication is separate from verification of every deployment and integration.
+The latest application release is **0.1.0-alpha.6**. This record was reconciled on **October 28, 2026**. The checks below retain their original dates, versions and environments: updating the guides does not establish that the alpha.5 or alpha.6 published images were tested again. Publication is separate from verification of every deployment and integration.
+
+## Covered at home development checks — October 28, 2026 (before alpha.6)
+
+Automated server tests cover what the list counted on at home, fully and in part; food bought for a meal left out; meals no longer on the list; a listed meal changing; cooking and its Undo; **Not at home** and its Undo; and putting used-up or lowered stock back on the list, with Undo. They passed on SQLite with the whole server suite, and the new, pantry and list tests passed on Postgres.
+
+In a development server, a test meal was added from the plan, then **Covered at home**, the line's info popup, **Not at home** and its **Undo**, **Put on the list** after using something up or lowering **How much**, and **Choose** after using up several things were each checked in the browser, including the bottom drawer at phone width. These checks used a development build, not the published alpha.6 image.
 
 ## Operator deployment report — October 19, 2026
 

@@ -26,13 +26,13 @@ open a meal from **Plan** to use the ingredients and instructions saved by a sho
 
 **Expected result:** each step appears with relevant recognized ingredients under **For this step**. The full ingredient checklist remains useful if automatic ingredient matching misses something.
 
-Not released yet: when a recipe has a serving count, use the servings controls in the cook view header to make more or less without leaving your step. Ingredient amounts change immediately. For a planned meal, choose **Save to plan** to update the plan and its linked shopping amounts; **Done cooking** also saves an unsaved serving change. **Exit** saves an unsaved planned change before leaving. For a recipe opened without a planned meal, the adjustment applies only to this cook and does not change the recipe.
+From alpha.6, when a recipe has a serving count, use the servings controls in the cook view header to make more or less without leaving your step. Ingredient amounts change immediately. For a planned meal, choose **Save to plan** to update the plan and its linked shopping amounts; **Done cooking** also saves an unsaved serving change. **Exit** saves an unsaved planned change before leaving. For a recipe opened without a planned meal, the adjustment applies only to this cook and does not change the recipe.
 
 Merran tries to keep the screen awake while cook view is open. This depends on browser support and permission; it is not guaranteed on every device.
 
 ## Put a step on hold
 
-Not released yet: choose **Hold this step** beside **Next** at the bottom when you need to come back to an instruction later. Cook view moves to the next step and keeps the held step in a reminder above the recipe. Its marker in **Steps** changes too. You can hold more than one step. Choose a held step from the reminder to return to it, then choose **Done with this step** in the bottom bar to clear the hold. On the last step, holding it leaves you there so you can choose another step or finish.
+From alpha.6, choose **Hold this step** beside **Next** at the bottom when you need to come back to an instruction later. Cook view moves to the next step and keeps the held step in a reminder above the recipe. Its marker in **Steps** changes too. You can hold more than one step. Choose a held step from the reminder to return to it, then choose **Done with this step** in the bottom bar to clear the hold. On the last step, holding it leaves you there so you can choose another step or finish.
 
 **Done cooking** warns when steps are still on hold. You can return to a held step or choose **Finish anyway**. Holds are reminders; they do not start or control timers.
 
@@ -75,7 +75,7 @@ Finishing with **Done cooking**, **Made it**, or **Mark cooked** on a planned me
 
 ## Resume and troubleshoot
 
-Progress is remembered in this browser for up to 12 hours, including the step and checked ingredients, when the serving scale and paired recipe match. Not released yet: steps on hold are remembered too, and **Start over** clears them. This is not cross-device cooking progress or an offline copy of the recipe.
+Progress is remembered in this browser for up to 12 hours, including the step and checked ingredients, when the serving scale and paired recipe match. From alpha.6, steps on hold are remembered too, and **Start over** clears them. This is not cross-device cooking progress or an offline copy of the recipe.
 
 | What you see                     | What to try                                                                                                                                                |
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
