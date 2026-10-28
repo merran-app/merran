@@ -245,7 +245,13 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
         )
       }
 
-      if (response.status >= 300 && response.status < 400) {
+      // A 304 isn't a redirect: it says the page hasn't changed since the
+      // etag or date the caller sent, so it's handed back like any answer.
+      if (
+        response.status >= 300 &&
+        response.status < 400 &&
+        response.status !== 304
+      ) {
         const location = response.headers.get("location")
         await response.body?.cancel()
         // A POST isn't sent on to somewhere else.
