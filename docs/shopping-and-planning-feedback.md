@@ -60,6 +60,35 @@ Decided October 18, 2026; built, released in alpha.4. Reward finishing a shoppin
 - Keep the effect silent, decorative, brief and unable to intercept taps or keyboard focus. Skip animations when the device requests reduced motion, and stop an active effect if that preference changes. Existing success messages, Undo and cooking notes remain available.
 - Use the current palette's chart colors and browser animations, with no new dependency. Ignore overlapping celebration requests so several quick completions cannot fill the screen with effects.
 
+## See what the pantry kept off the list
+
+Planned October 28, 2026; not built. Putting meals on the list counts on what's at home, but only **Add from plan** says so, in a toast that fades and isn't kept: "At home already: rice, olive oil." It names only food the pantry covered completely, so a partly covered line just shows the smaller amount. Changing a listed meal (servings, recipe or side), applying a replacement and the weekly autoplan count on the pantry the same way and say nothing. The Pantry page tags what's set aside for each meal; the List has no view of it.
+
+- **A Covered at home section on the List.** It sits below the list, collapsed like the **bought** section: a count and the names, with **Show**. Each row gives the food, how much at home is counted on, the meals and days it's for, and, when it's only partly covered, how much is still on the list: "Rice · 1 cup at home · Tacos, Tue · 1 cup still on the list". A food shows on the list it would have gone on, routed the way the list routes it. Always-on-hand staples get one line at the end, with **Change**, since a setting left them off rather than stock.
+- **Worked out from the pantry, not saved separately.** Counting on stock already sets it aside on the pantry item (`forMeals`: the meal and how much). The section reads those set-asides for meals on the list that are still to come. So it covers every way meals reach the list, and stays right when a meal is cooked, moved, skipped or taken off, or the stock is used.
+- **Counted-on stock is told apart from bought stock.** Putting shopping away also sets food aside for meals, and after a trip that isn't what kept anything off the list. Each set-aside share records where it came from: counted on when the meal was listed, or bought. `forMeals` is JSON, so there's no migration. Shares from before the change have no origin and count as bought, so the section starts with meals listed after the update. Three places must keep the origin:
+  - `merged()` keeps the two origins apart for the same meal rather than adding them together;
+  - cooking takes, and puts back on Undo, all of a meal's shares on a row, not only the first;
+  - the pantry's Undo snapshot (`PantrySnapshot`) keeps the origin instead of stripping it.
+- **Not at home.** Each row has **Not at home** for when the pantry is wrong. It marks that pantry item used up and puts what was counted on for meals on the list back on the list, with Undo. It doesn't ask first: you're already looking at the list when you press it.
+- **Used up asks about meals on the list (decided October 28, 2026).** Today, using up something set aside for a meal, or lowering its amount, drops the set-aside and puts nothing back on the list, so the meal quietly comes up short. Putting it back by itself would suit olive oil, but not carrots used in something else, so it asks. It asks only when the item is set aside for a meal on the list that's still to come, whether counted on or bought for it; using up anything else stays as it is.
+  - **One item:** the "Used up carrots." toast says "Was for Tacos, Tue" and adds **Put on the list** beside **Undo**. Ignoring it adds nothing.
+  - **Several at once** (select and **Used up**, **Toss the 3 past their date** under **Use soon**, or **Clear the pantry**): the toast says how many were for meals on the list and offers **Choose**. That opens a drawer on phones, or a dialog on larger screens, listing each food with its amount and meal. Each has a checkbox, unticked to start, and the buttons are **Put on the list** and **Not now**. Clearing the pantry never fills the list unless you pick what goes on.
+  - **Lowering How much** below what's set aside asks the same way, for the shortfall only.
+  - **What goes on the list** is that meal's share as a line for that meal, so cooking, changing or taking off the meal handles it like any planned line. Putting it on the list has its own Undo, and undoing the used up also takes off what it put on the list.
+  - Cooking a meal can use stock set aside for another meal and leave that one short. That's not covered here.
+- **The info popup and the toast.** A line's info popup adds how much was at home for each meal, next to **Recorded for this meal after pantry**. The **Add from plan** toast keeps its message and adds **See what's covered**, which opens the section.
+- **The API.** `GET /api/list/covered`, which needs both list and pantry read. The Not at home action, with its Undo. Removing and changing pantry items, one or several, say which meals on the list they leave short, and an action puts the chosen shares on the list. Regenerate OpenAPI and the web and extension types.
+- **Tests.** Server tests cover:
+  - full and partial cover;
+  - each way meals reach the list;
+  - bought shares left out;
+  - cooking and its Undo;
+  - Not at home and its Undo;
+  - the shortfall reported for used up, cleared and lowered items, and only for meals on the list still to come;
+  - putting chosen shares on the list, and its Undo.
+- **Docs.** The labels go in `en.json`. Update the site's shopping guide (**Create a list from the plan**, **Understand quantities and deductions**, and the pantry steps for **Used up** and **How much**) and this feature's row in [features.md](features.md).
+
 ## Before implementation of the planned improvements
 
-Direct meal swaps remain planned. The original feedback record introduced no runtime changes; the shopping completion, shopping mode, substitutions, ingredient-context, meal-moving, weekly-badge and celebration decisions above describe the subsequent implementation.
+Direct meal swaps and seeing what the pantry kept off the list remain planned. The original feedback record introduced no runtime changes; the shopping completion, shopping mode, substitutions, ingredient-context, meal-moving, weekly-badge and celebration decisions above describe the subsequent implementation.

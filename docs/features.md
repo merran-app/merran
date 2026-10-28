@@ -147,6 +147,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
 | A shopping list from the plan: combined, converted, pantry taken off | Headline | Built | One line per food however recipes name it (plain flour is all-purpose flour, chopped parsley is parsley, lemon wedges are lemons) and measure it (a head of garlic is ten cloves, a stick of butter half a cup, a cup of flour 120 g); names without how it's used or prepped ("to serve", "or vegetable oil", "large" on vegetables); a line naming more than one food is each of them ("salt and pepper", "½ tsp each thyme and oregano") |
+| See what the pantry kept off the list | Key | Planned | A Covered at home section on the List: each food at home counted on for meals on the list, the meals it's for, and what's still to buy when it's only partly covered, with Not at home for when the pantry's wrong. Using up or lowering something set aside for a meal on the list asks whether to put it back on the list. Today only Add from plan's toast names what was fully covered ([decision](shopping-and-planning-feedback.md#see-what-the-pantry-kept-off-the-list)) |
 | Every-week items and always-on-hand staples | Key | Built | |
 | Sorted by aisle, and it remembers where things go | Key | Built | |
 | A list for each place you shop | Key | Built | Lists are names and aisles, however the household sorts what it buys; the store is chosen for each thing (the two rows below) |
