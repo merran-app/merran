@@ -25,7 +25,7 @@ These steps follow the current repository implementation, pending fresh-install 
 
 When something is gone, choose **Used up**. For partial use outside a planned meal, edit **How much** to the amount left.
 
-:::note[Not released yet: putting food back on the list]
+:::note[Available in alpha.6: putting food back on the list]
 When something you use up was set aside for a meal on the list, the message says which meal and offers **Put on the list** beside **Undo**. Ignore it to leave the list as it is.
 
 Using up several things at once (**Used up** on a selection, **Toss the … past their date** under **Use soon**, or **Clear the pantry**) offers **Choose** when any were for meals on the list. Tick what to buy again, then choose **Put … on the list**, or **Not now**. Nothing is ticked to start.
@@ -44,7 +44,7 @@ What goes back is that meal's share, so taking the meal off the plan takes it of
 
 **Expected result:** ingredients from eligible planned meals are combined, with their planned serving amounts, plus configured every-week items. Past days are not added. Already listed meals are not added again simply by repeating this action. Later changes to listed meals update their outstanding list contributions.
 
-:::note[Not released yet: covered at home]
+:::note[Available in alpha.6: covered at home]
 Under the list, **Covered at home** names what the list counted on from the pantry for meals still to come, and so left off. Choose **Show** to see each food: how much is at home, which meals it's for, and how much is still on the list when the pantry covers only part. With several lists, each food shows under the list it would go on.
 
 If something isn't really there, choose **Not at home**. It's marked used up, and what those meals counted on goes on the list, with **Undo**. Always-on-hand staples those meals use are named on a line of their own, with **Change**.
@@ -112,7 +112,7 @@ Tap or hover the info icon beside any list item to compare **On the list** with 
 
 **Recorded for this meal after pantry** shows the contribution left to buy when the list was calculated. The recipe lines are before pantry deductions; recipe changes and manual list edits can make them differ from the amount on the list. Items added by hand or from recurring buys may have no linked recipe lines. Unavailable recipe details are identified rather than guessed.
 
-Not released yet: **At home, counted on for this meal** shows how much pantry stock the list counted on for that meal, so it isn't in the amount to buy.
+From alpha.6, **At home, counted on for this meal** shows how much pantry stock the list counted on for that meal, so it isn't in the amount to buy.
 :::
 
 :::note[shopping progress on List]
@@ -141,7 +141,7 @@ For Kroger-family cart handoff:
 
 **Walmart cart filling is experimental and off by default.** It requires the server admin to enable it and the Merran browser extension to operate a Walmart tab. It may stop for a retailer verification check. Other stores may offer search links only; do not assume they support cart filling or live prices.
 
-:::note[Not released yet: usual products]
+:::note[Available in alpha.6: usual products]
 **List → More → Usual products** and **Settings → Household → Your stores → Manage usual products** open a page for preparing product choices before shopping. Search foods from your recipes, lists, pantry and purchases, or search Merran's known foods. For each connected store, choose, change or forget the product you buy. A Fry's choice and a Walmart choice for the same food stay separate. Walmart product search requires the extension and a usable Walmart tab. Stores that only offer search links do not save a product.
 
 Foods are grouped into collapsible aisle sections. Each heading shows how many foods need a product at the selected store. Search opens matching sections, and **Needs a product** narrows the list.

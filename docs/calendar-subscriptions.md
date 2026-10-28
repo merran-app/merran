@@ -1,8 +1,8 @@
 # Calendar subscriptions — planning proposal
 
-October 19, 2026. This scopes the exploratory calendar item in [features.md](features.md). It is a proposal, not a release commitment. The public site should continue to describe it as Exploring until implementation and release verification are complete.
+October 19, 2026. This scopes the exploratory calendar item in [features.md](features.md). It began as a proposal, not a release commitment. It is released in alpha.6, and the public site describes it from that release.
 
-Implementation started October 19, 2026: default and one-off meal times, a tokenized feed, subscription management and API schemas are now in the working tree. SQLite route tests cover updates, revocation, skipped meals and daylight-saving boundaries. Calendar-client acceptance and release verification are still pending.
+Implemented from October 19, 2026 and released in alpha.6: default and one-off meal times, a tokenized feed, subscription management and API schemas. SQLite route tests cover updates, revocation, skipped meals and daylight-saving boundaries. Calendar-client acceptance is still pending.
 
 ## Goal
 

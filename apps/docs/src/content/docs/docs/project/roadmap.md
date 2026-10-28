@@ -7,9 +7,9 @@ sidebar:
 
 Merran is in alpha. This roadmap describes our direction, not a delivery schedule: priorities and scope can change as we learn from people using it. The released features below are available now; planned and exploratory work has no promised release date.
 
-The last published release is [v0.1.0-alpha.4](https://github.com/merran-app/merran/releases/tag/v0.1.0-alpha.4). The alpha.5 additions below are prepared for the next release. See the [release verification record](../release-verification/) for what we have tested and what still needs checking.
+The latest release is [v0.1.0-alpha.6](https://github.com/merran-app/merran/releases/tag/v0.1.0-alpha.6). See the [release verification record](../release-verification/) for what we have tested and what still needs checking.
 
-**Last reviewed:** October 19, 2026. Implementation status is separate from device and provider acceptance.
+**Last reviewed:** October 28, 2026. Implementation status is separate from device and provider acceptance.
 
 ## Available now
 
@@ -38,6 +38,12 @@ Start with [the guides](../../) and [integration setup](../../integrations/brows
 - **MCP:** connect a compatible AI app with a scoped API key or OAuth, let it read permitted kitchen data and send recipe, meal and list suggestions to Review. Every MCP change needs a person to apply it. See [MCP setup](../../integrations/mcp/). Optional direct plan/list application remains future work.
 - **Authentication and connected apps:** opt-in passkeys, authenticator-based two-step sign-in, one external OIDC provider, and household-scoped OAuth connections for MCP and REST. An operator confirmed MCP OAuth, recipe proposals and Bitwarden passkey sign-in on TrueNAS/Dockge; other providers, devices and lifecycle checks remain. See [authentication setup](../../run/authentication/) and the [operator verification report](../release-verification/#operator-authentication-report--october-19-2026).
 - **Everyday app improvements:** clearer before-and-after proposal previews, grouped settings with section links, and bottom drawers for forms and confirmations on phones.
+
+## In alpha.6
+
+- **Cooking:** change servings in cook view without losing your place; for a planned meal, the new count is saved to the plan and its shopping. Put a step on hold, keep cooking ahead, and come back to it. See [cooking](../../use/cooking/).
+- **Meal calendar:** subscribe to the household's meal plan from a calendar app through a revocable, read-only link, with usual meal times and changes for one day. See [the meal calendar](../../use/planning/#subscribe-to-the-meal-calendar). Checks with real calendar apps remain.
+- **Shopping:** prepare the product you buy for each food at each connected store, and order from one store on shopping day. **Covered at home** on the list shows what the pantry kept off it, and using up food that meals on the list were counting on offers to put it back. See [shopping and pantry](../../use/shopping-and-pantry/).
 
 ## Up next
 
@@ -82,7 +88,6 @@ These are research candidates, not scheduled work. We would like feedback before
 
 - **Saved meal plans and menus:** keep named plans for a busy week, a holiday, or a camping trip, then reuse them with new dates and serving counts. Repeat last week already works; this would add a reusable library.
 - **Prepared meals and freezer portions:** record portions of meals you have already cooked, plan when to eat them, and avoid buying their original ingredients again. Fridge/freezer locations and leftover notes already exist; this would track the prepared food itself.
-- **Calendar subscriptions:** show the meal plan in your preferred calendar through an optional read-only iCalendar feed with a revocable link. Calendar apps control how often they refresh it.
 - **Minimum-stock reminders:** set a target amount for staples and review suggested top-ups when measured pantry stock falls below it. This would complement recurring buys and usual-buy suggestions.
 - **Share a recipe with a friend:** create a revocable, read-only link to one recipe without adding the recipient to your household or exposing its other data.
 - **Print and keep:** print clean recipes, plans, and shopping lists, with a possible later option to assemble selected recipes into a family cookbook.
