@@ -1,6 +1,7 @@
 import { z } from "@hono/zod-openapi"
 import { ITEM_SOURCES, MEALS } from "../../database/entities/index.ts"
 import { IDS, TIMES } from "./examples.ts"
+import { PantrySnapshotSchema } from "./pantry.ts"
 
 // The shopping lists: what to buy, by aisle, on whichever list the
 // household sorts it onto; from the plan, typed in, or every week.
@@ -97,6 +98,10 @@ export const ListItemDetailsSchema = z
           description:
             "Recorded outstanding meal contributions after pantry deductions; may differ from a manually edited list amount.",
         }),
+        atHome: z.array(z.string()).openapi({
+          description:
+            "How much of it at home was counted on for the meal when it went on the list, so isn't on the list.",
+        }),
         lines: z.array(
           z.object({
             recipe: z.string(),
@@ -121,6 +126,7 @@ export const ListItemDetailsSchema = z
           date: "2026-10-15",
           anyDay: false,
           listedAmounts: ["3 lb"],
+          atHome: ["1 lb"],
           lines: [
             {
               recipe: "Lemon Chicken",
@@ -342,7 +348,16 @@ export const ClearListSchema = z
   .openapi("ClearList", { example: { which: "checked" } })
 
 export const ListRestoreSchema = z
-  .object({ items: z.array(ListItemSnapshotSchema).min(1).max(500) })
+  .object({
+    items: z.array(ListItemSnapshotSchema).max(500),
+    remove: z.array(z.string()).max(500).optional().openapi({
+      description: "Items that weren't there, by id, to take off again.",
+    }),
+  })
+  .refine((body) => body.items.length > 0 || (body.remove ?? []).length > 0, {
+    message: "Say what to put back or take off.",
+    path: ["items"],
+  })
   .openapi("ListRestore", { example: { items: [SNAPSHOT] } })
 
 export const ListItemsSchema = z
@@ -587,3 +602,114 @@ export const AliasParam = z.object({
     example: IDS.listItems[2],
   }),
 })
+
+// What's at home that the list counted on for meals on it, and what goes
+// back on the list when it isn't there after all.
+
+const COVERED = {
+  id: IDS.pantryItems[0],
+  name: "chicken thighs",
+  list: IDS.shoppingList,
+  amount: "1 lb",
+  meals: [
+    {
+      id: IDS.planEntry,
+      name: "Lemon Chicken",
+      date: "2026-10-17",
+      anyDay: false,
+      amount: "1 lb",
+    },
+  ],
+  stillToBuy: "2 lb",
+}
+
+export const CoveredSchema = z
+  .object({
+    items: z
+      .array(
+        z.object({
+          id: z.string().openapi({
+            description: "The thing at home's id, as in the pantry.",
+          }),
+          name: z.string(),
+          list: z.string().openapi({
+            description:
+              "The list it would be on: the one its food is on already, or where the list puts that food.",
+          }),
+          amount: z.string().openapi({
+            description:
+              "How much of it was counted on, so isn't on the list; empty when no amount was needed.",
+          }),
+          meals: z.array(
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              date: Day,
+              anyDay: z.boolean(),
+              amount: z.string(),
+            })
+          ),
+          stillToBuy: z.string().nullable().openapi({
+            description:
+              "What the same meals still need of it on the list, when what's at home covers only part.",
+          }),
+        })
+      )
+      .openapi({
+        description:
+          "Things at home the list counted on for meals on it still to come, by name.",
+      }),
+    onHand: z.array(z.string()).openapi({
+      description:
+        "What's always on hand that those meals use: left off by the household's setting, not for what's at home.",
+    }),
+  })
+  .openapi("Covered", {
+    example: { items: [COVERED], onHand: ["olive oil", "salt"] },
+  })
+
+export const ForMealsSchema = z
+  .object({
+    removed: z.array(PantrySnapshotSchema).max(500).optional().openapi({
+      description:
+        "Things used up, as removing them said they were: all they were set aside for goes on the list.",
+    }),
+    items: z.array(z.string()).max(500).optional().openapi({
+      description:
+        "Things at home, by id: what there isn't enough of any more goes on the list, and stops being set aside.",
+    }),
+  })
+  .refine(
+    (body) => (body.removed ?? []).length + (body.items ?? []).length > 0,
+    { message: "Say what isn't at home.", path: ["items"] }
+  )
+  .openapi("ForMeals", { example: { items: [IDS.pantryItems[0]] } })
+
+export const ForMealsResultSchema = z
+  .object({
+    added: z.number().int().openapi({ description: "New lines on the list." }),
+    merged: z
+      .number()
+      .int()
+      .openapi({ description: "Lines added to ones already there." }),
+    before: z.array(ListItemSnapshotSchema).openapi({
+      description:
+        "The lines added to, as they were: for Undo with /list/restore.",
+    }),
+    remove: z.array(z.string()).openapi({
+      description: "The new lines' ids: for Undo with /list/restore.",
+    }),
+    pantry: z.array(PantrySnapshotSchema).openapi({
+      description:
+        "Things at home as they were, for Undo with /pantry/restore.",
+    }),
+  })
+  .openapi("ForMealsResult", {
+    example: {
+      added: 1,
+      merged: 0,
+      before: [],
+      remove: [IDS.listItems[0]],
+      pantry: [],
+    },
+  })

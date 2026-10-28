@@ -38,8 +38,10 @@ export async function coverFromPantry(
   )
   const setAside = (meal: string) =>
     listing.has(meal) || stillToCome(meals.get(meal), today)
+  // Set aside as counted on: it kept that much off the list.
   const setFor = (item: PantryItem, share: MealShare) => {
-    item.forMeals = merged([...(item.forMeals ?? []), share])
+    const counted = { quantity: share.quantity, unit: share.unit }
+    item.forMeals = merged([...(item.forMeals ?? []), { ...share, counted }])
   }
 
   const inPantry: string[] = []

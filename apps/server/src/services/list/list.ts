@@ -371,17 +371,24 @@ export async function clearList(
 }
 
 /**
- * Puts items back as they were (Undo). An id another household has can't
- * come back here; an aisle that's gone is left empty, and a list that's
- * gone is the main list.
+ * Puts items back as they were (Undo), and takes off ones that weren't
+ * there (`remove`, by id). An id another household has can't come back
+ * here; an aisle that's gone is left empty, and a list that's gone is the
+ * main list.
  */
 export async function restoreItems(
   em: EntityManager,
   householdId: string,
-  snapshots: readonly ItemSnapshot[]
+  snapshots: readonly ItemSnapshot[],
+  remove: readonly string[] = []
 ) {
   const keyOf = await householdKeys(em)
   return inHouseholdTransaction(em, householdId, async (tx) => {
+    const ids = remove.filter((id) => UUID.test(id))
+    if (ids.length > 0) {
+      for (const item of await tx.find(ShoppingItem, { id: { $in: ids } }))
+        tx.remove(item)
+    }
     const lists = await householdLists(tx, householdId)
     const listOf = (id: string) =>
       lists.find((list) => list.id === id) ?? lists[0]!

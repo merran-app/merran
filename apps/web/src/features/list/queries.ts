@@ -16,6 +16,19 @@ export const listQuery = queryOptions({
   queryFn: () => unwrap(api.GET("/api/list")),
 })
 
+export type Covered = Schemas["Covered"]
+export type CoveredItem = Covered["items"][number]
+
+/**
+ * What the list counted on at home for meals on it, so left off. Under
+ * the list's key, so it loads again with the list; the pantry's live
+ * updates load it again too.
+ */
+export const coveredQuery = queryOptions({
+  queryKey: ["list", "covered"],
+  queryFn: () => unwrap(api.GET("/api/list/covered")),
+})
+
 /** Fetch the original recipe wording only when an item's info is opened. */
 export const itemDetailsQuery = (itemId: string) =>
   queryOptions({

@@ -1145,6 +1145,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/list/covered": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What's at home instead of on the list
+         * @description What the list counted on at home for planned meals on it that are still to come, so left off: each thing, how much, which meals, and what those meals still need of it on the list when it covers only part. Also what's always on hand that those meals use, left off by the household's setting. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["getCovered"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/covered/{itemId}/not-at-home": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * It isn't at home after all
+         * @description The thing at home is used up, and everything it was set aside for planned meals on the list still to come goes on the list. The answer says what the list and the pantry were, for Undo with /list/restore and /pantry/restore. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["notAtHome"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/list/every-week": {
         parameters: {
             query?: never;
@@ -1228,6 +1268,26 @@ export interface paths {
          * @description Merran's own name for it counts again. Lines already joined stay as they are. With an API key, it needs the `list: write` permission.
          */
         delete: operations["forgetFoodAlias"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/for-meals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put what planned meals are short of on the list
+         * @description For planned meals on the list that are still to come: everything set aside for them in things used up, and what things at home don't have enough of any more, which stops being set aside. Each goes on the list as those meals' share, so the list follows the plan for it. The answer says what the list and the pantry were, for Undo with /list/restore and /pantry/restore. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["putShortOnList"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1496,7 +1556,7 @@ export interface paths {
         put?: never;
         /**
          * Put things on the list back as they were
-         * @description Undo: items as taking them off or changing them said they were. One taken off comes back with its id. An aisle that's gone is left empty. With an API key, it needs the `list: write` permission.
+         * @description Undo: items as taking them off or changing them said they were. One taken off comes back with its id. An aisle that's gone is left empty. Items in `remove` weren't there before, and come off again. With an API key, it needs the `list: write` permission.
          */
         post: operations["restoreListItems"];
         delete?: never;
@@ -6806,6 +6866,134 @@ export interface components {
          * @example {
          *       "items": [
          *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *           "name": "chicken thighs",
+         *           "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
+         *           "amount": "1 lb",
+         *           "meals": [
+         *             {
+         *               "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "name": "Lemon Chicken",
+         *               "date": "2026-10-17",
+         *               "anyDay": false,
+         *               "amount": "1 lb"
+         *             }
+         *           ],
+         *           "stillToBuy": "2 lb"
+         *         }
+         *       ],
+         *       "onHand": [
+         *         "olive oil",
+         *         "salt"
+         *       ]
+         *     }
+         */
+        Covered: {
+            /** @description Things at home the list counted on for meals on it still to come, by name. */
+            items: {
+                /** @description The thing at home's id, as in the pantry. */
+                id: string;
+                name: string;
+                /** @description The list it would be on: the one its food is on already, or where the list puts that food. */
+                list: string;
+                /** @description How much of it was counted on, so isn't on the list; empty when no amount was needed. */
+                amount: string;
+                meals: {
+                    id: string;
+                    name: string;
+                    /** @example 2026-10-15 */
+                    date: string;
+                    anyDay: boolean;
+                    amount: string;
+                }[];
+                /** @description What the same meals still need of it on the list, when what's at home covers only part. */
+                stillToBuy: string | null;
+            }[];
+            /** @description What's always on hand that those meals use: left off by the household's setting, not for what's at home. */
+            onHand: string[];
+        };
+        /**
+         * @example {
+         *       "added": 1,
+         *       "merged": 0,
+         *       "before": [],
+         *       "remove": [
+         *         "0199e8b0-5a10-7a01-8b00-00000000001d"
+         *       ],
+         *       "pantry": []
+         *     }
+         */
+        ForMealsResult: {
+            /** @description New lines on the list. */
+            added: number;
+            /** @description Lines added to ones already there. */
+            merged: number;
+            /** @description The lines added to, as they were: for Undo with /list/restore. */
+            before: components["schemas"]["ListItemSnapshot"][];
+            /** @description The new lines' ids: for Undo with /list/restore. */
+            remove: string[];
+            /** @description Things at home as they were, for Undo with /pantry/restore. */
+            pantry: components["schemas"]["PantrySnapshot"][];
+        };
+        /**
+         * @description Something at home as it was, to put it back (Undo).
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *       "name": "chicken thighs",
+         *       "foodKey": "chicken thigh",
+         *       "quantity": 2,
+         *       "unit": "pound",
+         *       "amountText": null,
+         *       "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *       "storedIn": "fridge",
+         *       "useBy": "2026-10-18",
+         *       "forMeals": [
+         *         {
+         *           "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "quantity": 2,
+         *           "unit": "pound",
+         *           "counted": {
+         *             "quantity": 2,
+         *             "unit": "pound"
+         *           }
+         *         }
+         *       ],
+         *       "createdAt": "2026-10-15T18:30:00.000Z"
+         *     }
+         */
+        PantrySnapshot: {
+            id: string;
+            name: string;
+            foodKey: string;
+            quantity: number | null;
+            unit: string | null;
+            amountText: string | null;
+            aisle: string | null;
+            storedIn: components["schemas"]["StoredIn"];
+            /** @example 2026-10-20 */
+            useBy: string | null;
+            forMeals: {
+                meal: string;
+                quantity: number | null;
+                unit: string | null;
+                /** @description How much of it was counted on when the meal went on the list, keeping that much off the list. */
+                counted?: {
+                    quantity: number | null;
+                    unit: string | null;
+                };
+            }[] | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /**
+         * @description Where it's kept.
+         * @enum {string|null}
+         */
+        StoredIn: "fridge" | "freezer" | "cupboard" | null;
+        /**
+         * @example {
+         *       "items": [
+         *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-000000000023",
          *           "name": "Bananas",
          *           "amount": "1 bunch",
@@ -6881,6 +7069,19 @@ export interface components {
             food: string;
             /** @description Kept its own food. */
             apart: boolean;
+        };
+        /**
+         * @example {
+         *       "items": [
+         *         "0199e8b0-5a10-7a01-8b00-000000000026"
+         *       ]
+         *     }
+         */
+        ForMeals: {
+            /** @description Things used up, as removing them said they were: all they were set aside for goes on the list. */
+            removed?: components["schemas"]["PantrySnapshot"][];
+            /** @description Things at home, by id: what there isn't enough of any more goes on the list, and stops being set aside. */
+            items?: string[];
         };
         /**
          * @example {
@@ -7109,6 +7310,9 @@ export interface components {
          *           "listedAmounts": [
          *             "3 lb"
          *           ],
+         *           "atHome": [
+         *             "1 lb"
+         *           ],
          *           "lines": [
          *             {
          *               "recipe": "Lemon Chicken",
@@ -7134,6 +7338,8 @@ export interface components {
                 anyDay: boolean;
                 /** @description Recorded outstanding meal contributions after pantry deductions; may differ from a manually edited list amount. */
                 listedAmounts: string[];
+                /** @description How much of it at home was counted on for the meal when it went on the list, so isn't on the list. */
+                atHome: string[];
                 lines: {
                     recipe: string;
                     original: string;
@@ -7582,6 +7788,8 @@ export interface components {
          */
         ListRestore: {
             items: components["schemas"]["ListItemSnapshot"][];
+            /** @description Items that weren't there, by id, to take off again. */
+            remove?: string[];
         };
         /**
          * @example {
@@ -7649,7 +7857,10 @@ export interface components {
          *               "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
          *               "name": "Lemon Chicken",
          *               "date": "2026-10-17",
-         *               "status": "planned"
+         *               "status": "planned",
+         *               "onList": true,
+         *               "amount": "2 lb",
+         *               "short": null
          *             }
          *           ],
          *           "useSoon": {
@@ -7695,7 +7906,10 @@ export interface components {
          *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
          *           "name": "Lemon Chicken",
          *           "date": "2026-10-17",
-         *           "status": "planned"
+         *           "status": "planned",
+         *           "onList": true,
+         *           "amount": "2 lb",
+         *           "short": null
          *         }
          *       ],
          *       "useSoon": {
@@ -7725,16 +7939,17 @@ export interface components {
                 date: string;
                 /** @enum {string} */
                 status: "planned" | "cooked" | "skipped";
+                /** @description The meal's on the shopping list and still to come: using this up leaves it short. */
+                onList: boolean;
+                /** @description How much is set aside for it: "2 lb", or empty. */
+                amount: string;
+                /** @description How much of that isn't there any more, for a meal on the list: what to put back on it. */
+                short: string | null;
             }[];
             useSoon: components["schemas"]["UseSoon"];
             /** Format: date-time */
             createdAt: string;
         };
-        /**
-         * @description Where it's kept.
-         * @enum {string|null}
-         */
-        StoredIn: "fridge" | "freezer" | "cupboard" | null;
         /** @description Why to use it soon: its use-by date has gone (`past`) or is close (`soon`), or it's fresh food bought for meals that were skipped or went by uncooked (`leftover`). */
         UseSoon: {
             /** @enum {string} */
@@ -7768,7 +7983,11 @@ export interface components {
          *             {
          *               "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
          *               "quantity": 2,
-         *               "unit": "pound"
+         *               "unit": "pound",
+         *               "counted": {
+         *                 "quantity": 2,
+         *                 "unit": "pound"
+         *               }
          *             }
          *           ],
          *           "createdAt": "2026-10-15T18:30:00.000Z"
@@ -7778,47 +7997,6 @@ export interface components {
          */
         PantryBefore: {
             before: components["schemas"]["PantrySnapshot"][];
-        };
-        /**
-         * @description Something at home as it was, to put it back (Undo).
-         * @example {
-         *       "id": "0199e8b0-5a10-7a01-8b00-000000000026",
-         *       "name": "chicken thighs",
-         *       "foodKey": "chicken thigh",
-         *       "quantity": 2,
-         *       "unit": "pound",
-         *       "amountText": null,
-         *       "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
-         *       "storedIn": "fridge",
-         *       "useBy": "2026-10-18",
-         *       "forMeals": [
-         *         {
-         *           "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
-         *           "quantity": 2,
-         *           "unit": "pound"
-         *         }
-         *       ],
-         *       "createdAt": "2026-10-15T18:30:00.000Z"
-         *     }
-         */
-        PantrySnapshot: {
-            id: string;
-            name: string;
-            foodKey: string;
-            quantity: number | null;
-            unit: string | null;
-            amountText: string | null;
-            aisle: string | null;
-            storedIn: components["schemas"]["StoredIn"];
-            /** @example 2026-10-20 */
-            useBy: string | null;
-            forMeals: {
-                meal: string;
-                quantity: number | null;
-                unit: string | null;
-            }[] | null;
-            /** Format: date-time */
-            createdAt: string;
         };
         /**
          * @example {
@@ -7852,7 +8030,11 @@ export interface components {
          *             {
          *               "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
          *               "quantity": 2,
-         *               "unit": "pound"
+         *               "unit": "pound",
+         *               "counted": {
+         *                 "quantity": 2,
+         *                 "unit": "pound"
+         *               }
          *             }
          *           ],
          *           "createdAt": "2026-10-15T18:30:00.000Z"
@@ -8056,7 +8238,10 @@ export interface components {
          *               "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
          *               "name": "Lemon Chicken",
          *               "date": "2026-10-17",
-         *               "status": "planned"
+         *               "status": "planned",
+         *               "onList": true,
+         *               "amount": "2 lb",
+         *               "short": null
          *             }
          *           ],
          *           "useSoon": {
@@ -8088,7 +8273,11 @@ export interface components {
          *             {
          *               "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
          *               "quantity": 2,
-         *               "unit": "pound"
+         *               "unit": "pound",
+         *               "counted": {
+         *                 "quantity": 2,
+         *                 "unit": "pound"
+         *               }
          *             }
          *           ],
          *           "createdAt": "2026-10-15T18:30:00.000Z"
@@ -15627,6 +15816,93 @@ export interface operations {
             };
         };
     };
+    getCovered: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Covered at home. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Covered"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    notAtHome: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description On the list. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForMealsResult"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not in the pantry. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listEveryWeek: {
         parameters: {
             query?: never;
@@ -15888,6 +16164,57 @@ export interface operations {
             };
             /** @description No such name. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    putShortOnList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForMeals"];
+            };
+        };
+        responses: {
+            /** @description On the list. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForMealsResult"];
+                };
+            };
+            /** @description Nothing to put on the list. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,4 +1,4 @@
-import { STORAGE_PLACES, type MealShare } from "@merran/shared"
+import { STORAGE_PLACES, type Amount, type MealShare } from "@merran/shared"
 import { defineEntity, p, type InferEntity } from "@mikro-orm/core"
 import { householdFilter } from "../scope.ts"
 import { aisleRef } from "./aisles.ts"
@@ -6,6 +6,13 @@ import { amount, createdAt, day, foodKey, id, updatedAt } from "./base.ts"
 import { householdRef } from "./households.ts"
 
 export { STORAGE_PLACES }
+
+/**
+ * How much of something at home is set aside for a planned meal. `counted`
+ * is how much of that was counted on when the meal went on the list, so it
+ * kept that much off the list; the rest was bought for the meal.
+ */
+export type SetAside = MealShare & { counted?: Amount }
 
 export const PantryItem = defineEntity({
   name: "PantryItem",
@@ -25,7 +32,7 @@ export const PantryItem = defineEntity({
      * bought for them, or counted on when they went on the list. Cooking
      * one uses its share.
      */
-    forMeals: p.json<MealShare[]>().nullable(),
+    forMeals: p.json<SetAside[]>().nullable(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

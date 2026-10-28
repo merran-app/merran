@@ -13,7 +13,7 @@ const route = createRoute({
   tags: ["List"],
   summary: "Put things on the list back as they were",
   description:
-    "Undo: items as taking them off or changing them said they were. One taken off comes back with its id. An aisle that's gone is left empty.",
+    "Undo: items as taking them off or changing them said they were. One taken off comes back with its id. An aisle that's gone is left empty. Items in `remove` weren't there before, and come off again.",
   ...openToKeys("list", "write"),
   request: {
     body: {
@@ -30,7 +30,10 @@ const route = createRoute({
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId } = inHousehold(c)
-    const { items } = c.req.valid("json")
-    return c.json({ items: await restoreItems(em, householdId, items) }, 200)
+    const { items, remove } = c.req.valid("json")
+    return c.json(
+      { items: await restoreItems(em, householdId, items, remove) },
+      200
+    )
   })
 }

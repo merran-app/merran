@@ -53,7 +53,12 @@ import {
 } from "@/features/select/use-selection"
 import { cn } from "@/lib/utils"
 
-import { EditPantryDialog, PlaceDialog, UseByDialog } from "./pantry-dialogs"
+import {
+  EditPantryDialog,
+  PlaceDialog,
+  PutBackDialog,
+  UseByDialog,
+} from "./pantry-dialogs"
 import {
   pantryQuery,
   STORAGE_PLACES,
@@ -61,7 +66,7 @@ import {
   type StoragePlace,
 } from "./queries"
 import { WaitingReceipts } from "./receipts/waiting-receipts"
-import { usePantryActions } from "./use-pantry-actions"
+import { usePantryActions, type PutBack } from "./use-pantry-actions"
 import { missedMeal, urgency, useDayLabel } from "./use-soon"
 
 /**
@@ -75,6 +80,8 @@ export function PantryPage() {
   const [editing, setEditing] = React.useState<PantryItem | null>(null)
   const [onHand, setOnHand] = React.useState(false)
   const [dialog, setDialog] = React.useState<"place" | "useBy" | null>(null)
+  // Things used up that meals on the list counted on: which go back on it.
+  const [putBack, setPutBack] = React.useState<PutBack[] | null>(null)
   const dayLabel = useDayLabel()
   const aiOn = useCapability("ai")
 
@@ -97,7 +104,7 @@ export function PantryPage() {
     said: (count: number) => string
   ) => {
     setDialog(null)
-    if (await actions.bulk(picked, action, said)) selection.done()
+    if (await actions.bulk(picked, action, said, setPutBack)) selection.done()
   }
 
   return (
@@ -161,7 +168,7 @@ export function PantryPage() {
                   <DropdownMenuItem
                     variant="destructive"
                     disabled={items.length === 0}
-                    onClick={() => void actions.clear()}
+                    onClick={() => void actions.clear(setPutBack)}
                   >
                     {t("pantry.clear")}
                   </DropdownMenuItem>
@@ -198,6 +205,7 @@ export function PantryPage() {
                 items={soon}
                 selection={selection}
                 onOpen={setEditing}
+                onPutBack={setPutBack}
                 dayLabel={dayLabel}
               />
             )}
@@ -298,6 +306,7 @@ export function PantryPage() {
         }
       />
       <EditPantryDialog item={editing} onClose={() => setEditing(null)} />
+      <PutBackDialog choices={putBack} onClose={() => setPutBack(null)} />
       <OnHandDialog open={onHand} onOpenChange={setOnHand} />
     </>
   )
@@ -315,11 +324,14 @@ function UseSoonCard({
   items,
   selection,
   onOpen,
+  onPutBack,
   dayLabel,
 }: {
   items: PantryItem[]
   selection: Selection
   onOpen: (item: PantryItem) => void
+  /** Tossed things meals on the list counted on: which go back on it. */
+  onPutBack: (choices: PutBack[]) => void
   dayLabel: (day: string, inSentence?: boolean) => string
 }) {
   const { t } = useTranslation()
@@ -350,7 +362,8 @@ function UseSoonCard({
               void actions.bulk(
                 past.map((item) => item.id),
                 { action: "remove" },
-                (count) => t("pantry.soon.tossed", { count })
+                (count) => t("pantry.soon.tossed", { count }),
+                onPutBack
               )
             }
           >
