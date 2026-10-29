@@ -352,15 +352,18 @@ export async function readSite(
 
 /** Keeps each site's newest recipes, and forgets old posts that weren't. */
 async function prune(deps: ShelfDeps, em: EntityManager, site: RecipeSite) {
-  const old = await em.find(
-    SiteRecipe,
-    { site, state: "recipe", classic: false },
-    {
-      orderBy: { publishedAt: "desc", createdAt: "desc" },
-      offset: KEEP_PER_SITE,
-      fields: ["id", "photo"],
-    }
-  )
+  const recipes = { site, state: "recipe", classic: false } as const
+  // SQLite takes an offset only after a limit, so it's how many are over.
+  const over = (await em.count(SiteRecipe, recipes)) - KEEP_PER_SITE
+  const old =
+    over > 0
+      ? await em.find(SiteRecipe, recipes, {
+          orderBy: { publishedAt: "desc", createdAt: "desc" },
+          limit: over,
+          offset: KEEP_PER_SITE,
+          fields: ["id", "photo"],
+        })
+      : []
   const stale = await em.find(
     SiteRecipe,
     {
