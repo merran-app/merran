@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest"
 import { firstDuration, splitDurations } from "./durations.ts"
-import { foodWords, ingredientsInStep } from "./step-ingredients.ts"
+import { foodNames, ingredientsInStep } from "./step-ingredients.ts"
+import { notesInStep } from "./step-notes.ts"
 
 describe("times in a step", () => {
   test("are split out with their length in seconds", () => {
@@ -89,6 +90,138 @@ describe("ingredients in a step", () => {
     expect(
       ingredientsInStep("You can add red wine if you like.", ingredients)
     ).toEqual(new Set())
-    expect(foodWords("large fresh eggs")).toEqual(["eggs", "egg"])
+    expect(foodNames("large fresh eggs")).toEqual([["egg"]])
+    expect(foodNames("cornflour / cornstarch")).toEqual([
+      ["cornflour"],
+      ["cornstarch"],
+    ])
+  })
+
+  test("are the whole food a step names before a word of another", () => {
+    const lines = [
+      { id: "rice", food: "White rice" },
+      { id: "vinegar", food: "rice vinegar" },
+      { id: "onion", food: "onion" },
+      { id: "powder", food: "onion powder" },
+    ]
+    expect(
+      ingredientsInStep("Serve over rice with a little onion.", lines)
+    ).toEqual(new Set(["rice", "onion"]))
+    expect(ingredientsInStep("Stir in the onion powder.", lines)).toEqual(
+      new Set(["powder"])
+    )
+  })
+
+  test("leave out what an except names", () => {
+    const lines = [
+      { id: "juice", food: "orange juice" },
+      { id: "garlic", food: "garlic cloves" },
+    ]
+    expect(
+      ingredientsInStep("Mix the juice with everything but not garlic.", lines)
+    ).toEqual(new Set(["juice"]))
+  })
+})
+
+describe("ingredients in a step of a recipe with sections", () => {
+  // RecipeTin Eats' orange chicken: soy sauce, ginger and cornflour for
+  // the chicken and again for its sauce.
+  const lines = [
+    { id: "chicken", food: "boneless skinless chicken thighs or breast" },
+    { id: "soy", food: "light soy sauce", quantity: 2, unit: "tablespoon" },
+    { id: "ginger", food: "finely grated ginger", quantity: 0.5 },
+    { id: "pepper", food: "white pepper" },
+    {
+      id: "mix",
+      food: "cornflour / cornstarch",
+      quantity: 2,
+      unit: "tablespoon",
+    },
+    { id: "coat", food: "cornflour / cornstarch", quantity: 0.75, unit: "cup" },
+    { id: "oil", food: "vegetable oil" },
+    ...[
+      { id: "zest", food: "orange zest" },
+      { id: "juice", food: "orange juice" },
+      { id: "sauceFlour", food: "cornflour / cornstarch", quantity: 1.5 },
+      { id: "wine", food: "Chinese cooking wine" },
+      { id: "sugar", food: "white sugar" },
+      { id: "sauceSoy", food: "light soy sauce" },
+      { id: "sauceGinger", food: "ginger" },
+      { id: "garlic", food: "garlic cloves" },
+    ].map((line) => ({ ...line, section: "Orange sauce" })),
+    { id: "rice", food: "White rice", section: "For serving" },
+    { id: "onion", food: "green onion", section: "For serving" },
+  ]
+  const steps = [
+    {
+      text: "Orange sauce - Whisk the cornflour and soy sauce until lump free. Then whisk in everything else except garlic and orange zest.",
+    },
+    {
+      text: "Coat chicken - Mix the chicken with the soy sauce, ginger, pepper and the 2 tablespoons of cornflour. Add the 3/4 cup cornflour and toss.",
+    },
+    {
+      text: "Sauté - Pour out all but 2 tablespoons of the oil. Sauté garlic until light golden.",
+      section: "Orange sauce",
+    },
+    {
+      text: "Thicken sauce - Give the sauce a whisk, then simmer. Stir in zest.",
+      section: "Orange sauce",
+    },
+    {
+      text: "Toss - Toss the chicken in the sauce. Serve over rice, garnished with green onion.",
+      section: "Orange sauce",
+    },
+  ]
+  const inStep = (at: number) =>
+    [...ingredientsInStep(steps[at]!, lines, steps)].sort()
+
+  test("are its section's, for a step about that section", () => {
+    // Named by its first words, and "everything else" is the rest of it.
+    expect(inStep(0)).toEqual(
+      ["juice", "sauceFlour", "wine", "sugar", "sauceSoy", "sauceGinger"].sort()
+    )
+    expect(inStep(2)).toEqual(["garlic", "oil"])
+  })
+
+  test("are the ones no section's steps claim, with the amounts it gives", () => {
+    expect(inStep(1)).toEqual(
+      ["chicken", "coat", "ginger", "mix", "pepper", "soy"].sort()
+    )
+  })
+
+  test("don't count the sauce being made as soy sauce", () => {
+    expect(inStep(3)).toEqual(["zest"])
+    expect(inStep(4)).toEqual(["chicken", "onion", "rice"])
+    // A section for a food, not something made, still finds it.
+    expect(
+      ingredientsInStep("Shred the chicken.", [
+        { id: "chicken", food: "rotisserie chicken", section: "Chicken" },
+      ])
+    ).toEqual(new Set(["chicken"]))
+  })
+})
+
+describe("notes a step points to", () => {
+  const notes = [
+    "1. Soy sauce – not dark soy.",
+    "3. Crispy coating – press the cornflour on.",
+    "Note 12: Freezes well.",
+    "Leftovers keep for 3 days.",
+  ].join("\n\n")
+
+  test("are the notes with the numbers it gives", () => {
+    expect(
+      notesInStep("Shake off the excess cornflour. (Note 3)", notes)
+    ).toEqual(["3. Crispy coating – press the cornflour on."])
+    expect(notesInStep("See notes 12 and note 1.", notes)).toEqual([
+      "Note 12: Freezes well.",
+      "1. Soy sauce – not dark soy.",
+    ])
+  })
+
+  test("are none for a note the recipe hasn't got, or a step with none", () => {
+    expect(notesInStep("Fry it (Note 2).", notes)).toEqual([])
+    expect(notesInStep("Serve.", notes)).toEqual([])
+    expect(notesInStep("Fry it (Note 1).", null)).toEqual([])
   })
 })

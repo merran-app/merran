@@ -92,7 +92,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
-| Cook view for the kitchen counter: get ready, ingredients per step, big text | Headline | Built | Available in alpha.6: change servings in cook view without losing your place; a planned meal's new count is saved to the plan. Put a step on hold, keep it visible while cooking ahead, and return before finishing. |
+| Cook view for the kitchen counter: get ready, ingredients per step, big text | Headline | Built | Available in alpha.6: change servings in cook view without losing your place; a planned meal's new count is saved to the plan. Put a step on hold, keep it visible while cooking ahead, and return before finishing. Not released yet (after alpha.6): a step's ingredients are its own section's where a food is listed twice, picked by the amounts it gives, without what it says "except" for, and without a soy sauce for "the sauce" being made; a step pointing to "Note 3" shows that note. |
 | Kitchen timers from the steps | Key | Built | |
 | Screen stays on, and your place is kept | Detail | Built | |
 | Random celebrations when shopping or cooking is finished | Detail | Built | Available in alpha.4: falling showers of confetti, stars or petals after successful list completion/clearing and marking a meal made or cooked; respects reduced motion ([decision](shopping-and-planning-feedback.md#completion-celebrations)) |
@@ -105,7 +105,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
-| Import from a link | Headline | Built | Honest user agent |
+| Import from a link | Headline | Built | Honest user agent. Not released yet (after alpha.6): a WordPress Recipe Maker card's ingredient groups, notes and summary, which its recipe data leaves out; a summary section before the steps ("Abbreviated recipe") is left out |
 | Type one in | Detail | Built | |
 | Paste many links at once | Key | Built | Runs in the background |
 | Import from text, photos, PDFs, or pages with no recipe data | Headline | Built | AI; any model that reads images and PDFs |

@@ -17,6 +17,7 @@ import {
   firstDuration,
   goodVoices,
   ingredientsInStep,
+  notesInStep,
   pairRecipes,
   splitDurations,
   voiceLabel,
@@ -199,11 +200,20 @@ export function CookView({
     if (!step) return new Set<string>()
     // Cooked with a pairing, a step only uses its own recipe's ingredients.
     const from = "from" in step ? step.from : undefined
+    const sameRecipe = (item: object) => !("from" in item) || item.from === from
     return ingredientsInStep(
-      step.text,
-      ingredients.filter((line) => !("from" in line) || line.from === from)
+      step,
+      ingredients.filter(sameRecipe),
+      steps.filter(sameRecipe)
     )
-  }, [step, ingredients])
+  }, [step, ingredients, steps])
+  // The recipe's notes this step points to: "(Note 3)".
+  const stepNotes = React.useMemo(() => {
+    if (!step) return []
+    const from = "from" in step ? step.from : undefined
+    const notes = paired && from === paired.id ? paired.notes : recipe.notes
+    return notesInStep(step.text, notes)
+  }, [step, paired, recipe.notes])
   const stepLines = ingredients.filter((line) => highlighted.has(line.id))
   const stepIngredients = stepLines.filter((line) => !leftOut.has(line.id))
   const stepLeftOut = stepLines.filter((line) => leftOut.has(line.id))
@@ -856,6 +866,25 @@ export function CookView({
                     })}
                   </span>
                 </p>
+              )}
+
+              {stepNotes.length > 0 && (
+                <div className="grid max-w-prose gap-2">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {t("cook.fromNotes")}
+                  </p>
+                  {stepNotes.map((note) => (
+                    <p
+                      key={note}
+                      className={cn(
+                        "rounded-2xl border p-4 select-text",
+                        DETAIL_TEXT[textSize]
+                      )}
+                    >
+                      {note}
+                    </p>
+                  ))}
+                </div>
               )}
 
               {next && (
