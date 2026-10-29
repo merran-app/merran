@@ -27,9 +27,9 @@ What it takes to run Merran as a public project: the name and license, how peopl
 | `PRIVACY.md` | What Merran sends where (from [operations.md](operations.md#what-leaves-the-server)) |
 | `TRADEMARK.md` | Using the name and logo |
 | `CHANGELOG.md` | A pointer to the GitHub releases, whose notes Release Drafter drafts (see [operations.md](operations.md#releases-and-updates)) |
-| `.github/` | Issue forms (bug with diagnostics, store request, importer request), a pull request template, `CODEOWNERS`, `FUNDING.yml`, Renovate and workflow files |
+| `.github/` | Issue forms, each labelling what it files (added October 28, 2026): a bug report (`bug`) that asks for the version, how Merran runs and its database, the details **Copy diagnostics** will gather once it's built; a feature request, a store request and an importer request (`enhancement`); and links to private security reporting and the docs. Then a pull request template, `CODEOWNERS`, `FUNDING.yml`, Renovate and workflow files |
 
-- **Issues are for bugs; ideas go to Discussions,** with a template that asks what problem it solves. Popular ideas move to the public roadmap.
+- **Ideas come in as issues, through the feature request form, until there are Discussions** (decided October 28, 2026). The plan was issues for bugs and Discussions for ideas, but Discussions aren't turned on, and people were already filing ideas as issues (#43, #45, #46, #49) without being able to label them. The form asks what problem an idea solves and how people handle it today, the questions the public roadmap asks, and labels it `enhancement`. When Discussions are turned on, ideas move there with the same questions. Popular ideas move to the public roadmap.
 - **A public roadmap** on a GitHub Project board, and labels by area (`area:recipes`, `module:stores`) and for newcomers (`good first issue`, `help wanted`).
 - **AI-written contributions** (decided October 15, 2026): Merran itself is built with Claude, so they're welcome, but the contributor must understand and stand behind every line, and the pull request template asks which parts an AI wrote.
 
