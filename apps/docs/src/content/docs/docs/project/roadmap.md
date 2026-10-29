@@ -45,6 +45,10 @@ Start with [the guides](../../) and [integration setup](../../integrations/brows
 - **Meal calendar:** subscribe to the household's meal plan from a calendar app through a revocable, read-only link, with usual meal times and changes for one day. See [the meal calendar](../../use/planning/#subscribe-to-the-meal-calendar). Checks with real calendar apps remain.
 - **Shopping:** prepare the product you buy for each food at each connected store, and order from one store on shopping day. **Covered at home** on the list shows what the pantry kept off it, and using up food that meals on the list were counting on offers to put it back. See [shopping and pantry](../../use/shopping-and-pantry/).
 
+## Built, not released yet
+
+- **Imports through FlareSolverr:** a server admin can connect their own [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr), so links you import from sites that turn Merran away, including ones shared from a phone, can still come in. Background feed reads keep following `robots.txt` as Merran. Until it's released, the [browser extension](../../integrations/browser-extension/) imports from those sites. See [FlareSolverr](../../integrations/flaresolverr/); tracked in [#51](https://github.com/merran-app/merran/issues/51).
+
 ## Up next
 
 Our immediate focus is checking the released workflows in real use before choosing the next feature to build.

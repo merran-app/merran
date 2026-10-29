@@ -26,7 +26,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio, which thes
 5. **Households never see each other.** Enforced by a scoped data layer and tests generated from the schema, not by remembering.
 6. **The AI proposes, people apply.** Carried over unchanged.
 7. **Boring to run.** One image, one compose file, migrations on start (automatic pre-migration backups remain planned), signed releases.
-8. **Honest on the internet.** Merran says who it is when it fetches pages, and doesn't try to get past bot blocks.
+8. **Honest on the internet.** Merran says who it is when it fetches pages, and doesn't try to get past bot blocks on its own. A server admin can point it at their own FlareSolverr for imports a person asks for (decided and built October 28, 2026, not released yet: [flaresolverr-imports.md](flaresolverr-imports.md)).
 
 ## The docs
 
@@ -42,6 +42,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio, which thes
 | [open-source.md](open-source.md) | Name and license, contributing, CI, dependencies, security reports, docs site, funding, launch |
 | [shopping-and-planning-feedback.md](shopping-and-planning-feedback.md) | October 18 usage feedback: list completion after sending to stores, ingredient purpose and swaps while shopping, and rearranging automatically planned meals |
 | [store-product-mappings.md](store-product-mappings.md) | Proposed page for preparing a household's usual products at multiple stores, and choosing the ordering store on shopping day |
+| [flaresolverr-imports.md](flaresolverr-imports.md) | Importing links from sites that turn Merran away, through the server admin's own FlareSolverr, and what stays honest (built, not released yet) |
 | [features.md](features.md) | Every feature with its importance and status, for the marketing and docs sites |
 | [scope.md](scope.md) | Where each REFERENCE feature lands, what's not coming over, and the build order |
 | [foods.md](foods.md) | One vocabulary of foods: names in every language, kinds of, brands, what Merran knows about each, and matching a line to its food |
@@ -73,6 +74,7 @@ The REFERENCE app's docs described each feature in detail; they're in the repo's
 | Telemetry | Opt-in, a daily anonymous summary, shown before it's sent, to a small receiver the project runs | Useful to the project, safe for self-hosters |
 | Error tracking | The operator's own Sentry-compatible DSN, plus a built-in Problems page | Nothing sent to the project |
 | Starter collections | A rule per collection plus a few classics, filled from the recipe sites' feeds; shipped with releases, never fetched from the project | Decided October 16, 2026: they stay fresh without hardcoded links or calling home |
+| Sites that turn Merran away | An optional module that sends imports a person asks for through the server admin's own FlareSolverr; never feed reads, collections, Discover or photos | Decided October 28, 2026, from [#49](https://github.com/merran-app/merran/issues/49): phone shares and the API can't use the extension, and a person importing a page is what a browser does ([plan](flaresolverr-imports.md)) |
 
 Decided with the user on October 15, 2026, from the plan's open questions:
 

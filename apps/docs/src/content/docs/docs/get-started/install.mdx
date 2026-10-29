@@ -247,17 +247,18 @@ Manager instructions follow their platform documentation; these particular TrueN
 ## Optional services with Compose
 
 <details className="install-advanced">
-<summary>Advanced: add Postgres, Kokoro voice or a Cloudflare Tunnel</summary>
+<summary>Advanced: add Postgres, Kokoro voice, FlareSolverr or a Cloudflare Tunnel</summary>
 
 Choose the services you actually want. Postgres replaces SQLite; Kokoro reads cooking steps aloud; neither is needed for core recipes, planning, or shopping.
 
-| Setup                     | What to run                           | What to configure in Merran                                      |
-| ------------------------- | ------------------------------------- | ---------------------------------------------------------------- |
-| SQLite + device speech    | `merran` only                         | Nothing additional                                               |
-| Postgres                  | `merran` + `db`                       | `DATABASE_URL`                                                   |
-| Self-hosted Kokoro speech | `merran` + `kokoro`                   | `MERRAN_VOICE=kokoro` and `MERRAN_KOKORO_URL=http://kokoro:8880` |
-| Both                      | `merran` + `db` + `kokoro`            | Database URL and voice settings                                  |
-| Cloudflare Tunnel         | Add `cloudflared` to one of the above | Public hostname, tunnel token, and trusted-proxy configuration   |
+| Setup                           | What to run                           | What to configure in Merran                                      |
+| ------------------------------- | ------------------------------------- | ---------------------------------------------------------------- |
+| SQLite + device speech          | `merran` only                         | Nothing additional                                               |
+| Postgres                        | `merran` + `db`                       | `DATABASE_URL`                                                   |
+| Self-hosted Kokoro speech       | `merran` + `kokoro`                   | `MERRAN_VOICE=kokoro` and `MERRAN_KOKORO_URL=http://kokoro:8880` |
+| FlareSolverr (not released yet) | `merran` + `flaresolverr`             | `MERRAN_FLARESOLVERR_URL=http://flaresolverr:8191`               |
+| Both                            | `merran` + `db` + `kokoro`            | Database URL and voice settings                                  |
+| Cloudflare Tunnel               | Add `cloudflared` to one of the above | Public hostname, tunnel token, and trusted-proxy configuration   |
 
 **Existing SQLite users:** adding Kokoro can use your existing data. Selecting Postgres does **not** migrate that data: it connects Merran to another database. Use the combined Postgres examples for a **fresh installation**; for an existing household, first read [migration limits](../../run/postgres/#moving-an-existing-installation) and keep your original installation and backup.
 
@@ -270,7 +271,7 @@ Use the project Compose profiles, or a complete manager file with **no profiles 
 
 #### Project Compose file: enable the profiles
 
-This method uses the full `compose.yaml` downloaded in the **Docker Compose** tab above, not one of the smaller host-manager files. The full file already defines `db`, `kokoro`, and `cloudflared`, behind profiles.
+This method uses the full `compose.yaml` downloaded in the **Docker Compose** tab above, not one of the smaller host-manager files. The full file already defines `db`, `kokoro`, `flaresolverr`, and `cloudflared`, behind profiles.
 
 For a **new Postgres + Kokoro installation**, edit `.env` beside `compose.yaml`. Replace the existing password line rather than adding a duplicate, and add these values:
 
@@ -296,6 +297,7 @@ Keeping `COMPOSE_PROFILES` in `.env` also enables those services during later `p
 - **Postgres only:** use `COMPOSE_PROFILES=postgres`, keep the password/database URL, and omit the two voice settings.
 - **Kokoro with existing SQLite:** use `COMPOSE_PROFILES=voice` and the two voice settings; leave `DATABASE_URL` unset.
 - **Postgres and Kokoro:** use the complete settings block above.
+- **FlareSolverr (not released yet):** add `flaresolverr` to `COMPOSE_PROFILES` and set `MERRAN_FLARESOLVERR_URL=http://flaresolverr:8191`. It's for importing from sites that turn servers away; see [FlareSolverr](../../integrations/flaresolverr/).
 
 The project file uses `./data/app` for Merran and `./data/postgres` for Postgres. Only Merran's port 3000 is published; services reach each other by Docker names `db` and `kokoro`, not `localhost`. The `.env` file supplies both Compose substitutions and Merran's environment through the project's `env_file` entry. These instructions do not make the smaller SQLite examples gain additional services automatically.
 

@@ -3,6 +3,7 @@ import type { AnySetting } from "../core/settings.ts"
 import { AI } from "./ai/settings.ts"
 import { EMAIL } from "./email/settings.ts"
 import { ERROR_TRACKING } from "./error-tracking/settings.ts"
+import { FLARESOLVERR } from "./flaresolverr/settings.ts"
 import { NUTRITION } from "./nutrition/settings.ts"
 import { PHOTOS } from "./photos/settings.ts"
 import { SITES } from "./sites/settings.ts"
@@ -24,6 +25,7 @@ export const MODULE_SETTINGS: readonly AnySetting[] = [
   ...Object.values(VIDEO),
   ...Object.values(NUTRITION),
   ...Object.values(SITES),
+  ...Object.values(FLARESOLVERR),
   ...Object.values(PHOTOS),
   ...Object.values(VOICE),
   ...Object.values(STORE_SETTINGS),

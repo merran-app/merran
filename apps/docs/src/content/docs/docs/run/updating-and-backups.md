@@ -39,7 +39,7 @@ A household export is not a full server backup: it does not replace accounts, se
 The `edge` image is published after checks pass for changes affecting the application image on main. Documentation-only changes do not publish another image. The `next` and versioned release channels are unchanged.
 :::
 
-If using the project Compose file's optional database, voice or tunnel, keep the matching `COMPOSE_PROFILES` value in `.env` (for example `postgres,voice`), or pass the same `--profile` flags when pulling and starting. The self-contained host-manager stacks have no profiles. Postgres backups need both a database dump and app files; Kokoro does not replace either. See [the complete installation examples](../../get-started/install/#optional-services-with-compose).
+If using the project Compose file's optional database, voice, FlareSolverr or tunnel, keep the matching `COMPOSE_PROFILES` value in `.env` (for example `postgres,voice`), or pass the same `--profile` flags when pulling and starting. FlareSolverr keeps nothing worth backing up. The self-contained host-manager stacks have no profiles. Postgres backups need both a database dump and app files; Kokoro does not replace either. See [the complete installation examples](../../get-started/install/#optional-services-with-compose).
 
 Read the [release notes](https://github.com/merran-app/merran/releases), make a backup, then run from the Compose directory:
 

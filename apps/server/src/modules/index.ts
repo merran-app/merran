@@ -2,6 +2,7 @@ import { authentication } from "./auth/index.ts"
 import { ai } from "./ai/index.ts"
 import { email } from "./email/index.ts"
 import { errorTracking } from "./error-tracking/index.ts"
+import { flaresolverr } from "./flaresolverr/index.ts"
 import { nutrition } from "./nutrition/index.ts"
 import { sites } from "./sites/index.ts"
 import { stores } from "./stores/index.ts"
@@ -19,6 +20,7 @@ export const MODULES: readonly Module[] = [
   video,
   nutrition,
   sites,
+  flaresolverr,
   photos,
   voice,
   stores,

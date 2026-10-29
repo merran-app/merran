@@ -65,6 +65,7 @@ test("the next summary can be seen before saying yes to it", async () => {
       video: false,
       nutrition: false,
       sites: true,
+      flaresolverr: false,
       photos: false,
       voice: false,
       stores: false,
