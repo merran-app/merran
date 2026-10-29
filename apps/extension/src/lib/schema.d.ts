@@ -3332,6 +3332,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/settings/server/flaresolverr/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check FlareSolverr answers
+         * @description Server admins only. Asks FlareSolverr, at its saved address, which version it is. Opens no page.
+         */
+        post: operations["testFlareSolverr"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/settings/server/jobs": {
         parameters: {
             query?: never;
@@ -22617,6 +22637,65 @@ export interface operations {
             };
             /** @description Not allowed. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    testFlareSolverr: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description FlareSolverr answered. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description FlareSolverr's version, when it says. */
+                        version: string | null;
+                    };
+                };
+            };
+            /** @description FlareSolverr's address isn't set. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Nothing answered at the address, or it isn't FlareSolverr. */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

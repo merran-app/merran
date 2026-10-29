@@ -391,7 +391,7 @@ export function ServerAiPolicyCard() {
           </Field>
         </FieldGroup>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="justify-end">
         <Button
           disabled={(draft === null && limitText === null) || saving}
           onClick={() => void save()}

@@ -431,6 +431,17 @@ Read recipe sites' feeds in the background, for following sites and starter coll
 
 [Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/sites/settings.ts)
 
+## flaresolverr.url
+
+Where FlareSolverr answers, like http://flaresolverr:8191. It may be on the home network. Merran asks it for a page only when someone imports a link and the site turned Merran away; never for background reads or photos.
+
+- **Scope:** server
+- **Type:** text
+- **Default:** Unset
+- **Environment:** `MERRAN_FLARESOLVERR_URL`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/flaresolverr/settings.ts)
+
 ## photos.enabled
 
 Enable optional AI photos for recipes without a photo. Requires eligible OpenAI or Google access; provider charges vary. Generated photos never replace a real photo.

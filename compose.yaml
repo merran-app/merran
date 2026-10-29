@@ -5,7 +5,8 @@
 #   docker compose --profile postgres up -d    on Postgres: set POSTGRES_PASSWORD
 #                                              and DATABASE_URL in .env first
 #
-# Add --profile voice for Kokoro, a voice for the cook view, and --profile
+# Add --profile voice for Kokoro, a voice for the cook view, --profile
+# flaresolverr for importing from sites that turn servers away, and --profile
 # tunnel for a Cloudflare Tunnel; more than one profile works too.
 # Or save COMPOSE_PROFILES=postgres,voice in .env to keep those services
 # included in later commands. See the installation guide for complete setup.
@@ -59,6 +60,20 @@ services:
     image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
     profiles: [voice]
     restart: unless-stopped
+    # No published ports: only Merran talks to it.
+
+  # FlareSolverr opens a page in a real browser when a recipe site turns
+  # Merran away, so links people import from it can still come in. Merran's
+  # background reads of recipe sites never use it. It starts a browser for
+  # each import, which takes memory while it runs. Then set its address,
+  # http://flaresolverr:8191, in Settings → This server → FlareSolverr (or
+  # MERRAN_FLARESOLVERR_URL in .env).
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    profiles: [flaresolverr]
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-UTC}
     # No published ports: only Merran talks to it.
 
   # A Cloudflare Tunnel, for reaching Merran from outside without opening a

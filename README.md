@@ -51,7 +51,7 @@ Core recipes, planning, lists, and pantry tracking work without AI. AI, nutritio
 
 ## Get started
 
-The [installation guide](https://merran.app/docs/get-started/install/) includes TrueNAS, Dockge, and Portainer examples, plus complete [Postgres, Kokoro voice, and tunnel setup](https://merran.app/docs/get-started/install/#optional-services-with-compose).
+The [installation guide](https://merran.app/docs/get-started/install/) includes TrueNAS, Dockge, and Portainer examples, plus complete [Postgres, Kokoro voice, and tunnel setup](https://merran.app/docs/get-started/install/#optional-services-with-compose). The project's `compose.yaml` also has FlareSolverr, for importing from sites that turn servers away (not released yet).
 
 Merran runs in one Docker container with SQLite included. Postgres is optional. The image includes application dependencies; no separate Node package installation is needed on the host.
 

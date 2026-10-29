@@ -66,6 +66,8 @@ Household members can view shared details, people and tastes; household admins s
 
 See [household roles and permissions](../household-roles/) for who can change each scope. Server administration and household ownership are separate roles.
 
+For importing from sites that turn servers away, a server admin can connect their own FlareSolverr (not released yet) with `MERRAN_FLARESOLVERR_URL` or **Recipe services → FlareSolverr**. See [FlareSolverr](../../integrations/flaresolverr/).
+
 For AI, follow [AI setup and costs](../ai-setup/) to connect providers, select models, manage shared and household keys, and troubleshoot requests. Read [AI privacy and data flow](../../project/ai-privacy/) before enabling external processing.
 
 ## Secrets and data

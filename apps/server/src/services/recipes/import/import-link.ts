@@ -1,6 +1,8 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import sharp from "sharp"
 import { AppError } from "../../../core/errors.ts"
+import { FLARESOLVERR } from "../../../modules/flaresolverr/settings.ts"
+import { solvePage } from "../../fetch/flaresolverr.ts"
 import type { Fetcher } from "../../fetch/public-fetch.ts"
 import type { FileStore } from "../../storage/files.ts"
 import { MAX_PHOTO_BYTES, removePhoto, storePhoto } from "../photos/photos.ts"
@@ -63,6 +65,27 @@ export type ImportResult = {
 }
 
 /**
+ * The page at a link someone's importing. When the site turns Merran away
+ * and the server admin has set up FlareSolverr, it's the page as
+ * FlareSolverr's browser saw it instead.
+ */
+async function fetchPage(
+  deps: Pick<AiDeps, "fetcher" | "settings">,
+  url: string
+) {
+  try {
+    return await deps.fetcher(url)
+  } catch (error) {
+    if (!(error instanceof AppError) || error.code !== "site_refused") {
+      throw error
+    }
+    const address = await deps.settings.server(FLARESOLVERR.url)
+    if (!address) throw error
+    return solvePage(deps.fetcher, address, url)
+  }
+}
+
+/**
  * Adds a recipe from a link, using the recipe data most recipe sites put in
  * their pages for search engines, and its photo. A page without it is read
  * by AI, when the household has it. A link imported before gives back that
@@ -86,7 +109,6 @@ export async function importLink(
       : null
   }
 
-  const { fetcher, files } = deps
   const url = normalizeLink(options.url)
   const known = await already([url])
   if (known) return known
@@ -94,7 +116,7 @@ export async function importLink(
     return importVideo(em, deps, { ...options, url, already })
   }
 
-  const page = await fetcher(url)
+  const page = await fetchPage(deps, url)
   if (page.contentType && !/html|xml/i.test(page.contentType)) {
     throw new AppError(
       "unprocessable",

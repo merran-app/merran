@@ -94,6 +94,7 @@ Every outside call Merran can make, when, and how to stop it. This table also go
 | Recipe sites and feeds | Importing a link; the suggested and followed sites' feeds every 6 hours, their new posts and photos; starter collections' classics weekly; Discover results | A normal page request, with Merran's user agent, following `robots.txt` in the background | Not importing; Recipe sites module off |
 | TikTok, YouTube, Instagram, Facebook | Importing a video | Requests made by yt-dlp | Video import module off |
 | Kokoro, at the address the server admin gave | Reading cook steps aloud, when it's the server voice | The words of each step, once | Voice set to each device |
+| FlareSolverr, at the address the server admin gave (not released yet) | Importing a link a person asked for, after the site turned Merran away | The link; FlareSolverr's browser then opens it | No FlareSolverr address |
 | GitHub releases | yt-dlp updating itself, weekly | A download request | `MERRAN_YTDLP_AUTO_UPDATE=false` |
 | GitHub releases | The update check, every 6 hours | A request for the latest release | `MERRAN_UPDATE_CHECK=false` |
 | USDA | Working out nutrition | Food names | No USDA key |
@@ -127,7 +128,7 @@ Runtime dependency fix, October 18, 2026: shared telemetry imports zod at runtim
   docker run -d --name merran -p 3000:3000 -v ./data:/data ghcr.io/merran-app/merran
   ```
 
-- **The compose file** does the same, with room to grow: `merran` alone by default, plus optional services behind profiles: `postgres` (`postgres:18`), `voice` (Kokoro) and `tunnel` (cloudflared).
+- **The compose file** does the same, with room to grow: `merran` alone by default, plus optional services behind profiles: `postgres` (`postgres:18`), `voice` (Kokoro), `flaresolverr` (FlareSolverr, for importing from sites that turn servers away; added October 28, 2026, not released yet) and `tunnel` (cloudflared).
 - **For Postgres:** `docker compose --profile postgres up -d`, with `POSTGRES_PASSWORD` set in `.env`. The compose file points `DATABASE_URL` at it. An existing Postgres works too: set `DATABASE_URL` and skip the profile.
 - `docker compose --profile voice up -d` adds Kokoro; no editing the file.
 
@@ -142,7 +143,7 @@ Runtime dependency fix, October 18, 2026: shared telemetry imports zod at runtim
 | Kubernetes | A Helm chart | When someone asks |
 | CasaOS, Umbrel, YunoHost | Their app stores | When someone asks |
 
-**What it needs:** about 512 MB of RAM on SQLite, or 1 GB with Postgres alongside; Kokoro adds 1 to 2 GB. Two CPU cores are plenty. On SQLite, the data folder must be on a local disk, not a network share (see [platform.md](platform.md#the-database)).
+**What it needs:** about 512 MB of RAM on SQLite, or 1 GB with Postgres alongside; Kokoro adds 1 to 2 GB, and FlareSolverr starts a browser for each import it's asked for. Two CPU cores are plenty. On SQLite, the data folder must be on a local disk, not a network share (see [platform.md](platform.md#the-database)).
 
 ### Reaching it from outside
 

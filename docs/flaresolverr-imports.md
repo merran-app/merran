@@ -1,6 +1,6 @@
-# Imports through FlareSolverr — plan
+# Imports through FlareSolverr
 
-October 28, 2026. This plans [#51](https://github.com/merran-app/merran/issues/51), split from [#49](https://github.com/merran-app/merran/issues/49). It's Planned in [features.md](features.md), not built.
+October 28, 2026. This plans [#51](https://github.com/merran-app/merran/issues/51), split from [#49](https://github.com/merran-app/merran/issues/49). Built the same day, after alpha.6, and not released yet; the public site marks it so.
 
 ## Why
 
@@ -33,8 +33,8 @@ And never for:
 
 ## How an import uses it
 
-1. `importLink` fetches the page directly, as today, with `keepErrors` so it can see the answer.
-2. It asks FlareSolverr only when the module is on and the site turned Merran away: a 403 or 429, or a 503 with Cloudflare's `cf-mitigated: challenge` header. Any other answer is handled as today.
+1. `importLink` fetches the page directly, as today.
+2. It asks FlareSolverr only when the module is on and the fetch threw `site_refused`: a 403 or 429, or Cloudflare's check, an answer with its `cf-mitigated: challenge` header. The fetcher counts that header as the site turning Merran away everywhere, so background reads leave a site behind Cloudflare's check alone for a while too, as they do after a 403. Any other failure is handled as today.
 3. It sends `{"cmd": "request.get", "url": <the link>, "maxTimeout": 55000}` to `<address>/v1`, through the fetcher with `homeNetwork`. FlareSolverr can take most of a minute, so the fetcher gets a `timeoutMs` option (15 seconds unless set), 60 seconds here.
 4. With `status: "ok"` and a `solution.status` below 400, `solution.response` (the page's HTML) and `solution.url` (where it ended up) go to `importHtml` as a fetched page would. Recipe data, AI reading and the duplicate check by final link all work as today.
 
@@ -44,8 +44,8 @@ FlareSolverr opens a temporary browser for each request without a `session`, whi
 
 FlareSolverr's browser can reach whatever its container can, and the fetcher's address checks don't apply inside it. So:
 
-- **Before:** the link goes through `checkLink`, and the direct fetch has already reached it through the public agent, so its name resolved to a public address.
-- **After:** `solution.url` is looked up again, and a page that ended up on a private address is refused with the private-address error, even though FlareSolverr fetched it. A site can't steer FlareSolverr's browser onto the home network and have Merran import what it found.
+- **Before:** the link goes through `checkPublicLink`, which looks its name up again and refuses it unless every address is public. The direct fetch has already reached it through the public agent too.
+- **After:** `solution.url` goes through `checkPublicLink` as well, and a page that ended up on a private address, or on a name this server can't look up, is refused with the private-address error, even though FlareSolverr fetched it. A site can't steer FlareSolverr's browser onto the home network and have Merran import what it found.
 - **The guide says** what's left: the browser inside FlareSolverr can still reach the network it runs on, so run it on a network of its own if that worries you.
 
 ## Photos
@@ -58,27 +58,18 @@ Photos are fetched as today, with Merran's own user agent and the page as the re
 |---|---|
 | The module is off | Today's message: "That site turned Merran away. Type the recipe in instead." |
 | FlareSolverr answers `status: "error"`, times out, or its page is still a 403 or 429 | "That site turned Merran away, even through FlareSolverr. Import it with the browser extension, or type it in." |
-| FlareSolverr can't be reached | The same; the server logs a warning naming FlareSolverr's address, and **Test** in Settings says why |
+| FlareSolverr can't be reached | The same; **Test** in Settings says "Couldn't reach FlareSolverr at \<address\>." |
+| Something else answers at the address | **Test** says "That address answered, but not like FlareSolverr does." |
 | Its page has no recipe data and there's no AI | Today's message for a page with no recipe data |
 
-## Tests
+## Where it is
 
-Against a fake FlareSolverr on a local server, as the home-network fetch test does:
+- `services/fetch/flaresolverr.ts`: `solvePage` and `checkFlareSolverr`, with tests against a fake FlareSolverr for what's sent, the address with or without `/v1`, its failures, and private links before and after
+- `services/fetch/public-fetch.ts`: `checkPublicLink`, the `timeoutMs` option, and Cloudflare's header counted as turned away, each tested against a local server
+- `services/recipes/import/import-link.ts`: `fetchPage`, the one place an import falls back to FlareSolverr. Feed reads, collections and Discover open pages through `openPage` and `readFeed`, which never see the setting
+- `modules/flaresolverr/`, and `POST /api/settings/server/flaresolverr/test`, for server admins
+- The web app's FlareSolverr card under **Recipe services**, checked in the browser against a stand-in that answers `sessions.list`
+- `compose.yaml` has a `flaresolverr` profile, like Kokoro's `voice`
+- The site's [FlareSolverr guide](../apps/docs/src/content/docs/docs/integrations/flaresolverr.md) covers an existing FlareSolverr, the profile, other Compose files, `docker run`, and keeping it to its network
 
-- Asked only after a refusal, and only when the module has an address
-- Not asked for feed reads, collections or Discover: those run with FlareSolverr set up and never call it
-- Its HTML imports like a fetched page, and its final link counts for duplicates
-- A link to a private address is never sent, and a page that ended up on one is refused
-- Errors, timeouts and pages it couldn't get past become the messages above
-- The Test route, for server admins only
-
-No new entities, so no migration.
-
-## When it's built
-
-- [features.md](features.md): the row goes from Planned to Built, and the public [roadmap](../apps/docs/src/content/docs/docs/project/roadmap.md) moves it out of Planned
-- The [README](README.md#principles)'s principle 8 and [platform.md](platform.md#security): say it's built
-- `pnpm --filter @merran/docs settings:generate`, `.env.example`, and the site's `run/configuration.md`
-- A guide on the site for running FlareSolverr beside Merran, with a compose example and the network advice, and the import guide's word on sites that turn Merran away
-- `pnpm --filter @merran/server openapi`, then both `schema.d.ts` files, for the Test route
-- `en.json` for the card and the new message
+No new entities, so no migration. Imports through a real FlareSolverr and a site behind Cloudflare still need checking by hand.

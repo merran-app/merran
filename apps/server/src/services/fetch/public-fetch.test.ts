@@ -3,6 +3,7 @@ import type { AddressInfo } from "node:net"
 import { describe, expect, test } from "vitest"
 import {
   checkLink,
+  checkPublicLink,
   createPublicFetcher,
   isBlockedAddress,
 } from "./public-fetch.ts"
@@ -50,6 +51,43 @@ describe("public fetches", () => {
     await expect(fetcher(`http://localhost:${port}/`)).rejects.toThrow(
       /private network/
     )
+    server.close()
+  })
+
+  test("look a page's address up again, for pages something else fetched", async () => {
+    expect((await checkPublicLink("http://93.184.216.34/soup")).pathname).toBe(
+      "/soup"
+    )
+    await expect(checkPublicLink("http://localhost/")).rejects.toThrow(
+      /private network/
+    )
+    await expect(checkPublicLink("http://10.0.0.1/")).rejects.toThrow(
+      /private network/
+    )
+    await expect(
+      checkPublicLink("http://no-such-name.invalid/")
+    ).rejects.toThrow(/private network/)
+  })
+
+  test("count Cloudflare's check as the site turning Merran away", async () => {
+    // Cloudflare's "Just a moment..." page, waiting for a browser.
+    const server = createServer((req, res) => {
+      if (req.url === "/slow") return
+      res.writeHead(503, { "cf-mitigated": "challenge" })
+      res.end("Just a moment...")
+    })
+    await new Promise<void>((resolve) => server.listen(0, resolve))
+    const { port } = server.address() as AddressInfo
+    const fetcher = createPublicFetcher({ version: "0.0.0" })
+    const site = `http://127.0.0.1:${port}`
+
+    await expect(
+      fetcher(`${site}/soup`, { homeNetwork: true })
+    ).rejects.toMatchObject({ code: "site_refused" })
+    await expect(
+      fetcher(`${site}/slow`, { homeNetwork: true, timeoutMs: 100 })
+    ).rejects.toMatchObject({ code: "site_timeout" })
+    server.closeAllConnections()
     server.close()
   })
 

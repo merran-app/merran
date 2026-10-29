@@ -1,4 +1,5 @@
 import { lookup } from "node:dns"
+import { lookup as lookUpAll } from "node:dns/promises"
 import { BlockList, isIP } from "node:net"
 import { Agent, fetch } from "undici"
 import { AppError } from "../../core/errors.ts"
@@ -129,6 +130,8 @@ export type FetchOptions = {
   homeNetwork?: boolean
   /** Hands back an error answer, with its status, rather than throwing. */
   keepErrors?: boolean
+  /** How long to wait for all of it: 15 seconds unless it's known to be slow. */
+  timeoutMs?: number
 }
 
 export type Fetcher = (
@@ -167,12 +170,44 @@ const privateAddress = () =>
     "That link goes to a private network address, which Merran won't fetch."
   )
 
+/**
+ * A link whose name leads only to public addresses, looked up now: for a
+ * page something else fetched, like FlareSolverr, where Merran's own lookup
+ * never ran. A name this server can't look up may be one only the home
+ * network knows, so it's refused too.
+ */
+export async function checkPublicLink(raw: string): Promise<URL> {
+  const url = checkLink(raw)
+  const host = url.hostname.replace(/^\[|\]$/g, "")
+  if (isIP(host)) return url
+  const addresses = await lookUpAll(host, { all: true }).catch(() => [])
+  if (
+    addresses.length === 0 ||
+    addresses.some((found) => isBlockedAddress(found.address))
+  ) {
+    throw privateAddress()
+  }
+  return url
+}
+
+/**
+ * The site said no: a 403 or 429, or Cloudflare's check waiting for a
+ * browser, which is a 503 or a 403 with its `cf-mitigated` header.
+ */
+function turnedAway(response: { status: number; headers: Headers }) {
+  return (
+    response.status === 403 ||
+    response.status === 429 ||
+    response.headers.get("cf-mitigated") === "challenge"
+  )
+}
+
 const TIMEOUT_MS = 15_000
 const MAX_REDIRECTS = 5
 
 /**
  * Makes the fetcher. It follows up to 5 redirects, checking each one, and
- * gives up after 15 seconds or `maxBytes`.
+ * gives up after 15 seconds (or `timeoutMs`) or `maxBytes`.
  */
 export function createPublicFetcher({ version }: { version: string }): Fetcher {
   const userAgent = `Merran/${version} (+https://merran.app)`
@@ -189,11 +224,12 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
       headers = {},
       homeNetwork = false,
       keepErrors = false,
+      timeoutMs = TIMEOUT_MS,
     } = {}
   ) => {
     let url = checkLink(raw, { homeNetwork })
     const start = url.origin
-    const signal = AbortSignal.timeout(TIMEOUT_MS)
+    const signal = AbortSignal.timeout(timeoutMs)
 
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
       let response
@@ -268,7 +304,7 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
       }
       if (!response.ok && !keepErrors) {
         await response.body?.cancel()
-        throw response.status === 403 || response.status === 429
+        throw turnedAway(response)
           ? new AppError(
               "upstream",
               "site_refused",

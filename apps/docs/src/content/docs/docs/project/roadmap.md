@@ -45,6 +45,10 @@ Start with [the guides](../../) and [integration setup](../../integrations/brows
 - **Meal calendar:** subscribe to the household's meal plan from a calendar app through a revocable, read-only link, with usual meal times and changes for one day. See [the meal calendar](../../use/planning/#subscribe-to-the-meal-calendar). Checks with real calendar apps remain.
 - **Shopping:** prepare the product you buy for each food at each connected store, and order from one store on shopping day. **Covered at home** on the list shows what the pantry kept off it, and using up food that meals on the list were counting on offers to put it back. See [shopping and pantry](../../use/shopping-and-pantry/).
 
+## Built, not released yet
+
+- **Imports through FlareSolverr:** a server admin can connect their own [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr), so links you import from sites that turn Merran away, including ones shared from a phone, can still come in. Background feed reads keep following `robots.txt` as Merran. Until it's released, the [browser extension](../../integrations/browser-extension/) imports from those sites. See [FlareSolverr](../../integrations/flaresolverr/); tracked in [#51](https://github.com/merran-app/merran/issues/51).
+
 ## Up next
 
 Our immediate focus is checking the released workflows in real use before choosing the next feature to build.
@@ -63,7 +67,6 @@ These are features we intend to build. Their order here does not indicate priori
 - **Offline recipes, plans, and shopping lists:** keep previously opened recipes, the week's plan, and shopping lists useful without a connection, with list check-offs syncing when you reconnect.
 - **Prep reminders:** help you remember to thaw ingredients, start a marinade, or begin cooking before dinner is due.
 - **Webhooks:** let tools such as Home Assistant and n8n react when recipes, plans, lists, or pantry items change.
-- **Imports through FlareSolverr:** let a server admin connect their own [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr), so links you import from sites that turn Merran away, including ones shared from a phone, can still come in. Background feed reads keep following `robots.txt` as Merran. Until then, the [browser extension](../../integrations/browser-extension/) imports from those sites. Tracked in [#51](https://github.com/merran-app/merran/issues/51).
 - **Translations:** make the interface available beyond English, including the planned option to translate recipes as they are imported. Measurement conversion already works.
 - **After-cooking pantry checks:** offer a checklist of ingredients that ran out, with an option to put them on the shopping list. Existing planned-meal deductions remain available.
 - **Server administration:** add automatic backups before migrations, a consolidated Problems page, an audit log, and a guided SQLite-to-Postgres transfer. Manual restore smoke tests and secret rotation already exist; they do not implement these additions.

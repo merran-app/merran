@@ -842,6 +842,17 @@
         "enabledHint": "Off, households can't follow sites, and collections keep only what's been read already.",
         "saved": "Saved."
       },
+      "flaresolverr": {
+        "title": "FlareSolverr",
+        "description": "Some recipe sites turn servers away. With your own FlareSolverr beside Merran, links people import from those sites, including ones shared from a phone, can still come in. Merran's background reads of recipe sites never use it.",
+        "url": "Address",
+        "urlHint": "Where FlareSolverr answers, like http://flaresolverr:8191. It may be on your home network. Leave it empty to turn FlareSolverr off.",
+        "test": "Test",
+        "testHint": "Asks FlareSolverr which version it is. It opens no page.",
+        "ready": "FlareSolverr {{version}} is ready.",
+        "readyNoVersion": "FlareSolverr is ready.",
+        "saved": "Saved."
+      },
       "saved": "Saved.",
       "photos": {
         "title": "AI photos",

@@ -14,6 +14,7 @@ import { AuthCard } from "@/features/server/auth-card"
 import { OAuthClientsCard } from "@/features/server/oauth-clients-card"
 import { ErrorTrackingCard } from "@/features/server/error-tracking-card"
 import { EmailCard } from "@/features/server/email-card"
+import { FlareSolverrCard } from "@/features/server/flaresolverr-card"
 import { JobsCard, serverJobsQuery } from "@/features/server/jobs-card"
 import { KrogerCard } from "@/features/server/kroger-card"
 import { NutritionCard } from "@/features/server/nutrition-card"
@@ -90,6 +91,7 @@ function ServerSettings() {
               <VideoCard />
               <NutritionCard />
               <SitesCard />
+              <FlareSolverrCard />
               <PhotosCard />
               <VoiceCard />
             </>

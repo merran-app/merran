@@ -30472,6 +30472,88 @@
         }
       }
     },
+    "/api/settings/server/flaresolverr/test": {
+      "post": {
+        "operationId": "testFlareSolverr",
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Check FlareSolverr answers",
+        "description": "Server admins only. Asks FlareSolverr, at its saved address, which version it is. Opens no page.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "FlareSolverr answered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "FlareSolverr's version, when it says."
+                    }
+                  },
+                  "required": [
+                    "version"
+                  ],
+                  "example": {
+                    "version": "3.3.21"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "FlareSolverr's address isn't set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Nothing answered at the address, or it isn't FlareSolverr.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/settings/server/jobs": {
       "get": {
         "operationId": "listServerJobs",
