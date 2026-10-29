@@ -87,4 +87,24 @@ describe("public fetches", () => {
     ).rejects.toThrow(/redirects somewhere else/)
     server.close()
   })
+
+  test("hand back a 304 as an answer, not a broken redirect", async () => {
+    // Like a recipe site's feed that hasn't changed since Merran last read
+    // it: a 304, with no location to go to.
+    const server = createServer((_, res) => {
+      res.writeHead(304, { etag: '"1"' })
+      res.end()
+    })
+    await new Promise<void>((resolve) => server.listen(0, resolve))
+    const { port } = server.address() as AddressInfo
+    const fetcher = createPublicFetcher({ version: "0.0.0" })
+    const feed = `http://127.0.0.1:${port}/feed`
+    const unchanged = { homeNetwork: true, headers: { "if-none-match": '"1"' } }
+
+    const answer = await fetcher(feed, { ...unchanged, keepErrors: true })
+    expect(answer.status).toBe(304)
+    expect(answer.etag).toBe('"1"')
+    await expect(fetcher(feed, unchanged)).rejects.toThrow(/error \(304\)/)
+    server.close()
+  })
 })
