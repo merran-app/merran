@@ -160,6 +160,62 @@ describe("recipe data", () => {
     expect(result?.input.ingredients).toEqual(["1 slice bread"])
   })
 
+  test("leaves out a summary the site puts before the steps", () => {
+    // Like RecipeTin Eats: the whole recipe in a line, then the steps.
+    const result = readRecipeData(
+      page({
+        "@type": "Recipe",
+        name: "Orange chicken",
+        recipeIngredient: ["600g chicken thighs"],
+        recipeInstructions: [
+          {
+            "@type": "HowToSection",
+            name: "ABBREVIATED RECIPE",
+            itemListElement: [
+              { "@type": "HowToStep", text: "Coat, fry, toss in sauce." },
+            ],
+          },
+          {
+            "@type": "HowToSection",
+            name: "FULL RECIPE",
+            itemListElement: [{ "@type": "HowToStep", text: "Coat chicken." }],
+          },
+          {
+            "@type": "HowToSection",
+            name: "Orange sauce:",
+            itemListElement: [{ "@type": "HowToStep", text: "Simmer." }],
+          },
+        ],
+      }),
+      "https://example.com/orange-chicken"
+    )!
+    // "Full recipe" says nothing as a section.
+    expect(result.input.steps).toEqual([
+      "Coat chicken.",
+      "# Orange sauce",
+      "Simmer.",
+    ])
+  })
+
+  test("keeps a summary that's all the steps there are", () => {
+    const result = readRecipeData(
+      page({
+        "@type": "Recipe",
+        name: "Toast",
+        recipeIngredient: ["1 slice bread"],
+        recipeInstructions: [
+          {
+            "@type": "HowToSection",
+            name: "Quick version",
+            itemListElement: [{ "@type": "HowToStep", text: "Toast it." }],
+          },
+        ],
+      }),
+      "https://example.com/toast"
+    )!
+    expect(result.input.steps).toEqual(["# Quick version", "Toast it."])
+  })
+
   test("is null for a page without a recipe", () => {
     expect(
       readRecipeData(
@@ -173,6 +229,110 @@ describe("recipe data", () => {
         "https://example.com/"
       )
     ).toBeNull()
+  })
+})
+
+describe("a WordPress Recipe Maker card", () => {
+  const recipe = {
+    "@type": "Recipe",
+    name: "Orange chicken",
+    description:
+      "Recipe video above. Crispy without deep frying!The sauce clings.",
+    recipeIngredient: [
+      "600g chicken thighs",
+      "2 tbsp soy sauce (, Note 1)",
+      "1 cup orange juice",
+      "2 tbsp soy sauce",
+      "White rice",
+    ],
+    recipeInstructions: [{ "@type": "HowToStep", text: "Cook it." }],
+  }
+
+  // The card as the plugin writes it, cut down to what Merran reads.
+  const card = `
+    <div class="wprm-recipe-container" data-recipe-id="1">
+      <h2 class="wprm-recipe-name">Orange chicken</h2>
+      <div class="wprm-recipe-summary">
+        <span style="display: block;"><strong>Recipe video above. </strong>Crispy without deep frying!</span><div class="wprm-spacer"></div>
+        <span style="display: block;">The sauce <em>clings</em>.</span>
+      </div>
+      <div class="wprm-recipe-ingredient-group">
+        <ul><li class="wprm-recipe-ingredient">600g chicken thighs</li>
+        <li class="wprm-recipe-ingredient">2 tbsp soy sauce, Note 1</li></ul>
+      </div>
+      <div class="wprm-recipe-ingredient-group">
+        <h4 class="wprm-recipe-group-name">Orange sauce:</h4>
+        <ul><li class="wprm-recipe-ingredient">1 cup orange juice</li>
+        <li class="wprm-recipe-ingredient">2 tbsp soy sauce</li></ul>
+      </div>
+      <div class="wprm-recipe-ingredient-group">
+        <h4 class="wprm-recipe-group-name">For serving:</h4>
+        <ul><li class="wprm-recipe-ingredient">White rice</li></ul>
+      </div>
+      <div class="wprm-recipe-notes">
+        <span style="display: block;"><strong>1. Soy sauce</strong> – not dark soy.</span><div class="wprm-spacer"></div>
+        <span style="display: block;"><strong>Leftovers</strong> keep for 3 days.</span>
+        <ul><li>Freeze the sauce.</li></ul>
+      </div>
+    </div>`
+
+  const withCard = (html: string, body: string) =>
+    html.replace("<h1>Hi</h1>", body)
+
+  test("gives the ingredients its groups, and its notes and summary", () => {
+    const result = readRecipeData(
+      withCard(page(recipe), card),
+      "https://blog.example/orange-chicken/"
+    )!
+    expect(result.input.ingredients).toEqual([
+      "600g chicken thighs",
+      "2 tbsp soy sauce (, Note 1)",
+      "# Orange sauce",
+      "1 cup orange juice",
+      "2 tbsp soy sauce",
+      "# For serving",
+      "White rice",
+    ])
+    expect(result.input.notes).toBe(
+      "1. Soy sauce – not dark soy.\n\nLeftovers keep for 3 days.\n\n- Freeze the sauce."
+    )
+    expect(result.input.description).toBe(
+      "Crispy without deep frying! The sauce clings."
+    )
+  })
+
+  test("leaves the ingredients as they are when its groups don't add up", () => {
+    const short = card.replace(
+      '<ul><li class="wprm-recipe-ingredient">White rice</li></ul>',
+      ""
+    )
+    const result = readRecipeData(
+      withCard(page(recipe), short),
+      "https://blog.example/orange-chicken/"
+    )!
+    expect(result.input.ingredients).toEqual(recipe.recipeIngredient)
+  })
+
+  test("is the one with the recipe's name, on a page with several", () => {
+    const other = card
+      .replace(">Orange chicken<", ">Fried rice<")
+      .replace("not dark soy", "any soy")
+    const result = readRecipeData(
+      withCard(page(recipe), `${other}${card}`),
+      "https://blog.example/orange-chicken/"
+    )!
+    expect(result.input.notes).toContain("not dark soy")
+  })
+
+  test("isn't needed to tidy the description", () => {
+    const result = readRecipeData(
+      page(recipe),
+      "https://blog.example/orange-chicken/"
+    )!
+    expect(result.input.description).toBe(
+      "Crispy without deep frying! The sauce clings."
+    )
+    expect(result.input.notes).toBeNull()
   })
 })
 

@@ -1,6 +1,7 @@
 import { load, type CheerioAPI } from "cheerio"
 import type { Nutrition } from "../../../database/entities/index.ts"
 import type { RecipeInput } from "../../../http/schemas/recipes.ts"
+import { inGroups, readRecipeCard } from "./recipe-card.ts"
 
 // Most recipe sites describe their recipe in the page as schema.org Recipe
 // data (JSON-LD), for search engines. This reads it.
@@ -75,6 +76,21 @@ export function cleanText(value: unknown): string {
     ? load(`<div>${text}</div>`)("div").text()
     : text
   return decoded.replace(/\s+/g, " ").trim()
+}
+
+/**
+ * A description without "Recipe video above.", which means nothing away
+ * from the page, and with a space between sentences whose paragraphs were
+ * run together ("frying!The sauce").
+ */
+function tidyDescription(text: string) {
+  return text
+    .replace(
+      /^(?:recipe |watch the )?video (?:is )?(?:above|below)[.!:]?\s*/i,
+      ""
+    )
+    .replace(/([a-z][.!?])(?=[A-Z][a-z])/g, "$1 ")
+    .trim()
 }
 
 function asArray(value: unknown): any[] {
@@ -292,6 +308,26 @@ export function shareImages($: CheerioAPI, base: string) {
   return [...new Set(urls)]
 }
 
+/**
+ * A section that sums up the steps after it, which some sites put first:
+ * "Abbreviated recipe", "Quick version". Cooking from it, then from the
+ * steps it sums up, would make the recipe twice.
+ */
+const SUMMARY_SECTION =
+  /^(?:(?:abbreviated|condensed|short|quick|brief)\s+(?:recipe|version|method|instructions|steps)|summary|tl;?dr)$/i
+
+/** A section's name that only says its steps are the whole method: "Full recipe". */
+const WHOLE_METHOD =
+  /^(?:full|complete|detailed)\s+(?:recipe|version|method|instructions|steps)$/i
+
+function isSection(item: any) {
+  if (!item || typeof item !== "object") return false
+  const type = asArray(item["@type"]).join(" ")
+  return /HowToSection/i.test(type) || (item.itemListElement && !item.text)
+}
+
+const sectionName = (item: any) => cleanText(item.name).replace(/:$/, "")
+
 /** Steps as editor lines, with "# Section" lines for HowToSections. */
 function stepLines(value: unknown): string[] {
   const lines: string[] = []
@@ -303,19 +339,29 @@ function stepLines(value: unknown): string[] {
             .map((li) => load(li).text())
         : item.split(/\n+/)
       lines.push(...text.map(cleanText).filter(Boolean))
+    } else if (isSection(item)) {
+      const name = sectionName(item)
+      if (name && !WHOLE_METHOD.test(name)) lines.push(`# ${name}`)
+      // A bare "#" ends the section before, for steps that have none.
+      else if (lines.length > 0) lines.push("#")
+      lines.push(...stepLines(item.itemListElement))
     } else if (item && typeof item === "object") {
-      const type = asArray(item["@type"]).join(" ")
-      if (/HowToSection/i.test(type) || (item.itemListElement && !item.text)) {
-        const name = cleanText(item.name)
-        if (name) lines.push(`# ${name}`)
-        lines.push(...stepLines(item.itemListElement))
-      } else {
-        const text = cleanText(item.text ?? item.name ?? item.description)
-        if (text) lines.push(text)
-      }
+      const text = cleanText(item.text ?? item.name ?? item.description)
+      if (text) lines.push(text)
     }
   }
   return lines
+}
+
+/** The recipe's steps as editor lines, leaving out a summary of them. */
+function methodLines(value: unknown): string[] {
+  const items = asArray(value)
+  const method = items.filter(
+    (item) => !(isSection(item) && SUMMARY_SECTION.test(sectionName(item)))
+  )
+  const lines = stepLines(method)
+  // A recipe that's only a summary keeps it.
+  return lines.some((line) => !line.startsWith("#")) ? lines : stepLines(items)
 }
 
 /** Categories some sites give that say nothing. */
@@ -395,12 +441,17 @@ export function readRecipeData(
   const ingredients = asArray(node.recipeIngredient ?? node.ingredients)
     .map(cleanText)
     .filter(Boolean)
-  const steps = stepLines(node.recipeInstructions)
+  const steps = methodLines(node.recipeInstructions)
   if (!name || (ingredients.length === 0 && steps.length === 0)) return null
 
+  // The recipe card on the page has what its data leaves out.
+  const card = readRecipeCard($, name)
   const { servings, yieldText } = parseYield(node.recipeYield)
   const nutrition = siteNutrition(node.nutrition)
-  const description = cleanText(node.description)
+  const description = tidyDescription(
+    card?.summary.length ? card.summary.join(" ") : cleanText(node.description)
+  )
+  const notes = card?.notes.join("\n\n") ?? ""
   const prepMinutes = parseDuration(node.prepTime)
   const cookMinutes = parseDuration(node.cookTime)
   return {
@@ -412,11 +463,13 @@ export function readRecipeData(
       prepMinutes,
       cookMinutes,
       totalMinutes: parseDuration(node.totalTime),
-      notes: null,
+      notes: notes ? notes.slice(0, 5000) : null,
       sourceUrl: pageUrl,
       rating: null,
       tags: tagsFrom(node),
-      ingredients: ingredients.slice(0, 300).map((line) => line.slice(0, 500)),
+      ingredients: (card ? inGroups(ingredients, card.groups) : ingredients)
+        .slice(0, 300)
+        .map((line) => line.slice(0, 500)),
       steps: steps.slice(0, 200).map((line) => line.slice(0, 5000)),
     },
     nutrition: nutrition && servings ? { ...nutrition, servings } : nutrition,

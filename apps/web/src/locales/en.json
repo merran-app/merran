@@ -1845,6 +1845,7 @@
     "makes_one": "This makes {{servings}} serving.",
     "makes_other": "This makes {{servings}} servings.",
     "forThisStep": "For this step",
+    "fromNotes": "From the recipe's notes",
     "upNext": "Next:",
     "noStepsYet": "This recipe has no steps yet. Add some from Edit.",
     "back": "Back",
