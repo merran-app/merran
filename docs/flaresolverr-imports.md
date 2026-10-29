@@ -72,4 +72,12 @@ Photos are fetched as today, with Merran's own user agent and the page as the re
 - `compose.yaml` has a `flaresolverr` profile, like Kokoro's `voice`
 - The site's [FlareSolverr guide](../apps/docs/src/content/docs/docs/integrations/flaresolverr.md) covers an existing FlareSolverr, the profile, other Compose files, `docker run`, and keeping it to its network
 
-No new entities, so no migration. Imports through a real FlareSolverr and a site behind Cloudflare still need checking by hand.
+No new entities, so no migration.
+
+## Checked with a real FlareSolverr — October 28, 2026
+
+FlareSolverr 3.5.2 in Docker, with a throwaway Merran running this branch:
+
+- **Allrecipes** answered Merran's own requests with Cloudflare's check (a 403 with `cf-mitigated: challenge`) on recipe pages, though not on every request. Pasted as a link, a recipe went through FlareSolverr in about 4 seconds and came in with its photo. FlareSolverr's browser wasn't even challenged: the check stops visitors that aren't browsers.
+- **taste.com.au** answers Merran with Akamai's 403. Through **Add from link**, a recipe took 21 seconds in FlareSolverr and came in with its photo, ingredients, steps and the site's nutrition. Both sites' photo hosts let Merran's own requests through.
+- FlareSolverr reports a page's status as 200 even when the page is the site's 404 page. Such a link ends with Merran's message for a page with no recipe data, which is fair.
