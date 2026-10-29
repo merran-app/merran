@@ -416,3 +416,41 @@ describe("starter collections", () => {
     expect((await res.json()).error.code).toMatch(/^ai_/)
   })
 })
+
+describe("keeping the shelf small", () => {
+  test("keeps each site's newest recipes and forgets the rest", async () => {
+    web.set("https://many.example/feed/", { body: "", status: 304 })
+    const em = database.em.fork()
+    const site = em.create(RecipeSite, {
+      name: "Many Example",
+      url: "https://many.example/",
+      feedUrl: "https://many.example/feed/",
+    })
+    const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000)
+    for (let day = 0; day < 125; day++) {
+      em.create(SiteRecipe, {
+        site,
+        url: `https://many.example/recipe-${day}/`,
+        state: "recipe",
+        siteName: "Many Example",
+        name: `Recipe ${day}`,
+        courses: [],
+        keywords: [],
+        ingredients: [],
+        diets: [],
+        publishedAt: daysAgo(day),
+      })
+    }
+    await em.flush()
+
+    await enqueue(em, { kind: "sites.read", payload: { siteId: site.id } })
+    await jobs.drain()
+
+    const kept = await database.em
+      .fork()
+      .find(SiteRecipe, { site: site.id }, { orderBy: { publishedAt: "desc" } })
+    // The newest 120: the five oldest are forgotten.
+    expect(kept).toHaveLength(120)
+    expect(kept.at(-1)!.name).toBe("Recipe 119")
+  })
+})
