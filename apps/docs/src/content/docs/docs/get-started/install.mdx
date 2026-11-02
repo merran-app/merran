@@ -420,7 +420,7 @@ For Postgres and/or Kokoro, use [the complete optional-service setup](#optional-
 The examples use **:next** while Merran is in alpha. Pulling this tag and recreating the container installs the newest published release, including alpha releases. Keep the same data directory and back up before updating.
 
 - **next** follows the newest published release, including alpha releases.
-- **latest** follows stable releases. It will become the recommended tag with the first full release.
+- **latest** is the same as **next** until the first full release. From then on it follows full releases only, and becomes the recommended tag.
 - **edge** follows development on main, for testing changes before a release.
 - A specific release tag keeps an installation on that version. To update a pinned installation, change `MERRAN_IMAGE` in `.env`, the YAML `image` line or the `docker run` image before pulling and recreating.
 

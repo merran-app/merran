@@ -66,7 +66,7 @@ docker logs merran
 
 Open **http://YOUR-SERVER:3000** and use the setup code from the log to create your account and household.
 
-**Merran is in alpha.** `next` follows published releases, including alphas; `edge` follows development on main. The docs will recommend `latest` with the first full release. You can pin a specific published version if you prefer to choose when to change versions. Never delete the persistent data directory when recreating Merran: it contains the database, photos and server secret. Back up the complete directory before updating.
+**Merran is in alpha.** `next` follows published releases, including alphas; `edge` follows development on main. Until the first full release, `latest` is the same as `next`; from then on it follows full releases only and becomes the recommended tag. You can pin a specific published version if you prefer to choose when to change versions. Never delete the persistent data directory when recreating Merran: it contains the database, photos and server secret. Back up the complete directory before updating.
 
 See the [installation guide](https://merran.app/docs/get-started/install/) for Docker Compose and image tags, and [updating and backups](https://merran.app/docs/run/updating-and-backups/) for maintaining your server.
 

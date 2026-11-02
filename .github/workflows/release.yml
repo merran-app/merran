@@ -12,7 +12,8 @@ name: Release
 #
 # Image tags: the version itself (0.1.0-alpha.1, 0.4.2), which never moves,
 # and `next`, the newest release of any kind. A release that isn't a
-# pre-release also moves 0.4 and `latest` (and 1, from 1.0 on).
+# pre-release also moves 0.4 and `latest` (and 1, from 1.0 on). Until the
+# first such release, pre-releases move `latest` too.
 
 on:
   workflow_dispatch:
@@ -41,6 +42,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       prerelease: ${{ steps.version.outputs.prerelease }}
       stable-major: ${{ steps.version.outputs.stable-major }}
+      latest: ${{ steps.version.outputs.latest }}
       draft: ${{ steps.notes.outputs.draft }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -74,6 +76,15 @@ jobs:
             echo "stable-major=true" >> "$GITHUB_OUTPUT"
           else
             echo "stable-major=false" >> "$GITHUB_OUTPUT"
+          fi
+          # `latest` is the tag people and Docker tools try first, so it
+          # follows pre-releases until there's been a full release (a v tag
+          # without a hyphen), and only full releases after that.
+          released=$(git tag -l 'v*' | grep -v -- '-' || true)
+          if [[ "$VERSION" != *-* || -z "$released" ]]; then
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "latest=false" >> "$GITHUB_OUTPUT"
           fi
       # The draft's notes, taken now, before anything's built: a merge
       # during the build writes the draft afresh, without the highlights.
@@ -140,7 +151,7 @@ jobs:
             type=raw,value=next
             type=semver,pattern={{major}}.{{minor}},value=v${{ env.VERSION }},enable=${{ needs.version.outputs.prerelease == 'false' }}
             type=semver,pattern={{major}},value=v${{ env.VERSION }},enable=${{ needs.version.outputs.stable-major == 'true' }}
-            type=raw,value=latest,enable=${{ needs.version.outputs.prerelease == 'false' }}
+            type=raw,value=latest,enable=${{ needs.version.outputs.latest == 'true' }}
           labels: |
             org.opencontainers.image.version=${{ env.VERSION }}
       - id: build
