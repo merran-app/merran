@@ -21,7 +21,7 @@ What it takes to run Merran as a public project: the name and license, how peopl
 | `CONTRIBUTING.md` | Setting up, the commands, how to send a change, pull request titles (`feat:`, `fix:`...), the DCO |
 | `AGENTS.md` | How to work on Merran, for AI coding agents and people alike (decided October 17, 2026): the commands, the conventions, and what else to update with each kind of change, so the docs, the public site and the generated files stay current. `CLAUDE.md` only points Claude Code to it |
 | `CODE_OF_CONDUCT.md` | Contributor Covenant |
-| `SECURITY.md` | How to report a vulnerability privately, and what happens next |
+| `SECURITY.md` | How to report a vulnerability privately, and what happens next. In `.github/` (added November 3, 2026), where GitHub finds it, to keep the root short |
 | `SUPPORT.md` | Where to ask questions (Discussions), and what issues are for |
 | `GOVERNANCE.md` | Who decides: the maintainer for now, and how that could change |
 | `PRIVACY.md` | What Merran sends where (from [operations.md](operations.md#what-leaves-the-server)) |
@@ -62,7 +62,11 @@ CI runs on every pull request:
 
 ## Keeping dependencies healthy
 
-- **Renovate:** weekly grouped updates, security updates at once, and auth packages (`better-auth`, `@better-auth/*`) always updated together.
+- **Renovate:** weekly grouped updates, security updates at once, and auth packages (`better-auth`, `@better-auth/*`) always updated together. Set up November 3, 2026 in `.github/renovate.json5`, chosen over Dependabot to keep this plan, and run by the Renovate GitHub app on the `merran-app` organization:
+  - **npm packages wait three days** after they're published before Renovate offers them. pnpm won't install anything less than a day old, so a shorter wait would make lockfiles that don't install; the extra days give a bad release time to be pulled.
+  - **Security fixes come from the OSV database** (`osvVulnerabilityAlerts`, still experimental in Renovate), so they don't depend on GitHub's dependency graph, which has had trouble reading pnpm 12's two-part lockfile. They skip the weekly schedule and the three-day wait.
+  - **Every title is `chore(deps): ...`,** so dependency updates land under their own heading in the release notes. Renovate is told to use semantic titles, since Merran's plain-English commits would turn them off.
+  - **Node majors aren't offered** (`node`, `@types/node`): moving off Node 24 is a decision of its own.
 - **GitHub's dependency review** flags risky new packages in pull requests; **CodeQL** scans the code.
 - **Secret scanning with push protection** is on, and `mrn_` keys are registered as a custom pattern.
 - **Workflows pin actions by commit hash.**
@@ -71,7 +75,7 @@ CI runs on every pull request:
 
 ## Security reports
 
-- GitHub's private vulnerability reporting is on, and `SECURITY.md` explains it.
+- GitHub's private vulnerability reporting is on, and `.github/SECURITY.md` explains it: what to include, what happens next, which versions get fixes, and what's in scope.
 - A reply within a few days, a fix and release as soon as practical, and a published advisory crediting the reporter.
 - The docs keep a short **threat model**: what Merran protects (households from each other, keys, the home network from imports) and what it doesn't (a server admin with shell access can read everything).
 
