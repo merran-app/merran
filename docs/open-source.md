@@ -67,6 +67,7 @@ CI runs on every pull request:
   - **Security fixes come from the OSV database** (`osvVulnerabilityAlerts`, still experimental in Renovate), so they don't depend on GitHub's dependency graph, which has had trouble reading pnpm 12's two-part lockfile. They skip the weekly schedule and the three-day wait.
   - **Every title is `chore(deps): ...`,** so dependency updates land under their own heading in the release notes. Renovate is told to use semantic titles, since Merran's plain-English commits would turn them off.
   - **Node majors aren't offered** (`node`, `@types/node`): moving off Node 24 is a decision of its own.
+  - **Updates that aren't major merge themselves** once main's required checks pass, security fixes included (decided November 3, 2026). Majors wait for someone to read what changed. Renovate merges them itself, with a squash (`platformAutomerge: false`), and only the Renovate app may skip main's review, so GitHub's auto-merge stays off and no one else's pull request can merge without a review (see [operations.md](operations.md#selective-ci--october-19-2026), "Required checks").
 - **GitHub's dependency review** flags risky new packages in pull requests; **CodeQL** scans the code.
 - **Secret scanning with push protection** is on, and `mrn_` keys are registered as a custom pattern.
 - **Workflows pin actions by commit hash.**

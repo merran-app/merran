@@ -1,7 +1,8 @@
 // Renovate keeps Merran's dependencies current (docs/open-source.md,
 // "Keeping dependencies healthy"): one grouped pull request a week, security
-// fixes at once, and the auth packages always together. It runs from the
-// Renovate GitHub app on the merran-app organization.
+// fixes at once, the auth packages always together, and everything but majors
+// merged once the checks pass. It runs from the Renovate GitHub app on the
+// merran-app organization.
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: [
@@ -21,7 +22,19 @@
   // lockfile. Like every security fix, they skip the schedule and the
   // release-age wait below.
   osvVulnerabilityAlerts: true,
+  // Updates that aren't major merge themselves once main's required checks
+  // pass (docs/operations.md, "Required checks"). Renovate merges them
+  // itself, and main's rules let only the Renovate app skip the review, so
+  // GitHub's auto-merge stays off and no one else's pull request merges
+  // without one. Main keeps a straight history, so they're squashed.
+  platformAutomerge: false,
+  automergeStrategy: "squash",
   packageRules: [
+    // Majors wait for someone to read what changed, security fixes included.
+    {
+      matchUpdateTypes: ["minor", "patch", "pin", "digest"],
+      automerge: true,
+    },
     // pnpm won't install a version less than a day old. Waiting three days
     // keeps Renovate's lockfiles installable, and leaves time for a bad
     // release to be pulled before it reaches Merran.
