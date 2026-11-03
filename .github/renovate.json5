@@ -1,0 +1,45 @@
+// Renovate keeps Merran's dependencies current (docs/open-source.md,
+// "Keeping dependencies healthy"): one grouped pull request a week, security
+// fixes at once, and the auth packages always together. It runs from the
+// Renovate GitHub app on the merran-app organization.
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
+    "config:recommended",
+    // Updates that aren't major go into one pull request a week.
+    "group:allNonMajor",
+    "schedule:weekly",
+    // Every title starts chore(deps): ..., as the Title check and Release
+    // Drafter's "Dependency updates" heading expect, whatever the dependency.
+    ":semanticCommitTypeAll(chore)",
+  ],
+  // Merran's commits are plain English, so Renovate wouldn't detect semantic
+  // commits on its own, and its titles would fail the Title check.
+  semanticCommits: "enabled",
+  // Security fixes from the OSV database, so they don't wait on GitHub's
+  // dependency graph, which has had trouble reading pnpm 12's two-part
+  // lockfile. Like every security fix, they skip the schedule and the
+  // release-age wait below.
+  osvVulnerabilityAlerts: true,
+  packageRules: [
+    // pnpm won't install a version less than a day old. Waiting three days
+    // keeps Renovate's lockfiles installable, and leaves time for a bad
+    // release to be pulled before it reaches Merran.
+    {
+      matchDatasources: ["npm"],
+      minimumReleaseAge: "3 days",
+    },
+    // better-auth and its plugins are released together, at one version.
+    {
+      matchPackageNames: ["better-auth", "@better-auth/**"],
+      groupName: "better-auth",
+    },
+    // Merran runs on Node 24 (.nvmrc, the Dockerfile, engines). Moving to the
+    // next major is a decision of its own, not a weekly update.
+    {
+      matchPackageNames: ["node", "@types/node"],
+      matchUpdateTypes: ["major"],
+      enabled: false,
+    },
+  ],
+}
