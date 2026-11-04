@@ -35,17 +35,22 @@ const links = (html: string) => html.replaceAll("__BASE__", base)
     <ThemeState />
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Skip to content</a>
+    <a class="skip-link" href="#main-content">
+      Skip to content
+    </a>
     <Fragment set:html={icons} />
-    <header class="nav" id="top"><div class="wrap"><SiteHeader /></div></header>
+    <header class="nav" id="top">
+      <div class="wrap">
+        <SiteHeader />
+      </div>
+    </header>
     <aside class="site-context" aria-label="Project status">
       Merran is in alpha. These are scripted previews with sample data and
       AI-generated sample recipe photos, not a live Merran server. Selected
       controls work locally; no imports, AI requests, microphone access or store
       orders occur here. Core release installation and restore smoke tests have
-      passed; broader integration verification continues. <a
-        href={`${base}docs/`}>Read the docs and get started →</a
-      >
+      passed; broader integration verification continues.{" "}
+      <a href={`${base}docs/`}>Read the docs and get started →</a>
     </aside>
     <main id="main-content" tabindex="-1">
       <Fragment set:html={links(photographedMain)} />

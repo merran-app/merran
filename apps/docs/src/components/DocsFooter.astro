@@ -2,13 +2,16 @@
 import Footer from "@astrojs/starlight/components/Footer.astro"
 ---
 
-<Footer><slot /></Footer>
+<Footer>
+  <slot />
+</Footer>
 <p class="license">
-  © 2026 Kyle Johnson. Documentation: <a
-    href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a
-  >. Merran: <a href="https://github.com/merran-app/merran/blob/main/LICENSE"
-    >AGPL-3.0-or-later</a
-  >.
+  © 2026 Kyle Johnson. Documentation:{" "}
+  <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Merran:{" "}
+  <a href="https://github.com/merran-app/merran/blob/main/LICENSE">
+    AGPL-3.0-or-later
+  </a>
+  .
 </p>
 <style>
   .license {
