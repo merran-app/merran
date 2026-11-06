@@ -10195,10 +10195,10 @@
           },
           "rating": {
             "type": [
-              "integer",
+              "number",
               "null"
             ],
-            "minimum": 1,
+            "minimum": 0.5,
             "maximum": 5
           },
           "tags": {
@@ -11338,7 +11338,7 @@
               "number",
               "null"
             ],
-            "description": "1 to 5 stars."
+            "description": "Half a star to 5, in halves."
           },
           "note": {
             "type": [
@@ -11406,12 +11406,12 @@
         "properties": {
           "rating": {
             "type": [
-              "integer",
+              "number",
               "null"
             ],
-            "minimum": 1,
+            "minimum": 0.5,
             "maximum": 5,
-            "description": "1 to 5 stars. They become the recipe's rating."
+            "description": "Half a star to 5, in halves. They become the recipe's rating."
           },
           "note": {
             "type": [
@@ -11687,19 +11687,19 @@
         "properties": {
           "rating": {
             "type": [
-              "integer",
+              "number",
               "null"
             ],
-            "minimum": 1,
+            "minimum": 0.5,
             "maximum": 5,
-            "description": "From 1 to 5 stars, or null to clear it."
+            "description": "Half a star to 5, in halves, or null to clear it."
           }
         },
         "required": [
           "rating"
         ],
         "example": {
-          "rating": 4
+          "rating": 4.5
         }
       },
       "Swaps": {
@@ -29156,7 +29156,7 @@
             }
           },
           "400": {
-            "description": "The rating isn't from 1 to 5.",
+            "description": "The rating isn't from half a star to 5, in halves.",
             "content": {
               "application/json": {
                 "schema": {

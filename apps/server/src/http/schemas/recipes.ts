@@ -1,5 +1,5 @@
 import { z } from "@hono/zod-openapi"
-import { DIETS, INGREDIENT_MARKS } from "@merran/shared"
+import { DIETS, INGREDIENT_MARKS, MAX_STARS, STAR_STEP } from "@merran/shared"
 import { RECIPE_ORIGINS } from "../../database/entities/index.ts"
 import {
   COOK_NOTE,
@@ -12,6 +12,10 @@ import {
 } from "./examples.ts"
 
 const minutes = z.number().int().min(0).max(100_000).nullish()
+
+/** A rating: half a star to 5, in halves. */
+const stars = () =>
+  z.number().min(STAR_STEP).max(MAX_STARS).multipleOf(STAR_STEP)
 
 const DietSchema = z.enum(DIETS).openapi("Diet")
 
@@ -62,11 +66,7 @@ export const RecipeInputSchema = z
       ])
       .nullish()
       .transform((value) => value || null),
-    rating: z
-      .number()
-      .int()
-      .min(1)
-      .max(5)
+    rating: stars()
       .nullish()
       .transform((value) => value ?? null),
     tags: z
@@ -272,7 +272,10 @@ export const RecipeParam = z.object({
 export const CookNoteSchema = z
   .object({
     id: z.string(),
-    rating: z.number().nullable().openapi({ description: "1 to 5 stars." }),
+    rating: z
+      .number()
+      .nullable()
+      .openapi({ description: "Half a star to 5, in halves." }),
     note: z.string().nullable().openapi({ description: "For next time." }),
     by: z
       .string()
@@ -291,15 +294,12 @@ export const AddedCookNoteSchema = CookNoteSchema.extend({
 
 export const CookNoteInputSchema = z
   .object({
-    rating: z
-      .number()
-      .int()
-      .min(1)
-      .max(5)
+    rating: stars()
       .nullish()
       .transform((value) => value ?? null)
       .openapi({
-        description: "1 to 5 stars. They become the recipe's rating.",
+        description:
+          "Half a star to 5, in halves. They become the recipe's rating.",
       }),
     note: z
       .string()
@@ -495,11 +495,11 @@ export const BulkResultSchema = z
 
 export const RatingInputSchema = z
   .object({
-    rating: z.number().int().min(1).max(5).nullable().openapi({
-      description: "From 1 to 5 stars, or null to clear it.",
+    rating: stars().nullable().openapi({
+      description: "Half a star to 5, in halves, or null to clear it.",
     }),
   })
-  .openapi("RecipeRatingInput", { example: { rating: 4 } })
+  .openapi("RecipeRatingInput", { example: { rating: 4.5 } })
 
 export const VersionSchema = z
   .object({

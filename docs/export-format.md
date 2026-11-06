@@ -24,7 +24,7 @@ The schemas in [`apps/server/src/services/transfer/format.ts`](../apps/server/sr
 ```json
 {
   "format": "merran.household",
-  "version": 1,
+  "version": 2,
   "exportedAt": "2026-10-16T05:12:00.000Z",
   "merranVersion": "0.1.0",
   "household": { "name": "The Johnsons" },
@@ -33,6 +33,11 @@ The schemas in [`apps/server/src/services/transfer/format.ts`](../apps/server/sr
 ```
 
 `format` is always `merran.household`. An import refuses a `version` newer than it knows, and says to update Merran first.
+
+| Version | What changed |
+|---|---|
+| 1 | The first |
+| 2 | Ratings can be half stars, such as 4.5. Decided November 5, 2026, when half stars came in: a Merran that knows only version 1 would refuse a 4.5 as not what Merran wrote, so it says to update instead. Version 1 exports are read as they are, since whole stars are still ratings |
 
 ### `household.json`
 
@@ -55,7 +60,7 @@ An array of recipes. Recipes in Recently deleted aren't exported.
 | `slug` | Its address, as in `/recipes/tomato-soup` |
 | `name`, `description`, `notes`, `sourceUrl`, `yieldText` | As shown on the recipe |
 | `servings`, `prepMinutes`, `cookMinutes`, `totalMinutes` | Numbers, or null. `totalMinutes` is null when it's prep and cook added up |
-| `rating` | 1 to 5, or null |
+| `rating` | Stars, from 0.5 to 5 in halves, or null. Whole stars only before version 2 |
 | `nutrition` | Per serving, or null |
 | `dietOverrides` | The household's corrections to the diet labels worked out from the ingredients: `{ "gluten-free": false }`. The labels themselves are worked out again on import |
 | `origin` | Where it first came from: `link`, `manual`, `mealie`... |
@@ -66,7 +71,7 @@ An array of recipes. Recipes in Recently deleted aren't exported.
 | `ingredients`, `steps` | Lines in order: `{ "section": "For the sauce", "text": "2 tbsp butter" }`, with `section` null outside a section |
 | `photo` | Its photo's path in the zip, or null |
 | `versions` | Earlier copies, oldest first: `{ source, snapshot, createdAt, createdBy }`. A snapshot is the recipe as the editor had it |
-| `cookNotes` | How cooking it went: `{ rating, note, createdAt, by }` |
+| `cookNotes` | How cooking it went: `{ rating, note, createdAt, by }`, with `rating` in stars as above |
 | `pairings` | What it goes with: `{ "recipe": "<id>" }` for one recipe, `{ "tag": "Sauce" }` for every recipe with a tag |
 
 ## How an import treats what's there

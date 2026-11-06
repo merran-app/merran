@@ -80,7 +80,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Diet labels worked out from the ingredients, with corrections | Key | Built | |
 | Goes with: pair recipes, like chicken with any of your sauces | Key | Built | |
 | "I made this", and a New badge for ones you haven't cooked | Detail | Built | |
-| How did it go? Stars and notes after cooking | Key | Built | |
+| How did it go? Stars and notes after cooking | Key | Built | Not released yet (after alpha.6): half stars, from ½ to 5; the left half of a star picks half of it. Mealie's half stars come in as they are, and household exports are version 2 ([export format](export-format.md)) |
 | Select and act on many recipes; Recently deleted for 30 days | Detail | Built | |
 | Nutrition from the recipe's site | Detail | Built | |
 | Nutrition worked out from USDA data or by AI, with plan totals | Key | Built | Module: a free USDA key; AI estimates without one. Worked out by itself when a recipe's saved, and for the whole library. The foods Merran knows have their USDA food checked by hand, so they aren't searched for. Available in alpha.4: free-key signup steps and email/spam guidance in Settings |

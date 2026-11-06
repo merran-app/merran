@@ -1,6 +1,7 @@
 import { checkTastes } from "@merran/shared"
 import { tool } from "ai"
 import { z } from "zod"
+import { toNumber } from "../../../database/numbers.ts"
 import { getTastes } from "../../households/tastes.ts"
 import { snapshotOf, totalMinutes } from "../../recipes/recipes.ts"
 import { tagsOf } from "../../recipes/tags.ts"
@@ -46,7 +47,7 @@ export function getRecipeTool({
         ingredients: input.ingredients,
         steps: input.steps,
         notes: input.notes,
-        rating: recipe.rating ?? null,
+        rating: toNumber(recipe.rating),
         lastMade: recipe.lastMadeAt?.toISOString().slice(0, 10) ?? null,
         ...(includeTastes
           ? {

@@ -14,7 +14,7 @@ export const CookNote = defineEntity({
     household: () => householdRef(),
     recipe: () => recipeRef(),
     user: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
-    rating: p.smallint().nullable(),
+    rating: p.double().nullable(),
     note: p.text().nullable(),
     createdAt: createdAt(),
   },

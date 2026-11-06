@@ -1916,7 +1916,7 @@
         },
         "rating": {
           "name": "rating",
-          "type": "smallint",
+          "type": "double precision",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1929,7 +1929,7 @@
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "smallint"
+          "mappedType": "double"
         },
         "recipe_id": {
           "name": "recipe_id",
@@ -10652,7 +10652,7 @@
         },
         "rating": {
           "name": "rating",
-          "type": "smallint",
+          "type": "double precision",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -10665,7 +10665,7 @@
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "smallint"
+          "mappedType": "double"
         },
         "servings": {
           "name": "servings",

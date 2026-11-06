@@ -85,7 +85,7 @@ beforeAll(async () => {
   })
   await kyle.post("/api/recipes/tomato-soup/made")
   await kyle.post("/api/recipes/tomato-soup/cook-notes", {
-    rating: 5,
+    rating: 4.5,
     note: "More salt.",
   })
   await kyle.request("PUT", "/api/recipes/tomato-soup/diets", {
@@ -159,7 +159,7 @@ describe("importing an export", () => {
     const soup = await (await kyleThere.get("/api/recipes/tomato-soup")).json()
     expect(soup).toMatchObject({
       id: ids.soup,
-      rating: 5,
+      rating: 4.5,
       tags: ["Dinner", "Soup"],
       lastMadeAt: expect.any(String),
       dietOverrides: { "gluten-free": false },
@@ -186,7 +186,9 @@ describe("importing an export", () => {
     const notes = await (
       await kyleThere.get("/api/recipes/tomato-soup/cook-notes")
     ).json()
-    expect(notes).toMatchObject([{ note: "More salt.", by: "Kyle" }])
+    expect(notes).toMatchObject([
+      { rating: 4.5, note: "More salt.", by: "Kyle" },
+    ])
     const pairings = await (
       await kyleThere.get("/api/recipes/tomato-soup/pairings")
     ).json()

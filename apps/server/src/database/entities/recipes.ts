@@ -55,8 +55,8 @@ export const Recipe = defineEntity({
     cookMinutes: p.integer().nullable(),
     totalMinutes: p.integer().nullable(),
     notes: p.text().nullable(),
-    /** 1 to 5. */
-    rating: p.smallint().nullable(),
+    /** Half a star to 5, in halves. */
+    rating: p.double().nullable(),
     nutrition: p.json<Nutrition>().nullable(),
     /** The household's corrections to the diet labels worked out from the ingredients. */
     dietOverrides: p.json<Record<string, boolean>>().nullable(),

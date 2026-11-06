@@ -1,3 +1,4 @@
+import { MAX_STARS, STAR_STEP } from "@merran/shared"
 import { cleanText, parseDuration } from "../recipe-data.ts"
 
 // Reading the loose text other apps keep: times typed by hand, Markdown,
@@ -58,10 +59,12 @@ export function asLink(raw: unknown) {
   }
 }
 
-/** 1 to 5 stars, rounded, or null for none. */
+/** Half a star to 5, to the nearest half, or null for none. */
 export function stars(value: unknown) {
   const rating = positive(value)
-  return rating === null ? null : Math.min(5, Math.max(1, Math.round(rating)))
+  if (rating === null) return null
+  const halves = Math.round(rating / STAR_STEP) * STAR_STEP
+  return Math.min(MAX_STARS, Math.max(STAR_STEP, halves))
 }
 
 /** Tags Merran can take: each once, short enough, 30 at most. */
