@@ -21,7 +21,7 @@ const route = createRoute({
   tags: ["List"],
   summary: "Change something on the list",
   description:
-    "Check it off or not, rename it, change how much, or move it to another aisle or list, which the household remembers for the food.",
+    "Check it off or not, rename it, change how much, or move it to another aisle or list, which the household remembers for the food. With the household's put-away setting on, checking it off puts it in the pantry and unchecking takes that back out; renaming a checked row swaps the food in the pantry, and changing its amount changes the pantry by the difference.",
   ...openToKeys("list", "write"),
   request: {
     params: ItemParam,

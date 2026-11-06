@@ -13,7 +13,7 @@ const route = createRoute({
   tags: ["List"],
   summary: "Clear the list",
   description:
-    "Takes off what's checked, or everything. The answer says what was there, for Undo with /list/restore.",
+    "Takes off what's checked, or everything. The answer says what was there, for Undo with /list/restore. With the household's put-away setting on, what checking put in the pantry stays there, and checked rows that never went in are put away first.",
   ...openToKeys("list", "write"),
   request: {
     body: {

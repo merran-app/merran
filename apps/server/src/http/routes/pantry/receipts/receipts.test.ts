@@ -119,7 +119,7 @@ type Line = {
   name: string
   amount: string | null
   kind: string
-  listItem: { id: string; name: string } | null
+  listItem: { id: string; name: string; putAway: boolean } | null
 }
 
 async function scanned() {
@@ -259,6 +259,47 @@ describe("adding a receipt", () => {
       404
     )
     expect((await kyle.get(receipt.files[0]!.url)).status).toBe(404)
+  })
+
+  test("a line for something already put away from the list says so, and adding it anyway leaves the list alone", async () => {
+    const made = await kyle.post("/api/list/items", { text: "milk" })
+    const row = (await made.json()) as { id: string }
+    const checked = await kyle.patch(`/api/list/items/${row.id}`, {
+      checked: true,
+    })
+    expect(checked.status, await checked.clone().text()).toBe(200)
+
+    const receipt = await scanned()
+    expect(receipt.lines[0]!.listItem).toEqual({
+      id: row.id,
+      name: "milk",
+      putAway: true,
+    })
+
+    const res = await kyle.post(`/api/pantry/receipts/${receipt.id}/add`, {
+      items: [{ id: receipt.lines[0]!.id, name: "milk", amount: "1 gallon" }],
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    // Bought again, so it's added, but nothing came off the list.
+    expect(await res.json()).toEqual({ added: 1, offTheList: 0 })
+
+    const list = (await (await kyle.get("/api/list")).json()).items as {
+      id: string
+      checked: boolean
+    }[]
+    expect(list.find((item) => item.id === row.id)).toMatchObject({
+      checked: true,
+    })
+    const pantry = (await (await kyle.get("/api/pantry")).json()).items as {
+      name: string
+      quantity: number | null
+      unit: string | null
+    }[]
+    // The earlier test left a gallon of whole milk; this is the second.
+    expect(pantry.find((item) => item.name === "whole milk")).toMatchObject({
+      quantity: 2,
+      unit: "gallon",
+    })
   })
 
   test("needs something picked", async () => {

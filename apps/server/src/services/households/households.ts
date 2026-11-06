@@ -3,6 +3,7 @@ import type { EntityManager } from "@mikro-orm/sql"
 import {
   Household,
   HouseholdMember,
+  type HouseholdSettings,
   Session,
   ShoppingList,
   type HOUSEHOLD_ROLES,
@@ -11,6 +12,13 @@ import { ACROSS_HOUSEHOLDS } from "../../database/scope.ts"
 import { AppError } from "../../core/errors.ts"
 
 export type HouseholdRole = (typeof HOUSEHOLD_ROLES)[number]
+
+/** Whether checking something off the list puts it in the pantry. Absent means yes. */
+export function putsAwayWhenChecked(
+  settings: HouseholdSettings | null | undefined
+) {
+  return settings?.pantry?.putAwayWhenChecked ?? true
+}
 
 /** "Mom & Dad's" becomes "mom-dads-3f9a1c": readable, and unique. */
 function slugFor(name: string) {

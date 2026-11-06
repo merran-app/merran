@@ -23,17 +23,23 @@ import { STORAGE_PLACES, type PantryItem, type StoragePlace } from "./queries"
 import { usePantryActions, type PutBack } from "./use-pantry-actions"
 import { useDayLabel } from "./use-soon"
 
-/** Fridge, freezer or cupboard, as toggles. */
-function PlacePicker({
+/**
+ * Fridge, freezer or cupboard, as toggles. `label` names the group for
+ * screen readers, where several sit together and each is for one thing.
+ */
+export function PlacePicker({
   value,
   onChange,
+  label,
 }: {
   value: StoragePlace | null
   onChange: (place: StoragePlace) => void
+  label?: string
 }) {
   const { t } = useTranslation()
   return (
     <ToggleGroup
+      aria-label={label}
       variant="outline"
       value={value ? [value] : []}
       onValueChange={(next) => {

@@ -102,6 +102,14 @@ async function undo(result: ForMeals) {
   }
 }
 
+/** Whether checking something off puts it in the pantry. */
+async function putAwayWhenChecked(on: boolean) {
+  const res = await kyle.patch("/api/households/current", {
+    putAwayWhenChecked: on,
+  })
+  expect(res.status, await res.clone().text()).toBe(200)
+}
+
 /** Meals first: taking a cooked one off puts back what it used. */
 async function clearAll() {
   const entries = (
@@ -201,13 +209,19 @@ describe("covered at home", () => {
   })
 
   test("not what was bought for the meals", async () => {
-    await lemonChicken()
-    const line = await listed("chicken thighs")
-    await kyle.patch(`/api/list/items/${line!.id}`, { checked: true })
-    await kyle.post("/api/list/put-away", {})
-    expect((await atHome("chicken thighs"))?.meals).toHaveLength(1)
-    expect((await covered()).items).toEqual([])
-    await clearAll()
+    // Put away as it is when checking off doesn't put things away first.
+    await putAwayWhenChecked(false)
+    try {
+      await lemonChicken()
+      const line = await listed("chicken thighs")
+      await kyle.patch(`/api/list/items/${line!.id}`, { checked: true })
+      await kyle.post("/api/list/put-away", {})
+      expect((await atHome("chicken thighs"))?.meals).toHaveLength(1)
+      expect((await covered()).items).toEqual([])
+      await clearAll()
+    } finally {
+      await putAwayWhenChecked(true)
+    }
   })
 
   test("only for meals on the list still to come", async () => {

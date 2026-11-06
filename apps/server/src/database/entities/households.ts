@@ -22,6 +22,11 @@ export type HouseholdSettings = {
   /** The meals filled for it: every meal until it opts out of some. Any can be planned by hand. */
   meals?: Meal[]
   alwaysOnHand?: string[]
+  /** What the pantry does by itself. */
+  pantry?: {
+    /** Checking something off the list puts it in the pantry. On unless turned off. */
+    putAwayWhenChecked?: boolean
+  }
   /** What it eats and doesn't. */
   tastes?: HouseholdTastes
   /**

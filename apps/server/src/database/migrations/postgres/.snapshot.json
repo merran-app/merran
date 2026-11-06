@@ -3072,6 +3072,27 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
+        "stored_in": {
+          "name": "stored_in",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [
+            "fridge",
+            "freezer",
+            "cupboard"
+          ],
+          "mappedType": "enum"
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamptz(6)",
@@ -3123,7 +3144,14 @@
           "unique": true
         }
       ],
-      "checks": [],
+      "checks": [
+        {
+          "name": "food_placements_stored_in_check",
+          "expression": "\"stored_in\" in ('fridge', 'freezer', 'cupboard')",
+          "definition": "check (\"stored_in\" in ('fridge', 'freezer', 'cupboard'))",
+          "columnName": "stored_in"
+        }
+      ],
       "triggers": [],
       "foreignKeys": {
         "food_placements_aisle_id_foreign": {
@@ -11599,6 +11627,23 @@
           "collation": null,
           "enumItems": [],
           "mappedType": "string"
+        },
+        "put_away": {
+          "name": "put_away",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "json"
         },
         "quantity": {
           "name": "quantity",

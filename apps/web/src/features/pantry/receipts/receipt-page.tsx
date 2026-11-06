@@ -99,7 +99,8 @@ function Review({ receipt }: { receipt: Receipt }) {
       receipt.lines.map((line) => [
         line.id,
         {
-          on: line.kind === "food",
+          // Already put away from the list: ticking it adds it again.
+          on: line.kind === "food" && !line.listItem?.putAway,
           name: line.name,
           amount: line.amount ?? "",
         },
@@ -109,7 +110,10 @@ function Review({ receipt }: { receipt: Receipt }) {
   const chosen = receipt.lines.filter(
     (line) => choices[line.id]?.on && choices[line.id]!.name.trim()
   )
-  const offTheList = chosen.filter((line) => line.listItem).length
+  // A put-away row stays on the list, so it doesn't come off.
+  const offTheList = chosen.filter(
+    (line) => line.listItem && !line.listItem.putAway
+  ).length
   const change = (id: string, next: Partial<Choice>) =>
     setChoices((now) => ({ ...now, [id]: { ...now[id]!, ...next } }))
   const allOn = receipt.lines.every((line) => choices[line.id]?.on)
@@ -327,7 +331,11 @@ function Line({
           {line.text && <span className="font-mono">{line.text}</span>}
           {line.price !== null && <span>{money(line.price)}</span>}
           {line.listItem && (
-            <Badge variant="secondary">{t("pantry.receipts.onList")}</Badge>
+            <Badge variant="secondary">
+              {line.listItem.putAway
+                ? t("pantry.receipts.alreadyPutAway")
+                : t("pantry.receipts.onList")}
+            </Badge>
           )}
           {line.kind !== "food" && (
             <span>{t(`pantry.receipts.kinds.${line.kind}`)}</span>

@@ -177,6 +177,19 @@ describe("live updates", () => {
     await listeners(0)
   })
 
+  test("say that clearing the list, and turning put-away on, change the pantry too", async () => {
+    const stream = await listen(jamie)
+    await kyle.post("/api/list/clear", { which: "checked" })
+    expect(await stream.next()).toMatchObject({ event: "list" })
+    expect(await stream.next()).toMatchObject({ event: "pantry" })
+    await kyle.patch("/api/households/current", { putAwayWhenChecked: true })
+    expect(await stream.next()).toMatchObject({ event: "household" })
+    expect(await stream.next()).toMatchObject({ event: "list" })
+    expect(await stream.next()).toMatchObject({ event: "pantry" })
+    stream.close()
+    await listeners(0)
+  })
+
   test("say who has a page open", async () => {
     const kyleOnList = await listen(kyle, { page: "list" })
     expect(await kyleOnList.next()).toMatchObject({
