@@ -1,13 +1,22 @@
+import { addDays, clockIn, weekStartOf } from "@merran/shared"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../app.ts"
+import { Purchase } from "../../../../database/entities/index.ts"
+import type { Database } from "../../../../database/orm.ts"
+import { forHousehold } from "../../../../database/scope.ts"
 import { createTestApp, setUpServer, TestClient } from "../../../../test/app.ts"
 
 // Checking food off the list puts it in the pantry, in a US household on UTC
 // whose week starts on Monday.
 
 let app: App
+let database: Database
 let close: () => Promise<void>
 let kyle: TestClient
+let householdId: string
+let today: string
+/** Next week's Monday, so meals are still to come. */
+let monday: string
 const ids: Record<string, string> = {}
 
 type PantryItem = {
@@ -17,7 +26,17 @@ type PantryItem = {
   quantity: number | null
   unit: string | null
   storedIn: string | null
+  useBy: string | null
+  meals: { id: string; name: string }[]
 }
+
+type ListItem = {
+  id: string
+  name: string
+  checked: boolean
+}
+
+const day = (offset: number) => addDays(monday, offset)
 
 async function pantry(): Promise<PantryItem[]> {
   const res = await kyle.get("/api/pantry")
@@ -28,21 +47,53 @@ async function pantry(): Promise<PantryItem[]> {
 const find = async (name: string) =>
   (await pantry()).find((item) => item.name === name)
 
+/** Types something into the pantry, as its add box does. */
+async function add(text: string) {
+  const res = await kyle.post("/api/pantry/items", { text })
+  expect(res.status, await res.clone().text()).toBe(201)
+  return (await res.json()) as PantryItem
+}
+
 async function listItems() {
   const res = await kyle.get("/api/list")
   expect(res.status).toBe(200)
-  return (await res.json()).items as {
-    id: string
-    name: string
-    checked: boolean
-  }[]
+  return (await res.json()).items as ListItem[]
 }
 
 /** Types a line onto the list, as the add box does. */
-async function typed(text: string) {
+async function typed(text: string): Promise<ListItem> {
   const res = await kyle.post("/api/list/items", { text })
   expect(res.status, await res.clone().text()).toBe(201)
   return res.json()
+}
+
+/** Checks a row off, or not, as tapping it does. */
+async function check(row: { id: string }, on: boolean) {
+  const res = await kyle.patch(`/api/list/items/${row.id}`, { checked: on })
+  expect(res.status, await res.clone().text()).toBe(200)
+  return (await res.json()) as ListItem
+}
+
+/** What's in the purchase history, by name. */
+async function purchases() {
+  const em = forHousehold(database.em.fork(), householdId)
+  const bought = await em.find(Purchase, {}, { orderBy: { name: "asc" } })
+  return bought.map((purchase) => purchase.name)
+}
+
+async function plan(body: Record<string, unknown>) {
+  const res = await kyle.post("/api/plan/entries", body)
+  expect(res.status, await res.clone().text()).toBe(201)
+  return (await res.json()) as { id: string }
+}
+
+/** Puts next week's meals on the list. */
+async function fromPlan() {
+  const res = await kyle.post("/api/list/from-plan", {
+    from: day(0),
+    to: day(6),
+  })
+  expect(res.status, await res.clone().text()).toBe(200)
 }
 
 async function setting(on: boolean) {
@@ -53,10 +104,10 @@ async function setting(on: boolean) {
   return res.json()
 }
 
-/** The pantry, the list and the plan, emptied. */
+/** The pantry, the list, the plan and the purchase history, emptied. */
 async function clearAll() {
   const entries = (
-    await (await kyle.get("/api/plan?from=2000-01-01&to=2100-01-01")).json()
+    await (await kyle.get(`/api/plan?from=${day(-14)}&to=${day(13)}`)).json()
   ).entries
   if (entries.length > 0) {
     await kyle.post("/api/plan/entries/bulk", {
@@ -66,17 +117,26 @@ async function clearAll() {
   }
   await kyle.post("/api/pantry/clear")
   await kyle.post("/api/list/clear", { which: "all" })
+  // Nothing takes purchases out of the history but unchecking, so the
+  // tests start each other clean straight from the database.
+  await forHousehold(database.em.fork(), householdId).nativeDelete(Purchase, {})
 }
 
 beforeAll(async () => {
   const test = await createTestApp()
-  ;({ app, close } = test)
+  ;({ app, database, close } = test)
   kyle = await setUpServer(app, test.setupCode)
-  await kyle.patch("/api/households/current", {
-    timeZone: "UTC",
-    weekStartsOn: 1,
-    country: "US",
-  })
+  householdId = (
+    await (
+      await kyle.patch("/api/households/current", {
+        timeZone: "UTC",
+        weekStartsOn: 1,
+        country: "US",
+      })
+    ).json()
+  ).id
+  today = clockIn("UTC").today
+  monday = addDays(weekStartOf(today, 1), 7)
   const res = await kyle.post("/api/recipes", {
     name: "Lemon Chicken",
     servings: 4,
@@ -88,9 +148,6 @@ beforeAll(async () => {
 
 afterAll(() => close())
 
-// Kept for the tests that check things off, uncheck them and review them.
-void [pantry, find, listItems, typed, clearAll]
-
 describe("putting food away when it's checked off", () => {
   test("puts food away when it's checked off, unless the household says not", async () => {
     const household = await (await kyle.get("/api/households/current")).json()
@@ -100,5 +157,155 @@ describe("putting food away when it's checked off", () => {
     })
     expect((await off.json()).putAwayWhenChecked).toBe(false)
     await setting(true)
+  })
+})
+
+describe("checking off", () => {
+  test("puts it in the pantry, set aside for its meal, and records the purchase", async () => {
+    const meal = await plan({
+      date: day(0),
+      meal: "dinner",
+      recipe: ids["Lemon Chicken"],
+    })
+    await fromPlan()
+    const chicken = (await listItems()).find(
+      (item) => item.name === "chicken thighs"
+    )!
+    await check(chicken, true)
+    expect(await find("chicken thighs")).toMatchObject({
+      amount: "2 lb",
+      storedIn: "fridge",
+      useBy: addDays(today, 3),
+      meals: [{ id: meal.id, name: "Lemon Chicken" }],
+    })
+    expect(await purchases()).toEqual(["chicken thighs"])
+    await clearAll()
+  })
+
+  test("unchecking takes exactly that back out of stock that was there", async () => {
+    await add("1 lb chicken thighs")
+    const row = await typed("2 lb chicken thighs")
+    await check(row, true)
+    expect(await pantry()).toMatchObject([
+      { name: "chicken thighs", amount: "3 lb" },
+    ])
+    await check(row, false)
+    expect(await pantry()).toMatchObject([
+      { name: "chicken thighs", amount: "1 lb" },
+    ])
+    expect(await purchases()).toEqual([])
+    await clearAll()
+  })
+
+  test("unchecking takes its meal's share off what stays at home", async () => {
+    const meal = await plan({
+      date: day(0),
+      meal: "dinner",
+      recipe: ids["Lemon Chicken"],
+    })
+    await fromPlan()
+    await add("1 lb chicken thighs")
+    const row = (await listItems()).find(
+      (item) => item.name === "chicken thighs"
+    )!
+    await check(row, true)
+    expect(await find("chicken thighs")).toMatchObject({
+      amount: "3 lb",
+      meals: [{ id: meal.id }],
+    })
+    await check(row, false)
+    expect(await find("chicken thighs")).toMatchObject({
+      amount: "1 lb",
+      meals: [],
+    })
+    await clearAll()
+  })
+
+  test("unchecking what made a pantry item takes the item away", async () => {
+    const row = await typed("1 gallon milk")
+    await check(row, true)
+    expect(await find("milk")).toBeDefined()
+    await check(row, false)
+    expect(await find("milk")).toBeUndefined()
+    await clearAll()
+  })
+
+  test("something with no amount goes in as having some, and comes out only if it made it", async () => {
+    const basil = await typed("basil")
+    await check(basil, true)
+    expect(await find("basil")).toMatchObject({ amount: "" })
+    await check(basil, false)
+    expect(await find("basil")).toBeUndefined()
+    await add("rice")
+    const rice = await typed("rice")
+    await check(rice, true)
+    await check(rice, false)
+    expect(await find("rice")).toMatchObject({ amount: "" })
+    await clearAll()
+  })
+
+  test("something with an amount in words comes out only if it made it", async () => {
+    const spinach = await typed("spinach")
+    await kyle.patch(`/api/list/items/${spinach.id}`, { amount: "half a bag" })
+    await check(spinach, true)
+    expect(await find("spinach")).toMatchObject({ amount: "half a bag" })
+    await check(spinach, false)
+    expect(await find("spinach")).toBeUndefined()
+
+    // Joining stock that was there, it leaves that stock where it is.
+    await add("flour")
+    const flour = await typed("flour")
+    await kyle.patch(`/api/list/items/${flour.id}`, { amount: "half a bag" })
+    await check(flour, true)
+    await check(flour, false)
+    expect(await find("flour")).toBeDefined()
+    expect(await purchases()).toEqual([])
+    await clearAll()
+  })
+
+  test("household things and staples are bought, not stored", async () => {
+    const towels = await typed("paper towels")
+    const salt = await typed("salt")
+    await check(towels, true)
+    await check(salt, true)
+    expect(await pantry()).toEqual([])
+    expect(await purchases()).toEqual(["paper towels", "salt"])
+    await check(towels, false)
+    await check(salt, false)
+    expect(await pantry()).toEqual([])
+    expect(await purchases()).toEqual([])
+    await clearAll()
+  })
+
+  test("a selection goes in, and its Undo takes it back out", async () => {
+    const milk = await typed("1 gallon milk")
+    const eggs = await typed("12 eggs")
+    const res = await kyle.post("/api/list/items/bulk", {
+      ids: [milk.id, eggs.id],
+      action: "check",
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    const { before } = await res.json()
+    expect(await find("milk")).toBeDefined()
+    expect(await find("eggs")).toBeDefined()
+
+    const undo = await kyle.post("/api/list/restore", { items: before })
+    expect(undo.status, await undo.clone().text()).toBe(200)
+    expect(await find("milk")).toBeUndefined()
+    expect(await find("eggs")).toBeUndefined()
+    expect(await listItems()).toMatchObject([
+      { name: "milk", checked: false },
+      { name: "eggs", checked: false },
+    ])
+    expect(await purchases()).toEqual([])
+    await clearAll()
+  })
+
+  test("two phones checking the same row at once put it away once", async () => {
+    const row = await typed("2 lb chicken thighs")
+    await Promise.all([check(row, true), check(row, true)])
+    expect(await find("chicken thighs")).toMatchObject({ amount: "2 lb" })
+    expect(await purchases()).toEqual(["chicken thighs"])
+    await clearAll()
   })
 })

@@ -23,6 +23,8 @@ const CHANGES: [RegExp, LiveArea[]][] = [
     /^\/api\/list\/(put-away|from-plan|for-meals|covered\/[^/]+\/not-at-home)$/,
     ["list", "pantry"],
   ],
+  // Checking off puts food away.
+  [/^\/api\/list\/(items(\/[^/]+|\/bulk)?|restore)$/, ["list", "pantry"]],
   [/^\/api\/list(\/|$)/, ["list"]],
   // Product choices and cart transfers change shopping progress on every device.
   [/^\/api\/stores(\/|$)/, ["list"]],

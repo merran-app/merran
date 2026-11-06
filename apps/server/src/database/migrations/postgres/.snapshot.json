@@ -11600,6 +11600,23 @@
           "enumItems": [],
           "mappedType": "string"
         },
+        "put_away": {
+          "name": "put_away",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
         "quantity": {
           "name": "quantity",
           "type": "double precision",

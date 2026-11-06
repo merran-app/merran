@@ -1,5 +1,13 @@
 import { addDays, clockIn, weekStartOf } from "@merran/shared"
-import { afterAll, beforeAll, describe, expect, test } from "vitest"
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "vitest"
 import type { App } from "../../../app.ts"
 import { Purchase } from "../../../database/entities/index.ts"
 import type { Database } from "../../../database/orm.ts"
@@ -71,6 +79,14 @@ const listed = async (name: string) =>
   (await (await kyle.get("/api/list")).json()).items.find(
     (item: { name: string }) => item.name === name
   )
+
+/** Whether checking something off puts it in the pantry. */
+async function putAwayWhenChecked(on: boolean) {
+  const res = await kyle.patch("/api/households/current", {
+    putAwayWhenChecked: on,
+  })
+  expect(res.status, await res.clone().text()).toBe(200)
+}
 
 /** Meals first: taking a cooked one off puts back what it used. */
 async function clearAll() {
@@ -243,6 +259,10 @@ describe("the pantry", () => {
 })
 
 describe("putting the shopping away", () => {
+  // Put away as it is when checking off doesn't put things away first.
+  beforeEach(() => putAwayWhenChecked(false))
+  afterEach(() => putAwayWhenChecked(true))
+
   test("puts what's checked off in the pantry, and in the purchase history", async () => {
     const chicken = await plan({
       date: day(0),

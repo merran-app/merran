@@ -6826,6 +6826,7 @@ export interface components {
          *               "unit": "pound"
          *             }
          *           ],
+         *           "putAway": null,
          *           "createdAt": "2026-10-15T18:30:00.000Z"
          *         }
          *       ]
@@ -6854,6 +6855,7 @@ export interface components {
          *           "unit": "pound"
          *         }
          *       ],
+         *       "putAway": null,
          *       "createdAt": "2026-10-15T18:30:00.000Z"
          *     }
          */
@@ -6873,6 +6875,31 @@ export interface components {
                 quantity: number | null;
                 unit: string | null;
             }[] | null;
+            /** @description What checking it off put in the pantry, so unchecking takes it back out. */
+            putAway?: {
+                /**
+                 * Format: uuid
+                 * @description The pantry item it went into; null for household things and staples.
+                 */
+                pantryItem: string | null;
+                quantity: number | null;
+                unit: string | null;
+                amountText: string | null;
+                /** @description It made that pantry item, rather than joining one already there. */
+                created: boolean;
+                forMeals: {
+                    meal: string;
+                    quantity: number | null;
+                    unit: string | null;
+                }[];
+                /**
+                 * Format: uuid
+                 * @description The purchase it recorded.
+                 */
+                purchase: string;
+                /** Format: date-time */
+                lookedOverAt: string | null;
+            } | null;
             /** Format: date-time */
             createdAt: string;
         };
@@ -7213,6 +7240,7 @@ export interface components {
          *               "unit": "pound"
          *             }
          *           ],
+         *           "putAway": null,
          *           "createdAt": "2026-10-15T18:30:00.000Z"
          *         }
          *       ]
@@ -7807,6 +7835,7 @@ export interface components {
          *               "unit": "pound"
          *             }
          *           ],
+         *           "putAway": null,
          *           "createdAt": "2026-10-15T18:30:00.000Z"
          *         }
          *       ]

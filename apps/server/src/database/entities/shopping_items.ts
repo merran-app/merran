@@ -14,6 +14,27 @@ export const ITEM_SOURCES = [
   "assistant",
 ] as const
 
+/**
+ * What checking a row off put in the pantry, so unchecking it takes
+ * exactly that back out.
+ */
+export type PutAwayRecord = {
+  /** The pantry item it went into; null for household things and staples. */
+  pantryItem: string | null
+  /** How much it added there. */
+  quantity: number | null
+  unit: string | null
+  amountText: string | null
+  /** It made that pantry item, rather than joining one already there. */
+  created: boolean
+  /** The meal shares it brought. */
+  forMeals: MealShare[]
+  /** The purchase it recorded. */
+  purchase: string
+  /** When "Where did it all go?" showed it. */
+  lookedOverAt: string | null
+}
+
 export const ShoppingItem = defineEntity({
   name: "ShoppingItem",
   tableName: "shopping_items",
@@ -34,6 +55,8 @@ export const ShoppingItem = defineEntity({
      * meal off the plan takes its share off the list.
      */
     forMeals: p.json<MealShare[]>().nullable(),
+    /** What checking it off put in the pantry, while it's checked. */
+    putAway: p.json<PutAwayRecord>().nullable(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

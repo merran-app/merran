@@ -325,6 +325,14 @@ afterAll(() => close())
 const status = async (client = kyle) =>
   (await (await client.get("/api/stores")).json()).kroger
 
+/** Whether checking something off puts it in the pantry. */
+async function putAwayWhenChecked(on: boolean) {
+  const res = await kyle.patch("/api/households/current", {
+    putAwayWhenChecked: on,
+  })
+  expect(res.status, await res.clone().text()).toBe(200)
+}
+
 /** Links Kyle's Kroger account, as Kroger sends Kyle back. */
 async function link() {
   const res = await kyle.post("/api/stores/kroger/link")
@@ -1196,37 +1204,51 @@ describe("buying by the package, costs and a budget", () => {
   })
 
   test("what was sent to the cart goes in the pantry as the packs bought", async () => {
-    // Two gallons of milk went to the cart for the gallon on the list.
-    const list = (await (await kyle.get("/api/list")).json()).items as {
-      id: string
-      name: string
-    }[]
-    const milk = list.find((item) => item.name === "milk")!
-    await kyle.post("/api/list/items/bulk", { ids: [milk.id], action: "check" })
-    const res = await kyle.post("/api/list/put-away", {})
-    expect(res.status, await res.clone().text()).toBe(200)
-    const pantry = (await (await kyle.get("/api/pantry")).json()).items as {
-      name: string
-      quantity: number | null
-      unit: string | null
-    }[]
-    expect(pantry.find((item) => item.name === "milk")).toMatchObject({
-      quantity: 2,
-      unit: "gallon",
-    })
+    // Put away as it is when checking off doesn't put things away first.
+    await putAwayWhenChecked(false)
+    try {
+      // Two gallons of milk went to the cart for the gallon on the list.
+      const list = (await (await kyle.get("/api/list")).json()).items as {
+        id: string
+        name: string
+      }[]
+      const milk = list.find((item) => item.name === "milk")!
+      await kyle.post("/api/list/items/bulk", {
+        ids: [milk.id],
+        action: "check",
+      })
+      const res = await kyle.post("/api/list/put-away", {})
+      expect(res.status, await res.clone().text()).toBe(200)
+      const pantry = (await (await kyle.get("/api/pantry")).json()).items as {
+        name: string
+        quantity: number | null
+        unit: string | null
+      }[]
+      expect(pantry.find((item) => item.name === "milk")).toMatchObject({
+        quantity: 2,
+        unit: "gallon",
+      })
+    } finally {
+      await putAwayWhenChecked(true)
+    }
   })
 
   test("an amount corrected after sending takes precedence at put-away", async () => {
-    const { items } = await (await kyle.get("/api/list")).json()
-    const eggs = items.find((item: { name: string }) => item.name === "eggs")
-    await kyle.patch(`/api/list/items/${eggs.id}`, {
-      amount: "6",
-      checked: true,
-    })
-    expect((await kyle.post("/api/list/put-away", {})).status).toBe(200)
-    const pantry = await (await kyle.get("/api/pantry")).json()
-    expect(
-      pantry.items.find((item: { name: string }) => item.name === "eggs")
-    ).toMatchObject({ quantity: 6 })
+    await putAwayWhenChecked(false)
+    try {
+      const { items } = await (await kyle.get("/api/list")).json()
+      const eggs = items.find((item: { name: string }) => item.name === "eggs")
+      await kyle.patch(`/api/list/items/${eggs.id}`, {
+        amount: "6",
+        checked: true,
+      })
+      expect((await kyle.post("/api/list/put-away", {})).status).toBe(200)
+      const pantry = await (await kyle.get("/api/pantry")).json()
+      expect(
+        pantry.items.find((item: { name: string }) => item.name === "eggs")
+      ).toMatchObject({ quantity: 6 })
+    } finally {
+      await putAwayWhenChecked(true)
+    }
   })
 })

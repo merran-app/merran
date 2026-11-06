@@ -1,6 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
-import { putAway } from "../../../../services/pantry/put-away.ts"
+import { putAway } from "../../../../services/pantry/put-away/put-away.ts"
 import { inHousehold, openToKeys } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import { PutAwayResultSchema, PutAwaySchema } from "../../../schemas/pantry.ts"

@@ -61,8 +61,10 @@ async function fromPlan(from = day(0), to = day(6)) {
   return res.json()
 }
 
+/** The list, the plan, and the pantry checking off fills, emptied. */
 async function clearAll() {
   await kyle.post("/api/list/clear", { which: "all" })
+  await kyle.post("/api/pantry/clear")
   const entries = (
     await (await kyle.get(`/api/plan?from=${day(-7)}&to=${day(13)}`)).json()
   ).entries
@@ -408,13 +410,15 @@ describe("adding from the plan", () => {
     expect(await preview()).toMatchObject({ meals: [], listed: 1 })
 
     await kyle.post("/api/list/clear", { which: "all" })
-    // The oil at home is still the meal's, not needed twice.
+    // The oil at home is still the meal's, not needed twice; and so are
+    // the lemons, which went in the pantry when they were checked off.
     expect(await fromPlan()).toMatchObject({
       meals: 1,
-      inPantry: ["olive oil"],
+      inPantry: ["lemons", "olive oil"],
     })
     expect(await find("chicken thighs")).toMatchObject({ amount: "2 lb" })
     expect(await find("olive oil")).toBeUndefined()
+    expect(await find("lemons")).toBeUndefined()
 
     // Taking the last thing for it off does the same.
     for (const item of await list()) {

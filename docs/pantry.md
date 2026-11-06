@@ -16,7 +16,7 @@ Thaw reminders on Today, leftovers as portions, and a quick "still got these?" c
 
 ## What's there today
 
-- Checking something off doesn't put it in the pantry. **Put away** on a list, **Put it all away**, or **Put purchases away and finish** in shopping mode does ([put-away.ts](../apps/server/src/services/pantry/put-away.ts)). It already puts the food in the fridge, freezer or cupboard with a use-by guess, sets it aside for the meals it was bought for, uses the packs bought from Kroger, skips household things and always-on-hand staples, and records the purchase for usual buys.
+- Checking something off doesn't put it in the pantry. **Put away** on a list, **Put it all away**, or **Put purchases away and finish** in shopping mode does ([put-away.ts](../apps/server/src/services/pantry/put-away/put-away.ts)). It already puts the food in the fridge, freezer or cupboard with a use-by guess, sets it aside for the meals it was bought for, uses the packs bought from Kroger, skips household things and always-on-hand staples, and records the purchase for usual buys.
 - Cooking a planned meal takes the recipe's amounts out of the pantry, using what was set aside for it first, and remembers what it took so marking it not cooked puts that back ([cooking.ts](../apps/server/src/services/pantry/cooking.ts)).
 - **I made this** for a recipe with no meal today or in the week's pool sets when it was last made, and nothing else. The pantry isn't touched.
 - A planned meal nobody marks stays set aside for six days, then its food counts as free stock for the next list.

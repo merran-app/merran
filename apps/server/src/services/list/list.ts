@@ -14,11 +14,13 @@ import {
   ShoppingItem,
   ShoppingList,
   WeeklyItem,
+  type PutAwayRecord,
 } from "../../database/entities/index.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { householdKeys } from "../foods/aliases.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import { toNumber } from "../../database/numbers.ts"
+import { setChecked } from "../pantry/put-away/checking.ts"
 import {
   aislesOf,
   describeAisle,
@@ -38,7 +40,8 @@ import { relistRestored, unlistRemoved } from "./meals.ts"
 
 // The shopping lists: what to buy, by aisle, on the list for the store
 // it's bought at. Things go on from the plan (added up), typed in, or
-// every week. Checking something off keeps it until the list is cleared.
+// every week. Checking something off keeps it until the list is cleared,
+// and puts it in the pantry when the household says to.
 
 export type ItemSource = (typeof ITEM_SOURCES)[number]
 
@@ -114,11 +117,18 @@ export function itemSnapshot(item: ShoppingItem) {
     checked: item.checked,
     source: item.source,
     forMeals: item.forMeals ?? null,
+    putAway: item.putAway ?? null,
     createdAt: item.createdAt.toISOString(),
   }
 }
 
-export type ItemSnapshot = ReturnType<typeof itemSnapshot>
+/**
+ * Snapshots taken before rows remembered what they put away (a page open
+ * since then) have no `putAway`.
+ */
+export type ItemSnapshot = Omit<ReturnType<typeof itemSnapshot>, "putAway"> & {
+  putAway?: PutAwayRecord | null
+}
 
 /**
  * The household's lists, the main one first; its aisles in walking order;
@@ -205,40 +215,41 @@ export type ItemChanges = Partial<{
   list: string
 }>
 
-function check(item: ShoppingItem, checked: boolean) {
-  if (item.checked === checked) return
-  item.checked = checked
-  item.checkedAt = checked ? new Date() : null
-}
-
 export async function updateItem(
   em: EntityManager,
   householdId: string,
   id: string,
   changes: ItemChanges
 ) {
-  const keyOf = await householdKeys(em)
-  const item = await findItem(em, id)
-  if (changes.name !== undefined) {
-    item.name = changes.name.trim()
-    item.foodKey = keyOf(item.name)
-  }
-  if (changes.amount !== undefined) em.assign(item, readAmount(changes.amount))
-  if (changes.checked !== undefined) check(item, changes.checked)
-  if (changes.aisle !== undefined) {
-    const aisle = changes.aisle ? await findAisle(em, changes.aisle) : null
-    item.aisle = aisle
-      ? em.getReference(Aisle, aisle.id, { wrapped: true })
-      : null
-    await rememberAisle(em, householdId, [item.name], aisle)
-  }
-  if (changes.list !== undefined) {
-    const list = await findList(em, changes.list)
-    item.list = em.getReference(ShoppingList, list.id, { wrapped: true })
-    await rememberList(em, householdId, [item.name], list)
-  }
-  await em.flush()
-  return (await describeItems(em, [item]))[0]!
+  return inHouseholdTransaction(em, householdId, async (tx) => {
+    const keyOf = await householdKeys(tx)
+    const item = await findItem(tx, id)
+    if (changes.name !== undefined) {
+      item.name = changes.name.trim()
+      item.foodKey = keyOf(item.name)
+    }
+    if (changes.amount !== undefined) {
+      tx.assign(item, readAmount(changes.amount))
+    }
+    if (changes.aisle !== undefined) {
+      const aisle = changes.aisle ? await findAisle(tx, changes.aisle) : null
+      item.aisle = aisle
+        ? tx.getReference(Aisle, aisle.id, { wrapped: true })
+        : null
+      await rememberAisle(tx, householdId, [item.name], aisle)
+    }
+    if (changes.list !== undefined) {
+      const list = await findList(tx, changes.list)
+      item.list = tx.getReference(ShoppingList, list.id, { wrapped: true })
+      await rememberList(tx, householdId, [item.name], list)
+    }
+    // Last, so what goes in the pantry is the row as it's just been changed.
+    if (changes.checked !== undefined) {
+      await setChecked(tx, householdId, [item], changes.checked)
+    }
+    await tx.flush()
+    return (await describeItems(tx, [item]))[0]!
+  })
 }
 
 export async function removeItem(em: EntityManager, id: string) {
@@ -280,7 +291,7 @@ export async function bulkItems(
         break
       case "check":
       case "uncheck":
-        for (const item of items) check(item, bulk.action === "check")
+        await setChecked(tx, householdId, items, bulk.action === "check")
         break
       case "aisle": {
         const aisle = bulk.aisle ? await findAisle(tx, bulk.aisle) : null
@@ -406,12 +417,17 @@ export async function restoreItems(
           { filters: { [HOUSEHOLD_FILTER]: false } }
         )
         if (elsewhere > 0) continue
+        // Back checked or not as it was, with what it put away: that's
+        // still in the pantry, so nothing goes in again.
         item = tx.create(ShoppingItem, {
           id: snapshot.id,
           household: householdId,
           list: listOf(snapshot.list),
           name: snapshot.name,
           source: snapshot.source,
+          checked: snapshot.checked,
+          checkedAt: snapshot.checked ? new Date() : null,
+          putAway: snapshot.putAway ?? null,
           createdAt: new Date(snapshot.createdAt),
         })
       }
@@ -427,7 +443,9 @@ export async function restoreItems(
         source: snapshot.source,
         forMeals: snapshot.forMeals as MealShare[] | null,
       })
-      check(item, snapshot.checked)
+      if (item.checked !== snapshot.checked) {
+        await setChecked(tx, householdId, [item], snapshot.checked)
+      }
       restored.push(item)
     }
     await tx.flush()

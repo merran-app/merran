@@ -30,10 +30,10 @@ import { inHouseholdTransaction } from "../../database/transactions.ts"
 import { toNumber } from "../../database/numbers.ts"
 
 // What's at home, kept in the fridge, the freezer or the cupboard. It
-// goes in from the list when the shopping's put away, or typed in, and
-// cooking a planned meal uses it up. Each thing remembers how much of it
-// is set aside for which planned meals, so the same stock isn't counted
-// on twice.
+// goes in from the list when it's checked off or the shopping's put
+// away, or typed in, and cooking a planned meal uses it up. Each thing
+// remembers how much of it is set aside for which planned meals, so the
+// same stock isn't counted on twice.
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -281,12 +281,14 @@ export type Stock = {
  * Puts something in the pantry. The same food kept in the same place
  * goes with what's there when the amounts add up (or one is just "have
  * it"), keeping the earlier use-by date; otherwise it's a thing of its own.
+ * Says which item it went into, and whether it made that item, so
+ * checking off can take exactly that back out.
  */
 export async function store(
   em: EntityManager,
   householdId: string,
   stock: Stock
-) {
+): Promise<{ item: PantryItem; created: boolean }> {
   const keyOf = await householdKeys(em)
   const key = keyOf(stock.name)
   const same = await em.find(PantryItem, {
@@ -323,9 +325,9 @@ export async function store(
           : (item.useBy ?? stock.useBy),
       forMeals: merged([...(item.forMeals ?? []), ...stock.forMeals]),
     })
-    return item
+    return { item, created: false }
   }
-  return em.create(PantryItem, {
+  const item = em.create(PantryItem, {
     household: householdId,
     foodKey: key,
     name: stock.name,
@@ -337,6 +339,7 @@ export async function store(
     useBy: stock.useBy,
     forMeals: stock.forMeals.length > 0 ? merged(stock.forMeals) : null,
   })
+  return { item, created: true }
 }
 
 /**
@@ -404,7 +407,7 @@ export async function addTyped(
   const today = await householdToday(em, householdId)
   const place = await placeFor(em, householdId, { name, unit }, today)
   const storedIn = input.storedIn ?? place.storedIn
-  const item = await store(em, householdId, {
+  const { item } = await store(em, householdId, {
     name,
     quantity,
     unit,

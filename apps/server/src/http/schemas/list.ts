@@ -22,6 +22,23 @@ const share = z.object({
   unit: z.string().nullable(),
 })
 
+const putAwayRecord = z.object({
+  pantryItem: z.uuid().nullable().openapi({
+    description:
+      "The pantry item it went into; null for household things and staples.",
+  }),
+  quantity: z.number().nullable(),
+  unit: z.string().max(40).nullable(),
+  amountText: z.string().max(60).nullable(),
+  created: z.boolean().openapi({
+    description:
+      "It made that pantry item, rather than joining one already there.",
+  }),
+  forMeals: z.array(share).max(100),
+  purchase: z.uuid().openapi({ description: "The purchase it recorded." }),
+  lookedOverAt: z.iso.datetime().nullable(),
+})
+
 const ITEM = {
   id: IDS.listItems[0],
   list: IDS.shoppingList,
@@ -49,6 +66,7 @@ const SNAPSHOT = {
   checked: false,
   source: "plan" as const,
   forMeals: [{ meal: IDS.planEntry, quantity: 3, unit: "pound" }],
+  putAway: null,
   createdAt: TIMES.now,
 }
 
@@ -288,6 +306,10 @@ export const ListItemSnapshotSchema = z
     checked: z.boolean(),
     source: SourceSchema,
     forMeals: z.array(share).max(100).nullable(),
+    putAway: putAwayRecord.nullable().optional().openapi({
+      description:
+        "What checking it off put in the pantry, so unchecking takes it back out.",
+    }),
     createdAt: z.iso.datetime(),
   })
   .openapi("ListItemSnapshot", {

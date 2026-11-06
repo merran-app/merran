@@ -4287,6 +4287,7 @@
                   "unit": "pound"
                 }
               ],
+              "putAway": null,
               "createdAt": "2026-10-15T18:30:00.000Z"
             }
           ]
@@ -4377,6 +4378,98 @@
             },
             "maxItems": 100
           },
+          "putAway": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "pantryItem": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid",
+                "description": "The pantry item it went into; null for household things and staples."
+              },
+              "quantity": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "unit": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 40
+              },
+              "amountText": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 60
+              },
+              "created": {
+                "type": "boolean",
+                "description": "It made that pantry item, rather than joining one already there."
+              },
+              "forMeals": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "meal": {
+                      "type": "string"
+                    },
+                    "quantity": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "unit": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "meal",
+                    "quantity",
+                    "unit"
+                  ]
+                },
+                "maxItems": 100
+              },
+              "purchase": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The purchase it recorded."
+              },
+              "lookedOverAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "pantryItem",
+              "quantity",
+              "unit",
+              "amountText",
+              "created",
+              "forMeals",
+              "purchase",
+              "lookedOverAt"
+            ],
+            "description": "What checking it off put in the pantry, so unchecking takes it back out."
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -4415,6 +4508,7 @@
               "unit": "pound"
             }
           ],
+          "putAway": null,
           "createdAt": "2026-10-15T18:30:00.000Z"
         }
       },
@@ -5157,6 +5251,7 @@
                   "unit": "pound"
                 }
               ],
+              "putAway": null,
               "createdAt": "2026-10-15T18:30:00.000Z"
             }
           ]
@@ -6411,6 +6506,7 @@
                   "unit": "pound"
                 }
               ],
+              "putAway": null,
               "createdAt": "2026-10-15T18:30:00.000Z"
             }
           ]
