@@ -42,6 +42,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio, which thes
 | [open-source.md](open-source.md) | Name and license, contributing, CI, dependencies, security reports, docs site, funding, launch |
 | [shopping-and-planning-feedback.md](shopping-and-planning-feedback.md) | October 18 usage feedback: list completion after sending to stores, ingredient purpose and swaps while shopping, and rearranging automatically planned meals |
 | [store-product-mappings.md](store-product-mappings.md) | Proposed page for preparing a household's usual products at multiple stores, and choosing the ordering store on shopping day |
+| [pantry.md](pantry.md) | A pantry that keeps itself: checking off puts food away, it learns where things go, what ran out after cooking, cooking off the plan, and asking about meals nobody marked (planned November 5, 2026) |
 | [flaresolverr-imports.md](flaresolverr-imports.md) | Importing links from sites that turn Merran away, through the server admin's own FlareSolverr, and what stays honest (built, not released yet) |
 | [features.md](features.md) | Every feature with its importance and status, for the marketing and docs sites |
 | [scope.md](scope.md) | Where each REFERENCE feature lands, what's not coming over, and the build order |
