@@ -589,6 +589,33 @@ describe("a checked row", () => {
     await clearAll()
   })
 
+  test("giving an amount to a row that joined what was there leaves that be once it's in words", async () => {
+    await add("1 lb rice")
+    const row = await typed("rice")
+    await check(row, true)
+    const stored = (await find("rice"))!
+    const changed = await kyle.patch(`/api/pantry/items/${stored.id}`, {
+      amount: "a little",
+    })
+    expect(changed.status, await changed.clone().text()).toBe(200)
+
+    const corrected = await kyle.patch(`/api/list/items/${row.id}`, {
+      amount: "2 lb",
+    })
+    expect(corrected.status, await corrected.clone().text()).toBe(200)
+    expect(await pantry()).toMatchObject([
+      { id: stored.id, name: "rice", amount: "a little" },
+    ])
+    expect(await purchases()).toEqual(["rice"])
+
+    await check(row, false)
+    expect(await pantry()).toMatchObject([
+      { id: stored.id, amount: "a little" },
+    ])
+    expect(await purchases()).toEqual([])
+    await clearAll()
+  })
+
   test("renaming it takes the old food out and puts the new one in", async () => {
     const row = await typed("2 lb chicken thighs")
     await check(row, true)

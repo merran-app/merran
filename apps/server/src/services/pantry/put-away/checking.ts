@@ -206,8 +206,13 @@ function holdsWhatWentIn(item: PantryItem, record: PutAwayRecord) {
     if (!measured(item)) return false
     return subtractAmounts(amountOf(item), record, item.foodKey) !== null
   }
-  // A row with no amount that joined what was there put nothing in it.
-  if (!record.created && !record.filledEmpty) return true
+  if (!record.created && !record.filledEmpty) {
+    // A row with no amount that joined what was there put nothing in it, so
+    // its new amount can join the item while that's measured, or still just
+    // "have it". Not once someone has put it in words: what they said is at
+    // home counts what the row brought already.
+    return measured(item) || stillAsPutAway(item, record)
+  }
   return stillAsPutAway(item, record)
 }
 
