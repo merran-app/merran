@@ -1203,6 +1203,34 @@ describe("buying by the package, costs and a budget", () => {
     expect(prices.items[id("saffron")]).toBeUndefined()
   })
 
+  test("what was sent to the cart goes in the pantry as the packs bought when it's checked off", async () => {
+    // Marking the sent items bought checks them off in one go.
+    const list = (await (await kyle.get("/api/list")).json()).items as {
+      id: string
+      name: string
+    }[]
+    const milk = list.find((item) => item.name === "milk")!
+    const res = await kyle.post("/api/list/items/bulk", {
+      ids: [milk.id],
+      action: "check",
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    const pantry = (await (await kyle.get("/api/pantry")).json()).items as {
+      name: string
+      quantity: number | null
+      unit: string | null
+    }[]
+    expect(pantry.find((item) => item.name === "milk")).toMatchObject({
+      quantity: 2,
+      unit: "gallon",
+    })
+    // Taken back out, so what follows starts as it did.
+    await kyle.post("/api/list/items/bulk", {
+      ids: [milk.id],
+      action: "uncheck",
+    })
+  })
+
   test("what was sent to the cart goes in the pantry as the packs bought", async () => {
     // Put away as it is when checking off doesn't put things away first.
     await putAwayWhenChecked(false)

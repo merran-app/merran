@@ -365,3 +365,138 @@ describe("checking off", () => {
     await clearAll()
   })
 })
+
+describe("a checked row", () => {
+  test("changing its amount changes what went in", async () => {
+    const row = await typed("2 lb chicken thighs")
+    await check(row, true)
+    await kyle.patch(`/api/list/items/${row.id}`, { amount: "3 lb" })
+    expect(await find("chicken thighs")).toMatchObject({ amount: "3 lb" })
+    expect(await purchases()).toEqual(["chicken thighs"])
+    await check(row, false)
+    expect(await find("chicken thighs")).toBeUndefined()
+    expect(await purchases()).toEqual([])
+    await clearAll()
+  })
+
+  test("renaming it takes the old food out and puts the new one in", async () => {
+    const row = await typed("2 lb chicken thighs")
+    await check(row, true)
+    const renamed = await kyle.patch(`/api/list/items/${row.id}`, {
+      name: "ground beef",
+    })
+    expect(renamed.status, await renamed.clone().text()).toBe(200)
+    expect(await find("chicken thighs")).toBeUndefined()
+    expect(await find("ground beef")).toMatchObject({ amount: "2 lb" })
+    expect(await purchases()).toEqual(["ground beef"])
+    await check(row, false)
+    expect(await pantry()).toEqual([])
+    expect(await purchases()).toEqual([])
+    await clearAll()
+  })
+
+  test("clearing keeps it in the pantry, and Undo doesn't add it again", async () => {
+    const row = await typed("2 lb chicken thighs")
+    await check(row, true)
+    const cleared = await (
+      await kyle.post("/api/list/clear", { which: "checked" })
+    ).json()
+    expect(await find("chicken thighs")).toMatchObject({ amount: "2 lb" })
+    const undo = await kyle.post("/api/list/restore", { items: cleared.before })
+    expect(undo.status, await undo.clone().text()).toBe(200)
+    expect(await find("chicken thighs")).toMatchObject({ amount: "2 lb" })
+    await check(row, false)
+    expect(await find("chicken thighs")).toBeUndefined()
+    await clearAll()
+  })
+
+  test("unchecking after cooking took some takes back only what's left", async () => {
+    const row = await typed("3 lb chicken thighs")
+    await check(row, true)
+    const meal = await plan({
+      date: today,
+      meal: "dinner",
+      recipe: ids["Lemon Chicken"],
+    })
+    const cooked = await kyle.patch(`/api/plan/entries/${meal.id}`, {
+      status: "cooked",
+    })
+    expect(cooked.status, await cooked.clone().text()).toBe(200)
+    // The meal takes 2 lb of the 3.
+    expect(await find("chicken thighs")).toMatchObject({ amount: "1 lb" })
+    await check(row, false)
+    expect(await find("chicken thighs")).toBeUndefined()
+    await clearAll()
+  })
+
+  test("unchecking after the pantry item was used up changes nothing else", async () => {
+    const row = await typed("2 lb chicken thighs")
+    await check(row, true)
+    const stored = (await find("chicken thighs"))!
+    const used = await kyle.delete(`/api/pantry/items/${stored.id}`)
+    expect(used.status, await used.clone().text()).toBe(200)
+    await check(row, false)
+    expect(await pantry()).toEqual([])
+    expect(await purchases()).toEqual([])
+    await clearAll()
+  })
+
+  test("unchecking after the pantry item was given an amount in words leaves it", async () => {
+    const row = await typed("2 lb chicken thighs")
+    await check(row, true)
+    const stored = (await find("chicken thighs"))!
+    const changed = await kyle.patch(`/api/pantry/items/${stored.id}`, {
+      amount: "half a bag",
+    })
+    expect(changed.status, await changed.clone().text()).toBe(200)
+    await check(row, false)
+    expect(await find("chicken thighs")).toMatchObject({ amount: "half a bag" })
+    await clearAll()
+  })
+
+  test("a snapshot from before put-away records still restores", async () => {
+    const milk = await typed("1 gallon milk")
+    const removed = await kyle.delete(`/api/list/items/${milk.id}`)
+    expect(removed.status, await removed.clone().text()).toBe(200)
+    const { putAway: _putAway, ...snapshot } = await removed.json()
+    expect("putAway" in snapshot).toBe(false)
+    const restored = await kyle.post("/api/list/restore", {
+      items: [{ ...snapshot, checked: true }],
+    })
+    expect(restored.status, await restored.clone().text()).toBe(200)
+    expect(await listItems()).toMatchObject([{ name: "milk", checked: true }])
+    await clearAll()
+  })
+
+  test("with the setting off, checking leaves the pantry alone and Put away works as before", async () => {
+    await setting(false)
+    try {
+      await check(await typed("1 gallon milk"), true)
+      expect(await find("milk")).toBeUndefined()
+      const res = await kyle.post("/api/list/put-away", {})
+      expect(await res.json()).toEqual({ stored: 1, cleared: 0 })
+      expect(await find("milk")).toMatchObject({ amount: "1 gal" })
+    } finally {
+      await setting(true)
+    }
+    await clearAll()
+  })
+
+  test("turning the setting on puts away what's already checked, once", async () => {
+    await setting(false)
+    try {
+      await check(await typed("1 gallon milk"), true)
+      await setting(true)
+    } finally {
+      await setting(true)
+    }
+    expect(await find("milk")).toMatchObject({ amount: "1 gal" })
+    // Saving it on again, as it already is, doesn't put it away twice.
+    await setting(true)
+    expect(await find("milk")).toMatchObject({ amount: "1 gal" })
+    const res = await kyle.post("/api/list/put-away", {})
+    expect(await res.json()).toEqual({ stored: 0, cleared: 1 })
+    expect(await find("milk")).toMatchObject({ amount: "1 gal" })
+    await clearAll()
+  })
+})

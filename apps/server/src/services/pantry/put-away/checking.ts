@@ -46,6 +46,29 @@ export async function setChecked(
 }
 
 /**
+ * Turning the setting on: what's checked off already is put away too, the
+ * same as if it were checked now. Rows that went in already are left alone.
+ * Says how many rows went in.
+ */
+export async function putAwayAlreadyChecked(
+  tx: EntityManager,
+  householdId: string
+): Promise<number> {
+  const checkedRows = await tx.find(
+    ShoppingItem,
+    { checked: true },
+    { orderBy: { createdAt: "asc" } }
+  )
+  const checked = checkedRows.filter((item) => !item.putAway)
+  if (checked.length === 0) return 0
+  const context = await putAwayContext(tx, householdId)
+  for (const item of checked) {
+    item.putAway = await putAwayItem(tx, householdId, item, context)
+  }
+  return checked.length
+}
+
+/**
  * Changes whether a row is checked in the database, unless it's that
  * already: here, or on another phone a moment ago. Says whether it
  * changed it, and keeps the row loaded here the same.

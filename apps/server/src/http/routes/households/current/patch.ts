@@ -1,6 +1,9 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
 import { Household } from "../../../../database/entities/index.ts"
+import { inHouseholdTransaction } from "../../../../database/transactions.ts"
+import { putsAwayWhenChecked } from "../../../../services/households/households.ts"
+import { putAwayAlreadyChecked } from "../../../../services/pantry/put-away/checking.ts"
 import { asHouseholdAdmin } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import {
@@ -39,6 +42,9 @@ export default (router: Router, _deps: AppDeps) => {
     const { householdId, role, em } = asHouseholdAdmin(c)
     const household = await em.findOneOrFail(Household, householdId)
     const { meals, putAwayWhenChecked, ...changes } = c.req.valid("json")
+    // Only turning it on from off puts away what's already checked.
+    const turnedOn =
+      putAwayWhenChecked === true && !putsAwayWhenChecked(household.settings)
     em.assign(household, changes)
     // The meals it plans live with its other planning settings.
     if (meals) household.settings = { ...household.settings, meals }
@@ -47,6 +53,17 @@ export default (router: Router, _deps: AppDeps) => {
         ...household.settings,
         pantry: { ...household.settings?.pantry, putAwayWhenChecked },
       }
+    }
+    if (turnedOn) {
+      // Saved in the same transaction as what it puts away, so the setting
+      // is never on without the checked rows being in the pantry.
+      const settings = household.settings
+      await inHouseholdTransaction(em, householdId, async (tx) => {
+        const saved = await tx.findOneOrFail(Household, householdId)
+        saved.settings = settings
+        await putAwayAlreadyChecked(tx, householdId)
+        await tx.flush()
+      })
     }
     await em.flush()
     return c.json(describeHousehold(household, role), 200)

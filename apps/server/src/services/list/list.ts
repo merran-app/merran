@@ -20,7 +20,8 @@ import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { householdKeys } from "../foods/aliases.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import { toNumber } from "../../database/numbers.ts"
-import { setChecked } from "../pantry/put-away/checking.ts"
+import { setChecked, takeBack } from "../pantry/put-away/checking.ts"
+import { putAwayContext, putAwayItem } from "../pantry/put-away/put-away.ts"
 import {
   aislesOf,
   describeAisle,
@@ -224,6 +225,14 @@ export async function updateItem(
   return inHouseholdTransaction(em, householdId, async (tx) => {
     const keyOf = await householdKeys(tx)
     const item = await findItem(tx, id)
+    // A checked row's name or amount is what's in the pantry. The old food
+    // comes out first, while the row still says what it put in, and the
+    // changed row goes in below.
+    const changesPantry =
+      item.checked &&
+      Boolean(item.putAway) &&
+      (changes.name !== undefined || changes.amount !== undefined)
+    if (changesPantry) await takeBack(tx, item)
     if (changes.name !== undefined) {
       item.name = changes.name.trim()
       item.foodKey = keyOf(item.name)
@@ -242,6 +251,11 @@ export async function updateItem(
       const list = await findList(tx, changes.list)
       item.list = tx.getReference(ShoppingList, list.id, { wrapped: true })
       await rememberList(tx, householdId, [item.name], list)
+    }
+    // Unless it's being unchecked, which leaves nothing to put in.
+    if (changesPantry && changes.checked !== false) {
+      const context = await putAwayContext(tx, householdId)
+      item.putAway = await putAwayItem(tx, householdId, item, context)
     }
     // Last, so what goes in the pantry is the row as it's just been changed.
     if (changes.checked !== undefined) {
