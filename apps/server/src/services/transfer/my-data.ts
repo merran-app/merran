@@ -1,5 +1,6 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { ApiKey, CookNote, User } from "../../database/entities/index.ts"
+import { toNumber } from "../../database/numbers.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { membershipsOf } from "../households/households.ts"
 
@@ -49,7 +50,7 @@ export async function exportMyData(em: EntityManager, userId: string) {
     cookingNotes: notes.map((note) => ({
       household: note.household.getEntity().name,
       recipe: note.recipe.getEntity().name,
-      rating: note.rating ?? null,
+      rating: toNumber(note.rating),
       note: note.note ?? null,
       createdAt: note.createdAt.toISOString(),
     })),

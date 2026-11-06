@@ -1,6 +1,7 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
 import { CookNote } from "../../database/entities/index.ts"
+import { toNumber } from "../../database/numbers.ts"
 import type { CookNoteInput } from "../../http/schemas/recipes.ts"
 import { findRecipe } from "./recipes.ts"
 
@@ -12,7 +13,7 @@ const SHOWN = 50
 function describeNote(note: CookNote) {
   return {
     id: note.id,
-    rating: note.rating ?? null,
+    rating: toNumber(note.rating),
     note: note.note ?? null,
     by: note.user?.getEntity().name ?? null,
     createdAt: note.createdAt.toISOString(),

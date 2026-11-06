@@ -10361,7 +10361,7 @@ export interface components {
          */
         CookNote: {
             id: string;
-            /** @description 1 to 5 stars. */
+            /** @description Half a star to 5, in halves. */
             rating: number | null;
             /** @description For next time. */
             note: string | null;
@@ -10391,7 +10391,7 @@ export interface components {
          *     }
          */
         CookNoteInput: {
-            /** @description 1 to 5 stars. They become the recipe's rating. */
+            /** @description Half a star to 5, in halves. They become the recipe's rating. */
             rating?: number | null;
             /** @description Anything to change next time. */
             note?: string | null;
@@ -10523,11 +10523,11 @@ export interface components {
         };
         /**
          * @example {
-         *       "rating": 4
+         *       "rating": 4.5
          *     }
          */
         RecipeRatingInput: {
-            /** @description From 1 to 5 stars, or null to clear it. */
+            /** @description Half a star to 5, in halves, or null to clear it. */
             rating: number | null;
         };
         /**
@@ -21697,7 +21697,7 @@ export interface operations {
                     "application/json": components["schemas"]["Recipe"];
                 };
             };
-            /** @description The rating isn't from 1 to 5. */
+            /** @description The rating isn't from half a star to 5, in halves. */
             400: {
                 headers: {
                     [name: string]: unknown;

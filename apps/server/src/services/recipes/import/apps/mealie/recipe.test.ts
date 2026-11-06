@@ -136,7 +136,7 @@ describe("a Mealie recipe", () => {
       cookMinutes: 40,
       totalMinutes: 55,
       sourceUrl: "https://example.com/lemon-chicken",
-      rating: 5,
+      rating: 4.5,
       notes: "Tip: Use bone-in.\n\nGood cold.",
       // Categories are tags too, without doubling one that's both.
       tags: ["Dinner", "Easy", "Chicken"],

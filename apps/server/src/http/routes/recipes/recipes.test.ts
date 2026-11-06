@@ -200,6 +200,7 @@ describe("finding recipes", () => {
       name: "apple pie",
       tags: ["Baking"],
       ingredients: ["6 apples", "1 cup sugar"],
+      rating: 4.5,
     })
   })
 
@@ -227,10 +228,11 @@ describe("finding recipes", () => {
   })
 
   test("sorted, a page at a time", async () => {
-    const byRating = await list(kyle, "?sort=rating&limit=1")
+    const byRating = await list(kyle, "?sort=rating&limit=2")
     expect(byRating.total).toBe(5)
     expect(byRating.recipes.map((r: { name: string }) => r.name)).toEqual([
       "Lemon Chicken",
+      "apple pie",
     ])
 
     const second = await list(kyle, "?sort=newest&limit=1&offset=1")

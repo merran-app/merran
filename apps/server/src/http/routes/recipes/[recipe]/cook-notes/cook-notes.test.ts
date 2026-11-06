@@ -63,12 +63,14 @@ describe("how cooking went", () => {
     expect(list[0]).toMatchObject({ rating: null, note: "5 minutes less" })
   })
 
-  test("needs stars or a note, and stars from 1 to 5", async () => {
+  test("needs stars or a note, and stars from half to 5, in halves", async () => {
     const add = (body: unknown) =>
       kyle.post("/api/recipes/soup/cook-notes", body)
     expect((await add({})).status).toBe(400)
     expect((await add({ note: "   " })).status).toBe(400)
     expect((await add({ rating: 6 })).status).toBe(400)
+    expect((await add({ rating: 0 })).status).toBe(400)
+    expect((await add({ rating: 3.2 })).status).toBe(400)
     expect(
       (await kyle.post("/api/recipes/no-such-recipe/cook-notes", { rating: 3 }))
         .status
@@ -85,6 +87,17 @@ describe("how cooking went", () => {
     ).toBe(404)
     expect(await notes()).toHaveLength(1)
     expect((await (await kyle.get("/api/recipes/soup")).json()).rating).toBe(4)
+  })
+
+  test("can give half stars, which become the rating", async () => {
+    const res = await kyle.post("/api/recipes/soup/cook-notes", {
+      rating: 3.5,
+    })
+    expect(res.status).toBe(201)
+    expect((await res.json()).rating).toBe(3.5)
+    expect((await (await kyle.get("/api/recipes/soup")).json()).rating).toBe(
+      3.5
+    )
   })
 
   test("goes when the recipe is deleted for good", async () => {

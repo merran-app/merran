@@ -67,6 +67,8 @@ The optional server voice module can read using a configured Kokoro service or O
 2. In **How did it go?**, add a rating and **A note for next time**, then choose **Save**, or choose **Skip** to leave without a note.
 3. Find saved notes under **Cooking notes** on the recipe. Use **Add a note** there to record something later.
 
+Not released yet: a rating can be half stars. Tap the left half of a star for half of it, such as 3½ stars, or use the arrow keys to go up and down by half a star. Tap the rating you gave again to clear it.
+
 **Expected result:** the recipe is marked made today. Merran marks a matching meal on today's plan cooked, or moves a matching meal from this week's any-day pool to today and marks it cooked. A cooked plan entry can consume its pantry stock. Cooking a recipe with no matching plan entry records that it was made; do not assume it deducts an unplanned meal from the pantry.
 
 Cooking notes record what happened on a particular occasion. Use **Edit → Notes** for lasting recipe instructions. When optional AI note suggestions are available, a note may produce a proposed recipe change in **Review**; inspect it before applying it.

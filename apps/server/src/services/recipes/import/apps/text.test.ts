@@ -28,9 +28,12 @@ describe("other apps' text", () => {
     expect(asLink("NYT Cooking")).toBeNull()
   })
 
-  test("ratings are 1 to 5 stars, and 0 is none", () => {
-    expect(stars(4.5)).toBe(5)
+  test("ratings are half to 5 stars, to the nearest half, and 0 is none", () => {
+    expect(stars(4.5)).toBe(4.5)
+    expect(stars(4.3)).toBe(4.5)
+    expect(stars(4.2)).toBe(4)
     expect(stars(9)).toBe(5)
+    expect(stars(0.1)).toBe(0.5)
     expect(stars(0)).toBeNull()
   })
 

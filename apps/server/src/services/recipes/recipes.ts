@@ -85,7 +85,7 @@ export function summarize(recipe: Recipe, tags: string[]) {
     description: recipe.description ?? null,
     servings: toNumber(recipe.servings),
     totalMinutes: totalMinutes(recipe),
-    rating: recipe.rating ?? null,
+    rating: toNumber(recipe.rating),
     tags,
     diets: decodeDiets(recipe.diets),
     photo: photoUrls(recipe),
@@ -146,7 +146,7 @@ export function snapshotOf(recipe: Recipe, tags: string[]): RecipeInput {
     totalMinutes: recipe.totalMinutes ?? null,
     notes: recipe.notes ?? null,
     sourceUrl: recipe.sourceUrl ?? null,
-    rating: recipe.rating ?? null,
+    rating: toNumber(recipe.rating),
     tags,
     ingredients: joinSections(
       recipe.ingredients

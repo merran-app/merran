@@ -96,7 +96,7 @@ async function recipesOf(
     totalMinutes: recipe.totalMinutes ?? null,
     notes: recipe.notes ?? null,
     sourceUrl: recipe.sourceUrl ?? null,
-    rating: recipe.rating ?? null,
+    rating: toNumber(recipe.rating),
     nutrition: (recipe.nutrition as Record<string, unknown> | null) ?? null,
     dietOverrides: recipe.dietOverrides ?? {},
     needs: recipe.needs ?? [],
@@ -124,7 +124,7 @@ async function recipesOf(
       createdBy: emailOf(version.createdBy),
     })),
     cookNotes: (notesOf.get(recipe.id) ?? []).map((note) => ({
-      rating: note.rating ?? null,
+      rating: toNumber(note.rating),
       note: note.note ?? null,
       createdAt: note.createdAt.toISOString(),
       by: emailOf(note.user),

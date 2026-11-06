@@ -35,8 +35,16 @@ describe("a recipe's rating", () => {
     expect(versions).toEqual([])
   })
 
-  test("is from 1 to 5 whole stars", async () => {
-    for (const rating of [0, 6, 2.5, "3"]) {
+  test("can be half stars", async () => {
+    for (const rating of [4.5, 0.5]) {
+      const rated = await rate(rating)
+      expect(rated.status).toBe(200)
+      expect((await rated.json()).rating).toBe(rating)
+    }
+  })
+
+  test("is from half a star to 5, in halves", async () => {
+    for (const rating of [0, 6, 5.5, 2.3, "3"]) {
       expect((await rate(rating)).status).toBe(400)
     }
     expect(

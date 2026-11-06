@@ -72,7 +72,7 @@ cards show **Planned this week** when the recipe is on the household's current w
 
 1. Open a recipe and choose **Edit**.
 2. Correct the name, original link, servings, times, ingredients, or steps. Use **Notes** for lasting tips and substitutions.
-3. Under **Tags**, type a tag and press Enter or type a comma. Add a rating if useful.
+3. Under **Tags**, type a tag and press Enter or type a comma. Add a rating if useful. Not released yet: tap the left half of a star to give half of it.
 4. Choose **Save**. Leaving with unsaved edits prompts you before discarding them. In alpha.5, the confirmation opens as a bottom drawer on phones, with **Cancel** and **Leave without saving**.
 
 **Expected result:** the saved recipe opens with your changes. **More → Versions** lets you inspect earlier versions and **Go back**; restoring also keeps the current version in history.

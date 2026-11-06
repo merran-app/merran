@@ -199,7 +199,7 @@ async function candidates(em: EntityManager): Promise<Candidate[]> {
     photo: photoUrls(recipe)?.card ?? null,
     servings: toNumber(recipe.servings),
     totalMinutes: totalMinutes(recipe),
-    rating: recipe.rating ?? null,
+    rating: toNumber(recipe.rating),
     lastMadeAt: recipe.lastMadeAt ?? null,
     tags: (tags.get(recipe.id) ?? []).map(tagKey),
     diets: decodeDiets(recipe.diets),

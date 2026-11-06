@@ -32,7 +32,7 @@ const route = createRoute({
   },
   responses: {
     200: jsonResponse(RecipeSchema, "The recipe, with its new rating."),
-    400: errorResponse("The rating isn't from 1 to 5."),
+    400: errorResponse("The rating isn't from half a star to 5, in halves."),
     404: errorResponse("No such recipe."),
     ...SIGNED_IN_ERRORS,
   },

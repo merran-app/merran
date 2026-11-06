@@ -1,4 +1,4 @@
-import { INGREDIENT_MARKS } from "@merran/shared"
+import { INGREDIENT_MARKS, MAX_STARS, STAR_STEP } from "@merran/shared"
 import { z } from "zod"
 import { VERSION_SOURCES } from "../../database/entities/index.ts"
 
@@ -8,7 +8,11 @@ import { VERSION_SOURCES } from "../../database/entities/index.ts"
 // read needs a new version, and imports keep reading the old ones.
 
 export const EXPORT_FORMAT = "merran.household"
-export const EXPORT_VERSION = 1
+/**
+ * 2: ratings can be half stars. Version 1 had whole stars only, which
+ * version 2 reads as they are.
+ */
+export const EXPORT_VERSION = 2
 
 /** The files in an export. */
 export const EXPORT_FILES = {
@@ -23,6 +27,13 @@ export const photoPath = (recipeId: string) => `photos/${recipeId}.webp`
 const when = z.iso.datetime()
 /** Who did something, by email, so they can be found on another server. */
 const by = z.string().nullable()
+/** A rating: half a star to 5, in halves, or null for none. */
+const stars = z
+  .number()
+  .min(STAR_STEP)
+  .max(MAX_STARS)
+  .multipleOf(STAR_STEP)
+  .nullable()
 
 export const ManifestSchema = z.object({
   format: z.literal(EXPORT_FORMAT),
@@ -66,7 +77,7 @@ export const RecipeFileSchema = z.object({
   totalMinutes: z.number().int().nullable(),
   notes: z.string().nullable(),
   sourceUrl: z.string().nullable(),
-  rating: z.number().int().min(1).max(5).nullable(),
+  rating: stars,
   nutrition: z.record(z.string(), z.unknown()).nullable(),
   dietOverrides: z.record(z.string(), z.boolean()),
   /** Added after version 1 came out, so older exports don't have it. */
@@ -93,7 +104,7 @@ export const RecipeFileSchema = z.object({
   ),
   cookNotes: z.array(
     z.object({
-      rating: z.number().int().min(1).max(5).nullable(),
+      rating: stars,
       note: z.string().nullable(),
       createdAt: when,
       by,
