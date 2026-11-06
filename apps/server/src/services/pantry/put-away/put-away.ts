@@ -6,6 +6,7 @@ import {
   formatAmount,
   sizeAmount,
   type AisleKey,
+  type StoragePlace,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import {
@@ -58,6 +59,31 @@ export async function putAwayContext(
   }
 }
 
+/** Where a pantry item was kept, and its use-by date. */
+export type Place = {
+  storedIn: StoragePlace | null
+  useBy: string | null
+}
+
+/**
+ * How much of a row was bought: what it says, or the packs sent to the
+ * Kroger cart. An explicit correction after sending describes what
+ * actually arrived.
+ */
+export function amountBought(item: ShoppingItem, context: PutAwayContext) {
+  const detail = context.lastSent?.details?.[item.id]
+  const amount =
+    item.amountText ?? formatAmount(toNumber(item.quantity), item.unit ?? null)
+  const corrected =
+    detail && (detail.name !== item.name || detail.amount !== amount)
+  return boughtAmount(
+    item,
+    corrected ? undefined : context.lastSent?.items[item.id],
+    context.packs,
+    detail?.size
+  )
+}
+
 /**
  * Puts one row from the list away: it goes in the purchase history, then
  * in the pantry, set aside for the meals it was bought for, in the
@@ -65,28 +91,20 @@ export async function putAwayContext(
  * sent to the Kroger cart goes in as the packs bought, so the rest of a
  * 1 lb pack after the ½ lb the meals need is there to use. Household
  * things and what's always on hand are bought but not stored. Says what
- * it did, so it can be taken back out. The row itself stays.
+ * it did, so it can be taken back out. The row itself stays. `keep` says
+ * where to put it and its use-by date instead of guessing, for an amount
+ * corrected on a row that went in already.
  */
 export async function putAwayItem(
   tx: EntityManager,
   householdId: string,
   item: ShoppingItem,
-  context: PutAwayContext
+  context: PutAwayContext,
+  keep?: Place
 ): Promise<PutAwayRecord> {
   // Checking one row off loads it without its aisle.
   await tx.populate(item, ["aisle"])
-  const detail = context.lastSent?.details?.[item.id]
-  const amount =
-    item.amountText ?? formatAmount(toNumber(item.quantity), item.unit ?? null)
-  // An explicit correction after sending describes what actually arrived.
-  const corrected =
-    detail && (detail.name !== item.name || detail.amount !== amount)
-  const bought = boughtAmount(
-    item,
-    corrected ? undefined : context.lastSent?.items[item.id],
-    context.packs,
-    detail?.size
-  )
+  const bought = amountBought(item, context)
   const purchase = tx.create(Purchase, {
     household: householdId,
     foodKey: item.foodKey ?? context.keyOf(item.name),
@@ -100,7 +118,7 @@ export async function putAwayItem(
   const key = (aisle?.key as AisleKey | null | undefined) ?? null
   let stored: Awaited<ReturnType<typeof store>> | null = null
   if (key !== "household" && !context.isOnHand(item.name)) {
-    const storedIn = guessStorage(item.name, key)
+    const storedIn = keep ? keep.storedIn : guessStorage(item.name, key)
     stored = await store(tx, householdId, {
       name: item.name,
       quantity: bought.quantity,
@@ -108,7 +126,9 @@ export async function putAwayItem(
       amountText: item.amountText ?? null,
       aisle,
       storedIn,
-      useBy: guessUseBy(item.name, key, storedIn, context.today),
+      useBy: keep
+        ? keep.useBy
+        : guessUseBy(item.name, key, storedIn, context.today),
       forMeals: item.forMeals ?? [],
     })
   }

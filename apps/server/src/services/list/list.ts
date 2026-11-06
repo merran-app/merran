@@ -9,6 +9,7 @@ import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
 import {
   Aisle,
+  Household,
   ITEM_SOURCES,
   PlanEntry,
   ShoppingItem,
@@ -18,9 +19,15 @@ import {
 } from "../../database/entities/index.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { householdKeys } from "../foods/aliases.ts"
+import { putsAwayWhenChecked } from "../households/households.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import { toNumber } from "../../database/numbers.ts"
-import { setChecked, takeBack } from "../pantry/put-away/checking.ts"
+import {
+  putAwayAlreadyChecked,
+  recountPutAway,
+  setChecked,
+  takeBack,
+} from "../pantry/put-away/checking.ts"
 import { putAwayContext, putAwayItem } from "../pantry/put-away/put-away.ts"
 import {
   aislesOf,
@@ -216,6 +223,18 @@ export type ItemChanges = Partial<{
   list: string
 }>
 
+/** Whether an amount typed in is not what the row says already. */
+function amountDiffers(
+  typed: ReturnType<typeof readAmount>,
+  item: ShoppingItem
+) {
+  return (
+    typed.quantity !== toNumber(item.quantity) ||
+    typed.unit !== (item.unit ?? null) ||
+    typed.amountText !== (item.amountText ?? null)
+  )
+}
+
 export async function updateItem(
   em: EntityManager,
   householdId: string,
@@ -225,14 +244,19 @@ export async function updateItem(
   return inHouseholdTransaction(em, householdId, async (tx) => {
     const keyOf = await householdKeys(tx)
     const item = await findItem(tx, id)
-    // A checked row's name or amount is what's in the pantry. The old food
-    // comes out first, while the row still says what it put in, and the
-    // changed row goes in below.
-    const changesPantry =
-      item.checked &&
-      Boolean(item.putAway) &&
-      (changes.name !== undefined || changes.amount !== undefined)
-    if (changesPantry) await takeBack(tx, item)
+    // A checked row's name or amount is what's in the pantry, when what's
+    // sent is different from what the row says. A new food comes in and the
+    // old one goes: out first, while the row still says what it put in.
+    // The same food with another amount just changes by the difference.
+    const wentIn = item.checked && Boolean(item.putAway)
+    const renamed =
+      wentIn && changes.name !== undefined && changes.name.trim() !== item.name
+    const recounted =
+      wentIn &&
+      !renamed &&
+      changes.amount !== undefined &&
+      amountDiffers(readAmount(changes.amount), item)
+    if (renamed) await takeBack(tx, item)
     if (changes.name !== undefined) {
       item.name = changes.name.trim()
       item.foodKey = keyOf(item.name)
@@ -253,9 +277,12 @@ export async function updateItem(
       await rememberList(tx, householdId, [item.name], list)
     }
     // Unless it's being unchecked, which leaves nothing to put in.
-    if (changesPantry && changes.checked !== false) {
+    if (renamed && changes.checked !== false) {
       const context = await putAwayContext(tx, householdId)
       item.putAway = await putAwayItem(tx, householdId, item, context)
+    }
+    if (recounted && changes.checked !== false) {
+      await recountPutAway(tx, householdId, item)
     }
     // Last, so what goes in the pantry is the row as it's just been changed.
     if (changes.checked !== undefined) {
@@ -383,6 +410,13 @@ export async function clearList(
   which: "checked" | "all"
 ) {
   return inHouseholdTransaction(em, householdId, async (tx) => {
+    // Nothing is cleared without going in the pantry: rows checked off
+    // before the setting was on, or before put-away kept records, go in
+    // now, so Undo brings them back with what they put away.
+    const household = await tx.findOneOrFail(Household, { id: householdId })
+    if (putsAwayWhenChecked(household.settings)) {
+      await putAwayAlreadyChecked(tx, householdId)
+    }
     const items = await tx.find(
       ShoppingItem,
       which === "checked" ? { checked: true } : {}

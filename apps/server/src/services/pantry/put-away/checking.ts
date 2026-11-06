@@ -1,4 +1,4 @@
-import { subtractAmounts, type MealShare } from "@merran/shared"
+import { addAmounts, subtractAmounts, type MealShare } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import {
   Household,
@@ -11,7 +11,12 @@ import {
 import { householdKeys } from "../../foods/aliases.ts"
 import { putsAwayWhenChecked } from "../../households/households.ts"
 import { amountOf, measured } from "../pantry.ts"
-import { putAwayContext, putAwayItem, type PutAwayContext } from "./put-away.ts"
+import {
+  amountBought,
+  putAwayContext,
+  putAwayItem,
+  type PutAwayContext,
+} from "./put-away.ts"
 
 // Checking a row off the list goes through here, however it's done: one
 // row, a selection, Undo, or marking what was sent to the cart bought.
@@ -133,6 +138,87 @@ export async function takeBack(
   } else {
     takeBackWords(tx, item, record)
   }
+}
+
+/**
+ * A checked row's amount was corrected, and its food is the same: what went
+ * in changes by the difference, in place, so the item keeps where it was
+ * moved to, its use-by date and its meals, and cooking's share of it stays
+ * taken. The purchase and what the row remembers get the new amount. If
+ * the pantry item is gone, only those change: used-up food doesn't come
+ * back. When the difference can't be worked out (words, or units that
+ * don't convert), what went in comes out and the row goes in again, into
+ * the item's place if it's still there.
+ */
+export async function recountPutAway(
+  tx: EntityManager,
+  householdId: string,
+  row: ShoppingItem
+): Promise<void> {
+  const record = row.putAway
+  if (!record) return
+  const context = await putAwayContext(tx, householdId)
+  const bought = amountBought(row, context)
+  const isRowsFood = await foodTest(tx, row)
+  const found = record.pantryItem
+    ? await tx.findOne(PantryItem, { id: record.pantryItem })
+    : null
+  const item = found && isRowsFood(found.foodKey) ? found : null
+  if (item && !changeItem(tx, item, record, bought)) {
+    const keep = { storedIn: item.storedIn ?? null, useBy: item.useBy ?? null }
+    await takeBack(tx, row)
+    row.putAway = await putAwayItem(tx, householdId, row, context, keep)
+    return
+  }
+  const purchase = await tx.findOne(Purchase, { id: record.purchase })
+  if (purchase && isRowsFood(purchase.foodKey)) {
+    tx.assign(purchase, {
+      quantity: bought.quantity,
+      unit: bought.unit,
+      amountText: row.amountText ?? null,
+    })
+  }
+  row.putAway = {
+    ...record,
+    quantity: bought.quantity,
+    unit: bought.unit,
+    amountText: row.amountText ?? null,
+  }
+}
+
+/**
+ * Changes a pantry item by how much more (or less) was bought than the row
+ * first put in. Says whether it could: not when either is in words, or the
+ * units don't convert, or the item's own amount was changed to words.
+ */
+function changeItem(
+  tx: EntityManager,
+  item: PantryItem,
+  record: PutAwayRecord,
+  bought: { quantity: number | null; unit: string | null }
+) {
+  if (bought.quantity === null || record.quantity === null) return false
+  if (!measured(item)) return false
+  const difference = subtractAmounts(bought, record, item.foodKey)
+  if (!difference) return false
+  if (Math.abs(difference.quantity) <= NOTHING) return true
+  if (difference.quantity > 0) {
+    const sum = addAmounts(amountOf(item), difference, item.foodKey)
+    if (!sum) return false
+    tx.assign(item, { quantity: sum.quantity, unit: sum.unit })
+    return true
+  }
+  const less = { quantity: -difference.quantity, unit: difference.unit }
+  const rest = subtractAmounts(amountOf(item), less, item.foodKey)
+  if (!rest) return false
+  if (rest.quantity > NOTHING) {
+    tx.assign(item, { quantity: rest.quantity, unit: rest.unit })
+  } else if (record.filledEmpty) {
+    tx.assign(item, { quantity: null, unit: null })
+  } else {
+    tx.remove(item)
+  }
+  return true
 }
 
 /**
