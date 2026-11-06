@@ -15,9 +15,13 @@ const UNDO_MS = 10_000
 
 /**
  * Changes to the list, each followed by the list loading again. Taking
- * things off says so with an Undo that really puts them back.
+ * things off says so with an Undo that really puts them back. When the last
+ * row of a list is checked, `onListDone` hears which list: the page passes
+ * it only while checking puts food away, to show where it all went.
  */
-export function useListActions() {
+export function useListActions(options?: {
+  onListDone?: (list: string) => void
+}) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
@@ -98,8 +102,10 @@ export function useListActions() {
         if (
           items?.some((line) => line.id === item.id && line.checked) &&
           !items.some((line) => line.list === item.list && !line.checked)
-        )
+        ) {
           celebrate()
+          options?.onListDone?.(item.list)
+        }
       }
       return done
     },
@@ -130,15 +136,22 @@ export function useListActions() {
       if (action.action === "remove") celebrateEmpty(done.before)
       if (action.action === "check") {
         const items = queryClient.getQueryData(listQuery.queryKey)?.items
-        if (
-          items &&
-          done.before.some(
-            (old) =>
-              !old.checked &&
-              !items.some((item) => item.list === old.list && !item.checked)
-          )
+        // Each list this finished, once, however many of its rows were picked.
+        const finished = new Set(
+          items
+            ? done.before
+                .filter(
+                  (old) =>
+                    !old.checked &&
+                    !items.some(
+                      (item) => item.list === old.list && !item.checked
+                    )
+                )
+                .map((old) => old.list)
+            : []
         )
-          celebrate()
+        if (finished.size > 0) celebrate()
+        for (const list of finished) options?.onListDone?.(list)
       }
       return true
     },

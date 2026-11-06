@@ -2195,6 +2195,19 @@
     "putAwayDone_one": "Put {{count}} thing in the pantry.",
     "putAwayDone_other": "Put {{count}} things in the pantry.",
     "putAwayCleared": "Cleared the cart.",
+    "putAwayReview": {
+      "title": "Where did it all go?",
+      "description": "Move anything that went to the wrong place, or fix an amount.",
+      "freezeSome": "Freeze some",
+      "howMuch": "How much goes in the freezer?",
+      "freeze": "Freeze",
+      "done": "Looks right",
+      "openPantry": "Open the pantry",
+      "changeAmount": "Change the amount of {{name}}",
+      "noAmount": "Add an amount",
+      "amount": "How much is there?",
+      "placeFor": "Where {{name}} is kept"
+    },
     "usual": {
       "title": "Due about now",
       "hint": "Things you buy every so often, from the shopping you've put away.",

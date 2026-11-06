@@ -86,8 +86,10 @@ import {
   OnHandDialog,
 } from "./list-dialogs"
 import { ListsDialog } from "./lists-dialog"
+import { PutAwayReview } from "./put-away-review"
 import { listQuery, type List, type ListItem } from "./queries"
 import { useListActions } from "./use-list-actions"
+import { usePutAwayReview } from "./use-put-away-review"
 import { UsualBuys } from "./usual-buys"
 import { useShoppingTrip } from "./shopping/use-shopping-trip"
 import { ShoppingMode } from "./shopping/shopping-mode"
@@ -111,7 +113,16 @@ function readChosenList() {
 export function ListPage() {
   const { t, i18n } = useTranslation()
   const list = useQuery(listQuery)
-  const actions = useListActions()
+  const putAwayReview = usePutAwayReview()
+  const { data: household } = useQuery(householdQuery)
+  // While it's on, checking a row already put it away, so the buttons that
+  // put the checked rows away have nothing left to do. Until the household
+  // loads they show, as they always have.
+  const putAwayWhenChecked = household?.putAwayWhenChecked === true
+  // Finishing a list shows where it all went, only while checking puts food
+  // away: with it off, nothing here runs.
+  const onListDone = putAwayWhenChecked ? putAwayReview.onListDone : undefined
+  const actions = useListActions({ onListDone })
   const admin = isAdminRole(useActiveHousehold()?.role)
   const others = usePeopleHere()
   const [fromPlan, setFromPlan] = React.useState(false)
@@ -126,11 +137,6 @@ export function ListPage() {
   const [chosen, setChosen] = React.useState(readChosenList)
   const selection = useSelection()
 
-  const { data: household } = useQuery(householdQuery)
-  // While it's on, checking a row already put it away, so the buttons that
-  // put the checked rows away have nothing left to do. Until the household
-  // loads they show, as they always have.
-  const putAwayWhenChecked = household?.putAwayWhenChecked === true
   const trip = useShoppingTrip(household?.id)
   const { data: yours = [] } = useQuery(yourStoresQuery)
   const [finding, setFinding] = React.useState<Finding | null>(null)
@@ -279,12 +285,23 @@ export function ListPage() {
   }
 
   /** Clears what's checked, or everything, on the list showing. */
-  function clear(which: "checked" | "all") {
-    if (!split) return void actions.clear(which)
+  async function clearNow(which: "checked" | "all") {
+    if (!split) return void (await actions.clear(which))
     const ids = (which === "checked" ? got : items).map((item) => item.id)
-    void actions.bulk(ids, { action: "remove" }, (count) =>
+    await actions.bulk(ids, { action: "remove" }, (count) =>
       t("list.cleared", { count })
     )
+  }
+
+  /**
+   * Clearing what's checked is the end of that shopping. Where it went has
+   * to be read first, because clearing takes the rows it's found by.
+   */
+  async function clear(which: "checked" | "all") {
+    if (which !== "checked" || !putAwayWhenChecked) return void clearNow(which)
+    const review = await putAwayReview.take(listShowing)
+    await clearNow(which)
+    putAwayReview.show(review)
   }
 
   if (trip.trip && list.data)
@@ -303,6 +320,7 @@ export function ListPage() {
             )
           }
           onEdit={setEditing}
+          onListDone={onListDone}
         />
         <EditItemDialog
           item={editing}
@@ -310,6 +328,10 @@ export function ListPage() {
           aisles={aisles}
           lists={lists}
           onClose={() => setEditing(null)}
+        />
+        <PutAwayReview
+          review={putAwayReview.review}
+          onClose={putAwayReview.close}
         />
       </>
     )
@@ -543,6 +565,7 @@ export function ListPage() {
                       item={item}
                       selection={selection}
                       onEdit={() => setEditing(item)}
+                      onListDone={onListDone}
                       find={find}
                       prices={rowPrices}
                       shopping={
@@ -639,6 +662,7 @@ export function ListPage() {
                         item={item}
                         selection={selection}
                         onEdit={() => setEditing(item)}
+                        onListDone={onListDone}
                         find={find}
                       />
                     ))}
@@ -758,6 +782,10 @@ export function ListPage() {
         aisles={aisles}
         lists={lists}
         onClose={() => setEditing(null)}
+      />
+      <PutAwayReview
+        review={putAwayReview.review}
+        onClose={putAwayReview.close}
       />
     </>
   )

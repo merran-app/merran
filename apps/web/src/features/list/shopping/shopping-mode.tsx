@@ -27,18 +27,21 @@ export function ShoppingMode({
   stores,
   assigned,
   onEdit,
+  onListDone,
 }: {
   data: ShoppingList
   controls: TripControls
   stores: YourStore[]
   assigned: Map<string, string | undefined>
   onEdit: (item: ListItem) => void
+  /** A list's last row was checked, or the trip ended on it. */
+  onListDone?: (list: string) => void
 }) {
   const { t, i18n } = useTranslation()
   const trip = controls.trip!
   const awake = useWakeLock()
   const selection = useSelection()
-  const actions = useListActions()
+  const actions = useListActions({ onListDone })
   const { data: household } = useQuery(householdQuery)
   // While it's on, checking a row already put it away, so there's nothing
   // left to put away at the end. Until the household loads the button shows.
@@ -93,6 +96,11 @@ export function ShoppingMode({
     { value: "", label: t("shopping.allStores") },
     ...stores.map((store) => ({ value: store.key, label: store.name })),
   ]
+  /** Ends the trip, showing where the shopping went first when it's on. */
+  function finishTrip() {
+    onListDone?.(trip.listId)
+    controls.finish()
+  }
   function setAside(item: ListItem) {
     controls.aside(item.id)
     setTrouble(null)
@@ -178,6 +186,7 @@ export function ShoppingMode({
                 item={item}
                 trip
                 selection={selection}
+                onListDone={onListDone}
                 onEdit={() => onEdit(item)}
                 shopping={
                   <Button
@@ -305,7 +314,7 @@ export function ShoppingMode({
             <Button
               variant="outline"
               disabled={puttingAway}
-              onClick={controls.finish}
+              onClick={finishTrip}
             >
               {t("shopping.endTrip")}
             </Button>

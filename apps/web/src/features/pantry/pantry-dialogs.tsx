@@ -24,7 +24,7 @@ import { usePantryActions, type PutBack } from "./use-pantry-actions"
 import { useDayLabel } from "./use-soon"
 
 /** Fridge, freezer or cupboard, as toggles. */
-function PlacePicker({
+export function PlacePicker({
   value,
   onChange,
 }: {
