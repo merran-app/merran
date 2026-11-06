@@ -66,6 +66,7 @@ export const HOUSEHOLD = {
   timeZone: "America/Phoenix",
   weekStartsOn: 0,
   meals: ["dinner" as const],
+  putAwayWhenChecked: true,
   role: "owner" as const,
 }
 

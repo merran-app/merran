@@ -8,7 +8,10 @@ import {
   type HouseholdMember,
   type InviteLink,
 } from "../../database/entities/index.ts"
-import type { HouseholdRole } from "../../services/households/households.ts"
+import {
+  putsAwayWhenChecked,
+  type HouseholdRole,
+} from "../../services/households/households.ts"
 import { HOUSEHOLD, INVITE_LINK, MEMBER } from "./examples.ts"
 
 function isTimeZone(zone: string) {
@@ -31,6 +34,10 @@ export const HouseholdSchema = z
     meals: z.array(z.enum(MEALS)).openapi({
       description:
         "The meals filled for it (by Fill the week and Plan each week), in a day's order: every meal until it opts out of some. Any meal can be planned by hand.",
+    }),
+    putAwayWhenChecked: z.boolean().openapi({
+      description:
+        "Whether checking something off on the list puts it in the pantry, and unchecking takes it back out. On unless the household turns it off.",
     }),
     /** Your role in it. */
     role: z.enum(HOUSEHOLD_ROLES),
@@ -60,6 +67,10 @@ export const HouseholdChangesSchema = z
       .array(z.enum(MEALS))
       .min(1, "Plan at least one meal.")
       .openapi({ description: "The meals filled for it." }),
+    putAwayWhenChecked: z.boolean().openapi({
+      description:
+        "Whether checking something off on the list puts it in the pantry, and unchecking takes it back out.",
+    }),
   })
   .partial()
   .openapi("HouseholdChanges", {
@@ -117,6 +128,7 @@ export function describeHousehold(household: Household, role: HouseholdRole) {
     timeZone: household.timeZone,
     weekStartsOn: household.weekStartsOn,
     meals: plannedMeals(household.settings?.meals),
+    putAwayWhenChecked: putsAwayWhenChecked(household.settings),
     role,
   }
 }

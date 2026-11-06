@@ -5822,6 +5822,7 @@ export interface components {
          *       "meals": [
          *         "dinner"
          *       ],
+         *       "putAwayWhenChecked": true,
          *       "role": "owner"
          *     }
          */
@@ -5834,6 +5835,8 @@ export interface components {
             weekStartsOn: number;
             /** @description The meals filled for it (by Fill the week and Plan each week), in a day's order: every meal until it opts out of some. Any meal can be planned by hand. */
             meals: ("breakfast" | "lunch" | "dinner" | "snack")[];
+            /** @description Whether checking something off on the list puts it in the pantry, and unchecking takes it back out. On unless the household turns it off. */
+            putAwayWhenChecked: boolean;
             /** @enum {string} */
             role: "owner" | "admin" | "member";
         };
@@ -5851,6 +5854,8 @@ export interface components {
             weekStartsOn?: number;
             /** @description The meals filled for it. */
             meals?: ("breakfast" | "lunch" | "dinner" | "snack")[];
+            /** @description Whether checking something off on the list puts it in the pantry, and unchecking takes it back out. */
+            putAwayWhenChecked?: boolean;
         };
         /**
          * @example {
@@ -6626,6 +6631,7 @@ export interface components {
          *         "meals": [
          *           "dinner"
          *         ],
+         *         "putAwayWhenChecked": true,
          *         "role": "owner"
          *       },
          *       "job": {

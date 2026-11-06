@@ -38,10 +38,16 @@ export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { householdId, role, em } = asHouseholdAdmin(c)
     const household = await em.findOneOrFail(Household, householdId)
-    const { meals, ...changes } = c.req.valid("json")
+    const { meals, putAwayWhenChecked, ...changes } = c.req.valid("json")
     em.assign(household, changes)
     // The meals it plans live with its other planning settings.
     if (meals) household.settings = { ...household.settings, meals }
+    if (putAwayWhenChecked !== undefined) {
+      household.settings = {
+        ...household.settings,
+        pantry: { ...household.settings?.pantry, putAwayWhenChecked },
+      }
+    }
     await em.flush()
     return c.json(describeHousehold(household, role), 200)
   })

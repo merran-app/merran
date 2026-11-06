@@ -1925,6 +1925,10 @@
             },
             "description": "The meals filled for it (by Fill the week and Plan each week), in a day's order: every meal until it opts out of some. Any meal can be planned by hand."
           },
+          "putAwayWhenChecked": {
+            "type": "boolean",
+            "description": "Whether checking something off on the list puts it in the pantry, and unchecking takes it back out. On unless the household turns it off."
+          },
           "role": {
             "type": "string",
             "enum": [
@@ -1942,6 +1946,7 @@
           "timeZone",
           "weekStartsOn",
           "meals",
+          "putAwayWhenChecked",
           "role"
         ],
         "example": {
@@ -1954,6 +1959,7 @@
           "meals": [
             "dinner"
           ],
+          "putAwayWhenChecked": true,
           "role": "owner"
         }
       },
@@ -2000,6 +2006,10 @@
             },
             "minItems": 1,
             "description": "The meals filled for it."
+          },
+          "putAwayWhenChecked": {
+            "type": "boolean",
+            "description": "Whether checking something off on the list puts it in the pantry, and unchecking takes it back out."
           }
         },
         "example": {
@@ -3950,6 +3960,7 @@
             "meals": [
               "dinner"
             ],
+            "putAwayWhenChecked": true,
             "role": "owner"
           },
           "job": {
