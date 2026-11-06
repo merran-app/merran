@@ -13,7 +13,7 @@ const route = createRoute({
   tags: ["List"],
   summary: "Put things on the list back as they were",
   description:
-    "Undo: items as taking them off or changing them said they were. One taken off comes back with its id. An aisle that's gone is left empty. Items in `remove` weren't there before, and come off again.",
+    "Undo: items as taking them off or changing them said they were. One taken off comes back with its id. An aisle that's gone is left empty. Items in `remove` weren't there before, and come off again. With the household's put-away setting on, one put back checked or unchecked goes in the pantry or comes back out as checking or unchecking it would; one that was taken off comes back with what it put in the pantry, which stayed there, so it doesn't go in again.",
   ...openToKeys("list", "write"),
   request: {
     body: {

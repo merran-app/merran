@@ -16,7 +16,8 @@ const route = createRoute({
   operationId: "removeListItem",
   tags: ["List"],
   summary: "Take something off the list",
-  description: "The answer is what it was, for Undo with /list/restore.",
+  description:
+    "The answer is what it was, for Undo with /list/restore. With the household's put-away setting on, what it put in the pantry stays there, and a checked row that never went in is put away first.",
   ...openToKeys("list", "write"),
   request: { params: ItemParam },
   responses: {
@@ -28,8 +29,8 @@ const route = createRoute({
 
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em } = inHousehold(c)
+    const { em, householdId } = inHousehold(c)
     const { itemId } = c.req.valid("param")
-    return c.json(await removeItem(em, itemId), 200)
+    return c.json(await removeItem(em, householdId, itemId), 200)
   })
 }

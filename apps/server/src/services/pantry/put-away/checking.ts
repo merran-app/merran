@@ -53,15 +53,18 @@ export async function setChecked(
 /**
  * Turning the setting on: what's checked off already is put away too, the
  * same as if it were checked now. Rows that went in already are left alone.
- * Says how many rows went in.
+ * `only` limits it to those rows, for some being taken off the list. Says
+ * how many rows went in.
  */
 export async function putAwayAlreadyChecked(
   tx: EntityManager,
-  householdId: string
+  householdId: string,
+  only?: readonly string[]
 ): Promise<number> {
+  if (only && only.length === 0) return 0
   const checkedRows = await tx.find(
     ShoppingItem,
-    { checked: true },
+    only ? { checked: true, id: { $in: [...only] } } : { checked: true },
     { orderBy: { createdAt: "asc" } }
   )
   const checked = checkedRows.filter((item) => !item.putAway)
@@ -145,10 +148,12 @@ export async function takeBack(
  * in changes by the difference, in place, so the item keeps where it was
  * moved to, its use-by date and its meals, and cooking's share of it stays
  * taken. The purchase and what the row remembers get the new amount. If
- * the pantry item is gone, only those change: used-up food doesn't come
- * back. When the difference can't be worked out (words, or units that
- * don't convert), what went in comes out and the row goes in again, into
- * the item's place if it's still there.
+ * the pantry item is gone, or someone has since changed its amount to
+ * words or to one the row's can't come off, only those change: used-up
+ * food doesn't come back, and what someone said is at home stays as they
+ * said it. When the row's own amounts can't be compared (words, or units
+ * that don't convert), what went in comes out and the row goes in again,
+ * into the item's place.
  */
 export async function recountPutAway(
   tx: EntityManager,
@@ -163,7 +168,10 @@ export async function recountPutAway(
   const found = record.pantryItem
     ? await tx.findOne(PantryItem, { id: record.pantryItem })
     : null
-  const item = found && isRowsFood(found.foodKey) ? found : null
+  const item =
+    found && isRowsFood(found.foodKey) && holdsWhatWentIn(found, record)
+      ? found
+      : null
   if (item && !changeItem(tx, item, record, bought)) {
     const keep = { storedIn: item.storedIn ?? null, useBy: item.useBy ?? null }
     await takeBack(tx, row)
@@ -187,9 +195,26 @@ export async function recountPutAway(
 }
 
 /**
+ * Whether what a row put in can still come out of its pantry item as it
+ * went in: the item's amount takes the row's off, or it still says the
+ * row's words. Not when someone has since changed it to words, to just
+ * "have it", or to a unit the row's doesn't convert to: what they said is
+ * at home counts what the row brought already.
+ */
+function holdsWhatWentIn(item: PantryItem, record: PutAwayRecord) {
+  if (record.quantity !== null) {
+    if (!measured(item)) return false
+    return subtractAmounts(amountOf(item), record, item.foodKey) !== null
+  }
+  // A row with no amount that joined what was there put nothing in it.
+  if (!record.created && !record.filledEmpty) return true
+  return stillAsPutAway(item, record)
+}
+
+/**
  * Changes a pantry item by how much more (or less) was bought than the row
  * first put in. Says whether it could: not when either is in words, or the
- * units don't convert, or the item's own amount was changed to words.
+ * units don't convert.
  */
 function changeItem(
   tx: EntityManager,

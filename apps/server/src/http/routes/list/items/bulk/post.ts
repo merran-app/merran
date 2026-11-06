@@ -20,7 +20,7 @@ const route = createRoute({
   tags: ["List"],
   summary: "Change several things on the list at once",
   description:
-    "Take them off, check them off or not, move them to an aisle or another list (remembered for each food), or buy them every week: all or none. The answer says what they were before, for Undo with /list/restore. Ids not on the list are passed over.",
+    "Take them off, check them off or not, move them to an aisle or another list (remembered for each food), or buy them every week: all or none. The answer says what they were before, for Undo with /list/restore. Ids not on the list are passed over. With the household's put-away setting on, checking puts them in the pantry and unchecking takes that back out; taking them off keeps what's in the pantry, and puts away first any checked row that never went in.",
   ...openToKeys("list", "write"),
   request: {
     body: {

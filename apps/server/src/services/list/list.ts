@@ -244,22 +244,26 @@ export async function updateItem(
   return inHouseholdTransaction(em, householdId, async (tx) => {
     const keyOf = await householdKeys(tx)
     const item = await findItem(tx, id)
+    // Only a name that's different is a new food. The same name sent again
+    // keeps the row's food, which for a row from the plan can be one a
+    // person chose rather than its name's.
+    const name = changes.name?.trim()
+    const nameChanged = name !== undefined && name !== item.name
     // A checked row's name or amount is what's in the pantry, when what's
     // sent is different from what the row says. A new food comes in and the
     // old one goes: out first, while the row still says what it put in.
     // The same food with another amount just changes by the difference.
     const wentIn = item.checked && Boolean(item.putAway)
-    const renamed =
-      wentIn && changes.name !== undefined && changes.name.trim() !== item.name
+    const renamed = wentIn && nameChanged
     const recounted =
       wentIn &&
       !renamed &&
       changes.amount !== undefined &&
       amountDiffers(readAmount(changes.amount), item)
     if (renamed) await takeBack(tx, item)
-    if (changes.name !== undefined) {
-      item.name = changes.name.trim()
-      item.foodKey = keyOf(item.name)
+    if (nameChanged) {
+      item.name = name
+      item.foodKey = keyOf(name)
     }
     if (changes.amount !== undefined) {
       tx.assign(item, readAmount(changes.amount))
@@ -293,13 +297,42 @@ export async function updateItem(
   })
 }
 
-export async function removeItem(em: EntityManager, id: string) {
-  const item = await findItem(em, id)
-  const before = itemSnapshot(item)
-  em.remove(item)
-  await em.flush()
-  await unlistRemoved(em, [item])
-  return before
+/**
+ * Nothing checked comes off the list without going in the pantry, when the
+ * household says to: rows checked off before the setting was on, or before
+ * put-away kept records, go in now, before what they were is taken for
+ * Undo, so Undo brings them back with what they put away. `only` limits
+ * it to the rows being taken off.
+ */
+async function putAwayBeforeTakingOff(
+  tx: EntityManager,
+  householdId: string,
+  only?: readonly ShoppingItem[]
+) {
+  if (only && !only.some((item) => item.checked && !item.putAway)) return
+  const household = await tx.findOneOrFail(Household, { id: householdId })
+  if (!putsAwayWhenChecked(household.settings)) return
+  await putAwayAlreadyChecked(
+    tx,
+    householdId,
+    only?.map((item) => item.id)
+  )
+}
+
+export async function removeItem(
+  em: EntityManager,
+  householdId: string,
+  id: string
+) {
+  return inHouseholdTransaction(em, householdId, async (tx) => {
+    const item = await findItem(tx, id)
+    await putAwayBeforeTakingOff(tx, householdId, [item])
+    const before = itemSnapshot(item)
+    tx.remove(item)
+    await tx.flush()
+    await unlistRemoved(tx, [item])
+    return before
+  })
 }
 
 export type ItemBulk =
@@ -323,6 +356,9 @@ export async function bulkItems(
     const items = await tx.find(ShoppingItem, {
       id: { $in: ids.filter((id) => UUID.test(id)) },
     })
+    if (bulk.action === "remove") {
+      await putAwayBeforeTakingOff(tx, householdId, items)
+    }
     const before = items.map(itemSnapshot)
     switch (bulk.action) {
       case "remove":
@@ -410,13 +446,8 @@ export async function clearList(
   which: "checked" | "all"
 ) {
   return inHouseholdTransaction(em, householdId, async (tx) => {
-    // Nothing is cleared without going in the pantry: rows checked off
-    // before the setting was on, or before put-away kept records, go in
-    // now, so Undo brings them back with what they put away.
-    const household = await tx.findOneOrFail(Household, { id: householdId })
-    if (putsAwayWhenChecked(household.settings)) {
-      await putAwayAlreadyChecked(tx, householdId)
-    }
+    // Clearing either way takes off everything that's checked.
+    await putAwayBeforeTakingOff(tx, householdId)
     const items = await tx.find(
       ShoppingItem,
       which === "checked" ? { checked: true } : {}

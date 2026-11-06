@@ -1136,7 +1136,7 @@ export interface paths {
         put?: never;
         /**
          * Clear the list
-         * @description Takes off what's checked, or everything. The answer says what was there, for Undo with /list/restore. With an API key, it needs the `list: write` permission.
+         * @description Takes off what's checked, or everything. The answer says what was there, for Undo with /list/restore. With the household's put-away setting on, what checking put in the pantry stays there, and checked rows that never went in are put away first. With an API key, it needs the `list: write` permission.
          */
         post: operations["clearList"];
         delete?: never;
@@ -1348,7 +1348,7 @@ export interface paths {
         put?: never;
         /**
          * Change several things on the list at once
-         * @description Take them off, check them off or not, move them to an aisle or another list (remembered for each food), or buy them every week: all or none. The answer says what they were before, for Undo with /list/restore. Ids not on the list are passed over. With an API key, it needs the `list: write` permission.
+         * @description Take them off, check them off or not, move them to an aisle or another list (remembered for each food), or buy them every week: all or none. The answer says what they were before, for Undo with /list/restore. Ids not on the list are passed over. With the household's put-away setting on, checking puts them in the pantry and unchecking takes that back out; taking them off keeps what's in the pantry, and puts away first any checked row that never went in. With an API key, it needs the `list: write` permission.
          */
         post: operations["changeListItems"];
         delete?: never;
@@ -1369,14 +1369,14 @@ export interface paths {
         post?: never;
         /**
          * Take something off the list
-         * @description The answer is what it was, for Undo with /list/restore. With an API key, it needs the `list: write` permission.
+         * @description The answer is what it was, for Undo with /list/restore. With the household's put-away setting on, what it put in the pantry stays there, and a checked row that never went in is put away first. With an API key, it needs the `list: write` permission.
          */
         delete: operations["removeListItem"];
         options?: never;
         head?: never;
         /**
          * Change something on the list
-         * @description Check it off or not, rename it, change how much, or move it to another aisle or list, which the household remembers for the food. With an API key, it needs the `list: write` permission.
+         * @description Check it off or not, rename it, change how much, or move it to another aisle or list, which the household remembers for the food. With the household's put-away setting on, checking it off puts it in the pantry and unchecking takes that back out; renaming a checked row swaps the food in the pantry, and changing its amount changes the pantry by the difference. With an API key, it needs the `list: write` permission.
          */
         patch: operations["updateListItem"];
         trace?: never;
@@ -1580,7 +1580,7 @@ export interface paths {
         put?: never;
         /**
          * Put things on the list back as they were
-         * @description Undo: items as taking them off or changing them said they were. One taken off comes back with its id. An aisle that's gone is left empty. Items in `remove` weren't there before, and come off again. With an API key, it needs the `list: write` permission.
+         * @description Undo: items as taking them off or changing them said they were. One taken off comes back with its id. An aisle that's gone is left empty. Items in `remove` weren't there before, and come off again. With the household's put-away setting on, one put back checked or unchecked goes in the pantry or comes back out as checking or unchecking it would; one that was taken off comes back with what it put in the pantry, which stayed there, so it doesn't go in again. With an API key, it needs the `list: write` permission.
          */
         post: operations["restoreListItems"];
         delete?: never;
@@ -7818,7 +7818,7 @@ export interface components {
         /**
          * @example {
          *       "rows": [
-         *         "0199e8b0-5a10-7a01-8b00-000000000027"
+         *         "0199e8b0-5a10-7a01-8b00-00000000001d"
          *       ],
          *       "items": [
          *         {
@@ -7944,7 +7944,7 @@ export interface components {
         /**
          * @example {
          *       "rows": [
-         *         "0199e8b0-5a10-7a01-8b00-000000000027"
+         *         "0199e8b0-5a10-7a01-8b00-00000000001d"
          *       ]
          *     }
          */
@@ -7960,7 +7960,7 @@ export interface components {
         PutAwayResult: {
             /** @description Things now at home. */
             stored: number;
-            /** @description Things cleared without going in: household things and what's always on hand. */
+            /** @description Things cleared without going in now: household things, what's always on hand, and what went in already when it was checked off. */
             cleared: number;
         };
         /** @example {} */

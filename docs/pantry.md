@@ -42,7 +42,7 @@ Each row remembers what it added: which pantry item, how much, whether it made t
 **Other changes to a checked row:**
 
 - Changing its amount changes what went in: the old amount comes out and the new one goes in.
-- Deleting it, **Clear checked** and **Clear the list** just tidy the list. The food was bought, so it stays in the pantry.
+- Deleting it, **Clear checked** and **Clear the list** just tidy the list. The food was bought, so it stays in the pantry. A checked row that never went in goes in first, whichever way it's taken off.
 - **Undo** after a clear brings the rows back checked, with what they put away, and adds nothing again.
 - A meal taken off the plan after its food was checked works as today: the checked row stays, and what was set aside for the meal is free again.
 
@@ -178,6 +178,8 @@ Decided while building, November 6, 2026:
 | Changing a checked row's amount | Changes the pantry item by the difference, keeping its place, date and what cooking took | Taking it all out and putting it away again would lose the place you fixed and what cooking already took |
 | Unchecking an item that had no amount before | It goes back to having none, rather than being removed | It was there before the row, so unchecking shouldn't make it vanish |
 | What taking back touches | Only the same food | Undo can't be used to take other food out of the pantry |
-| Clearing with the setting on | First puts away checked rows that never went in | Households upgrading start with the setting on, and their old checked rows would otherwise be cleared without going in |
+| Clearing with the setting on | First puts away checked rows that never went in, and so does deleting a checked row or taking several off at once | Households upgrading start with the setting on, and their old checked rows would otherwise be cleared without going in. With a list for each store, the page clears a list by taking its rows off |
+| Correcting a checked row's amount after its pantry item was changed by hand to words, "have it" or a unit that doesn't convert | Changes only the purchase and what the row remembers, and leaves the pantry item as it was set | What someone said is at home already counts what the row brought, so adding the row again would count it twice |
+| Sending a checked row's same name again | Keeps the row's food | A row from the plan can be a food someone chose for the recipe's line, rather than its name's, and unchecking finds its purchase by that food |
 | What teaches a place | Only a real move | Editing an item without moving it says nothing about where the food goes |
 | Shopping mode's button | Keeps **Finish trip** | It was already there, and does what plain **Finish** was meant to |

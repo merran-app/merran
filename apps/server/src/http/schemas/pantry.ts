@@ -269,7 +269,7 @@ export const PutAwayResultSchema = z
     stored: z.number().int().openapi({ description: "Things now at home." }),
     cleared: z.number().int().openapi({
       description:
-        "Things cleared without going in: household things and what's always on hand.",
+        "Things cleared without going in now: household things, what's always on hand, and what went in already when it was checked off.",
     }),
   })
   .openapi("PutAwayResult", { example: { stored: 12, cleared: 2 } })
@@ -297,12 +297,12 @@ export const PutAwayReviewSchema = z
     }),
   })
   .openapi("PutAwayReview", {
-    example: { rows: [IDS.pantryItems[1]], items: [ITEM] },
+    example: { rows: [IDS.listItems[0]], items: [ITEM] },
   })
 
 export const LookedOverSchema = z
   .object({ rows: z.array(z.string()).max(500) })
-  .openapi("LookedOver", { example: { rows: [IDS.pantryItems[1]] } })
+  .openapi("LookedOver", { example: { rows: [IDS.listItems[0]] } })
 
 export const LookedOverResultSchema = z
   .object({
