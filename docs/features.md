@@ -166,8 +166,8 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Usual buys: "Milk? You last got some Oct 9" | Key | Built | |
 | A pantry: amounts, use soon, leftovers, cooking uses it up | Headline | Built | |
 | Ran out of anything? Check off what you used up after cooking | Key | Planned | [pantry.md](pantry.md): its own step when cooking is done, before "How did it go?". The recipe's foods and staples as chips; each ticked one is used up at home (not the freezer, unless cooking took from it) and goes on the list, with Undo |
-| Checking off puts it away, then a look at where it all went | Key | Planned | [pantry.md](pantry.md): a household setting, on to start; unchecking takes it back out. When the shopping's done, a drawer shows what went to the fridge, freezer and cupboard, to move, fix the amount or freeze some |
-| The pantry learns where you keep things | Detail | Planned | [pantry.md](pantry.md): moving all of something to another place remembers it for that food; freezing some doesn't |
+| Checking off puts it away, then a look at where it all went | Key | Built | Not released yet (after alpha.6), see [pantry.md](pantry.md): a household setting, on to start; unchecking takes it back out. When the shopping's done, a drawer shows what went to the fridge, freezer and cupboard, to move, fix the amount or freeze some |
+| The pantry learns where you keep things | Detail | Built | Not released yet (after alpha.6), see [pantry.md](pantry.md): moving all of something to another place remembers it for that food; freezing some doesn't |
 | Put away what you bought in one tap | Detail | Built | |
 | Select and act on many list or pantry items | Detail | Built | |
 | Fridge, freezer or cupboard | Detail | Built | Released in 0.1.0-alpha.1; storedIn on pantry items and place controls in the pantry UI |

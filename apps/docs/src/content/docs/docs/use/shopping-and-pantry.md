@@ -75,6 +75,32 @@ Creating the list sets pantry stock aside for meals; it does not mean the food h
 
 **Expected result:** checked food moves into the pantry and purchases are recorded. Household supplies and always-on-hand staples are cleared without creating pantry stock. Unchecked items stay on the list. Merely checking an item does not put it away.
 
+:::note[Not released yet (after alpha.6): checking off puts it away]
+Checking an item off now puts it in the pantry at once, and unchecking takes it back out. It goes in the same way **Put away** puts it: in the fridge, freezer or cupboard, with a use-by guess, set aside for the meals it was bought for. Household supplies and always-on-hand staples are recorded as bought but don't go in the pantry. **Put away** and **Put it all away** are hidden, because there's nothing left to put away.
+
+A household admin can turn this off under **Settings → Household → Shopping and stores → Pantry** with **Put food away when it's checked off**. It's on unless turned off. Turning it on puts away anything already checked. With it off, everything works as described above, **Put away** included.
+
+- **Unchecking** takes back exactly what that row put in. If cooking or **Used up** has taken some since, it takes back what's left, and never goes below zero. A pantry item that had no amount before goes back to having none.
+- **Changing the amount** on a checked row changes the pantry by the difference. The item keeps its place and use-by date. Renaming the row swaps the food.
+- **Delete**, **Clear checked** and **Clear the list** only tidy the list. The food was bought, so it stays in the pantry. **Undo** brings the rows back without putting them in the pantry again.
+  :::
+
+:::note[Not released yet (after alpha.6): Where did it all go?]
+When the shopping's done, **Where did it all go?** opens over the list: when you check the last unchecked item, when you choose **Finish trip** in shopping mode, and when you choose **Clear checked**. It shows once for each batch of items.
+
+Food is grouped by **Fridge**, **Freezer** and **Cupboard**, with its amount and use-by date.
+
+- Tap a place to move the food there. Moving it to the freezer drops the use-by date.
+- Tap the amount to fix it, such as when you bought a bigger pack. That changes the pantry, not the list.
+- Choose **Freeze some**, say how much goes in the freezer when asked **How much goes in the freezer?**, then choose **Freeze**. The rest stays where it was.
+
+Choose **Looks right** when it's all where it should be, or **Open the pantry** to see it there.
+:::
+
+:::note[Not released yet (after alpha.6): the pantry learns where you keep things]
+When you move all of an item, or a selection, to another place, Merran remembers that place for the food. Putting food away, typing it into the pantry and reading receipts use it before guessing. If that place is the freezer, the food gets no use-by date. Moving it back teaches that instead. Using **Freeze some** and editing an item without moving it don't teach anything.
+:::
+
 Where a supported cart handoff recorded pack sizes, put-away can use purchased packs instead of the recipe's required amount. Otherwise it uses the list's amount. Correct the pantry if you actually bought a different pack. Purchase history can later produce **Due about now** suggestions; adding those remains your choice.
 
 :::note[Available in alpha.4]
@@ -89,6 +115,10 @@ Choose **Start shopping** on **List** for a focused aisle view with larger check
 Check items off as you buy them. **Couldn’t find it** offers **Set aside for this trip**, **Try [store] instead**, or **Find a substitute**. Set-aside items stay needed on the household list and appear in a collapsed section with **Restore**. Try-another-store choices appear under **At another store**. They are not purchases. Trip focus and deferred choices are remembered for this household on this device; the list itself remains shared.
 
 The shopping header scrolls with the list so it does not cover items. Scroll back to the top to change lists or stores, or choose **Finish shopping** to review bought and outstanding items. **Finish trip** returns to the normal list, preserving unresolved needs. **Put purchases away and finish** explicitly puts checked purchases into the pantry. Ending the trip alone does not put anything away. Offline list synchronization is not added by this mode.
+:::
+
+:::note[Not released yet (after alpha.6): shopping mode with put-away on check]
+When the household puts food away as it's checked off, shopping mode hides **Put purchases away and finish**, because everything checked is in the pantry already. **Finish trip** returns to the normal list and opens **Where did it all go?**.
 :::
 
 ### Replace an unavailable ingredient
@@ -126,7 +156,7 @@ The product finder also uses a phone drawer: its title, close button, and search
 
 Use **All items**, **Needs attention**, or **Sent to a cart** to see what remains. If an amount or selected product changes after sending, review the retailer cart before sending again; older sends without recorded details also need review. Merran records successful transfers, not live retailer-cart contents. It cannot detect items removed at the retailer or whether checkout completed.
 
-After checkout, **Mark … sent items bought** checks the unchanged, verified sent items, with **Undo** available. Check individual items instead if only some were bought. Items needing review stay unchecked. Checking items does not put them in the pantry: after receiving them, correct substitutions and quantities, then choose **Put away**. Sending to a cart alone never marks an item bought.
+After checkout, **Mark … sent items bought** checks the unchanged, verified sent items, with **Undo** available. Check individual items instead if only some were bought. Items needing review stay unchecked. Checking items does not put them in the pantry: after receiving them, correct substitutions and quantities, then choose **Put away**. Sending to a cart alone never marks an item bought. Not released yet (after alpha.6): when the household puts food away as it's checked off, **Mark … sent items bought** puts those items in the pantry too.
 :::
 
 The stores module is optional. **Find** can open searches at selected stores without a direct cart integration. Prices, product choices, and **Send** depend on the configured integration; support is not universal.
@@ -153,16 +183,18 @@ When shopping with multiple connected stores, **Order from** on List or Send cho
 
 With AI receipt reading available, choose **Pantry → Scan a receipt**, then take a photo, choose files, or paste receipt text. Choose **Read it**, review names and amounts, select the food to keep, and choose **Add … to the pantry**. Review the items that will come off the list before confirming. Receipt reading can make mistakes and may incur provider charges; it is an alternative to manual put-away, so avoid recording the same purchase twice.
 
+Not released yet (after alpha.6): with checking off putting food away, a receipt line that matches a list row already put away shows **Already put away from the list** and starts unticked, so the purchase isn't counted twice. Tick it to add it again, if you really bought two.
+
 ## Troubleshooting
 
-| What you see                                   | What to try                                                                                                                                      |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| An ingredient is missing from the list         | Check **Always on hand**, pantry entries without amounts, meal dates/status, and whether the meal is already listed.                             |
-| Too much is listed or lines do not combine     | Check recipe and pantry units, food names, meal servings, and stock reserved for other meals. Correct mistaken aliases under **Your own foods**. |
-| Checked food is not in the pantry              | Finish with **Put away**. Household supplies and always-on-hand items intentionally do not create stock.                                         |
-| Pantry amount differs from the actual purchase | Edit **How much**, especially after substitutions or different pack sizes.                                                                       |
-| **Send** or prices are unavailable             | Check module availability, store selection, account linking, and whether that retailer has an integration. The manual list still works.          |
-| Receipt controls are missing                   | Check the household's AI setup and module availability with the administrator.                                                                   |
+| What you see                                   | What to try                                                                                                                                                                                         |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| An ingredient is missing from the list         | Check **Always on hand**, pantry entries without amounts, meal dates/status, and whether the meal is already listed.                                                                                |
+| Too much is listed or lines do not combine     | Check recipe and pantry units, food names, meal servings, and stock reserved for other meals. Correct mistaken aliases under **Your own foods**.                                                    |
+| Checked food is not in the pantry              | Finish with **Put away**. Not released yet (after alpha.6): make sure **Put food away when it's checked off** is on. Household supplies and always-on-hand items intentionally do not create stock. |
+| Pantry amount differs from the actual purchase | Edit **How much**, especially after substitutions or different pack sizes.                                                                                                                          |
+| **Send** or prices are unavailable             | Check module availability, store selection, account linking, and whether that retailer has an integration. The manual list still works.                                                             |
+| Receipt controls are missing                   | Check the household's AI setup and module availability with the administrator.                                                                                                                      |
 
 ## Next steps
 

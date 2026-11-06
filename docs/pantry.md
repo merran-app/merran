@@ -1,6 +1,6 @@
 # A pantry that keeps itself
 
-November 5, 2026. Planned with the user, not built yet. The pantry works, but keeping it right is work: pressing **Put away**, fixing where things went, and noticing what ran out. When it drifts from what's really at home, the list leaves out things you need, which is worse than having no pantry at all. This plan makes the pantry stay roughly right using only moments when you're already in the app: finishing the shopping and finishing cooking.
+November 5, 2026. Planned with the user. Parts 1 and 2 were built on November 6, 2026, and aren't released yet. Parts 3 to 5 are still planned. The pantry works, but keeping it right is work: pressing **Put away**, fixing where things went, and noticing what ran out. When it drifts from what's really at home, the list leaves out things you need, which is worse than having no pantry at all. This plan makes the pantry stay roughly right using only moments when you're already in the app: finishing the shopping and finishing cooking.
 
 Five parts, built in this order, all before the next release:
 
@@ -46,14 +46,14 @@ Each row remembers what it added: which pantry item, how much, whether it made t
 - **Undo** after a clear brings the rows back checked, with what they put away, and adds nothing again.
 - A meal taken off the plan after its food was checked works as today: the checked row stays, and what was set aside for the meal is free again.
 
-**What the buttons become.** **Put away** and **Put it all away** are hidden while the setting is on. In shopping mode, **Put purchases away and finish** becomes plain **Finish**.
+**What the buttons become.** **Put away** and **Put it all away** are hidden while the setting is on. In shopping mode, **Put purchases away and finish** is hidden, leaving **Finish trip**.
 
 **Receipts.** Receipt reading matches checked rows too. A line matching a row that's already been put away shows as already put away, unticked, so the purchase doesn't go in twice. Ticking it anyway adds it again, for when you really bought two.
 
 **Where did it all go?** A drawer (a dialog on larger screens) that opens on the phone that finished:
 
 - when the last unchecked item on a list is checked
-- on **Finish** in shopping mode
+- on **Finish trip** in shopping mode
 - on **Clear checked**
 
 It shows once for each batch: rows remember they've been looked over, so finishing and then clearing doesn't show it twice. Nothing to show means no drawer.
@@ -170,3 +170,14 @@ Decided with the user on November 5, 2026:
 | What "ran out" uses up | Everything of that food at home except the freezer, unless cooking took from the freezer | Running out mid-cook rarely means the frozen stock is gone |
 | Cooking off the plan | Adds a cooked meal to today | Every cooked meal then uses the pantry and can be undone the same way |
 | Unmarked meals | Asked about on Today for six days | The same six days the pantry keeps their food set aside |
+
+Decided while building, November 6, 2026:
+
+| Decision | Choice | Why |
+|---|---|---|
+| Changing a checked row's amount | Changes the pantry item by the difference, keeping its place, date and what cooking took | Taking it all out and putting it away again would lose the place you fixed and what cooking already took |
+| Unchecking an item that had no amount before | It goes back to having none, rather than being removed | It was there before the row, so unchecking shouldn't make it vanish |
+| What taking back touches | Only the same food | Undo can't be used to take other food out of the pantry |
+| Clearing with the setting on | First puts away checked rows that never went in | Households upgrading start with the setting on, and their old checked rows would otherwise be cleared without going in |
+| What teaches a place | Only a real move | Editing an item without moving it says nothing about where the food goes |
+| Shopping mode's button | Keeps **Finish trip** | It was already there, and does what plain **Finish** was meant to |
