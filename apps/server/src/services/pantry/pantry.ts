@@ -281,14 +281,15 @@ export type Stock = {
  * Puts something in the pantry. The same food kept in the same place
  * goes with what's there when the amounts add up (or one is just "have
  * it"), keeping the earlier use-by date; otherwise it's a thing of its own.
- * Says which item it went into, and whether it made that item, so
- * checking off can take exactly that back out.
+ * Says which item it went into, whether it made that item, and whether
+ * it gave an amount to one that had none, so checking off can take
+ * exactly that back out.
  */
 export async function store(
   em: EntityManager,
   householdId: string,
   stock: Stock
-): Promise<{ item: PantryItem; created: boolean }> {
+): Promise<{ item: PantryItem; created: boolean; filledEmpty: boolean }> {
   const keyOf = await householdKeys(em)
   const key = keyOf(stock.name)
   const same = await em.find(PantryItem, {
@@ -325,7 +326,11 @@ export async function store(
           : (item.useBy ?? stock.useBy),
       forMeals: merged([...(item.forMeals ?? []), ...stock.forMeals]),
     })
-    return { item, created: false }
+    return {
+      item,
+      created: false,
+      filledEmpty: !hasAmount(current) && hasAmount(stock),
+    }
   }
   const item = em.create(PantryItem, {
     household: householdId,
@@ -339,7 +344,7 @@ export async function store(
     useBy: stock.useBy,
     forMeals: stock.forMeals.length > 0 ? merged(stock.forMeals) : null,
   })
-  return { item, created: true }
+  return { item, created: true, filledEmpty: false }
 }
 
 /**

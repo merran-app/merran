@@ -1,7 +1,7 @@
 import { addDays, clockIn, weekStartOf } from "@merran/shared"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../app.ts"
-import { Purchase } from "../../../../database/entities/index.ts"
+import { Purchase, ShoppingItem } from "../../../../database/entities/index.ts"
 import type { Database } from "../../../../database/orm.ts"
 import { forHousehold } from "../../../../database/scope.ts"
 import { createTestApp, setUpServer, TestClient } from "../../../../test/app.ts"
@@ -79,6 +79,12 @@ async function purchases() {
   const em = forHousehold(database.em.fork(), householdId)
   const bought = await em.find(Purchase, {}, { orderBy: { name: "asc" } })
   return bought.map((purchase) => purchase.name)
+}
+
+/** What checking a row off put away, as the row remembers it. */
+async function putAwayOf(row: { id: string }) {
+  const em = forHousehold(database.em.fork(), householdId)
+  return (await em.findOneOrFail(ShoppingItem, { id: row.id })).putAway
 }
 
 async function plan(body: Record<string, unknown>) {
@@ -251,14 +257,42 @@ describe("checking off", () => {
     expect(await find("spinach")).toMatchObject({ amount: "half a bag" })
     await check(spinach, false)
     expect(await find("spinach")).toBeUndefined()
+    expect(await purchases()).toEqual([])
+    await clearAll()
+  })
 
-    // Joining stock that was there, it leaves that stock where it is.
+  test("unchecking what gave an amount to something there as having some leaves it as that", async () => {
+    await add("rice")
+    const row = await typed("2 lb rice")
+    await check(row, true)
+    expect(await find("rice")).toMatchObject({ amount: "2 lb" })
+    await check(row, false)
+    expect(await find("rice")).toMatchObject({ amount: "" })
+    expect(await purchases()).toEqual([])
+    await clearAll()
+  })
+
+  test("unchecking what gave an amount in words to something there as having some leaves it as that, unless it's changed since", async () => {
     await add("flour")
     const flour = await typed("flour")
     await kyle.patch(`/api/list/items/${flour.id}`, { amount: "half a bag" })
     await check(flour, true)
+    expect(await find("flour")).toMatchObject({ amount: "half a bag" })
     await check(flour, false)
-    expect(await find("flour")).toBeDefined()
+    expect(await find("flour")).toMatchObject({ amount: "" })
+
+    // Changed at home since it went in, it's left as it is now.
+    await add("sugar")
+    const sugar = await typed("sugar")
+    await kyle.patch(`/api/list/items/${sugar.id}`, { amount: "half a bag" })
+    await check(sugar, true)
+    const stored = (await find("sugar"))!
+    const changed = await kyle.patch(`/api/pantry/items/${stored.id}`, {
+      amount: "a little",
+    })
+    expect(changed.status, await changed.clone().text()).toBe(200)
+    await check(sugar, false)
+    expect(await find("sugar")).toMatchObject({ amount: "a little" })
     expect(await purchases()).toEqual([])
     await clearAll()
   })
@@ -298,6 +332,28 @@ describe("checking off", () => {
       { name: "eggs", checked: false },
     ])
     expect(await purchases()).toEqual([])
+    await clearAll()
+  })
+
+  test("a row put back saying it put another food away takes none of that out", async () => {
+    const chicken = await typed("2 lb chicken thighs")
+    await check(chicken, true)
+    const record = await putAwayOf(chicken)
+    expect(record).toMatchObject({ quantity: 2, created: true })
+
+    // Milk, taken off the list and put back checked, claiming the chicken.
+    const milk = await typed("1 gallon milk")
+    const removed = await kyle.delete(`/api/list/items/${milk.id}`)
+    expect(removed.status, await removed.clone().text()).toBe(200)
+    const snapshot = await removed.json()
+    const restored = await kyle.post("/api/list/restore", {
+      items: [{ ...snapshot, checked: true, putAway: record }],
+    })
+    expect(restored.status, await restored.clone().text()).toBe(200)
+    await check(milk, false)
+
+    expect(await find("chicken thighs")).toMatchObject({ amount: "2 lb" })
+    expect(await purchases()).toEqual(["chicken thighs"])
     await clearAll()
   })
 

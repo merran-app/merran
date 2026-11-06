@@ -6887,6 +6887,8 @@ export interface components {
                 amountText: string | null;
                 /** @description It made that pantry item, rather than joining one already there. */
                 created: boolean;
+                /** @description It gave an amount to a pantry item that was there with none, so taking it back leaves that item with none again. */
+                filledEmpty?: boolean;
                 forMeals: {
                     meal: string;
                     quantity: number | null;

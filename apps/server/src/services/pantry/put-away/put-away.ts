@@ -14,7 +14,6 @@ import {
   ShoppingItem,
   StoreProduct,
   type LastSent,
-  type PantryItem,
   type PutAwayRecord,
 } from "../../../database/entities/index.ts"
 import { householdKeys } from "../../foods/aliases.ts"
@@ -99,7 +98,7 @@ export async function putAwayItem(
   })
   const aisle = item.aisle?.getEntity() ?? null
   const key = (aisle?.key as AisleKey | null | undefined) ?? null
-  let stored: { item: PantryItem; created: boolean } | null = null
+  let stored: Awaited<ReturnType<typeof store>> | null = null
   if (key !== "household" && !context.isOnHand(item.name)) {
     const storedIn = guessStorage(item.name, key)
     stored = await store(tx, householdId, {
@@ -121,6 +120,7 @@ export async function putAwayItem(
     unit: bought.unit,
     amountText: item.amountText ?? null,
     created: stored?.created ?? false,
+    filledEmpty: stored?.filledEmpty ?? false,
     forMeals: item.forMeals ?? [],
     purchase: purchase.id,
     lookedOverAt: null,

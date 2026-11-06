@@ -27,6 +27,13 @@ export type PutAwayRecord = {
   amountText: string | null
   /** It made that pantry item, rather than joining one already there. */
   created: boolean
+  /**
+   * It gave an amount to a pantry item that was there with none ("have
+   * it"), so taking it back leaves that item with none again rather than
+   * taking it away. Records made before this was kept don't have it,
+   * which counts as false.
+   */
+  filledEmpty?: boolean
   /** The meal shares it brought. */
   forMeals: MealShare[]
   /** The purchase it recorded. */

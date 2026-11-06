@@ -4416,6 +4416,10 @@
                 "type": "boolean",
                 "description": "It made that pantry item, rather than joining one already there."
               },
+              "filledEmpty": {
+                "type": "boolean",
+                "description": "It gave an amount to a pantry item that was there with none, so taking it back leaves that item with none again."
+              },
               "forMeals": {
                 "type": "array",
                 "items": {

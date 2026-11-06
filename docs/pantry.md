@@ -35,9 +35,9 @@ Thaw reminders on Today, leftovers as portions, and a quick "still got these?" c
 - recorded as a purchase
 - household things and always-on-hand staples skipped: the purchase is recorded, but nothing goes in the pantry
 
-Each row remembers what it added: which pantry item, how much, whether it made that item, the meal shares it brought, and the purchase. Meals already do the same with what cooking took (`pantryUsed`).
+Each row remembers what it added: which pantry item, how much, whether it made that item or gave an amount to one that had none, the meal shares it brought, and the purchase. Meals already do the same with what cooking took (`pantryUsed`).
 
-**Unchecking** takes exactly that back out: the amount comes off the pantry item, its meal shares go, and the purchase is deleted. When cooking or **Used up** has taken some of it since, unchecking takes back what's left and never goes below zero. If the item is gone, there's nothing to take back.
+**Unchecking** takes exactly that back out: the amount comes off the pantry item, its meal shares go, and the purchase is deleted. When cooking or **Used up** has taken some of it since, unchecking takes back what's left and never goes below zero. If the item is gone, there's nothing to take back. An item that was there with no amount ("have it") before the row gave it one goes back to having none, rather than going. Undo sends what a row put away back from the page, so unchecking leaves alone a pantry item or purchase of another food.
 
 **Other changes to a checked row:**
 
@@ -115,7 +115,7 @@ Anyone in the household can answer, and the meal leaves the card on every phone 
 **Data.** Migrations for SQLite and Postgres:
 
 - `HouseholdSettings` gets `pantry: { putAwayWhenChecked: boolean }`. Absent means on.
-- `ShoppingItem` gets `putAway`, JSON or null: the pantry item's id, the amount added, whether the item was made by it, the meal shares it brought, the purchase's id, and when it was looked over.
+- `ShoppingItem` gets `putAway`, JSON or null: the pantry item's id, the amount added, whether the item was made by it or given its first amount by it, the meal shares it brought, the purchase's id, and when it was looked over.
 - `FoodPlacement` gets `storedIn`, nullable.
 - No change to `PantryItem` or `PlanEntry`.
 

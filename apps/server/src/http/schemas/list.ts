@@ -34,6 +34,10 @@ const putAwayRecord = z.object({
     description:
       "It made that pantry item, rather than joining one already there.",
   }),
+  filledEmpty: z.boolean().optional().openapi({
+    description:
+      "It gave an amount to a pantry item that was there with none, so taking it back leaves that item with none again.",
+  }),
   forMeals: z.array(share).max(100),
   purchase: z.uuid().openapi({ description: "The purchase it recorded." }),
   lookedOverAt: z.iso.datetime().nullable(),
