@@ -73,7 +73,7 @@ Creating the list sets pantry stock aside for meals; it does not mean the food h
 2. When finished, choose **Put away** for the list, or **Put it all away** for all checked purchases.
 3. Open **Pantry** and check the amounts, storage locations, use-by dates, and meal reservations.
 
-**Expected result:** checked food moves into the pantry and purchases are recorded. Household supplies and always-on-hand staples are cleared without creating pantry stock. Unchecked items stay on the list. Merely checking an item does not put it away.
+**Expected result:** checked food moves into the pantry and purchases are recorded. Household supplies and always-on-hand staples are cleared without creating pantry stock. Unchecked items stay on the list. In the released version, and when **Put food away when it's checked off** is off, merely checking an item does not put it away.
 
 :::note[Not released yet (after alpha.6): checking off puts it away]
 Checking an item off now puts it in the pantry at once, and unchecking takes it back out. It goes in the same way **Put away** puts it: in the fridge, freezer or cupboard, with a use-by guess, set aside for the meals it was bought for. Household supplies and always-on-hand staples are recorded as bought but don't go in the pantry. **Put away** and **Put it all away** are hidden, because there's nothing left to put away.
@@ -83,7 +83,8 @@ A household admin can turn this off under **Settings → Household → Shopping 
 - **Unchecking** takes back exactly what that row put in. If cooking or **Used up** has taken some since, it takes back what's left, and never goes below zero. A pantry item that had no amount before goes back to having none.
 - **Changing the amount** on a checked row changes the pantry by the difference. The item keeps its place and use-by date. Renaming the row swaps the food.
 - **Delete**, **Clear checked** and **Clear the list** only tidy the list. The food was bought, so it stays in the pantry. **Undo** brings the rows back without putting them in the pantry again.
-  :::
+
+:::
 
 :::note[Not released yet (after alpha.6): Where did it all go?]
 When the shopping's done, **Where did it all go?** opens over the list: when you check the last unchecked item, when you choose **Finish trip** in shopping mode, and when you choose **Clear checked**. It shows once for each batch of items.
