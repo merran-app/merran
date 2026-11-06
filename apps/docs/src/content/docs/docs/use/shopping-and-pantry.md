@@ -82,12 +82,12 @@ A household admin can turn this off under **Settings → Household → Shopping 
 
 - **Unchecking** takes back exactly what that row put in. If cooking or **Used up** has taken some since, it takes back what's left, and never goes below zero. A pantry item that had no amount before goes back to having none.
 - **Changing the amount** on a checked row changes the pantry by the difference. The item keeps its place and use-by date. Renaming the row swaps the food.
-- **Delete**, **Clear checked** and **Clear the list** only tidy the list. The food was bought, so it stays in the pantry. **Undo** brings the rows back without putting them in the pantry again.
+- **Delete**, **Clear checked** and **Clear the list** only tidy the list. The food was bought, so it stays in the pantry. **Undo** brings the rows back without putting them in the pantry again. Anything checked off before you updated goes in the pantry first.
 
 :::
 
 :::note[Not released yet (after alpha.6): Where did it all go?]
-When the shopping's done, **Where did it all go?** opens over the list: when you check the last unchecked item, when you choose **Finish trip** in shopping mode, and when you choose **Clear checked**. It shows once for each batch of items.
+When the shopping's done, **Where did it all go?** opens over the list: when you check the last unchecked item (or **Mark … sent items bought** does), when you choose **Finish trip** in shopping mode, and when you choose **Clear checked**. It shows once for each batch of items.
 
 Food is grouped by **Fridge**, **Freezer** and **Cupboard**, with its amount and use-by date.
 
@@ -157,7 +157,7 @@ The product finder also uses a phone drawer: its title, close button, and search
 
 Use **All items**, **Needs attention**, or **Sent to a cart** to see what remains. If an amount or selected product changes after sending, review the retailer cart before sending again; older sends without recorded details also need review. Merran records successful transfers, not live retailer-cart contents. It cannot detect items removed at the retailer or whether checkout completed.
 
-After checkout, **Mark … sent items bought** checks the unchanged, verified sent items, with **Undo** available. Check individual items instead if only some were bought. Items needing review stay unchecked. Checking items does not put them in the pantry: after receiving them, correct substitutions and quantities, then choose **Put away**. Sending to a cart alone never marks an item bought. Not released yet (after alpha.6): when the household puts food away as it's checked off, **Mark … sent items bought** puts those items in the pantry too.
+After checkout, **Mark … sent items bought** checks the unchanged, verified sent items, with **Undo** available. Check individual items instead if only some were bought. Items needing review stay unchecked. Checking items does not put them in the pantry: after receiving them, correct substitutions and quantities, then choose **Put away**. Sending to a cart alone never marks an item bought. Not released yet (after alpha.6): when the household has **Put food away when it's checked off** on, there's no **Put away** to choose: **Mark … sent items bought** puts those items in the pantry at once, so use it once they arrive, then correct substitutions and quantities on the checked items, which changes the pantry too. If it finishes the list, **Where did it all go?** opens.
 :::
 
 The stores module is optional. **Find** can open searches at selected stores without a direct cart integration. Prices, product choices, and **Send** depend on the configured integration; support is not universal.
