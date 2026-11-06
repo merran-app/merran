@@ -20,7 +20,9 @@ export function usePutAwayReview() {
           params: { query: list ? { list } : {} },
         })
       )
-      // Rows whose food has gone from the pantry are looked over too.
+      // Marked now, so they never come up again. Rows whose food has gone
+      // from the pantry aren't among them: they stay as they are, and never
+      // show, since there's nothing left to look over.
       if (found.rows.length > 0) {
         await unwrap(
           api.POST("/api/list/put-away/looked-over", {

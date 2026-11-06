@@ -14,10 +14,12 @@ type Bulk = Schemas["ListBulk"]
 const UNDO_MS = 10_000
 
 /**
- * Changes to the list, each followed by the list loading again. Taking
- * things off says so with an Undo that really puts them back. When the last
- * row of a list is checked, `onListDone` hears which list: the page passes
- * it only while checking puts food away, to show where it all went.
+ * Changes to the list, each followed by the list loading again, and the
+ * pantry: checking and unchecking can put food away or take it back out,
+ * and live updates don't tell the device that did it. Taking things off
+ * says so with an Undo that really puts them back. When the last row of a
+ * list is checked, `onListDone` hears which list: the page passes it only
+ * while checking puts food away, to show where it all went.
  */
 export function useListActions(options?: {
   onListDone?: (list: string) => void
@@ -28,6 +30,7 @@ export function useListActions(options?: {
   const refresh = () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: listQuery.queryKey }),
+      queryClient.invalidateQueries({ queryKey: ["pantry"] }),
       queryClient.invalidateQueries({
         queryKey: ["stores", "kroger", "basket"],
       }),
@@ -171,7 +174,6 @@ export function useListActions(options?: {
           })
         )
       )
-      await queryClient.invalidateQueries({ queryKey: ["pantry"] })
       if (!done) return
       if (done.stored + done.cleared > 0) celebrateEmpty(before)
       toast.success(

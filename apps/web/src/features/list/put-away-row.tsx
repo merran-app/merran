@@ -199,6 +199,7 @@ export function PutAwayRow({
       <PlacePicker
         value={item.storedIn}
         onChange={(place) => void move(place)}
+        label={t("list.putAwayReview.placeFor", { name: item.name })}
       />
       {errors.storedIn && mode !== "freeze" && (
         <FieldError>{errors.storedIn}</FieldError>

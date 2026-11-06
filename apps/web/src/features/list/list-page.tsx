@@ -487,6 +487,7 @@ export function ListPage() {
                 onFilter={setFilter}
                 review={review}
                 onReview={setReview}
+                onListDone={onListDone}
               />
             </div>
           )}
