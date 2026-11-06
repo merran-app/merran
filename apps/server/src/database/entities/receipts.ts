@@ -19,8 +19,12 @@ export type ReceiptLine = {
   amount: string | null
   price: number | null
   kind: ReceiptKind
-  /** The shopping list item it was bought for, taken off when it's added. */
-  listItem: { id: string; name: string } | null
+  /**
+   * The shopping list item it was bought for, taken off when it's added.
+   * A checked item that was already put away is matched too, and left on
+   * the list: `putAway` says the purchase is already in the pantry.
+   */
+  listItem: { id: string; name: string; putAway: boolean } | null
 }
 
 /** A photo or PDF of the receipt, kept to compare with while looking it over. */

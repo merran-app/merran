@@ -8152,7 +8152,8 @@ export interface components {
          *               "kind": "food",
          *               "listItem": {
          *                 "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
-         *                 "name": "milk"
+         *                 "name": "milk",
+         *                 "putAway": false
          *               }
          *             }
          *           ],
@@ -8186,7 +8187,8 @@ export interface components {
          *           "kind": "food",
          *           "listItem": {
          *             "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
-         *             "name": "milk"
+         *             "name": "milk",
+         *             "putAway": false
          *           }
          *         }
          *       ],
@@ -8225,7 +8227,8 @@ export interface components {
          *       "kind": "food",
          *       "listItem": {
          *         "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
-         *         "name": "milk"
+         *         "name": "milk",
+         *         "putAway": false
          *       }
          *     }
          */
@@ -8246,6 +8249,8 @@ export interface components {
             listItem: {
                 id: string;
                 name: string;
+                /** @description True when the item was checked off and already put away: the purchase is in the pantry, so the line starts unticked, and adding it anyway leaves the item on the list. */
+                putAway: boolean;
             } | null;
         };
         /**

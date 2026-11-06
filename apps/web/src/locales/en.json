@@ -2574,6 +2574,7 @@
       "name": "What it is",
       "amount": "Amount",
       "onList": "On your list",
+      "alreadyPutAway": "Already put away from the list",
       "kinds": {
         "household": "Not food",
         "other": "Not food"

@@ -9,7 +9,7 @@ const LINE = {
   amount: "1 gal",
   price: 3.48,
   kind: "food",
-  listItem: { id: IDS.listItems[0], name: "milk" },
+  listItem: { id: IDS.listItems[0], name: "milk", putAway: false },
 } as const
 
 const ReceiptLineSchema = z
@@ -24,7 +24,14 @@ const ReceiptLineSchema = z
         "Food goes in the pantry; household things and the rest don't, unless they're picked.",
     }),
     listItem: z
-      .object({ id: z.string(), name: z.string() })
+      .object({
+        id: z.string(),
+        name: z.string(),
+        putAway: z.boolean().openapi({
+          description:
+            "True when the item was checked off and already put away: the purchase is in the pantry, so the line starts unticked, and adding it anyway leaves the item on the list.",
+        }),
+      })
       .nullable()
       .openapi({
         description:

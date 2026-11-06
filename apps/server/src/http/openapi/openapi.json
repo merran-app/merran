@@ -7115,7 +7115,8 @@
                   "kind": "food",
                   "listItem": {
                     "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
-                    "name": "milk"
+                    "name": "milk",
+                    "putAway": false
                   }
                 }
               ],
@@ -7213,7 +7214,8 @@
               "kind": "food",
               "listItem": {
                 "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
-                "name": "milk"
+                "name": "milk",
+                "putAway": false
               }
             }
           ],
@@ -7272,11 +7274,16 @@
               },
               "name": {
                 "type": "string"
+              },
+              "putAway": {
+                "type": "boolean",
+                "description": "True when the item was checked off and already put away: the purchase is in the pantry, so the line starts unticked, and adding it anyway leaves the item on the list."
               }
             },
             "required": [
               "id",
-              "name"
+              "name",
+              "putAway"
             ],
             "description": "The shopping list item it was bought for, taken off the list when it's added."
           }
@@ -7299,7 +7306,8 @@
           "kind": "food",
           "listItem": {
             "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
-            "name": "milk"
+            "name": "milk",
+            "putAway": false
           }
         }
       },
