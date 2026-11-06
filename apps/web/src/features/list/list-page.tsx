@@ -127,6 +127,10 @@ export function ListPage() {
   const selection = useSelection()
 
   const { data: household } = useQuery(householdQuery)
+  // While it's on, checking a row already put it away, so the buttons that
+  // put the checked rows away have nothing left to do. Until the household
+  // loads they show, as they always have.
+  const putAwayWhenChecked = household?.putAwayWhenChecked === true
   const trip = useShoppingTrip(household?.id)
   const { data: yours = [] } = useQuery(yourStoresQuery)
   const [finding, setFinding] = React.useState<Finding | null>(null)
@@ -570,7 +574,7 @@ export function ListPage() {
             {toGet.length === 0 && (
               <div className="grid justify-items-center gap-3 py-4 text-center">
                 <p className="text-muted-foreground">{t("list.allDone")}</p>
-                {got.length > 0 && (
+                {got.length > 0 && !putAwayWhenChecked && (
                   <Button onClick={() => void actions.putAway(listShowing)}>
                     <HugeiconsIcon
                       icon={FridgeIcon}
@@ -610,19 +614,21 @@ export function ListPage() {
                     >
                       {showCart ? t("list.hide") : t("list.show")}
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full bg-card"
-                      onClick={() => void actions.putAway(listShowing)}
-                    >
-                      <HugeiconsIcon
-                        icon={FridgeIcon}
-                        strokeWidth={2}
-                        data-icon="inline-start"
-                      />
-                      {t("list.putAway")}
-                    </Button>
+                    {!putAwayWhenChecked && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full bg-card"
+                        onClick={() => void actions.putAway(listShowing)}
+                      >
+                        <HugeiconsIcon
+                          icon={FridgeIcon}
+                          strokeWidth={2}
+                          data-icon="inline-start"
+                        />
+                        {t("list.putAway")}
+                      </Button>
+                    )}
                   </div>
                 </div>
                 {showCart && (

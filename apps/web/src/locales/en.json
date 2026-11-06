@@ -387,7 +387,7 @@
         },
         "shopping": {
           "title": "Shopping and stores",
-          "description": "Choose where this household shops and connect a store account."
+          "description": "Choose where this household shops, connect a store account, and how the pantry fills."
         }
       },
       "yourStores": {
@@ -402,6 +402,12 @@
         "description": "The meals Fill the week and Plan each week fill for you: all of them, unless you turn some off. Every meal still shows on the plan, so you can plan one you've turned off yourself whenever you like.",
         "meals": "Meals to fill",
         "save": "Save",
+        "saved": "Saved."
+      },
+      "pantry": {
+        "title": "Pantry",
+        "putAway": "Put food away when it's checked off",
+        "putAwayHint": "Checking something off on the list puts it in the pantry, and unchecking takes it back out. Turn it off to put the shopping away yourself.",
         "saved": "Saved."
       },
       "calendar": {
