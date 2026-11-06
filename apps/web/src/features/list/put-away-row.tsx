@@ -8,6 +8,7 @@ import { FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { PlacePicker } from "@/features/pantry/pantry-dialogs"
 import { pantryQuery, type PantryItem } from "@/features/pantry/queries"
+import { useDayLabel } from "@/features/pantry/use-soon"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 type Mode = "idle" | "amount" | "freeze"
@@ -37,6 +38,7 @@ export function PutAwayRow({
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const dayLabel = useDayLabel()
   const [mode, setMode] = React.useState<Mode>("idle")
   const [typed, setTyped] = React.useState("")
   const [busy, setBusy] = React.useState(false)
@@ -139,7 +141,14 @@ export function PutAwayRow({
   return (
     <li className="grid gap-2 py-3">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 truncate font-medium">{item.name}</span>
+        <span className="min-w-0 truncate font-medium">
+          {item.name}
+          {item.useBy && item.storedIn !== "freezer" && (
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              {t("pantry.tags.useBy", { day: dayLabel(item.useBy, true) })}
+            </span>
+          )}
+        </span>
         {mode !== "amount" && (
           <Button
             variant="ghost"

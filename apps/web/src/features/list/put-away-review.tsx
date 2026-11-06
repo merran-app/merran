@@ -68,12 +68,26 @@ export function PutAwayReview({
 function ReviewItems({ start }: { start: PantryItem[] }) {
   const { t } = useTranslation()
   const [items, setItems] = React.useState(start)
+  // Things that went from the pantry while the drawer's open stay gone.
+  const gone = React.useRef(new Set<string>())
+
+  // Items that arrive while it's open join the ones here, edits and all.
+  React.useEffect(() => {
+    setItems((now) => {
+      const known = new Set(now.map((one) => one.id))
+      const added = start.filter(
+        (one) => !known.has(one.id) && !gone.current.has(one.id)
+      )
+      return added.length > 0 ? [...now, ...added] : now
+    })
+  }, [start])
 
   function replace(item: PantryItem) {
     setItems((now) => now.map((one) => (one.id === item.id ? item : one)))
   }
 
   function drop(id: string) {
+    gone.current.add(id)
     setItems((now) => now.filter((one) => one.id !== id))
   }
 

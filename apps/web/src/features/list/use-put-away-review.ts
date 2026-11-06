@@ -36,9 +36,24 @@ export function usePutAwayReview() {
     }
   }
 
-  /** Opens the drawer, when there's anything to show. */
+  /**
+   * Opens the drawer, when there's anything to show. A review that comes
+   * while one is open joins it, so none that was marked as looked over is
+   * lost: its items are added, and ones already there stay as they are.
+   */
   function show(found: Review | null) {
-    if (found) setReview(found)
+    if (!found) return
+    setReview((open) => {
+      if (!open) return found
+      const known = new Set(open.items.map((item) => item.id))
+      return {
+        rows: [...open.rows, ...found.rows],
+        items: [
+          ...open.items,
+          ...found.items.filter((item) => !known.has(item.id)),
+        ],
+      }
+    })
   }
 
   /** The list is done: load where it went, and show it. */
