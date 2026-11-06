@@ -9,7 +9,7 @@ import {
   test,
 } from "vitest"
 import type { App } from "../../../app.ts"
-import { Purchase } from "../../../database/entities/index.ts"
+import { FoodPlacement, Purchase } from "../../../database/entities/index.ts"
 import type { Database } from "../../../database/orm.ts"
 import { forHousehold } from "../../../database/scope.ts"
 import {
@@ -150,6 +150,13 @@ beforeAll(async () => {
 })
 
 afterAll(() => close())
+
+// Moving things teaches where they go: forget it, so the next test's food
+// goes where it's guessed.
+afterEach(async () => {
+  const em = forHousehold(database.em.fork(), householdId)
+  await em.nativeDelete(FoodPlacement, {})
+})
 
 describe("splitting", () => {
   test("freezes some, joining what's in the freezer, and the rest stays", async () => {
@@ -548,6 +555,102 @@ describe("the pantry", () => {
       organizationId: householdId,
     })
     expect(await pantry()).toMatchObject([{ id: rice.id }])
+    await clearAll()
+  })
+})
+
+describe("where things go", () => {
+  /** Checks a typed list row off, which puts it in the pantry. */
+  async function checkOff(text: string) {
+    await putAwayWhenChecked(true)
+    await kyle.post("/api/list/items", { text })
+    const row = (await (await kyle.get("/api/list")).json()).items.find(
+      (item: { name: string }) => item.name === text
+    )
+    const res = await kyle.post("/api/list/items/bulk", {
+      ids: [row.id],
+      action: "check",
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+  }
+
+  test("moving all of something teaches where it goes, for put-away and typing", async () => {
+    const chicken = await add("2 lb chicken thighs")
+    const res = await kyle.patch(`/api/pantry/items/${chicken.id}`, {
+      storedIn: "freezer",
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    await clearAll()
+
+    expect(await add("1 lb chicken thighs")).toMatchObject({
+      storedIn: "freezer",
+      useBy: null,
+    })
+    await clearAll()
+
+    await checkOff("chicken thighs")
+    expect(await find("chicken thighs")).toMatchObject({
+      storedIn: "freezer",
+      useBy: null,
+    })
+    await clearAll()
+  })
+
+  test("moving it back teaches that instead", async () => {
+    const chicken = await add("2 lb chicken thighs")
+    await kyle.patch(`/api/pantry/items/${chicken.id}`, { storedIn: "freezer" })
+    await kyle.patch(`/api/pantry/items/${chicken.id}`, { storedIn: "fridge" })
+    await clearAll()
+    expect(await add("1 lb chicken thighs")).toMatchObject({
+      storedIn: "fridge",
+      useBy: addDays(today, 3),
+    })
+    await clearAll()
+  })
+
+  test("saving an item without moving it teaches nothing", async () => {
+    // A guess of the fridge, sent again as it is, doesn't become a rule.
+    const rice = await add("1 lb ground beef")
+    await kyle.patch(`/api/pantry/items/${rice.id}`, {
+      storedIn: "fridge",
+      useBy: addDays(today, 9),
+    })
+    await clearAll()
+    const again = await add("1 lb ground beef", "freezer")
+    expect(again.storedIn).toBe("freezer")
+    await clearAll()
+    expect((await add("1 lb ground beef")).storedIn).toBe("fridge")
+    await clearAll()
+  })
+
+  test("moving a selection teaches each food", async () => {
+    const chicken = await add("2 lb chicken thighs")
+    const peas = await add("1 bag peas", "cupboard")
+    const res = await kyle.post("/api/pantry/items/bulk", {
+      ids: [chicken.id, peas.id],
+      action: "storedIn",
+      storedIn: "freezer",
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    await clearAll()
+
+    expect(await add("1 lb chicken thighs")).toMatchObject({
+      storedIn: "freezer",
+      useBy: null,
+    })
+    expect((await add("2 bags peas")).storedIn).toBe("freezer")
+    await clearAll()
+  })
+
+  test("freezing some doesn't teach anything", async () => {
+    const beef = await add("2 lb ground beef")
+    const res = await kyle.post(`/api/pantry/items/${beef.id}/split`, {
+      amount: "1 lb",
+      storedIn: "freezer",
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    await clearAll()
+    expect(await add("1 lb ground beef")).toMatchObject({ storedIn: "fridge" })
     await clearAll()
   })
 })

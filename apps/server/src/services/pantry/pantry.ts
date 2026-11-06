@@ -2,8 +2,6 @@ import { householdToday } from "../households/clock.ts"
 import {
   addAmounts,
   formatAmount,
-  guessStorage,
-  guessUseBy,
   foodKey,
   readAmount,
   readItem,
@@ -24,6 +22,7 @@ import {
   type SetAside,
 } from "../../database/entities/index.ts"
 import { householdKeys } from "../foods/aliases.ts"
+import { placeOf, rememberPlace } from "./places.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { aislesOf, findAisle, householdAisles } from "../list/aisles.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
@@ -380,7 +379,7 @@ function countedTogether(a: SetAside, b: SetAside) {
   return sum ? { counted: sum } : null
 }
 
-/** Where a new thing at home goes, and its use-by guess: from its aisle. */
+/** Where a new thing at home goes, and its use-by guess: where it's kept, else from its aisle. */
 export async function placeFor(
   em: EntityManager,
   householdId: string,
@@ -392,11 +391,9 @@ export async function placeFor(
       ? ((await aislesOf(em, householdId, [food]))[0] ?? null)
       : food.aisle
   const key = (aisle?.key as AisleKey | null | undefined) ?? null
-  const storedIn = guessStorage(food.name, key)
   return {
     aisle,
-    storedIn,
-    useBy: guessUseBy(food.name, key, storedIn, today),
+    ...(await placeOf(em, householdId, { name: food.name, aisle: key }, today)),
   }
 }
 
@@ -457,6 +454,9 @@ export async function updateItem(
   }
   if (changes.amount !== undefined) em.assign(item, readAmount(changes.amount))
   if (changes.storedIn !== undefined) {
+    // Only a move teaches: saving it as it is shouldn't make a guess stick.
+    if (changes.storedIn !== (item.storedIn ?? null))
+      await rememberPlace(em, householdId, [item.name], changes.storedIn)
     item.storedIn = changes.storedIn
     // The freezer keeps it.
     if (changes.storedIn === "freezer" && changes.useBy === undefined)
@@ -568,6 +568,18 @@ export async function bulkItems(
       id: { $in: ids.filter((id) => UUID.test(id)) },
     })
     const before = items.map(itemSnapshot)
+    if (bulk.action === "storedIn") {
+      // Only what really moves teaches where it goes.
+      const moving = items.filter(
+        (item) => (item.storedIn ?? null) !== bulk.storedIn
+      )
+      await rememberPlace(
+        tx,
+        householdId,
+        moving.map((item) => item.name),
+        bulk.storedIn
+      )
+    }
     for (const item of items) {
       if (bulk.action === "remove") tx.remove(item)
       else if (bulk.action === "storedIn") {

@@ -2,6 +2,7 @@ import { addDays, clockIn, weekStartOf } from "@merran/shared"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../app.ts"
 import {
+  FoodPlacement,
   Household,
   Purchase,
   ShoppingItem,
@@ -130,7 +131,10 @@ async function clearAll() {
   await kyle.post("/api/pantry/clear")
   // Nothing takes purchases out of the history but unchecking, so the
   // tests start each other clean straight from the database.
-  await forHousehold(database.em.fork(), householdId).nativeDelete(Purchase, {})
+  const em = forHousehold(database.em.fork(), householdId)
+  await em.nativeDelete(Purchase, {})
+  // And moving things taught where they go: forget that too.
+  await em.nativeDelete(FoodPlacement, {})
 }
 
 beforeAll(async () => {

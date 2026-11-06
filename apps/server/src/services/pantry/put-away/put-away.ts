@@ -1,7 +1,5 @@
 import {
   DEFAULT_ON_HAND,
-  guessStorage,
-  guessUseBy,
   onHandTest,
   formatAmount,
   sizeAmount,
@@ -24,6 +22,7 @@ import { toNumber } from "../../../database/numbers.ts"
 import { KROGER, krogerConnection } from "../../stores/kroger/connection.ts"
 import { householdToday } from "../../households/clock.ts"
 import { store } from "../pantry.ts"
+import { placeOf } from "../places.ts"
 
 /**
  * What putting things away needs to know, read once for however many
@@ -118,17 +117,23 @@ export async function putAwayItem(
   const key = (aisle?.key as AisleKey | null | undefined) ?? null
   let stored: Awaited<ReturnType<typeof store>> | null = null
   if (key !== "household" && !context.isOnHand(item.name)) {
-    const storedIn = keep ? keep.storedIn : guessStorage(item.name, key)
+    // Where it was kept wins, then where the household keeps it, then a guess.
+    const place =
+      keep ??
+      (await placeOf(
+        tx,
+        householdId,
+        { name: item.name, aisle: key },
+        context.today
+      ))
     stored = await store(tx, householdId, {
       name: item.name,
       quantity: bought.quantity,
       unit: bought.unit,
       amountText: item.amountText ?? null,
       aisle,
-      storedIn,
-      useBy: keep
-        ? keep.useBy
-        : guessUseBy(item.name, key, storedIn, context.today),
+      storedIn: place.storedIn,
+      useBy: place.useBy,
       forMeals: item.forMeals ?? [],
     })
   }
