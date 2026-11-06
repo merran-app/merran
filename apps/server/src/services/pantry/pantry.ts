@@ -236,6 +236,9 @@ export async function describeItems(
   return items.map((item) => describeItem(item, meals, keys, today))
 }
 
+/** Something at home as the API shows it. */
+export type PantryItemView = Awaited<ReturnType<typeof describeItems>>[number]
+
 /** What's at home: the fridge, the freezer, then the cupboard; by aisle in each. */
 export async function getPantry(em: EntityManager, householdId: string) {
   const aisles = await householdAisles(em, householdId)
@@ -468,6 +471,52 @@ export async function updateItem(
   }
   await em.flush()
   return (await describeItems(em, householdId, [item]))[0]!
+}
+
+/**
+ * Moves part of something to another place (some to the freezer), joining
+ * the same food already kept there. The rest stays, with its use-by date
+ * and the meals it's set aside for; what moves takes no meal shares, and
+ * keeps no use-by date in the freezer.
+ */
+export async function splitItem(
+  em: EntityManager,
+  householdId: string,
+  id: string,
+  split: { amount: string; storedIn: StoragePlace }
+): Promise<{ item: PantryItemView; moved: PantryItemView }> {
+  const item = await findItem(em, id)
+  const lessThan = "Say how much less than what's there."
+  const refuse = (message: string, field = "amount") =>
+    new AppError("invalid", "invalid_amount", message, { [field]: message })
+  if (!measured(item)) throw refuse(lessThan)
+  const part = readAmount(split.amount)
+  if (part.quantity === null || part.amountText) throw refuse(lessThan)
+  const rest = subtractAmounts(amountOf(item), part, item.foodKey)
+  if (!rest || rest.quantity <= 0.001) throw refuse(lessThan)
+  // Moving it where it already is would only add it back to itself.
+  if (split.storedIn === item.storedIn) {
+    throw refuse("It's kept there already.", "storedIn")
+  }
+  await em.populate(item, ["aisle"])
+  const { item: moved } = await store(em, householdId, {
+    name: item.name,
+    quantity: part.quantity,
+    unit: part.unit,
+    amountText: null,
+    aisle: item.aisle?.getEntity() ?? null,
+    storedIn: split.storedIn,
+    useBy: split.storedIn === "freezer" ? null : (item.useBy ?? null),
+    forMeals: [],
+  })
+  item.quantity = rest.quantity
+  item.unit = rest.unit
+  await em.flush()
+  const [described, movedView] = await describeItems(em, householdId, [
+    item,
+    moved,
+  ])
+  return { item: described!, moved: movedView! }
 }
 
 /** Something at home as it was, to put it back as it was (Undo). */

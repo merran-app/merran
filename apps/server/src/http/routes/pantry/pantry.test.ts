@@ -151,6 +151,39 @@ beforeAll(async () => {
 
 afterAll(() => close())
 
+describe("splitting", () => {
+  test("freezes some, joining what's in the freezer, and the rest stays", async () => {
+    const chicken = await add("2 lb chicken thighs")
+    await add("1 lb chicken thighs", "freezer")
+    const res = await kyle.post(`/api/pantry/items/${chicken.id}/split`, {
+      amount: "1 lb",
+      storedIn: "freezer",
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    expect(await res.json()).toMatchObject({
+      item: { amount: "1 lb", storedIn: "fridge" },
+      moved: { amount: "2 lb", storedIn: "freezer", useBy: null },
+    })
+    for (const amount of ["2 lb", "half", "3 cups"]) {
+      const refused = await kyle.post(`/api/pantry/items/${chicken.id}/split`, {
+        amount,
+        storedIn: "freezer",
+      })
+      expect(refused.status).toBe(400)
+      expect((await refused.json()).error).toMatchObject({
+        code: "invalid_amount",
+        fields: { amount: expect.any(String) },
+      })
+    }
+    const missing = await kyle.post(
+      "/api/pantry/items/00000000-0000-4000-8000-000000000000/split",
+      { amount: "1 lb", storedIn: "freezer" }
+    )
+    expect(missing.status).toBe(404)
+    await clearAll()
+  })
+})
+
 describe("the pantry", () => {
   test("takes things as typed, kept where the food goes", async () => {
     expect(await add("2 lb chicken thighs")).toMatchObject({

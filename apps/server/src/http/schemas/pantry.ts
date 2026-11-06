@@ -273,3 +273,74 @@ export const PutAwayResultSchema = z
     }),
   })
   .openapi("PutAwayResult", { example: { stored: 12, cleared: 2 } })
+
+export const PutAwayReviewQuery = z.object({
+  list: z
+    .string()
+    .optional()
+    .openapi({
+      param: { name: "list", in: "query" },
+      description:
+        "A list's id: only what's checked off on it. Every list when left out.",
+    }),
+})
+
+export const PutAwayReviewSchema = z
+  .object({
+    rows: z.array(z.string()).openapi({
+      description:
+        "The checked-off rows that put something in the pantry and haven't been looked over.",
+    }),
+    items: z.array(PantryItemSchema).openapi({
+      description:
+        "What they went into, each once, in the pantry's order: the fridge, the freezer, then the cupboard.",
+    }),
+  })
+  .openapi("PutAwayReview", {
+    example: { rows: [IDS.pantryItems[1]], items: [ITEM] },
+  })
+
+export const LookedOverSchema = z
+  .object({ rows: z.array(z.string()).max(500) })
+  .openapi("LookedOver", { example: { rows: [IDS.pantryItems[1]] } })
+
+export const LookedOverResultSchema = z
+  .object({
+    changed: z.number().int().openapi({
+      description: "Rows now marked as looked over.",
+    }),
+  })
+  .openapi("LookedOverResult", { example: { changed: 1 } })
+
+export const PantrySplitSchema = z
+  .object({
+    amount: z.string().max(60).openapi({
+      description:
+        'How much to move, as typed: "1 lb". It has to be less than what\'s there.',
+    }),
+    storedIn: StoredInSchema,
+  })
+  .openapi("PantrySplit", { example: { amount: "1 lb", storedIn: "freezer" } })
+
+export const PantrySplitResultSchema = z
+  .object({
+    item: PantryItemSchema.openapi({
+      description: "What's left where it was.",
+    }),
+    moved: PantryItemSchema.openapi({
+      description: "What moved, joined with the same food already there.",
+    }),
+  })
+  .openapi("PantrySplitResult", {
+    example: {
+      item: { ...ITEM, amount: "1 lb", quantity: 1 },
+      moved: {
+        ...ITEM,
+        id: IDS.pantryItems[1],
+        storedIn: "freezer" as const,
+        useBy: null,
+        meals: [],
+        useSoon: null,
+      },
+    },
+  })

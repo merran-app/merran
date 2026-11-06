@@ -517,56 +517,6 @@ describe("a checked row", () => {
 
   test("clearing puts away what was checked before the setting existed, and Undo then unchecking takes it back out", async () => {
     // A household from before the setting has it on with nothing saved, and
-    // rows it checked off never went through turning it on.
-    await setting(false)
-    const row = await typed("2 lb chicken thighs")
-    await check(row, true)
-    expect(await find("chicken thighs")).toBeUndefined()
-    const em = database.em.fork()
-    const household = await em.findOneOrFail(Household, householdId)
-    const { pantry: _saved, ...settings } = household.settings ?? {}
-    household.settings = settings
-    await em.flush()
-    expect(
-      (await (await kyle.get("/api/households/current")).json())
-        .putAwayWhenChecked
-    ).toBe(true)
-
-    const cleared = await (
-      await kyle.post("/api/list/clear", { which: "checked" })
-    ).json()
-    expect(await find("chicken thighs")).toMatchObject({ amount: "2 lb" })
-    const undo = await kyle.post("/api/list/restore", { items: cleared.before })
-    expect(undo.status, await undo.clone().text()).toBe(200)
-    expect(await find("chicken thighs")).toMatchObject({ amount: "2 lb" })
-    await check(row, false)
-    expect(await find("chicken thighs")).toBeUndefined()
-    await clearAll()
-  })
-
-  test("deleting it keeps its food in the pantry", async () => {
-    const row = await typed("2 lb chicken thighs")
-    await check(row, true)
-    const removed = await kyle.delete(`/api/list/items/${row.id}`)
-    expect(removed.status, await removed.clone().text()).toBe(200)
-    expect(await listItems()).toEqual([])
-    expect(await find("chicken thighs")).toMatchObject({ amount: "2 lb" })
-    await clearAll()
-  })
-
-  test("clearing the whole list keeps what's checked in the pantry", async () => {
-    await check(await typed("2 lb chicken thighs"), true)
-    await typed("1 gallon milk")
-    const cleared = await kyle.post("/api/list/clear", { which: "all" })
-    expect(cleared.status, await cleared.clone().text()).toBe(200)
-    expect(await listItems()).toEqual([])
-    expect(await find("chicken thighs")).toMatchObject({ amount: "2 lb" })
-    expect(await find("milk")).toBeUndefined()
-    await clearAll()
-  })
-
-  test("clearing puts away what was checked before the setting existed, and Undo then unchecking takes it back out", async () => {
-    // A household from before the setting has it on with nothing saved, and
     // what it checked off never went through turning it on.
     await setting(false)
     let row: ListItem
@@ -683,6 +633,38 @@ describe("a checked row", () => {
     const res = await kyle.post("/api/list/put-away", {})
     expect(await res.json()).toEqual({ stored: 0, cleared: 1 })
     expect(await find("milk")).toMatchObject({ amount: "1 gal" })
+    await clearAll()
+  })
+})
+
+describe("looking over what went in", () => {
+  test("says what went in and hasn't been looked over, each pantry item once", async () => {
+    // Two rows for chicken thighs and one for milk, all checked; one more
+    // row, for eggs, whose pantry item is then deleted.
+    await check(await typed("2 lb chicken thighs"), true)
+    await check(await typed("1 lb chicken thighs"), true)
+    await check(await typed("1 gallon milk"), true)
+    await check(await typed("12 eggs"), true)
+    await kyle.delete(`/api/pantry/items/${(await find("eggs"))!.id}`)
+
+    const review = await (await kyle.get("/api/list/put-away")).json()
+    expect(review.items.map((item: { name: string }) => item.name)).toEqual([
+      "chicken thighs",
+      "milk",
+    ])
+    expect(review.rows).toHaveLength(3)
+    const marked = await kyle.post("/api/list/put-away/looked-over", {
+      rows: review.rows,
+    })
+    expect(await marked.json()).toEqual({ changed: 3 })
+    expect((await (await kyle.get("/api/list/put-away")).json()).items).toEqual(
+      []
+    )
+    // Saying so again changes nothing.
+    const again = await kyle.post("/api/list/put-away/looked-over", {
+      rows: review.rows,
+    })
+    expect(await again.json()).toEqual({ changed: 0 })
     await clearAll()
   })
 })
