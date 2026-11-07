@@ -82,7 +82,11 @@ export function needsAttention(
   return !product || !product.inStock
 }
 
-/** The list stays underneath review; closing it returns to the same place. */
+/**
+ * The list stays underneath review; closing it returns to the same place.
+ * Marking sent items bought can finish a list, which `onListDone` hears
+ * about, as checking the last row does.
+ */
 export function ShoppingProgress({
   plan,
   whereOf,
@@ -94,6 +98,7 @@ export function ShoppingProgress({
   onFilter,
   review,
   onReview,
+  onListDone,
 }: {
   plan: SendPlan
   whereOf: (item: ShoppingItemProgress) => string | undefined
@@ -105,9 +110,11 @@ export function ShoppingProgress({
   onFilter: (filter: ShoppingFilter) => void
   review: { store: string; items: string[] } | null
   onReview: (review: { store: string; items: string[] } | null) => void
+  /** Only while checking puts food away, to show where it all went. */
+  onListDone?: (list: string) => void
 }) {
   const { t } = useTranslation()
-  const actions = useListActions()
+  const actions = useListActions({ onListDone })
   const [buying, setBuying] = React.useState(false)
   const storeOptions = plan.stores.map((store) => ({
     value: store.key,

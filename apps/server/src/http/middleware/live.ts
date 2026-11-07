@@ -23,6 +23,9 @@ const CHANGES: [RegExp, LiveArea[]][] = [
     /^\/api\/list\/(put-away|from-plan|for-meals|covered\/[^/]+\/not-at-home)$/,
     ["list", "pantry"],
   ],
+  // Checking off puts food away, and taking checked rows off or clearing
+  // puts away what never went in.
+  [/^\/api\/list\/(items(\/[^/]+|\/bulk)?|restore|clear)$/, ["list", "pantry"]],
   [/^\/api\/list(\/|$)/, ["list"]],
   // Product choices and cart transfers change shopping progress on every device.
   [/^\/api\/stores(\/|$)/, ["list"]],
@@ -35,7 +38,8 @@ const CHANGES: [RegExp, LiveArea[]][] = [
   [/^\/api\/households\/current\/(tastes|themes|on-hand)$/, ["household"]],
   // A household's AI keys and models.
   [/^\/api\/households\/current\/ai(\/|$)/, ["household"]],
-  [/^\/api\/households\/current$/, ["household"]],
+  // Turning put-away on puts away what's checked off already.
+  [/^\/api\/households\/current$/, ["household", "list", "pantry"]],
 ]
 
 /**

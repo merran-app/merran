@@ -243,26 +243,38 @@ async function matchList(
     { checked: false },
     { fields: ["id", "name"], orderBy: { createdAt: "asc" } }
   )
+  // Checked rows that already put their food away: a line for one of these
+  // is the same purchase, so it's shown as done rather than added twice.
+  const putAway = await em.find(
+    ShoppingItem,
+    { checked: true, putAway: { $ne: null } },
+    { fields: ["id", "name"], orderBy: { createdAt: "asc" } }
+  )
   const claimed = new Set<string>()
   return lines.map((line) => {
     const key = keyOf(line.name)
-    const match =
-      line.kind === "other"
-        ? undefined
-        : waiting.find((item) => {
-            if (claimed.has(item.id)) return false
-            const theirs = keyOf(item.name)
-            return (
-              // Bought what's on the list, or a kind of it.
-              covers(key, theirs) ||
-              key.endsWith(` ${theirs}`) ||
-              theirs.endsWith(` ${key}`)
-            )
-          })
+    const isMatch = (item: { id: string; name: string }) => {
+      if (claimed.has(item.id)) return false
+      const theirs = keyOf(item.name)
+      return (
+        // Bought what's on the list, or a kind of it.
+        covers(key, theirs) ||
+        key.endsWith(` ${theirs}`) ||
+        theirs.endsWith(` ${key}`)
+      )
+    }
+    // Rows still to buy first; only a line with none left for it falls
+    // back to a row that's already been put away.
+    const unchecked = line.kind === "other" ? undefined : waiting.find(isMatch)
+    const done =
+      line.kind === "other" || unchecked ? undefined : putAway.find(isMatch)
+    const match = unchecked ?? done
     if (match) claimed.add(match.id)
     return {
       ...line,
-      listItem: match ? { id: match.id, name: match.name } : null,
+      listItem: match
+        ? { id: match.id, name: match.name, putAway: match === done }
+        : null,
     }
   })
 }
@@ -483,9 +495,12 @@ export async function addReceipt(
         aisle: place.aisle,
         storedIn: place.storedIn,
         useBy: place.useBy,
-        forMeals: bought?.forMeals ?? [],
+        // A row already put away gave its meals their share then, so
+        // buying it again is just more in the pantry.
+        forMeals: (!line.listItem?.putAway && bought?.forMeals) || [],
       })
-      if (bought) {
+      // A put-away row stays: it's checked, and what it put away stays put.
+      if (bought && !line.listItem?.putAway) {
         tx.remove(bought)
         offTheList++
       }

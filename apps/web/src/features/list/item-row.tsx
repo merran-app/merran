@@ -59,6 +59,7 @@ export function ItemRow({
   prices = null,
   shopping,
   trip = false,
+  onListDone,
 }: {
   item: ListItem
   selection: Selection
@@ -72,9 +73,11 @@ export function ItemRow({
   prices?: RowPrices | null
   shopping?: ReactNode
   trip?: boolean
+  /** Checking this row was the last one on its list. */
+  onListDone?: (list: string) => void
 }) {
   const { t, i18n } = useTranslation()
-  const actions = useListActions()
+  const actions = useListActions({ onListDone })
   const press = useLongPress(
     () => selection.start(item.id),
     !selection.selecting

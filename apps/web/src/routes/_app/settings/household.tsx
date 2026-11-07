@@ -22,6 +22,7 @@ import { MembersCard } from "@/features/household/members-card"
 import { NutritionLibraryCard } from "@/features/household/nutrition-library-card"
 import { PhotosCard } from "@/features/household/photos-card"
 import { NewHouseholdCard } from "@/features/household/new-household-card"
+import { PantryCard } from "@/features/household/pantry-card"
 import { PlanningCard } from "@/features/household/planning-card"
 import { StoresCard } from "@/features/stores/stores-card"
 import { YourStoresCard } from "@/features/stores/your-stores-card"
@@ -140,6 +141,7 @@ function HouseholdSettings() {
                     ),
                     content: (
                       <>
+                        <PantryCard />
                         <YourStoresCard />
                         <StoresCard />
                       </>

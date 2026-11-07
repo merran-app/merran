@@ -1136,7 +1136,7 @@ export interface paths {
         put?: never;
         /**
          * Clear the list
-         * @description Takes off what's checked, or everything. The answer says what was there, for Undo with /list/restore. With an API key, it needs the `list: write` permission.
+         * @description Takes off what's checked, or everything. The answer says what was there, for Undo with /list/restore. With the household's put-away setting on, what checking put in the pantry stays there, and checked rows that never went in are put away first. With an API key, it needs the `list: write` permission.
          */
         post: operations["clearList"];
         delete?: never;
@@ -1348,7 +1348,7 @@ export interface paths {
         put?: never;
         /**
          * Change several things on the list at once
-         * @description Take them off, check them off or not, move them to an aisle or another list (remembered for each food), or buy them every week: all or none. The answer says what they were before, for Undo with /list/restore. Ids not on the list are passed over. With an API key, it needs the `list: write` permission.
+         * @description Take them off, check them off or not, move them to an aisle or another list (remembered for each food), or buy them every week: all or none. The answer says what they were before, for Undo with /list/restore. Ids not on the list are passed over. With the household's put-away setting on, checking puts them in the pantry and unchecking takes that back out; taking them off keeps what's in the pantry, and puts away first any checked row that never went in. With an API key, it needs the `list: write` permission.
          */
         post: operations["changeListItems"];
         delete?: never;
@@ -1369,14 +1369,14 @@ export interface paths {
         post?: never;
         /**
          * Take something off the list
-         * @description The answer is what it was, for Undo with /list/restore. With an API key, it needs the `list: write` permission.
+         * @description The answer is what it was, for Undo with /list/restore. With the household's put-away setting on, what it put in the pantry stays there, and a checked row that never went in is put away first. With an API key, it needs the `list: write` permission.
          */
         delete: operations["removeListItem"];
         options?: never;
         head?: never;
         /**
          * Change something on the list
-         * @description Check it off or not, rename it, change how much, or move it to another aisle or list, which the household remembers for the food. With an API key, it needs the `list: write` permission.
+         * @description Check it off or not, rename it, change how much, or move it to another aisle or list, which the household remembers for the food. With the household's put-away setting on, checking it off puts it in the pantry and unchecking takes that back out; renaming a checked row swaps the food in the pantry, and changing its amount changes the pantry by the difference. With an API key, it needs the `list: write` permission.
          */
         patch: operations["updateListItem"];
         trace?: never;
@@ -1532,13 +1532,37 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * What the shopping put away
+         * @description What checked-off rows put in the pantry that hasn't been looked over: the rows, and the pantry items they went into, each once. Rows whose pantry item has gone since are left out. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["getPutAwayReview"];
         put?: never;
         /**
          * Put the shopping away
          * @description What's checked off (on a list, or all of them) goes in the pantry: set aside for the meals it was bought for, in the fridge, freezer or cupboard, with a use-by guess for fresh food. Household things and what's always on hand are cleared without going in. Everything bought goes in the purchase history. With an API key, it needs the `list: write` permission.
          */
         post: operations["putAway"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/put-away/looked-over": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Say what went in looks right
+         * @description Marks these rows' food as looked over, so it isn't shown again. Rows that aren't there, put nothing away, or were looked over already are passed over. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["markPutAwayLookedOver"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1556,7 +1580,7 @@ export interface paths {
         put?: never;
         /**
          * Put things on the list back as they were
-         * @description Undo: items as taking them off or changing them said they were. One taken off comes back with its id. An aisle that's gone is left empty. Items in `remove` weren't there before, and come off again. With an API key, it needs the `list: write` permission.
+         * @description Undo: items as taking them off or changing them said they were. One taken off comes back with its id. An aisle that's gone is left empty. Items in `remove` weren't there before, and come off again. With the household's put-away setting on, one put back checked or unchecked goes in the pantry or comes back out as checking or unchecking it would; one that was taken off comes back with what it put in the pantry, which stayed there, so it doesn't go in again. With an API key, it needs the `list: write` permission.
          */
         post: operations["restoreListItems"];
         delete?: never;
@@ -1747,6 +1771,26 @@ export interface paths {
          * @description Rename it, change how much, where it's kept, its use-by date or its aisle. Moving it to the freezer takes its use-by date off, unless one's given. With an API key, it needs the `pantry: write` permission.
          */
         patch: operations["updatePantryItem"];
+        trace?: never;
+    };
+    "/api/pantry/items/{itemId}/split": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move some of something
+         * @description Moves part of something at home to the fridge, freezer or cupboard, joining the same food already kept there. The rest stays where it was, with its use-by date and the meals it's set aside for. What moves to the freezer has no use-by date. With an API key, it needs the `pantry: write` permission.
+         */
+        post: operations["splitPantryItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/pantry/receipts": {
@@ -5822,6 +5866,7 @@ export interface components {
          *       "meals": [
          *         "dinner"
          *       ],
+         *       "putAwayWhenChecked": true,
          *       "role": "owner"
          *     }
          */
@@ -5834,6 +5879,8 @@ export interface components {
             weekStartsOn: number;
             /** @description The meals filled for it (by Fill the week and Plan each week), in a day's order: every meal until it opts out of some. Any meal can be planned by hand. */
             meals: ("breakfast" | "lunch" | "dinner" | "snack")[];
+            /** @description Whether checking something off on the list puts it in the pantry, and unchecking takes it back out. On unless the household turns it off. */
+            putAwayWhenChecked: boolean;
             /** @enum {string} */
             role: "owner" | "admin" | "member";
         };
@@ -5851,6 +5898,8 @@ export interface components {
             weekStartsOn?: number;
             /** @description The meals filled for it. */
             meals?: ("breakfast" | "lunch" | "dinner" | "snack")[];
+            /** @description Whether checking something off on the list puts it in the pantry, and unchecking takes it back out. */
+            putAwayWhenChecked?: boolean;
         };
         /**
          * @example {
@@ -6626,6 +6675,7 @@ export interface components {
          *         "meals": [
          *           "dinner"
          *         ],
+         *         "putAwayWhenChecked": true,
          *         "role": "owner"
          *       },
          *       "job": {
@@ -6820,6 +6870,7 @@ export interface components {
          *               "unit": "pound"
          *             }
          *           ],
+         *           "putAway": null,
          *           "createdAt": "2026-10-15T18:30:00.000Z"
          *         }
          *       ]
@@ -6848,6 +6899,7 @@ export interface components {
          *           "unit": "pound"
          *         }
          *       ],
+         *       "putAway": null,
          *       "createdAt": "2026-10-15T18:30:00.000Z"
          *     }
          */
@@ -6867,6 +6919,33 @@ export interface components {
                 quantity: number | null;
                 unit: string | null;
             }[] | null;
+            /** @description What checking it off put in the pantry, so unchecking takes it back out. */
+            putAway?: {
+                /**
+                 * Format: uuid
+                 * @description The pantry item it went into; null for household things and staples.
+                 */
+                pantryItem: string | null;
+                quantity: number | null;
+                unit: string | null;
+                amountText: string | null;
+                /** @description It made that pantry item, rather than joining one already there. */
+                created: boolean;
+                /** @description It gave an amount to a pantry item that was there with none, so taking it back leaves that item with none again. */
+                filledEmpty?: boolean;
+                forMeals: {
+                    meal: string;
+                    quantity: number | null;
+                    unit: string | null;
+                }[];
+                /**
+                 * Format: uuid
+                 * @description The purchase it recorded.
+                 */
+                purchase: string;
+                /** Format: date-time */
+                lookedOverAt: string | null;
+            } | null;
             /** Format: date-time */
             createdAt: string;
         };
@@ -7207,6 +7286,7 @@ export interface components {
          *               "unit": "pound"
          *             }
          *           ],
+         *           "putAway": null,
          *           "createdAt": "2026-10-15T18:30:00.000Z"
          *         }
          *       ]
@@ -7737,6 +7817,142 @@ export interface components {
         };
         /**
          * @example {
+         *       "rows": [
+         *         "0199e8b0-5a10-7a01-8b00-00000000001d"
+         *       ],
+         *       "items": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *           "name": "chicken thighs",
+         *           "amount": "2 lb",
+         *           "quantity": 2,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "storedIn": "fridge",
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "useBy": "2026-10-18",
+         *           "meals": [
+         *             {
+         *               "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "name": "Lemon Chicken",
+         *               "date": "2026-10-17",
+         *               "status": "planned",
+         *               "onList": true,
+         *               "amount": "2 lb",
+         *               "short": null
+         *             }
+         *           ],
+         *           "useSoon": {
+         *             "kind": "soon",
+         *             "date": "2026-10-18"
+         *           },
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        PutAwayReview: {
+            /** @description The checked-off rows that put something in the pantry and haven't been looked over. */
+            rows: string[];
+            /** @description What they went into, each once, in the pantry's order: the fridge, the freezer, then the cupboard. */
+            items: components["schemas"]["PantryItem"][];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *       "name": "chicken thighs",
+         *       "amount": "2 lb",
+         *       "quantity": 2,
+         *       "unit": "pound",
+         *       "amountText": null,
+         *       "storedIn": "fridge",
+         *       "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *       "useBy": "2026-10-18",
+         *       "meals": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "name": "Lemon Chicken",
+         *           "date": "2026-10-17",
+         *           "status": "planned",
+         *           "onList": true,
+         *           "amount": "2 lb",
+         *           "short": null
+         *         }
+         *       ],
+         *       "useSoon": {
+         *         "kind": "soon",
+         *         "date": "2026-10-18"
+         *       },
+         *       "createdAt": "2026-10-15T18:30:00.000Z"
+         *     }
+         */
+        PantryItem: {
+            id: string;
+            name: string;
+            /** @description How much, as it shows: "2 lb", "half a bag", or empty for just "have it". */
+            amount: string;
+            quantity: number | null;
+            unit: string | null;
+            amountText: string | null;
+            storedIn: components["schemas"]["StoredIn"];
+            aisle: string | null;
+            /** @example 2026-10-20 */
+            useBy: string | null;
+            /** @description The planned meals it's set aside for. */
+            meals: {
+                id: string;
+                name: string;
+                /** @example 2026-10-20 */
+                date: string;
+                /** @enum {string} */
+                status: "planned" | "cooked" | "skipped";
+                /** @description The meal's on the shopping list and still to come: using this up leaves it short. */
+                onList: boolean;
+                /** @description How much is set aside for it: "2 lb", or empty. */
+                amount: string;
+                /** @description How much of that isn't there any more, for a meal on the list: what to put back on it. */
+                short: string | null;
+            }[];
+            useSoon: components["schemas"]["UseSoon"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @description Why to use it soon: its use-by date has gone (`past`) or is close (`soon`), or it's fresh food bought for meals that were skipped or went by uncooked (`leftover`). */
+        UseSoon: {
+            /** @enum {string} */
+            kind: "past";
+            /** @example 2026-10-20 */
+            date: string;
+        } | {
+            /** @enum {string} */
+            kind: "soon";
+            /** @example 2026-10-20 */
+            date: string;
+        } | {
+            /** @enum {string} */
+            kind: "leftover";
+        } | null;
+        /**
+         * @example {
+         *       "changed": 1
+         *     }
+         */
+        LookedOverResult: {
+            /** @description Rows now marked as looked over. */
+            changed: number;
+        };
+        /**
+         * @example {
+         *       "rows": [
+         *         "0199e8b0-5a10-7a01-8b00-00000000001d"
+         *       ]
+         *     }
+         */
+        LookedOver: {
+            rows: string[];
+        };
+        /**
+         * @example {
          *       "stored": 12,
          *       "cleared": 2
          *     }
@@ -7744,7 +7960,7 @@ export interface components {
         PutAwayResult: {
             /** @description Things now at home. */
             stored: number;
-            /** @description Things cleared without going in: household things and what's always on hand. */
+            /** @description Things cleared without going in now: household things, what's always on hand, and what went in already when it was checked off. */
             cleared: number;
         };
         /** @example {} */
@@ -7801,6 +8017,7 @@ export interface components {
          *               "unit": "pound"
          *             }
          *           ],
+         *           "putAway": null,
          *           "createdAt": "2026-10-15T18:30:00.000Z"
          *         }
          *       ]
@@ -7910,81 +8127,6 @@ export interface components {
             /** @description The fridge, the freezer, then the cupboard; by aisle in each. */
             items: components["schemas"]["PantryItem"][];
         };
-        /**
-         * @example {
-         *       "id": "0199e8b0-5a10-7a01-8b00-000000000026",
-         *       "name": "chicken thighs",
-         *       "amount": "2 lb",
-         *       "quantity": 2,
-         *       "unit": "pound",
-         *       "amountText": null,
-         *       "storedIn": "fridge",
-         *       "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
-         *       "useBy": "2026-10-18",
-         *       "meals": [
-         *         {
-         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
-         *           "name": "Lemon Chicken",
-         *           "date": "2026-10-17",
-         *           "status": "planned",
-         *           "onList": true,
-         *           "amount": "2 lb",
-         *           "short": null
-         *         }
-         *       ],
-         *       "useSoon": {
-         *         "kind": "soon",
-         *         "date": "2026-10-18"
-         *       },
-         *       "createdAt": "2026-10-15T18:30:00.000Z"
-         *     }
-         */
-        PantryItem: {
-            id: string;
-            name: string;
-            /** @description How much, as it shows: "2 lb", "half a bag", or empty for just "have it". */
-            amount: string;
-            quantity: number | null;
-            unit: string | null;
-            amountText: string | null;
-            storedIn: components["schemas"]["StoredIn"];
-            aisle: string | null;
-            /** @example 2026-10-20 */
-            useBy: string | null;
-            /** @description The planned meals it's set aside for. */
-            meals: {
-                id: string;
-                name: string;
-                /** @example 2026-10-20 */
-                date: string;
-                /** @enum {string} */
-                status: "planned" | "cooked" | "skipped";
-                /** @description The meal's on the shopping list and still to come: using this up leaves it short. */
-                onList: boolean;
-                /** @description How much is set aside for it: "2 lb", or empty. */
-                amount: string;
-                /** @description How much of that isn't there any more, for a meal on the list: what to put back on it. */
-                short: string | null;
-            }[];
-            useSoon: components["schemas"]["UseSoon"];
-            /** Format: date-time */
-            createdAt: string;
-        };
-        /** @description Why to use it soon: its use-by date has gone (`past`) or is close (`soon`), or it's fresh food bought for meals that were skipped or went by uncooked (`leftover`). */
-        UseSoon: {
-            /** @enum {string} */
-            kind: "past";
-            /** @example 2026-10-20 */
-            date: string;
-        } | {
-            /** @enum {string} */
-            kind: "soon";
-            /** @example 2026-10-20 */
-            date: string;
-        } | {
-            /** @enum {string} */
-            kind: "leftover";
-        } | null;
         /**
          * @description What was there before, for Undo with /pantry/restore.
          * @example {
@@ -8099,6 +8241,66 @@ export interface components {
         };
         /**
          * @example {
+         *       "item": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *         "name": "chicken thighs",
+         *         "amount": "1 lb",
+         *         "quantity": 1,
+         *         "unit": "pound",
+         *         "amountText": null,
+         *         "storedIn": "fridge",
+         *         "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *         "useBy": "2026-10-18",
+         *         "meals": [
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *             "name": "Lemon Chicken",
+         *             "date": "2026-10-17",
+         *             "status": "planned",
+         *             "onList": true,
+         *             "amount": "2 lb",
+         *             "short": null
+         *           }
+         *         ],
+         *         "useSoon": {
+         *           "kind": "soon",
+         *           "date": "2026-10-18"
+         *         },
+         *         "createdAt": "2026-10-15T18:30:00.000Z"
+         *       },
+         *       "moved": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000027",
+         *         "name": "chicken thighs",
+         *         "amount": "2 lb",
+         *         "quantity": 2,
+         *         "unit": "pound",
+         *         "amountText": null,
+         *         "storedIn": "freezer",
+         *         "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *         "useBy": null,
+         *         "meals": [],
+         *         "useSoon": null,
+         *         "createdAt": "2026-10-15T18:30:00.000Z"
+         *       }
+         *     }
+         */
+        PantrySplitResult: {
+            item: components["schemas"]["PantryItem"] & unknown;
+            moved: components["schemas"]["PantryItem"] & unknown;
+        };
+        /**
+         * @example {
+         *       "amount": "1 lb",
+         *       "storedIn": "freezer"
+         *     }
+         */
+        PantrySplit: {
+            /** @description How much to move, as typed: "1 lb". It has to be less than what's there. */
+            amount: string;
+            storedIn: components["schemas"]["StoredIn"];
+        };
+        /**
+         * @example {
          *       "receipts": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-00000000002e",
@@ -8115,7 +8317,8 @@ export interface components {
          *               "kind": "food",
          *               "listItem": {
          *                 "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
-         *                 "name": "milk"
+         *                 "name": "milk",
+         *                 "putAway": false
          *               }
          *             }
          *           ],
@@ -8149,7 +8352,8 @@ export interface components {
          *           "kind": "food",
          *           "listItem": {
          *             "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
-         *             "name": "milk"
+         *             "name": "milk",
+         *             "putAway": false
          *           }
          *         }
          *       ],
@@ -8188,7 +8392,8 @@ export interface components {
          *       "kind": "food",
          *       "listItem": {
          *         "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
-         *         "name": "milk"
+         *         "name": "milk",
+         *         "putAway": false
          *       }
          *     }
          */
@@ -8209,6 +8414,8 @@ export interface components {
             listItem: {
                 id: string;
                 name: string;
+                /** @description True when the item was checked off and already put away: the purchase is in the pantry, so the line starts unticked, and adding it anyway leaves the item on the list. */
+                putAway: boolean;
             } | null;
         };
         /**
@@ -17004,6 +17211,56 @@ export interface operations {
             };
         };
     };
+    getPutAwayReview: {
+        parameters: {
+            query?: {
+                /** @description A list's id: only what's checked off on it. Every list when left out. */
+                list?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What went in. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PutAwayReview"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such list. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     putAway: {
         parameters: {
             query?: never;
@@ -17046,6 +17303,48 @@ export interface operations {
             };
             /** @description No such list. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    markPutAwayLookedOver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LookedOver"];
+            };
+        };
+        responses: {
+            /** @description Marked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LookedOverResult"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17531,6 +17830,68 @@ export interface operations {
                 };
             };
             /** @description Not in the pantry, or no such aisle. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    splitPantryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PantrySplit"];
+            };
+        };
+        responses: {
+            /** @description Split. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PantrySplitResult"];
+                };
+            };
+            /** @description The amount isn't one there is less of, or the item has no amount to split. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not in the pantry. */
             404: {
                 headers: {
                     [name: string]: unknown;

@@ -2,8 +2,6 @@ import { householdToday } from "../households/clock.ts"
 import {
   addAmounts,
   formatAmount,
-  guessStorage,
-  guessUseBy,
   foodKey,
   readAmount,
   readItem,
@@ -24,16 +22,17 @@ import {
   type SetAside,
 } from "../../database/entities/index.ts"
 import { householdKeys } from "../foods/aliases.ts"
+import { placeOf, rememberPlace } from "./places.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { aislesOf, findAisle, householdAisles } from "../list/aisles.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import { toNumber } from "../../database/numbers.ts"
 
 // What's at home, kept in the fridge, the freezer or the cupboard. It
-// goes in from the list when the shopping's put away, or typed in, and
-// cooking a planned meal uses it up. Each thing remembers how much of it
-// is set aside for which planned meals, so the same stock isn't counted
-// on twice.
+// goes in from the list when it's checked off or the shopping's put
+// away, or typed in, and cooking a planned meal uses it up. Each thing
+// remembers how much of it is set aside for which planned meals, so the
+// same stock isn't counted on twice.
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -236,6 +235,9 @@ export async function describeItems(
   return items.map((item) => describeItem(item, meals, keys, today))
 }
 
+/** Something at home as the API shows it. */
+export type PantryItemView = Awaited<ReturnType<typeof describeItems>>[number]
+
 /** What's at home: the fridge, the freezer, then the cupboard; by aisle in each. */
 export async function getPantry(em: EntityManager, householdId: string) {
   const aisles = await householdAisles(em, householdId)
@@ -281,12 +283,15 @@ export type Stock = {
  * Puts something in the pantry. The same food kept in the same place
  * goes with what's there when the amounts add up (or one is just "have
  * it"), keeping the earlier use-by date; otherwise it's a thing of its own.
+ * Says which item it went into, whether it made that item, and whether
+ * it gave an amount to one that had none, so checking off can take
+ * exactly that back out.
  */
 export async function store(
   em: EntityManager,
   householdId: string,
   stock: Stock
-) {
+): Promise<{ item: PantryItem; created: boolean; filledEmpty: boolean }> {
   const keyOf = await householdKeys(em)
   const key = keyOf(stock.name)
   const same = await em.find(PantryItem, {
@@ -323,9 +328,13 @@ export async function store(
           : (item.useBy ?? stock.useBy),
       forMeals: merged([...(item.forMeals ?? []), ...stock.forMeals]),
     })
-    return item
+    return {
+      item,
+      created: false,
+      filledEmpty: !hasAmount(current) && hasAmount(stock),
+    }
   }
-  return em.create(PantryItem, {
+  const item = em.create(PantryItem, {
     household: householdId,
     foodKey: key,
     name: stock.name,
@@ -337,6 +346,7 @@ export async function store(
     useBy: stock.useBy,
     forMeals: stock.forMeals.length > 0 ? merged(stock.forMeals) : null,
   })
+  return { item, created: true, filledEmpty: false }
 }
 
 /**
@@ -369,7 +379,7 @@ function countedTogether(a: SetAside, b: SetAside) {
   return sum ? { counted: sum } : null
 }
 
-/** Where a new thing at home goes, and its use-by guess: from its aisle. */
+/** Where a new thing at home goes, and its use-by guess: where it's kept, else from its aisle. */
 export async function placeFor(
   em: EntityManager,
   householdId: string,
@@ -381,11 +391,9 @@ export async function placeFor(
       ? ((await aislesOf(em, householdId, [food]))[0] ?? null)
       : food.aisle
   const key = (aisle?.key as AisleKey | null | undefined) ?? null
-  const storedIn = guessStorage(food.name, key)
   return {
     aisle,
-    storedIn,
-    useBy: guessUseBy(food.name, key, storedIn, today),
+    ...(await placeOf(em, householdId, { name: food.name, aisle: key }, today)),
   }
 }
 
@@ -404,7 +412,7 @@ export async function addTyped(
   const today = await householdToday(em, householdId)
   const place = await placeFor(em, householdId, { name, unit }, today)
   const storedIn = input.storedIn ?? place.storedIn
-  const item = await store(em, householdId, {
+  const { item } = await store(em, householdId, {
     name,
     quantity,
     unit,
@@ -446,6 +454,9 @@ export async function updateItem(
   }
   if (changes.amount !== undefined) em.assign(item, readAmount(changes.amount))
   if (changes.storedIn !== undefined) {
+    // Only a move teaches: saving it as it is shouldn't make a guess stick.
+    if (changes.storedIn !== (item.storedIn ?? null))
+      await rememberPlace(em, householdId, [item.name], changes.storedIn)
     item.storedIn = changes.storedIn
     // The freezer keeps it.
     if (changes.storedIn === "freezer" && changes.useBy === undefined)
@@ -460,6 +471,52 @@ export async function updateItem(
   }
   await em.flush()
   return (await describeItems(em, householdId, [item]))[0]!
+}
+
+/**
+ * Moves part of something to another place (some to the freezer), joining
+ * the same food already kept there. The rest stays, with its use-by date
+ * and the meals it's set aside for; what moves takes no meal shares, and
+ * keeps no use-by date in the freezer.
+ */
+export async function splitItem(
+  em: EntityManager,
+  householdId: string,
+  id: string,
+  split: { amount: string; storedIn: StoragePlace }
+): Promise<{ item: PantryItemView; moved: PantryItemView }> {
+  const item = await findItem(em, id)
+  const lessThan = "Say how much less than what's there."
+  const refuse = (message: string, field = "amount") =>
+    new AppError("invalid", "invalid_amount", message, { [field]: message })
+  if (!measured(item)) throw refuse(lessThan)
+  const part = readAmount(split.amount)
+  if (part.quantity === null || part.amountText) throw refuse(lessThan)
+  const rest = subtractAmounts(amountOf(item), part, item.foodKey)
+  if (!rest || rest.quantity <= 0.001) throw refuse(lessThan)
+  // Moving it where it already is would only add it back to itself.
+  if (split.storedIn === item.storedIn) {
+    throw refuse("It's kept there already.", "storedIn")
+  }
+  await em.populate(item, ["aisle"])
+  const { item: moved } = await store(em, householdId, {
+    name: item.name,
+    quantity: part.quantity,
+    unit: part.unit,
+    amountText: null,
+    aisle: item.aisle?.getEntity() ?? null,
+    storedIn: split.storedIn,
+    useBy: split.storedIn === "freezer" ? null : (item.useBy ?? null),
+    forMeals: [],
+  })
+  item.quantity = rest.quantity
+  item.unit = rest.unit
+  await em.flush()
+  const [described, movedView] = await describeItems(em, householdId, [
+    item,
+    moved,
+  ])
+  return { item: described!, moved: movedView! }
 }
 
 /** Something at home as it was, to put it back as it was (Undo). */
@@ -511,6 +568,18 @@ export async function bulkItems(
       id: { $in: ids.filter((id) => UUID.test(id)) },
     })
     const before = items.map(itemSnapshot)
+    if (bulk.action === "storedIn") {
+      // Only what really moves teaches where it goes.
+      const moving = items.filter(
+        (item) => (item.storedIn ?? null) !== bulk.storedIn
+      )
+      await rememberPlace(
+        tx,
+        householdId,
+        moving.map((item) => item.name),
+        bulk.storedIn
+      )
+    }
     for (const item of items) {
       if (bulk.action === "remove") tx.remove(item)
       else if (bulk.action === "storedIn") {
