@@ -26,7 +26,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio, which thes
 5. **Households never see each other.** Enforced by a scoped data layer and tests generated from the schema, not by remembering.
 6. **The AI proposes, people apply.** Carried over unchanged.
 7. **Boring to run.** One image, one compose file, migrations on start (automatic pre-migration backups remain planned), signed releases.
-8. **Honest on the internet.** Merran says who it is when it fetches pages, and doesn't try to get past bot blocks on its own. A server admin can point it at their own FlareSolverr for imports a person asks for (decided and built October 28, 2026, not released yet: [flaresolverr-imports.md](flaresolverr-imports.md)).
+8. **Honest on the internet.** Merran says who it is when it fetches pages, and doesn't try to get past bot blocks on its own. A server admin can point it at their own FlareSolverr for imports a person asks for (decided and built October 28, 2026, released in alpha.7: [flaresolverr-imports.md](flaresolverr-imports.md)).
 
 ## The docs
 
@@ -43,7 +43,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio, which thes
 | [shopping-and-planning-feedback.md](shopping-and-planning-feedback.md) | October 18 usage feedback: list completion after sending to stores, ingredient purpose and swaps while shopping, and rearranging automatically planned meals |
 | [store-product-mappings.md](store-product-mappings.md) | Proposed page for preparing a household's usual products at multiple stores, and choosing the ordering store on shopping day |
 | [pantry.md](pantry.md) | A pantry that keeps itself: checking off puts food away, it learns where things go, what ran out after cooking, cooking off the plan, and asking about meals nobody marked (planned November 5, 2026) |
-| [flaresolverr-imports.md](flaresolverr-imports.md) | Importing links from sites that turn Merran away, through the server admin's own FlareSolverr, and what stays honest (built, not released yet) |
+| [flaresolverr-imports.md](flaresolverr-imports.md) | Importing links from sites that turn Merran away, through the server admin's own FlareSolverr, and what stays honest (released in alpha.7) |
 | [features.md](features.md) | Every feature with its importance and status, for the marketing and docs sites |
 | [scope.md](scope.md) | Where each REFERENCE feature lands, what's not coming over, and the build order |
 | [foods.md](foods.md) | One vocabulary of foods: names in every language, kinds of, brands, what Merran knows about each, and matching a line to its food |

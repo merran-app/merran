@@ -5,8 +5,8 @@ sidebar:
   order: 6
 ---
 
-:::caution[Not released yet]
-FlareSolverr support was built after 0.1.0-alpha.6 and isn't in a release yet. Releases up to alpha.6 ignore `MERRAN_FLARESOLVERR_URL` and have no **FlareSolverr** card. These steps describe the next release.
+:::note[Available in alpha.7]
+Releases up to alpha.6 ignore `MERRAN_FLARESOLVERR_URL` and have no **FlareSolverr** card.
 :::
 
 Some recipe sites turn servers away, often with Cloudflare's "Just a moment..." check. Importing one of their links then fails with **That site turned Merran away. Type the recipe in instead.** [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) opens the page in a real browser and waits out that check. With your own FlareSolverr beside Merran, those imports can still come in.
