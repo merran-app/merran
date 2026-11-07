@@ -81,7 +81,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Goes with: pair recipes, like chicken with any of your sauces | Key | Built | |
 | "I made this", and a New badge for ones you haven't cooked | Detail | Built | |
 | Cooking off the plan uses the pantry too | Detail | Planned | [pantry.md](pantry.md): a recipe made with no meal of it planned is added to today, cooked, so it takes from the pantry and can be undone |
-| How did it go? Stars and notes after cooking | Key | Built | Not released yet (after alpha.6): half stars, from ½ to 5; the left half of a star picks half of it. Mealie's half stars come in as they are, and household exports are version 2 ([export format](export-format.md)) |
+| How did it go? Stars and notes after cooking | Key | Built | Available in alpha.8: half stars, from ½ to 5; the left half of a star picks half of it. Mealie's half stars come in as they are, and household exports are version 2 ([export format](export-format.md)) |
 | Select and act on many recipes; Recently deleted for 30 days | Detail | Built | |
 | Nutrition from the recipe's site | Detail | Built | |
 | Nutrition worked out from USDA data or by AI, with plan totals | Key | Built | Module: a free USDA key; AI estimates without one. Worked out by itself when a recipe's saved, and for the whole library. The foods Merran knows have their USDA food checked by hand, so they aren't searched for. Available in alpha.4: free-key signup steps and email/spam guidance in Settings |
@@ -93,7 +93,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
-| Cook view for the kitchen counter: get ready, ingredients per step, big text | Headline | Built | Available in alpha.6: change servings in cook view without losing your place; a planned meal's new count is saved to the plan. Put a step on hold, keep it visible while cooking ahead, and return before finishing. Not released yet (after alpha.6): a step's ingredients are its own section's where a food is listed twice, picked by the amounts it gives, without what it says "except" for, and without a soy sauce for "the sauce" being made; a step pointing to "Note 3" shows that note. |
+| Cook view for the kitchen counter: get ready, ingredients per step, big text | Headline | Built | Available in alpha.6: change servings in cook view without losing your place; a planned meal's new count is saved to the plan. Put a step on hold, keep it visible while cooking ahead, and return before finishing. Available in alpha.7: a step's ingredients are its own section's where a food is listed twice, picked by the amounts it gives, without what it says "except" for, and without a soy sauce for "the sauce" being made; a step pointing to "Note 3" shows that note. |
 | Kitchen timers from the steps | Key | Built | |
 | Screen stays on, and your place is kept | Detail | Built | |
 | Random celebrations when shopping or cooking is finished | Detail | Built | Available in alpha.4: falling showers of confetti, stars or petals after successful list completion/clearing and marking a meal made or cooked; respects reduced motion ([decision](shopping-and-planning-feedback.md#completion-celebrations)) |
@@ -106,7 +106,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
-| Import from a link | Headline | Built | Honest user agent. Not released yet (after alpha.6): a WordPress Recipe Maker card's ingredient groups, notes and summary, which its recipe data leaves out; a summary section before the steps ("Abbreviated recipe") is left out |
+| Import from a link | Headline | Built | Honest user agent. Available in alpha.7: a WordPress Recipe Maker card's ingredient groups, notes and summary, which its recipe data leaves out; a summary section before the steps ("Abbreviated recipe") is left out |
 | Type one in | Detail | Built | |
 | Paste many links at once | Key | Built | Runs in the background |
 | Import from text, photos, PDFs, or pages with no recipe data | Headline | Built | AI; any model that reads images and PDFs |
@@ -121,7 +121,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Imports in your language: a recipe from another language translated as it comes in | Key | Planned | AI; a setting, with the app's translations |
 | Discover: find recipes for any theme with AI | Key | Built | AI, with web search; each page is opened first, so they all import |
 | Browser extension: import a page, right-click, the list in a side panel | Key | Built | Chrome, Edge, Firefox; even sites that turn servers away or need a sign-in; in the stores with 0.1 |
-| Import from sites that turn servers away, through your own FlareSolverr | Detail | Built | Not released yet (after alpha.6). Module, off until the server admin gives FlareSolverr's address, with a Test; only for imports a person asks for, including phone shares and the API, never feed reads or photos. A `flaresolverr` Compose profile and a guide with examples ([plan](flaresolverr-imports.md), [#51](https://github.com/merran-app/merran/issues/51)) |
+| Import from sites that turn servers away, through your own FlareSolverr | Detail | Built | Available in alpha.7. Module, off until the server admin gives FlareSolverr's address, with a Test; only for imports a person asks for, including phone shares and the API, never feed reads or photos. A `flaresolverr` Compose profile and a guide with examples ([plan](flaresolverr-imports.md), [#51](https://github.com/merran-app/merran/issues/51)) |
 | Tandoor import | Detail | Later | |
 
 ## Planning
@@ -166,8 +166,8 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Usual buys: "Milk? You last got some Oct 9" | Key | Built | |
 | A pantry: amounts, use soon, leftovers, cooking uses it up | Headline | Built | |
 | Ran out of anything? Check off what you used up after cooking | Key | Planned | [pantry.md](pantry.md): its own step when cooking is done, before "How did it go?". The recipe's foods and staples as chips; each ticked one is used up at home (not the freezer, unless cooking took from it) and goes on the list, with Undo |
-| Checking off puts it away, then a look at where it all went | Key | Built | Not released yet (after alpha.6), see [pantry.md](pantry.md): a household setting, on to start; unchecking takes it back out. When the shopping's done, a drawer shows what went to the fridge, freezer and cupboard, to move, fix the amount or freeze some |
-| The pantry learns where you keep things | Detail | Built | Not released yet (after alpha.6), see [pantry.md](pantry.md): moving all of something to another place remembers it for that food; freezing some doesn't |
+| Checking off puts it away, then a look at where it all went | Key | Built | Available in alpha.8, see [pantry.md](pantry.md): a household setting, on to start; unchecking takes it back out. When the shopping's done, a drawer shows what went to the fridge, freezer and cupboard, to move, fix the amount or freeze some |
+| The pantry learns where you keep things | Detail | Built | Available in alpha.8, see [pantry.md](pantry.md): moving all of something to another place remembers it for that food; freezing some doesn't |
 | Put away what you bought in one tap | Detail | Built | |
 | Select and act on many list or pantry items | Detail | Built | |
 | Fridge, freezer or cupboard | Detail | Built | Released in 0.1.0-alpha.1; storedIn on pantry items and place controls in the pantry UI |

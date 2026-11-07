@@ -26,7 +26,7 @@ open a meal from **Plan** to use the ingredients and instructions saved by a sho
 
 **Expected result:** each step appears with relevant recognized ingredients under **For this step**. The full ingredient checklist remains useful if automatic ingredient matching misses something.
 
-Not released yet: when a recipe lists the same food more than once, such as soy sauce for the chicken and again for the sauce, a step about one of the recipe's sections shows that section's line, and "everything else" in such a step means the rest of that section. Amounts a step gives ("the 2 tablespoons of cornflour") pick the matching line, and foods named after "except" aren't shown. A step that points to a numbered note, such as "(Note 3)", shows it under **From the recipe's notes**.
+From alpha.7, when a recipe lists the same food more than once, such as soy sauce for the chicken and again for the sauce, a step about one of the recipe's sections shows that section's line, and "everything else" in such a step means the rest of that section. Amounts a step gives ("the 2 tablespoons of cornflour") pick the matching line, and foods named after "except" aren't shown. A step that points to a numbered note, such as "(Note 3)", shows it under **From the recipe's notes**.
 
 From alpha.6, when a recipe has a serving count, use the servings controls in the cook view header to make more or less without leaving your step. Ingredient amounts change immediately. For a planned meal, choose **Save to plan** to update the plan and its linked shopping amounts; **Done cooking** also saves an unsaved serving change. **Exit** saves an unsaved planned change before leaving. For a recipe opened without a planned meal, the adjustment applies only to this cook and does not change the recipe.
 
@@ -67,7 +67,7 @@ The optional server voice module can read using a configured Kokoro service or O
 2. In **How did it go?**, add a rating and **A note for next time**, then choose **Save**, or choose **Skip** to leave without a note.
 3. Find saved notes under **Cooking notes** on the recipe. Use **Add a note** there to record something later.
 
-Not released yet: a rating can be half stars. Tap the left half of a star for half of it, such as 3½ stars, or use the arrow keys to go up and down by half a star. Tap the rating you gave again to clear it.
+From alpha.8, a rating can be half stars. Tap the left half of a star for half of it, such as 3½ stars, or use the arrow keys to go up and down by half a star. Tap the rating you gave again to clear it.
 
 **Expected result:** the recipe is marked made today. Merran marks a matching meal on today's plan cooked, or moves a matching meal from this week's any-day pool to today and marks it cooked. A cooked plan entry can consume its pantry stock. Cooking a recipe with no matching plan entry records that it was made; do not assume it deducts an unplanned meal from the pantry.
 

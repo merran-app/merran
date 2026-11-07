@@ -3,7 +3,7 @@ title: Release verification
 description: What was tested on the published alpha, and what still needs real-device or external-service verification.
 ---
 
-The latest application release is **0.1.0-alpha.6**. This record was reconciled on **October 28, 2026**. The checks below retain their original dates, versions and environments: updating the guides does not establish that the alpha.5 or alpha.6 published images were tested again. Publication is separate from verification of every deployment and integration.
+The latest application release is **0.1.0-alpha.8**. This record was reconciled on **November 7, 2026**. The checks below retain their original dates, versions and environments: updating the guides does not establish that the alpha.5 to alpha.8 published images were tested again. Publication is separate from verification of every deployment and integration.
 
 ## Covered at home development checks — October 28, 2026 (before alpha.6)
 

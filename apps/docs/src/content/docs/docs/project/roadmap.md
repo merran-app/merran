@@ -7,9 +7,9 @@ sidebar:
 
 Merran is in alpha. This roadmap describes our direction, not a delivery schedule: priorities and scope can change as we learn from people using it. The released features below are available now; planned and exploratory work has no promised release date.
 
-The latest release is [v0.1.0-alpha.6](https://github.com/merran-app/merran/releases/tag/v0.1.0-alpha.6). See the [release verification record](../release-verification/) for what we have tested and what still needs checking.
+The latest release is [v0.1.0-alpha.8](https://github.com/merran-app/merran/releases/tag/v0.1.0-alpha.8). See the [release verification record](../release-verification/) for what we have tested and what still needs checking.
 
-**Last reviewed:** October 28, 2026. Implementation status is separate from device and provider acceptance.
+**Last reviewed:** November 7, 2026. Implementation status is separate from device and provider acceptance.
 
 ## Available now
 
@@ -45,9 +45,16 @@ Start with [the guides](../../) and [integration setup](../../integrations/brows
 - **Meal calendar:** subscribe to the household's meal plan from a calendar app through a revocable, read-only link, with usual meal times and changes for one day. See [the meal calendar](../../use/planning/#subscribe-to-the-meal-calendar). Checks with real calendar apps remain.
 - **Shopping:** prepare the product you buy for each food at each connected store, and order from one store on shopping day. **Covered at home** on the list shows what the pantry kept off it, and using up food that meals on the list were counting on offers to put it back. See [shopping and pantry](../../use/shopping-and-pantry/).
 
-## Built, not released yet
+## In alpha.7
 
-- **Imports through FlareSolverr:** a server admin can connect their own [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr), so links you import from sites that turn Merran away, including ones shared from a phone, can still come in. Background feed reads keep following `robots.txt` as Merran. Until it's released, the [browser extension](../../integrations/browser-extension/) imports from those sites. See [FlareSolverr](../../integrations/flaresolverr/); tracked in [#51](https://github.com/merran-app/merran/issues/51).
+- **Imports through FlareSolverr:** a server admin can connect their own [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr), so links you import from sites that turn Merran away, including ones shared from a phone, can still come in. Background feed reads keep following `robots.txt` as Merran. Without it, the [browser extension](../../integrations/browser-extension/) imports from those sites. See [FlareSolverr](../../integrations/flaresolverr/); tracked in [#51](https://github.com/merran-app/merran/issues/51).
+- **Recipe cards:** imports from the WordPress Recipe Maker card bring in its ingredient groups, numbered notes and summary. See [recipes](../../use/recipes/).
+- **Cooking:** each step shows its own section's ingredients when a recipe lists a food more than once, and the note a step points to. See [cooking](../../use/cooking/).
+
+## In alpha.8
+
+- **A pantry that keeps itself:** checking food off the list puts it in the pantry, and **Where did it all go?** shows what went to the fridge, freezer and cupboard, to move, fix or freeze some. The pantry learns where the household keeps each food. A household admin can turn this off. See [shopping and pantry](../../use/shopping-and-pantry/).
+- **Half stars:** rate a recipe from ½ to 5 stars. See [cooking](../../use/cooking/).
 
 ## Up next
 

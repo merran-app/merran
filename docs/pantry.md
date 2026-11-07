@@ -1,8 +1,8 @@
 # A pantry that keeps itself
 
-November 5, 2026. Planned with the user. Parts 1 and 2 were built on November 6, 2026, and aren't released yet. Parts 3 to 5 are still planned. The pantry works, but keeping it right is work: pressing **Put away**, fixing where things went, and noticing what ran out. When it drifts from what's really at home, the list leaves out things you need, which is worse than having no pantry at all. This plan makes the pantry stay roughly right using only moments when you're already in the app: finishing the shopping and finishing cooking.
+November 5, 2026. Planned with the user. Parts 1 and 2 were built on November 6, 2026, and go out in alpha.8, ahead of the rest (decided November 7, 2026). Parts 3 to 5 are still planned. The pantry works, but keeping it right is work: pressing **Put away**, fixing where things went, and noticing what ran out. When it drifts from what's really at home, the list leaves out things you need, which is worse than having no pantry at all. This plan makes the pantry stay roughly right using only moments when you're already in the app: finishing the shopping and finishing cooking.
 
-Five parts, built in this order, all before the next release:
+Five parts, built in this order:
 
 1. **Checking off puts it away**, then a drawer shows where it all went.
 2. **It learns where things go**, so that drawer has less to fix each time.
@@ -10,7 +10,7 @@ Five parts, built in this order, all before the next release:
 4. **Cooking off the plan uses the pantry too.**
 5. **Did you make these?** on Today, for past meals nobody marked.
 
-Parts 1 and 2 are about food coming in, and 3 to 5 about food going out. Part 1 fills every household's pantry, and 3 to 5 are what keep it honest, so they ship together.
+Parts 1 and 2 are about food coming in, and 3 to 5 about food going out. Part 1 fills every household's pantry, and 3 to 5 are what keep it honest.
 
 Thaw reminders on Today, leftovers as portions, and a quick "still got these?" check before **Add from plan** came up in the same conversation. They're for later, once these five are in use.
 

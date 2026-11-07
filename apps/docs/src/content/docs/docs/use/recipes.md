@@ -28,9 +28,9 @@ These steps follow the current repository implementation. They have not yet been
 
 Merran first reads structured recipe data on the page. If none is available, it can use AI when configured. A blocked, private, or unsupported page may still fail. Import is not a promise that every website can be read.
 
-Not released yet: on the many food blogs that use the WordPress Recipe Maker card, Merran also brings in the card's ingredient groups (such as "Orange sauce"), its numbered notes, and its summary. A short version of the recipe that a site puts before the full steps, such as **Abbreviated recipe**, is left out, so the steps aren't there twice.
+From alpha.7, on the many food blogs that use the WordPress Recipe Maker card, Merran also brings in the card's ingredient groups (such as "Orange sauce"), its numbered notes, and its summary. A short version of the recipe that a site puts before the full steps, such as **Abbreviated recipe**, is left out, so the steps aren't there twice.
 
-When a site turns Merran away, you'll see **That site turned Merran away. Type the recipe in instead.** The [browser extension](../../integrations/browser-extension/) can import the page from your own browser. Not released yet: a server admin can also connect [FlareSolverr](../../integrations/flaresolverr/), so those links come in from here and from your phone.
+When a site turns Merran away, you'll see **That site turned Merran away. Type the recipe in instead.** The [browser extension](../../integrations/browser-extension/) can import the page from your own browser. From alpha.7, a server admin can also connect [FlareSolverr](../../integrations/flaresolverr/), so those links come in from here and from your phone.
 
 If **You have this one** appears, choose **Open it** to use the existing recipe. **Add it again** creates a separate recipe; it does not update the earlier copy.
 
@@ -72,7 +72,7 @@ cards show **Planned this week** when the recipe is on the household's current w
 
 1. Open a recipe and choose **Edit**.
 2. Correct the name, original link, servings, times, ingredients, or steps. Use **Notes** for lasting tips and substitutions.
-3. Under **Tags**, type a tag and press Enter or type a comma. Add a rating if useful. Not released yet: tap the left half of a star to give half of it.
+3. Under **Tags**, type a tag and press Enter or type a comma. Add a rating if useful. From alpha.8, tap the left half of a star to give half of it.
 4. Choose **Save**. Leaving with unsaved edits prompts you before discarding them. In alpha.5, the confirmation opens as a bottom drawer on phones, with **Cancel** and **Leave without saving**.
 
 **Expected result:** the saved recipe opens with your changes. **More → Versions** lets you inspect earlier versions and **Go back**; restoring also keeps the current version in history.

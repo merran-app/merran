@@ -1,6 +1,6 @@
 # Imports through FlareSolverr
 
-October 28, 2026. This plans [#51](https://github.com/merran-app/merran/issues/51), split from [#49](https://github.com/merran-app/merran/issues/49). Built the same day, after alpha.6, and not released yet; the public site marks it so.
+October 28, 2026. This plans [#51](https://github.com/merran-app/merran/issues/51), split from [#49](https://github.com/merran-app/merran/issues/49). Built the same day and released in alpha.7.
 
 ## Why
 
