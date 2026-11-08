@@ -14,7 +14,12 @@ import {
   type PlanEntry,
   type PlanSnapshot,
 } from "./queries"
-import { optimisticMove, optimisticMoveUndo } from "./drag/optimistic-move"
+import {
+  optimisticMove,
+  optimisticMoveUndo,
+  optimisticOrder,
+  optimisticSwap,
+} from "./drag/optimistic-move"
 
 type NewEntry = Schemas["NewPlanEntry"]
 type Changes = Schemas["PlanEntryChanges"]
@@ -96,6 +101,34 @@ export function usePlanActions() {
 
   const nameOf = (entry: Pick<PlanEntry, "recipe" | "note">) =>
     entry.recipe?.name ?? entry.note ?? ""
+
+  /**
+   * Swaps and reorders: shown at once, then saved and said with Undo. A
+   * failed save puts back only the dishes it moved.
+   */
+  async function rearrange(
+    body: Bulk,
+    placed: Promise<() => void>,
+    message: string
+  ) {
+    const rollback = await placed
+    let done
+    try {
+      done = await run(() =>
+        unwrap(api.POST("/api/plan/entries/bulk", { body }))
+      )
+    } catch {
+      rollback()
+      toast.error(t("plan.moveFailed"))
+      return false
+    }
+    if (!done) {
+      rollback()
+      return false
+    }
+    undoable(message, done.before, true)
+    return true
+  }
 
   /** A recipe meal just cooked: the message offers "How did it go?". */
   const offerAfterCooking = (entry: PlanEntry) => {
@@ -246,6 +279,24 @@ export function usePlanActions() {
         action.action === "move"
       )
       return true
+    },
+
+    /** Two dishes trade places. `other` may be in a week that isn't loaded. */
+    swap(entry: PlanEntry, other: PlanEntry) {
+      return rearrange(
+        { ids: [entry.id, other.id], action: "swap" },
+        optimisticSwap(queryClient, entry.id, other.id, other),
+        t("plan.swapped", { a: nameOf(entry), b: nameOf(other) })
+      )
+    },
+
+    /** A meal's dishes in a new order, after `entry` was moved up, down or dragged. */
+    reorder(entry: PlanEntry, ids: string[], how: "up" | "down" | "drag") {
+      return rearrange(
+        { ids, action: "order" },
+        optimisticOrder(queryClient, ids),
+        t(`plan.reordered.${how}`, { name: nameOf(entry) })
+      )
     },
 
     async repeat(week: string) {
