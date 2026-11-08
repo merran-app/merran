@@ -131,6 +131,7 @@ export function MealTile({
   return (
     <MealContextMenu entry={entry} onSelect={() => selection.start(entry.id)}>
       <li
+        data-meal-dish={entry.id}
         className="flex min-h-17 items-center gap-3 rounded-2xl bg-muted/50 p-2.5"
         {...press}
       >

@@ -9,6 +9,7 @@ import { MoveMealsDialog } from "../change-meal-dialog"
 import type { Meal, PlanEntry } from "../queries"
 import { usePlanActions } from "../use-plan-actions"
 import { whenValue } from "../when"
+import { insertionBar, insertionIndex, reorderFor, type Box } from "./insertion"
 import { OccupiedPrompt } from "./occupied-prompt"
 
 type Destination = { date: string; anyDay: boolean; meal?: Meal }
@@ -18,6 +19,28 @@ const sameSlot = (entry: PlanEntry, to: Destination) =>
   entry.anyDay === to.anyDay &&
   (to.meal === undefined || entry.meal === to.meal)
 const destinationKey = (to: Destination) => JSON.stringify(to)
+
+/** The dishes a dish can be reordered among: its own meal, or its meal type in the pool. */
+const groupOf = (entries: PlanEntry[], entry: PlanEntry) =>
+  entries
+    .filter(
+      (other) =>
+        other.date === entry.date &&
+        other.anyDay === entry.anyDay &&
+        other.meal === entry.meal
+    )
+    .sort((a, b) => a.position - b.position)
+
+/** Where a dish's tile is on screen, if it's showing. */
+function boxOf(id: string): Box | null {
+  const tile = document.querySelector(`[data-meal-dish="${CSS.escape(id)}"]`)
+  if (!tile) return null
+  const { left, top, width, height } = tile.getBoundingClientRect()
+  return { left, top, width, height }
+}
+
+/** A dish dragged within its own group: its new order, and the bar to show. */
+type Insertion = { ids: string[]; index: number; bar: Box }
 
 // Only zones rendered by this planner are destinations. Pointer capture keeps
 // dragging on the handle while hit testing finds the slot beneath it.
@@ -66,6 +89,7 @@ export function MealDragProvider({
   const [id, setId] = React.useState<string | null>(null)
   const [over, setOver] = React.useState<string | null>(null)
   const [point, setPoint] = React.useState({ x: 0, y: 0 })
+  const [insertion, setInsertion] = React.useState<Insertion | null>(null)
   const pointer = React.useRef<PointerDrag | null>(null)
   const suppressClick = React.useRef(false)
   const saving = React.useRef(false)
@@ -86,7 +110,41 @@ export function MealDragProvider({
     pointer.current = null
     setId(null)
     setOver(null)
+    setInsertion(null)
   }, [])
+
+  /**
+   * Over its own meal, or its own meal type in the pool, a dish goes
+   * between the others: where, from the pointer and their tiles.
+   */
+  function insertionAt(
+    entryId: string,
+    to: Destination | null,
+    x: number,
+    y: number
+  ): Insertion | null {
+    const entry = entries.find((other) => other.id === entryId)
+    if (!entry || !to || !sameSlot(entry, to)) return null
+    const ids = groupOf(entries, entry).map((other) => other.id)
+    if (ids.length < 2) return null
+    const boxes = ids
+      .filter((other) => other !== entryId)
+      .map(boxOf)
+      .filter((box): box is Box => box !== null)
+    if (boxes.length !== ids.length - 1) return null
+    const index = insertionIndex(boxes, { x, y })
+    return { ids, index, bar: insertionBar(boxes, index) }
+  }
+
+  /** What's under the pointer: a meal to drop on, or a place among the dishes. */
+  const aim = React.useCallback(
+    (entryId: string, x: number, y: number) => {
+      const to = destinationAt(x, y)
+      setOver(to ? destinationKey(to) : null)
+      setInsertion(insertionAt(entryId, to, x, y))
+    },
+    [entries]
+  )
 
   // Native scrolling still works everywhere except the small drag handle.
   // Near a viewport edge, scroll continuously so distant days can be reached.
@@ -108,8 +166,7 @@ export function MealDragProvider({
             : 0
       if (speed) {
         window.scrollBy(0, speed)
-        const to = destinationAt(current.x, current.y)
-        setOver(to ? destinationKey(to) : null)
+        aim(current.id, current.x, current.y)
       }
       frame = requestAnimationFrame(scroll)
     }
@@ -127,7 +184,7 @@ export function MealDragProvider({
       window.removeEventListener("keydown", onKey)
       window.removeEventListener("blur", cancel)
     }
-  }, [id, disabled, cancel])
+  }, [id, disabled, cancel, aim])
 
   async function move(entryId: string, to: Destination) {
     if (saving.current || disabled) return
@@ -153,6 +210,26 @@ export function MealDragProvider({
       saving.current = false
       setBusy(false)
     }
+  }
+
+  async function reorder(entry: PlanEntry, ids: string[]) {
+    if (saving.current || disabled) return
+    saving.current = true
+    setBusy(true)
+    try {
+      await actions.reorder(entry, ids, "drag")
+    } finally {
+      saving.current = false
+      setBusy(false)
+    }
+  }
+
+  /** Dropped among its own meal's dishes: a new order, unless it's the same. */
+  function dropBetween(entryId: string, placed: Insertion) {
+    const entry = entries.find((other) => other.id === entryId)
+    const order = reorderFor(placed.ids, entryId, placed.index)
+    if (!entry || !order || saving.current || disabled) return
+    void reorder(entry, order)
   }
 
   function drop(entryId: string, to: Destination) {
@@ -207,8 +284,7 @@ export function MealDragProvider({
           suppressClick.current = true
           setId(current.id)
           setPoint({ x: current.x, y: current.y })
-          const to = destinationAt(current.x, current.y)
-          setOver(to ? destinationKey(to) : null)
+          aim(current.id, current.x, current.y)
         },
         finish: (event) => {
           const current = pointer.current
@@ -216,8 +292,15 @@ export function MealDragProvider({
           const to = current.active
             ? destinationAt(event.clientX, event.clientY)
             : null
+          const placed = insertionAt(
+            current.id,
+            to,
+            event.clientX,
+            event.clientY
+          )
           cancel()
-          if (to) drop(current.id, to)
+          if (placed) dropBetween(current.id, placed)
+          else if (to) drop(current.id, to)
         },
         cancel,
         preventClick: () => {
@@ -243,6 +326,9 @@ export function MealDragProvider({
           {nameOf(source)}
         </div>
       )}
+      {source && !disabled && insertion && (
+        <InsertionBar bar={insertion.bar} label={t("plan.drag.dropBetween")} />
+      )}
       <p className="sr-only" role="status">
         {source ? t("plan.drag.pickedUp", { name: nameOf(source) }) : ""}
       </p>
@@ -259,6 +345,26 @@ export function MealDragProvider({
         />
       )}
     </DragContext>
+  )
+}
+
+/** Where a dragged dish will go among its meal's dishes, drawn over them. */
+function InsertionBar({ bar, label }: { bar: Box; label: string }) {
+  return (
+    <>
+      <div
+        aria-hidden
+        className="pointer-events-none fixed z-40 rounded-full bg-primary"
+        style={bar}
+      />
+      <p
+        aria-hidden
+        className="pointer-events-none fixed z-40 rounded-lg bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
+        style={{ left: bar.left, top: bar.top + bar.height + 4 }}
+      >
+        {label}
+      </p>
+    </>
   )
 }
 
