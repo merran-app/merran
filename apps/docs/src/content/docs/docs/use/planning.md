@@ -80,6 +80,18 @@ Use a meal's menu to **Move or change**, **Skip**, or **Remove** it. **Plan it a
 
 Choose **Mark cooked** when a planned meal has been made. This can consume its pantry stock. **Not cooked yet** reverses that status and restores recorded pantry deductions. Avoid marking meals cooked simply to hide them; use **Skip** when you did not make them.
 
+:::note[Not released yet (after alpha.7): Did you make these?]
+**Today** asks **Did you make these?** about recipe meals from the past six days that are still planned, and about last week's **This week, any day** meals for six days after that week ends. Meals that are only a note, like eating out, aren't asked about.
+
+- **Made it** marks the meal cooked on its own day, which takes from the pantry. The message offers **How did it go?**.
+- **Didn't** marks it skipped, so what was bought for it shows under **Use soon**. The message offers **Undo**.
+- **Made them all** shows when there are several.
+
+Anyone in the household can answer, and the meal leaves the card on every phone. After six days a meal drops off the card, and its food is no longer set aside for it.
+
+Marking a meal from an earlier day cooked, here or on **Plan**, counts it as cooked at midday on that day, and a pool meal from a week that's over as cooked on that week's last day, so the recipe says when it was really last made.
+:::
+
 ## Troubleshooting and limits
 
 | What you see                              | What to check                                                                                                                    |

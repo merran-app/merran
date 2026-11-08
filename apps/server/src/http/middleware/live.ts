@@ -32,6 +32,8 @@ const CHANGES: [RegExp, LiveArea[]][] = [
   // Reading a receipt changes nothing; adding one fills the pantry from the list.
   [/^\/api\/pantry\/receipts\/[^/]+\/add$/, ["pantry", "list"]],
   [/^\/api\/pantry\/receipts(\/|$)/, []],
+  // What ran out cooking is used up, and goes on the list.
+  [/^\/api\/pantry\/ran-out$/, ["pantry", "list"]],
   [/^\/api\/pantry(\/|$)/, ["pantry"]],
   // Made it cooks the meal; Recently deleted takes meals off the plan.
   [/^\/api\/recipes(\/|$)/, ["recipes", "plan", "list", "pantry"]],

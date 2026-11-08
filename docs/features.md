@@ -80,7 +80,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Diet labels worked out from the ingredients, with corrections | Key | Built | |
 | Goes with: pair recipes, like chicken with any of your sauces | Key | Built | |
 | "I made this", and a New badge for ones you haven't cooked | Detail | Built | |
-| Cooking off the plan uses the pantry too | Detail | Planned | [pantry.md](pantry.md): a recipe made with no meal of it planned is added to today, cooked, so it takes from the pantry and can be undone |
+| Cooking off the plan uses the pantry too | Detail | Built | Not released yet (after alpha.7), see [pantry.md](pantry.md): a recipe made with no meal of it planned is added to today, cooked, with the servings cooked, so it takes from the pantry and can be undone. A meal of it already cooked today counts instead |
 | How did it go? Stars and notes after cooking | Key | Built | Available in alpha.8: half stars, from ½ to 5; the left half of a star picks half of it. Mealie's half stars come in as they are, and household exports are version 2 ([export format](export-format.md)) |
 | Select and act on many recipes; Recently deleted for 30 days | Detail | Built | |
 | Nutrition from the recipe's site | Detail | Built | |
@@ -130,7 +130,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 |---|---|---|---|
 | A week of meals, with the meals your household eats | Headline | Built | Breakfast, lunch and dinner each optional |
 | A pool of meals for the week, cooked in any order | Key | Built | |
-| Did you make these? Past meals nobody marked, asked about on Today | Key | Planned | [pantry.md](pantry.md): recipe meals from the past six days and pool meals from weeks that are over; Made it or Didn't, so the pantry stays right |
+| Did you make these? Past meals nobody marked, asked about on Today | Key | Built | Not released yet (after alpha.7), see [pantry.md](pantry.md): recipe meals from the past six days, and last week's pool for six days after it ends; Made it (cooked on its own day), Didn't, or Made them all, so the pantry stays right |
 | See which recipes are already planned for the week | Detail | Built | Available in alpha.4: Already planned badges in meal and side pickers for the destination week; Planned this week on recipe-library cards. Includes sides and any-day meals, counts cooked meals and excludes skipped ones ([decision](shopping-and-planning-feedback.md#see-recipes-already-planned-for-the-week)) |
 | What's next: tonight's dinner, this afternoon's lunch | Key | Built | |
 | Fill the week, re-roll, Something else | Headline | Built | No AI needed |
@@ -165,7 +165,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Recipe ingredient details on each shopping row | Detail | Built | Available in alpha.4: tap or hover the info icon for current recipe lines, scaled planned amounts, and recorded meal contributions after pantry deductions. Main dishes and sides stay identifiable; manual list edits remain separate. |
 | Usual buys: "Milk? You last got some Oct 9" | Key | Built | |
 | A pantry: amounts, use soon, leftovers, cooking uses it up | Headline | Built | |
-| Ran out of anything? Check off what you used up after cooking | Key | Planned | [pantry.md](pantry.md): its own step when cooking is done, before "How did it go?". The recipe's foods and staples as chips; each ticked one is used up at home (not the freezer, unless cooking took from it) and goes on the list, with Undo |
+| Ran out of anything? Check off what you used up after cooking | Key | Built | Not released yet (after alpha.7), see [pantry.md](pantry.md): its own step when cooking is done, before "How did it go?", and offered in the message after marking a meal cooked anywhere else. The recipe's foods and staples as chips; each ticked one is used up at home (not the freezer, unless cooking took from it) and goes on the list unless it's there already, with Undo |
 | Checking off puts it away, then a look at where it all went | Key | Built | Available in alpha.8, see [pantry.md](pantry.md): a household setting, on to start; unchecking takes it back out. When the shopping's done, a drawer shows what went to the fridge, freezer and cupboard, to move, fix the amount or freeze some |
 | The pantry learns where you keep things | Detail | Built | Available in alpha.8, see [pantry.md](pantry.md): moving all of something to another place remembers it for that food; freezing some doesn't |
 | Put away what you bought in one tap | Detail | Built | |

@@ -1793,6 +1793,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/pantry/ran-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What could have run out cooking a meal
+         * @description The foods a meal's recipe and side take, each once, for asking what ran out: always-on-hand foods like salt among them, water left out. A note meal has none. With an API key, it needs the `pantry: read` permission.
+         */
+        get: operations["getRanOutFoods"];
+        put?: never;
+        /**
+         * Say what ran out cooking a meal
+         * @description Only for a meal that's cooked. Everything of each food at home is used up, except what's in the freezer, unless cooking the meal took that food from the freezer. With `list`, each goes on the list as a plain line for no meal, unless it, or a kind of it, is on already: always-on-hand foods too. What the meal took when it was cooked stays as it was, so marking it not cooked later doesn't bring back what ran out. It takes the pantry permission, though it adds to the list. With an API key, it needs the `pantry: write` permission.
+         */
+        post: operations["ranOut"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pantry/receipts": {
         parameters: {
             query?: never;
@@ -2266,6 +2290,26 @@ export interface paths {
          * @description A recipe for each slot, saying why: Fill the week and Something else. Keeps to the household's tastes and theme nights, doesn't repeat a dish within two weeks, and pairs a side when one goes with it. Nothing is planned; slots with nothing suitable are left out. Asking again gives other ideas. With an API key, it needs the `plan: read` permission.
          */
         post: operations["suggestMeals"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/unmarked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Past meals nobody marked
+         * @description Recipe meals still planned from the past six days, and the pool of a week that ended in that time, oldest first: whether they were made is worth asking, since the pantry keeps their food set aside for six days. Note meals aren't included. Answer by marking them cooked or skipped; a meal from a day gone by that's marked cooked counts as cooked on its day, at midday in the household's time zone. With an API key, it needs the `plan: read` permission.
+         */
+        get: operations["getUnmarkedMeals"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2943,7 +2987,7 @@ export interface paths {
         put?: never;
         /**
          * Mark a recipe made
-         * @description The recipe was made now: today's meal of it on the plan is marked cooked (or, failing that, one in this week's pool becomes today's, cooked), and its `lastMadeAt` is set. Marking that meal not cooked again puts `lastMadeAt` back. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
+         * @description The recipe was made now, so a meal of it today is cooked: one already cooked today counts, so marking it twice doesn't cook it twice. Failing that, today's planned meal of it is cooked; failing that, one in this week's pool becomes today's, cooked; failing that, one's added to today at the meal that fits the time of day, cooked. Either way it takes from the pantry as any cooked meal does, and its `lastMadeAt` is set. Marking that meal not cooked puts both back. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["markRecipeMade"];
         delete?: never;
@@ -8301,6 +8345,78 @@ export interface components {
         };
         /**
          * @example {
+         *       "foods": [
+         *         {
+         *           "food": "chicken thigh",
+         *           "name": "chicken thighs",
+         *           "staple": false
+         *         },
+         *         {
+         *           "food": "salt",
+         *           "name": "salt",
+         *           "staple": true
+         *         }
+         *       ]
+         *     }
+         */
+        RanOutFoods: {
+            /** @description Each food once: the recipe's in order, then its side's. Water is left out. */
+            foods: {
+                /** @description The food, as the pantry and the list know it. */
+                food: string;
+                name: string;
+                /** @description One of the household's always-on-hand foods. */
+                staple: boolean;
+            }[];
+        };
+        /**
+         * @example {
+         *       "usedUp": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *           "name": "chicken thighs",
+         *           "foodKey": "chicken thigh",
+         *           "quantity": 1,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "storedIn": "fridge",
+         *           "useBy": "2026-10-18",
+         *           "forMeals": null,
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ],
+         *       "listed": []
+         *     }
+         */
+        RanOutResult: {
+            /** @description What was used up, as it was: for Undo with /pantry/restore. */
+            usedUp: components["schemas"]["PantrySnapshot"][];
+            /** @description What went on the list: for Undo, their ids go in /list/restore's `remove`. */
+            listed: components["schemas"]["ListItem"][];
+        };
+        /**
+         * @example {
+         *       "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *       "foods": [
+         *         "chicken thigh"
+         *       ],
+         *       "list": true
+         *     }
+         */
+        RanOut: {
+            /**
+             * Format: uuid
+             * @description The cooked meal.
+             */
+            meal: string;
+            /** @description Foods that ran out, from what could have. Others are passed over. */
+            foods: string[];
+            /** @description Put them on the list too, as plain lines for no meal, unless they're on it already. */
+            list: boolean;
+        };
+        /**
+         * @example {
          *       "receipts": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-00000000002e",
@@ -10613,6 +10729,132 @@ export interface components {
          */
         DietsInput: {
             overrides: components["schemas"]["DietOverrides"] & unknown;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *       "slug": "lemon-chicken",
+         *       "name": "Lemon Chicken",
+         *       "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *       "servings": 4,
+         *       "totalMinutes": 50,
+         *       "rating": 5,
+         *       "tags": [
+         *         "chicken",
+         *         "dinner"
+         *       ],
+         *       "diets": [
+         *         "gluten-free",
+         *         "dairy-free",
+         *         "egg-free",
+         *         "nut-free"
+         *       ],
+         *       "photo": {
+         *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *       },
+         *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
+         *       "createdAt": "2026-10-01T17:30:00.000Z",
+         *       "updatedAt": "2026-10-15T18:30:00.000Z",
+         *       "origin": "link",
+         *       "photoByAi": false,
+         *       "sourceUrl": "https://example.com/lemon-chicken",
+         *       "yieldText": null,
+         *       "prepMinutes": 10,
+         *       "cookMinutes": 40,
+         *       "notes": "Bone-in thighs work too: give them 10 minutes more.",
+         *       "dietOverrides": {},
+         *       "needs": [],
+         *       "nutrition": {
+         *         "source": "calculated",
+         *         "calories": 412,
+         *         "protein": 31.5,
+         *         "carbs": 6.2,
+         *         "fat": 28.1,
+         *         "fiber": 1.4,
+         *         "sugar": 1.2,
+         *         "sodium": 640,
+         *         "missing": [],
+         *         "servings": 4
+         *       },
+         *       "ingredients": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000011",
+         *           "section": null,
+         *           "text": "2 lb chicken thighs",
+         *           "quantity": 2,
+         *           "quantityMax": null,
+         *           "unit": "pound",
+         *           "food": "chicken thighs",
+         *           "note": null,
+         *           "mark": "needed"
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+         *           "section": null,
+         *           "text": "1 tbsp olive oil",
+         *           "quantity": 1,
+         *           "quantityMax": null,
+         *           "unit": "tablespoon",
+         *           "food": "olive oil",
+         *           "note": null,
+         *           "mark": "optional"
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000013",
+         *           "section": null,
+         *           "text": "2 lemons, juiced",
+         *           "quantity": 2,
+         *           "quantityMax": null,
+         *           "unit": null,
+         *           "food": "lemons",
+         *           "note": "juiced",
+         *           "mark": "needed"
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000014",
+         *           "section": null,
+         *           "text": "4 cloves garlic, smashed",
+         *           "quantity": 4,
+         *           "quantityMax": null,
+         *           "unit": "clove",
+         *           "food": "garlic",
+         *           "note": "smashed",
+         *           "mark": "swappable"
+         *         }
+         *       ],
+         *       "steps": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+         *           "section": null,
+         *           "text": "Heat the oven to 425°F."
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000016",
+         *           "section": null,
+         *           "text": "Toss the chicken with the oil, lemon juice, garlic, salt and pepper."
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000017",
+         *           "section": null,
+         *           "text": "Roast skin side up for 40 minutes, until crisp."
+         *         }
+         *       ],
+         *       "meal": "0199e8b0-5a10-7a01-8b00-00000000001b"
+         *     }
+         */
+        MadeRecipe: components["schemas"]["Recipe"] & {
+            /** @description The meal on the plan it cooked: today's, or one added to today for it. */
+            meal: string;
+        };
+        /**
+         * @example {
+         *       "servings": 2
+         *     }
+         */
+        Made: {
+            /** @description How many servings were made, for the meal it cooks. Left out, it's as planned, or the recipe's own. */
+            servings?: number;
         };
         /**
          * @description For example, a stir fry that's nothing without its mushrooms: someone who doesn't like them can't just leave them out.
@@ -17902,6 +18144,116 @@ export interface operations {
             };
         };
     };
+    getRanOutFoods: {
+        parameters: {
+            query: {
+                /** @description The cooked meal. */
+                meal: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What could have run out. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RanOutFoods"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such meal. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    ranOut: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RanOut"];
+            };
+        };
+        responses: {
+            /** @description Used up, and listed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RanOutResult"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such meal. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The meal isn't cooked. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listReceipts: {
         parameters: {
             query?: never;
@@ -19273,6 +19625,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Suggestions"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getUnmarkedMeals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The meals to ask about. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanEntries"];
                 };
             };
             /** @description Not signed in. */
@@ -21531,7 +21921,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Made"];
+            };
+        };
         responses: {
             /** @description The recipe, made now. */
             200: {
@@ -21539,7 +21933,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Recipe"];
+                    "application/json": components["schemas"]["MadeRecipe"];
                 };
             };
             /** @description Not signed in. */

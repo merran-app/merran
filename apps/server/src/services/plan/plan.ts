@@ -1,4 +1,4 @@
-import { householdClock } from "../households/clock.ts"
+import { householdClock, middayOn } from "../households/clock.ts"
 import {
   addDays,
   daysBetween,
@@ -11,9 +11,11 @@ import {
   type Reason,
   type MealRecipe,
 } from "@merran/shared"
+import { LockMode } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
 import {
+  Household,
   PlanEntry,
   Recipe,
   type PLAN_STATUSES,
@@ -224,14 +226,28 @@ async function nextPosition(
   return last ? last.position + 1 : 0
 }
 
+/** The household's day and time zone, to say when a meal was cooked. */
+type Day = { today: string; timeZone: string }
+
 /**
- * Cooked now: the recipe and its side were made now. Once it's saved,
- * `remade()` puts that on them, and takes it off if it stops being cooked.
+ * Cooked now: the recipe and its side were made now, or, for a meal on a
+ * day gone by, that day. Once it's saved, `remade()` puts that on them,
+ * and takes it off if it stops being cooked.
  */
-function setStatus(entry: PlanEntry, status: PlanStatus) {
+function setStatus(entry: PlanEntry, status: PlanStatus, day?: Day) {
   if (status === entry.status) return
   entry.status = status
-  entry.cookedAt = status === "cooked" ? new Date() : null
+  entry.cookedAt = status === "cooked" ? cookedTime(entry, day) : null
+}
+
+/**
+ * Now; but a meal on a day gone by was cooked that day, at midday, and one
+ * in the pool of a week that's over, on that week's last day.
+ */
+function cookedTime(entry: PlanEntry, day?: Day) {
+  const lastDay = entry.anyDay ? addDays(entry.date, 6) : entry.date
+  if (!day || lastDay >= day.today) return new Date()
+  return middayOn(lastDay, day.timeZone)
 }
 
 /** The recipes a meal says were made: its recipe and side, once it's cooked. */
@@ -436,7 +452,14 @@ async function change(
       : null
   }
   if (changes.servings !== undefined) entry.servings = changes.servings
-  if (changes.status !== undefined) setStatus(entry, changes.status)
+  if (changes.status !== undefined) {
+    // Only being cooked needs the household's day, to say when.
+    const day =
+      changes.status === "cooked" && entry.status !== "cooked"
+        ? await householdClock(em, householdId)
+        : undefined
+    setStatus(entry, changes.status, day)
+  }
   const recipes = [entry.recipe?.id, entry.withRecipe?.id]
   entry.variants =
     entry.variants?.filter((recipe) => recipes.includes(recipe.recipeId)) ??
@@ -796,22 +819,94 @@ export async function whatsNext(em: EntityManager, householdId: string) {
 }
 
 /**
- * Made it, from the recipe or the cook view: today's planned meal of it is
- * cooked. Failing that, one in this week's pool becomes today's, cooked.
- * Says how many were; with none, it was made off the plan (`markMade`).
+ * How long a meal nobody marked is asked about: as long as the pantry
+ * keeps its food set aside.
  */
-export async function cookedToday(
+const ASK_DAYS = 6
+
+/**
+ * Did you make these? Recipe meals still planned from the past six days,
+ * and the pool of a week that ended in that time, oldest first. Note
+ * meals take nothing from the pantry, so they aren't asked about.
+ */
+export async function toAsk(em: EntityManager, householdId: string) {
+  const { today } = await householdClock(em, householdId)
+  const entries = await em.find(
+    PlanEntry,
+    {
+      status: "planned",
+      recipe: { $ne: null },
+      $or: [
+        {
+          anyDay: false,
+          date: { $gte: addDays(today, -ASK_DAYS), $lt: today },
+        },
+        // A pool is dated to its week's first day, and its week is over
+        // seven days on.
+        {
+          anyDay: true,
+          date: {
+            $gte: addDays(today, -ASK_DAYS - 6),
+            $lte: addDays(today, -7),
+          },
+        },
+      ],
+    },
+    { populate: POPULATE, ...WITH_DELETED }
+  )
+  return sortEntries(entries.filter(shown)).map(describeEntry)
+}
+
+/**
+ * Made it, from the recipe or the cook view. A meal of it already cooked
+ * today counts, so pressing it twice doesn't cook it twice. Otherwise
+ * today's planned meals of it are cooked; failing those, one in this
+ * week's pool becomes today's, cooked; failing that, one's added to today,
+ * cooked. So it takes from the pantry like any cooked meal, and marking it
+ * not cooked puts that back. `servings`, when given, is how many it made.
+ * Says which meal it was.
+ */
+export function cookToday(
   em: EntityManager,
   householdId: string,
-  recipeId: string
+  recipeId: string,
+  servings?: number
+) {
+  return inHouseholdTransaction(em, householdId, async (tx) => {
+    // One at a time: pressed on two phones at once, the second waits here
+    // and then finds the first's meal cooked.
+    await tx.findOneOrFail(
+      Household,
+      { id: householdId },
+      { lockMode: LockMode.PESSIMISTIC_WRITE }
+    )
+    return cookTodayIn(tx, householdId, recipeId, servings)
+  })
+}
+
+async function cookTodayIn(
+  em: EntityManager,
+  householdId: string,
+  recipeId: string,
+  servings?: number
 ) {
   const clock = await householdClock(em, householdId)
-  const today = await em.find(
+  const onToday = { recipe: recipeId, date: clock.today, anyDay: false }
+  const done = await em.findOne(
     PlanEntry,
-    { recipe: recipeId, date: clock.today, anyDay: false, status: "planned" },
-    { populate: POPULATE }
+    { ...onToday, status: "cooked" },
+    { orderBy: { cookedAt: "desc" } }
   )
-  let entries = today
+  if (done) return done.id
+
+  const meal = cookingMeal(clock.meals, clock.hour)
+  let entries: PlanEntry[] = sortEntries(
+    await em.find(
+      PlanEntry,
+      { ...onToday, status: "planned" },
+      { populate: POPULATE }
+    )
+  )
   if (entries.length === 0) {
     const pooled = await em.findOne(
       PlanEntry,
@@ -824,9 +919,6 @@ export async function cookedToday(
       { populate: POPULATE }
     )
     if (pooled) {
-      const meal: Meal = clock.meals.includes(mealOfTheHour(clock.hour))
-        ? mealOfTheHour(clock.hour)
-        : "dinner"
       pooled.position = await nextPosition(em, {
         date: clock.today,
         meal,
@@ -838,7 +930,19 @@ export async function cookedToday(
       entries = [pooled]
     }
   }
+  if (entries.length === 0) {
+    entries = [
+      await createEntry(
+        em,
+        householdId,
+        { date: clock.today, meal, recipe: recipeId },
+        clock.weekStartsOn
+      ),
+    ]
+  }
   for (const entry of entries) setStatus(entry, "cooked")
+  // How many it made is the first meal's: the one it says it was.
+  if (servings !== undefined) entries[0]!.servings = servings
   await em.flush()
   await remade(em, entries.flatMap(madeBy))
   await followCooking(
@@ -846,5 +950,20 @@ export async function cookedToday(
     householdId,
     entries.map((entry) => ({ entry, was: false, now: true }))
   )
-  return entries.length
+  return entries[0]!.id
+}
+
+/**
+ * The meal something cooked now goes in: the one that fits the time of
+ * day, if the household plans it. Otherwise the latest it plans before
+ * then, or failing that its first, so the meal shows on Plan, where it
+ * can be marked not cooked.
+ */
+function cookingMeal(meals: readonly Meal[], hour: number): Meal {
+  const now = mealOfTheHour(hour)
+  if (meals.includes(now)) return now
+  const before = meals.filter(
+    (meal) => meal !== "snack" && MEALS.indexOf(meal) < MEALS.indexOf(now)
+  )
+  return before.at(-1) ?? meals.find((meal) => meal !== "snack") ?? meals[0]!
 }

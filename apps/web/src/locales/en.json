@@ -1860,7 +1860,20 @@
     "done": "Done cooking",
     "resumed": "Picked up where you left off.",
     "startOver": "Start over",
-    "made": "Nice work. Marked as made today.",
+    "ranOut": {
+      "title": "Ran out of anything?",
+      "description": "Tap what's run out. It comes out of the pantry, apart from anything in the freezer that cooking didn't use.",
+      "foods": "What {{name}} used",
+      "toList": "Put them on the list",
+      "next": "Next",
+      "nothing": "Nothing ran out",
+      "usedUp": "Noted: {{foods}} ran out.",
+      "usedUpListed": "Noted: {{foods}} ran out, and went on the list.",
+      "undo": "Undo",
+      "undone": "Put back as it was."
+    },
+    "cookedToast": "{{name}} is cooked.",
+    "howDidItGo": "How did it go?",
     "textSize": {
       "label": "Text size",
       "standard": "Standard",
@@ -2695,6 +2708,17 @@
       "useSoon": "Use soon",
       "andMore_one": "{{when}}, and {{count}} more",
       "andMore_other": "{{when}}, and {{count}} more"
+    },
+    "didYouMake": {
+      "title": "Did you make these?",
+      "hint": "Saying keeps the pantry right.",
+      "when": "{{day}}'s {{meal}}",
+      "pool": "Last week, any day",
+      "madeIt": "Made it",
+      "didnt": "Didn't",
+      "all": "Made them all",
+      "skipped": "{{name}} marked as not made.",
+      "undo": "Undo"
     },
     "comingUp": {
       "restOfWeek": "The rest of the week",

@@ -60,7 +60,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { CookNoteDialog, LastCookNote } from "@/features/recipes/cook-notes"
+import { LastCookNote } from "@/features/recipes/cook-notes"
 import { formatServings } from "@/features/recipes/format"
 import {
   convertible,
@@ -92,6 +92,7 @@ import {
   useTextSize,
   type TextSize,
 } from "./progress"
+import { AfterCookingDialog, type AfterCooking } from "./after-cooking"
 import { NewTimerButton, startTimer, TimerChips, type Cooking } from "./timers"
 import { formatDuration, stepWords } from "./durations"
 import { handsFreeSupported, useHandsFree } from "./hands-free"
@@ -185,7 +186,7 @@ export function CookView({
   const [textSize, setTextSize] = useTextSize()
   useWakeLock()
   const [finishing, setFinishing] = React.useState(false)
-  const [asking, setAsking] = React.useState(false)
+  const [asking, setAsking] = React.useState<AfterCooking | null>(null)
   const swipe = React.useRef<{ x: number; y: number } | null>(null)
 
   const onPrep = hasPrep && page === 0
@@ -337,6 +338,7 @@ export function CookView({
     if (finishing || savingServings) return
     setFinishing(true)
     try {
+      let cooked = mealId ?? null
       if (mealId) {
         const changed = await unwrap(
           api.PATCH("/api/plan/entries/{entryId}", {
@@ -350,11 +352,16 @@ export function CookView({
         queryClient.setQueryData(planEntryQuery(mealId).queryKey, changed)
         setSavedAmount(amount)
       } else {
-        await unwrap(
+        // Off the plan: today's meal of it, or one added, with the servings
+        // cooked. Sent even at the recipe's own, since a meal planned for
+        // other servings would otherwise keep those.
+        const made = await unwrap(
           api.POST("/api/recipes/{recipe}/made", {
             params: { path: { recipe: recipe.id } },
+            body: baseServings ? { servings: amount } : {},
           })
         )
+        cooked = made.meal
       }
       saveProgress(progressId, null)
       // Swaps are for this time: next time starts as written.
@@ -364,10 +371,10 @@ export function CookView({
         queryClient.invalidateQueries({ queryKey: ["list"] }),
         queryClient.invalidateQueries({ queryKey: ["pantry"] }),
       ])
-      toast.success(t("cook.made"))
       celebrate()
-      // Then "How did it go?", and back where cooking started.
-      setAsking(true)
+      // Then "Ran out of anything?" and "How did it go?", and back where
+      // cooking started. They say it's done, so no message covers them.
+      setAsking({ meal: cooked, recipe })
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       toast.error(error.message)
@@ -1042,12 +1049,11 @@ export function CookView({
           if (!open) setSwapping(null)
         }}
       />
-      <CookNoteDialog
-        recipe={recipe}
-        open={asking}
+      <AfterCookingDialog
+        asking={asking}
         onDone={() => {
-          setAsking(false)
-          leave()
+          setAsking(null)
+          void leave()
         }}
       />
     </div>

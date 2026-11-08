@@ -21,6 +21,7 @@ import {
 import { AlsoToday } from "./also-today"
 import { AutoplanNote } from "./autoplan-note"
 import { ComingUp } from "./coming-up"
+import { DidYouMake } from "./did-you-make"
 import { Glance } from "./glance"
 import { recentRecipesQuery } from "./queries"
 import { Shelves } from "./shelves"
@@ -124,6 +125,7 @@ export function TodayPage() {
             )}
           </section>
           <Glance entries={entries} />
+          <DidYouMake />
           <ComingUp entries={entries} loading={plan.isPending} />
           <Shelves />
         </>

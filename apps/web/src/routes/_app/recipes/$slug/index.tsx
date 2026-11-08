@@ -40,6 +40,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useAfterCooking } from "@/features/cook/after-cooking-context"
 import { tastesQuery } from "@/features/household/queries"
 import { CookNotes } from "@/features/recipes/cook-notes"
 import { NutritionSection } from "@/features/recipes/nutrition-section"
@@ -230,30 +231,40 @@ function RecipeView({
     }
   }
 
+  const afterCooking = useAfterCooking()
   const [marking, setMarking] = React.useState(false)
   const [planning, setPlanning] = React.useState(false)
+
+  /** Cooks the meal it was opened from, or today's: says which. */
+  async function cookMeal() {
+    if (planned) {
+      await unwrap(
+        api.PATCH("/api/plan/entries/{entryId}", {
+          params: { path: { entryId: planned.id } },
+          body: { status: "cooked" },
+        })
+      )
+      return planned.id
+    }
+    const { meal, ...made } = await unwrap(
+      api.POST("/api/recipes/{recipe}/made", {
+        params: { path: { recipe: recipe.id } },
+      })
+    )
+    queryClient.setQueryData(recipeQuery(recipe.slug).queryKey, made)
+    return meal
+  }
 
   async function markMade() {
     setMarking(true)
     try {
-      if (planned)
-        await unwrap(
-          api.PATCH("/api/plan/entries/{entryId}", {
-            params: { path: { entryId: planned.id } },
-            body: { status: "cooked" },
-          })
-        )
-      else
-        queryClient.setQueryData(
-          recipeQuery(recipe.slug).queryKey,
-          await unwrap(
-            api.POST("/api/recipes/{recipe}/made", {
-              params: { path: { recipe: recipe.id } },
-            })
-          )
-        )
-      await refresh()
-      toast.success(t("recipes.markedMade"))
+      const meal = await cookMeal()
+      await Promise.all([
+        refresh(),
+        queryClient.invalidateQueries({ queryKey: ["plan"] }),
+        queryClient.invalidateQueries({ queryKey: ["pantry"] }),
+      ])
+      afterCooking.offer(t("recipes.markedMade"), { meal, recipe })
       celebrate()
     } catch (error) {
       if (!(error instanceof ApiError)) throw error

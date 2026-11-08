@@ -686,19 +686,6 @@ export async function clearPhoto(
 }
 
 /**
- * "I made this", with no meal of it on the plan to mark cooked: the recipe
- * was made now, off the plan. Not an edit, so no version is kept.
- */
-export async function markMade(em: EntityManager, options: { recipe: string }) {
-  const recipe = await findRecipe(em, options.recipe)
-  const now = new Date()
-  recipe.lastMadeAt = now
-  recipe.madeOffPlanAt = now
-  await em.flush()
-  return loadRecipe(em, recipe.id)
-}
-
-/**
  * Corrects a recipe's diet labels. Only corrections that differ from what
  * the ingredients suggest are kept; they stick when the recipe is edited.
  * Not an edit, so no version is kept.
