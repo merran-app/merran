@@ -159,4 +159,25 @@ describe("making a recipe off the plan", () => {
     expect(await mealsToday()).toHaveLength(1)
     expect(await chicken()).toMatchObject({ amount: "3 lb" })
   })
+
+  test("goes in a meal the household plans", async () => {
+    await kyle.patch("/api/households/current", { meals: ["lunch"] })
+    try {
+      await made("lemon-chicken")
+      expect(await mealsToday()).toMatchObject([{ meal: "lunch" }])
+    } finally {
+      await kyle.patch("/api/households/current", { meals: MEALS })
+    }
+  })
+
+  test("pressed on two phones at once, cooks it once", async () => {
+    await kyle.post("/api/pantry/items", { text: "5 lb chicken thighs" })
+    const [one, two] = await Promise.all([
+      made("lemon-chicken"),
+      made("lemon-chicken"),
+    ])
+    expect(one.meal).toBe(two.meal)
+    expect(await mealsToday()).toHaveLength(1)
+    expect(await chicken()).toMatchObject({ amount: "3 lb" })
+  })
 })

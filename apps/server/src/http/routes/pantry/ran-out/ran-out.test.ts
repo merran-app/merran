@@ -211,6 +211,33 @@ describe("running out", () => {
     expect((await list()).map((item) => item.name)).toEqual(["salt"])
   })
 
+  test("doesn't list a food when a kind of it is on the list", async () => {
+    await kyle.post("/api/list/items", { text: "kosher salt" })
+    const meal = await cooked()
+    const result = await ranOut(meal.id, ["salt"])
+    expect(result.listed).toEqual([])
+    expect((await list()).map((item) => item.name)).toEqual(["kosher salt"])
+  })
+
+  test("is only for a meal that was cooked", async () => {
+    await add("1 cup olive oil", "cupboard")
+    const res = await kyle.post("/api/plan/entries", {
+      date: today,
+      meal: "dinner",
+      recipe: ids["Lemon Chicken"],
+    })
+    const meal = (await res.json()) as { id: string }
+    const oil = (await foodsFor(meal.id))[2]!
+    const answer = await kyle.post("/api/pantry/ran-out", {
+      meal: meal.id,
+      foods: [oil.food],
+      list: true,
+    })
+    expect(answer.status).toBe(409)
+    expect(await namesAtHome()).toEqual(["olive oil (cupboard)"])
+    expect(await list()).toEqual([])
+  })
+
   test("comes undone through the pantry's and list's restore", async () => {
     await add("1 cup olive oil", "cupboard")
     const meal = await cooked()

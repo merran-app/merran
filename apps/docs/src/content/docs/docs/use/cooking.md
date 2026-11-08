@@ -68,7 +68,7 @@ The optional server voice module can read using a configured Kokoro service or O
 3. Find saved notes under **Cooking notes** on the recipe. Use **Add a note** there to record something later.
 
 :::note[Not released yet (after alpha.7): Ran out of anything?]
-Finishing now asks **Ran out of anything?** before **How did it go?**. The recipe's foods, its side's too, show as chips, with always-on-hand staples like salt among them. Tap each one that ran out. With **Put them on the list** on, as it starts, they go on the shopping list as plain lines, unless they're on it already, which is also how a staple gets on the list. Choose **Next** to save, or **Nothing ran out** to go straight to **How did it go?**.
+Finishing now asks **Ran out of anything?** before **How did it go?**. The recipe's foods, its side's too, show as chips, with always-on-hand staples like salt among them. Tap each one that ran out. With **Put them on the list** on, as it starts, they go on the shopping list as plain lines, unless they're on it already (kosher salt on the list counts for salt), which is also how a staple gets on the list. Choose **Next** to save, or **Nothing ran out** to go straight to **How did it go?**.
 
 What ran out is used up in the pantry: all of it, apart from anything in the freezer, unless cooking took that food from the freezer. Running out of chicken mid-cook doesn't mean the frozen pack is gone. The message that follows has **Undo**, which puts the pantry back and takes those lines off the list. Marking the meal not cooked later puts back what cooking took, but not what ran out.
 
@@ -80,7 +80,7 @@ From alpha.8, a rating can be half stars. Tap the left half of a star for half o
 **Expected result:** the recipe is marked made today. Merran marks a matching meal on today's plan cooked, or moves a matching meal from this week's any-day pool to today and marks it cooked. A cooked plan entry can consume its pantry stock. Cooking a recipe with no matching plan entry records that it was made; do not assume it deducts an unplanned meal from the pantry.
 
 :::note[Not released yet (after alpha.7): cooking off the plan uses the pantry]
-Finishing a recipe, or choosing **Made it** on the recipe, with no meal of it today or in the week's pool adds one to today, already cooked, at the meal that fits the time of day and with the servings you cooked. It takes from the pantry like any cooked meal and shows on **Plan**. Mark it not cooked to put everything back. If a meal of it is already cooked today, that one counts, so pressing **Made it** twice doesn't cook it twice. The message after **Made it** offers **How did it go?**.
+Finishing a recipe, or choosing **Made it** on the recipe, with no meal of it today or in the week's pool adds one to today, already cooked, at the meal that fits the time of day (or the nearest meal your household plans) and with the servings you cooked. It takes from the pantry like any cooked meal and shows on **Plan**. Mark it not cooked to put everything back. If a meal of it is already cooked today, that one counts, so pressing **Made it** twice doesn't cook it twice. The message after **Made it** offers **How did it go?**.
 :::
 
 Cooking notes record what happened on a particular occasion. Use **Edit → Notes** for lasting recipe instructions. When optional AI note suggestions are available, a note may produce a proposed recipe change in **Review**; inspect it before applying it.

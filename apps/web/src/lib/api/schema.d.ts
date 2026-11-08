@@ -1808,7 +1808,7 @@ export interface paths {
         put?: never;
         /**
          * Say what ran out cooking a meal
-         * @description Everything of each food at home is used up, except what's in the freezer, unless cooking the meal took that food from the freezer. With `list`, each goes on the list as a plain line for no meal, unless it's on already: always-on-hand foods too. What the meal took when it was cooked stays as it was, so marking it not cooked later doesn't bring back what ran out. It takes the pantry permission, though it adds to the list. With an API key, it needs the `pantry: write` permission.
+         * @description Only for a meal that's cooked. Everything of each food at home is used up, except what's in the freezer, unless cooking the meal took that food from the freezer. With `list`, each goes on the list as a plain line for no meal, unless it, or a kind of it, is on already: always-on-hand foods too. What the meal took when it was cooked stays as it was, so marking it not cooked later doesn't bring back what ran out. It takes the pantry permission, though it adds to the list. With an API key, it needs the `pantry: write` permission.
          */
         post: operations["ranOut"];
         delete?: never;
@@ -18236,6 +18236,15 @@ export interface operations {
             };
             /** @description No such meal. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The meal isn't cooked. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -17,7 +17,7 @@ const route = createRoute({
   tags: ["Pantry"],
   summary: "Say what ran out cooking a meal",
   description:
-    "Everything of each food at home is used up, except what's in the freezer, unless cooking the meal took that food from the freezer. With `list`, each goes on the list as a plain line for no meal, unless it's on already: always-on-hand foods too. What the meal took when it was cooked stays as it was, so marking it not cooked later doesn't bring back what ran out. It takes the pantry permission, though it adds to the list.",
+    "Only for a meal that's cooked. Everything of each food at home is used up, except what's in the freezer, unless cooking the meal took that food from the freezer. With `list`, each goes on the list as a plain line for no meal, unless it, or a kind of it, is on already: always-on-hand foods too. What the meal took when it was cooked stays as it was, so marking it not cooked later doesn't bring back what ran out. It takes the pantry permission, though it adds to the list.",
   ...openToKeys("pantry", "write"),
   request: {
     body: {
@@ -28,6 +28,7 @@ const route = createRoute({
   responses: {
     200: jsonResponse(RanOutResultSchema, "Used up, and listed."),
     404: errorResponse("No such meal."),
+    409: errorResponse("The meal isn't cooked."),
     ...SIGNED_IN_ERRORS,
   },
 })

@@ -89,7 +89,7 @@ Choose **Mark cooked** when a planned meal has been made. This can consume its p
 
 Anyone in the household can answer, and the meal leaves the card on every phone. After six days a meal drops off the card, and its food is no longer set aside for it.
 
-Marking a meal from an earlier day cooked, here or on **Plan**, counts it as cooked at midday on that day, so the recipe says when it was really last made.
+Marking a meal from an earlier day cooked, here or on **Plan**, counts it as cooked at midday on that day, and a pool meal from a week that's over as cooked on that week's last day, so the recipe says when it was really last made.
 :::
 
 ## Troubleshooting and limits

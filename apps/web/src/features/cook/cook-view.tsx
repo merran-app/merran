@@ -352,14 +352,13 @@ export function CookView({
         queryClient.setQueryData(planEntryQuery(mealId).queryKey, changed)
         setSavedAmount(amount)
       } else {
-        // Off the plan: a meal's added to today, with the servings cooked.
+        // Off the plan: today's meal of it, or one added, with the servings
+        // cooked. Sent even at the recipe's own, since a meal planned for
+        // other servings would otherwise keep those.
         const made = await unwrap(
           api.POST("/api/recipes/{recipe}/made", {
             params: { path: { recipe: recipe.id } },
-            body:
-              baseServings && amount !== baseServings
-                ? { servings: amount }
-                : {},
+            body: baseServings ? { servings: amount } : {},
           })
         )
         cooked = made.meal

@@ -185,20 +185,47 @@ export async function addTyped(
   householdId: string,
   input: { text: string; aisle?: string | null; list?: string | null }
 ) {
-  const keyOf = await householdKeys(em)
   const { name, quantity, unit } = readItem(input.text)
   if (!name) {
     throw new AppError("invalid", "invalid_item", "Say what to add.", {
       text: "Say what to add.",
     })
   }
+  const item = await typedItem(em, householdId, {
+    name,
+    quantity,
+    unit,
+    aisle: input.aisle,
+    list: input.list,
+  })
+  await em.flush()
+  return (await describeItems(em, [item]))[0]!
+}
+
+/**
+ * A line typed in, read already: on the aisle and list given, else where
+ * its food goes. It's saved with the next flush.
+ */
+export async function typedItem(
+  em: EntityManager,
+  householdId: string,
+  input: {
+    name: string
+    quantity?: number | null
+    unit?: string | null
+    aisle?: string | null
+    list?: string | null
+  }
+) {
+  const keyOf = await householdKeys(em)
+  const { name, quantity = null, unit = null } = input
   const aisle = input.aisle
     ? await findAisle(em, input.aisle)
     : (await aislesOf(em, householdId, [{ name, unit }]))[0]!
   const list = input.list
     ? await findList(em, input.list)
     : (await listsOf(em, householdId, [{ name, aisle }]))[0]!
-  const item = em.create(ShoppingItem, {
+  return em.create(ShoppingItem, {
     household: householdId,
     list,
     foodKey: keyOf(name),
@@ -208,8 +235,6 @@ export async function addTyped(
     aisle,
     source: "typed",
   })
-  await em.flush()
-  return (await describeItems(em, [item]))[0]!
 }
 
 export type ItemChanges = Partial<{

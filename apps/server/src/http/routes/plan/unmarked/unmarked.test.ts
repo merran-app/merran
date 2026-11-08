@@ -120,6 +120,12 @@ describe("did you make these", () => {
     expect(await unmarked()).toEqual([])
   })
 
+  test("Made it on last week's pool cooks it on that week's last day", async () => {
+    const meal = await plan({ date: addDays(today, -7), anyDay: true })
+    await kyle.patch(`/api/plan/entries/${meal.id}`, { status: "cooked" })
+    expect(await lastMade()).toBe(`${addDays(today, -1)}T12:00:00.000Z`)
+  })
+
   test("its own day is midday where the household is", async () => {
     await kyle.patch("/api/households/current", { timeZone: "Asia/Kolkata" })
     const local = clockIn("Asia/Kolkata").today

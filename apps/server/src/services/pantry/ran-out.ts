@@ -5,11 +5,10 @@ import {
   ShoppingItem,
   type PlanEntry,
 } from "../../database/entities/index.ts"
+import { AppError } from "../../core/errors.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import { householdAliases } from "../foods/aliases.ts"
-import { aislesOf } from "../list/aisles.ts"
-import { describeItems } from "../list/list.ts"
-import { listsOf } from "../list/lists.ts"
+import { describeItems, typedItem } from "../list/list.ts"
 import { onHandOf } from "../list/meals.ts"
 import { findEntry } from "../plan/plan.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
@@ -102,6 +101,15 @@ export async function ranOut(
 ) {
   return inHouseholdTransaction(em, householdId, async (tx) => {
     const entry = await findEntry(tx, input.meal)
+    // Running out is something cooking finds out: a meal still planned
+    // took nothing, and may not be made at all.
+    if (entry.status !== "cooked") {
+      throw new AppError(
+        "conflict",
+        "meal_not_cooked",
+        "That meal isn't cooked yet."
+      )
+    }
     const chosen = new Set(input.foods)
     const foods = (await mealFoods(tx, householdId, entry)).filter((food) =>
       chosen.has(food.food)
@@ -129,32 +137,26 @@ export async function ranOut(
   })
 }
 
-/** Plain lines for no meal, each on the list its food goes on. */
+/**
+ * Plain lines for no meal, each where its food goes. A food's left off
+ * when it, or a kind of it, is on the list already, as the pantry counts
+ * a kind of a food as that food.
+ */
 async function listFoods(
   tx: EntityManager,
   householdId: string,
   foods: readonly RanOutFood[]
 ) {
-  const waiting = await tx.find(ShoppingItem, { checked: false })
+  const waiting = await tx.find(ShoppingItem, {
+    checked: false,
+    foodKey: { $ne: null },
+  })
   const missing = foods.filter(
-    ({ food }) => !waiting.some((item) => item.foodKey === food)
+    ({ food }) => !waiting.some((item) => covers(item.foodKey!, food))
   )
-  if (missing.length === 0) return []
-  const lines = missing.map(({ name }) => ({ name, unit: null }))
-  const aisles = await aislesOf(tx, householdId, lines)
-  const lists = await listsOf(
-    tx,
-    householdId,
-    missing.map(({ name }, index) => ({ name, aisle: aisles[index] ?? null }))
-  )
-  return missing.map(({ food, name }, index) =>
-    tx.create(ShoppingItem, {
-      household: householdId,
-      list: lists[index]!,
-      foodKey: food,
-      name,
-      aisle: aisles[index] ?? null,
-      source: "typed",
-    })
-  )
+  const listed: ShoppingItem[] = []
+  for (const { name } of missing) {
+    listed.push(await typedItem(tx, householdId, { name }))
+  }
+  return listed
 }

@@ -83,7 +83,7 @@ When cooking is done, the drawer has two steps.
 **Next** saves straight away, so skipping the second step loses nothing. Each ticked food:
 
 - is used up at home: every pantry item of it, apart from the freezer, unless the freezer is where cooking took it from. Running out of chicken mid-cook doesn't mean the frozen pack is gone.
-- goes on the list, with the switch on, as a plain line for no meal, unless an unchecked line of it is there already. Staples too, which makes this the way a staple gets on the list without you tapping it on the pantry page.
+- goes on the list, with the switch on, as a plain line for no meal, unless an unchecked line of it, or of a kind of it, is there already. Staples too, which makes this the way a staple gets on the list without you tapping it on the pantry page.
 
 The message says what was used up and put on the list, with **Undo**, which puts the pantry back and takes those lines off the list. Marking the meal not cooked later doesn't bring them back: what ran out really ran out.
 
@@ -188,8 +188,17 @@ Decided while building parts 3 to 5, November 7, 2026:
 
 | Decision | Choice | Why |
 |---|---|---|
-| Ran out of something already on the list | No second line: an unchecked line of that food counts | Two lines for the same salt would be noise |
+| Ran out of something already on the list | No second line: an unchecked line of that food, or of a kind of it, counts | Two lines for the same salt would be noise, and the pantry already counts kosher salt as salt |
 | Pool meals on **Did you make these?** | Asked about for six days after their week ends. Their food still stops being set aside when the week ends | A pool meal is dated to its week's first day, so the pantry frees its food as the week ends; changing that would change the list's maths too |
-| When a past meal was cooked | A meal on an earlier day counts as cooked on its own day, at midday in the household's time zone, wherever it's marked | **Made it** on Saturday for Tuesday's meal shouldn't say the recipe was last made Saturday |
+| When a past meal was cooked | A meal on an earlier day counts as cooked on its own day, at midday in the household's time zone, wherever it's marked. A pool meal from a week that's over counts as cooked on that week's last day | **Made it** on Saturday for Tuesday's meal shouldn't say the recipe was last made Saturday |
 | **I made this** with today's meal of it already cooked | That meal counts: no second meal, and nothing more taken from the pantry | A second press is far more often a mistake than a second batch |
 | Who else uses the made route | API keys only: the assistant and MCP have no tool for it | Corrects part 4, which said they did |
+
+Decided after reviewing parts 3 to 5, November 7, 2026:
+
+| Decision | Choice | Why |
+|---|---|---|
+| Which meal an off-plan cook goes in | The meal that fits the time of day if the household plans it; otherwise the latest it plans before then, or its first | A household that plans only lunch would never see a dinner on **Plan**, so couldn't mark it not cooked |
+| Servings from the cook view, off the plan | Always sent, even at the recipe's own | Today's meal of it may be planned for other servings, and would keep those |
+| **Made it** on two phones at once | The second waits for the first and finds its meal cooked | The pantry would otherwise be taken from twice |
+| **Ran out** for a meal that isn't cooked | Refused | Running out is something cooking finds out; a planned meal took nothing and may not be made |

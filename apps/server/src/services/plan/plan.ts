@@ -11,9 +11,11 @@ import {
   type Reason,
   type MealRecipe,
 } from "@merran/shared"
+import { LockMode } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
 import {
+  Household,
   PlanEntry,
   Recipe,
   type PLAN_STATUSES,
@@ -238,10 +240,14 @@ function setStatus(entry: PlanEntry, status: PlanStatus, day?: Day) {
   entry.cookedAt = status === "cooked" ? cookedTime(entry, day) : null
 }
 
-/** Now; but a meal on a day gone by was cooked that day, at midday. */
+/**
+ * Now; but a meal on a day gone by was cooked that day, at midday, and one
+ * in the pool of a week that's over, on that week's last day.
+ */
 function cookedTime(entry: PlanEntry, day?: Day) {
-  if (!day || entry.anyDay || entry.date >= day.today) return new Date()
-  return middayOn(entry.date, day.timeZone)
+  const lastDay = entry.anyDay ? addDays(entry.date, 6) : entry.date
+  if (!day || lastDay >= day.today) return new Date()
+  return middayOn(lastDay, day.timeZone)
 }
 
 /** The recipes a meal says were made: its recipe and side, once it's cooked. */
@@ -447,7 +453,12 @@ async function change(
   }
   if (changes.servings !== undefined) entry.servings = changes.servings
   if (changes.status !== undefined) {
-    setStatus(entry, changes.status, await householdClock(em, householdId))
+    // Only being cooked needs the household's day, to say when.
+    const day =
+      changes.status === "cooked" && entry.status !== "cooked"
+        ? await householdClock(em, householdId)
+        : undefined
+    setStatus(entry, changes.status, day)
   }
   const recipes = [entry.recipe?.id, entry.withRecipe?.id]
   entry.variants =
@@ -855,7 +866,25 @@ export async function toAsk(em: EntityManager, householdId: string) {
  * not cooked puts that back. `servings`, when given, is how many it made.
  * Says which meal it was.
  */
-export async function cookToday(
+export function cookToday(
+  em: EntityManager,
+  householdId: string,
+  recipeId: string,
+  servings?: number
+) {
+  return inHouseholdTransaction(em, householdId, async (tx) => {
+    // One at a time: pressed on two phones at once, the second waits here
+    // and then finds the first's meal cooked.
+    await tx.findOneOrFail(
+      Household,
+      { id: householdId },
+      { lockMode: LockMode.PESSIMISTIC_WRITE }
+    )
+    return cookTodayIn(tx, householdId, recipeId, servings)
+  })
+}
+
+async function cookTodayIn(
   em: EntityManager,
   householdId: string,
   recipeId: string,
@@ -870,10 +899,7 @@ export async function cookToday(
   )
   if (done) return done.id
 
-  // At the meal that fits the time of day, as moving a pool meal does.
-  const meal: Meal = clock.meals.includes(mealOfTheHour(clock.hour))
-    ? mealOfTheHour(clock.hour)
-    : "dinner"
+  const meal = cookingMeal(clock.meals, clock.hour)
   let entries: PlanEntry[] = sortEntries(
     await em.find(
       PlanEntry,
@@ -925,4 +951,19 @@ export async function cookToday(
     entries.map((entry) => ({ entry, was: false, now: true }))
   )
   return entries[0]!.id
+}
+
+/**
+ * The meal something cooked now goes in: the one that fits the time of
+ * day, if the household plans it. Otherwise the latest it plans before
+ * then, or failing that its first, so the meal shows on Plan, where it
+ * can be marked not cooked.
+ */
+function cookingMeal(meals: readonly Meal[], hour: number): Meal {
+  const now = mealOfTheHour(hour)
+  if (meals.includes(now)) return now
+  const before = meals.filter(
+    (meal) => meal !== "snack" && MEALS.indexOf(meal) < MEALS.indexOf(now)
+  )
+  return before.at(-1) ?? meals.find((meal) => meal !== "snack") ?? meals[0]!
 }
