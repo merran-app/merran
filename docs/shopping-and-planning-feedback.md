@@ -33,7 +33,7 @@ Decided and implemented October 18, 2026, released in alpha.4. **Start shopping*
 
 ## Rearrange meals after automatic planning
 
-Decided and implemented October 18, 2026, released in alpha.4: a move handle on each weekly meal supports mouse, pen and touch dragging between days, meal types and the any-day pool. It also opens the destination picker by tap or keyboard. Keep **Move or change** and bulk **Move** available. Direct two-meal swaps remain planned.
+Decided and implemented October 18, 2026, released in alpha.4: a move handle on each weekly meal supports mouse, pen and touch dragging between days, meal types and the any-day pool. It also opens the destination picker by tap or keyboard. Keep **Move or change** and bulk **Move** available. Direct two-meal swaps followed on November 8, 2026 (below).
 
 - Highlight valid destinations without shifting the layout. Scroll near the viewport edges to reach other days. Release outside a destination or press Escape to cancel. A drop back on the current slot does nothing; selection mode disables dragging.
 - Keep day headings, theme badges and calorie totals wrapping within the phone viewport. Meal tracks can shrink and long names truncate; drag hints stay within their targets so moving meals does not introduce horizontal page scrolling.
@@ -41,6 +41,13 @@ Decided and implemented October 18, 2026, released in alpha.4: a move handle on 
 - Preserve entry identity, recipes, paired recipes, servings, notes and cooked/skipped status. Manual moves can miss theme nights, as **Move or change** already permits; they do not generate replacement recipes or reset cooking history.
 - Update cached week ranges optimistically for moves and their Undo, including the destination picker. A failed save rolls back only the affected locations, preserving unrelated changes and showing an error. Cancel in-flight range reads before moving so they cannot restore stale positions. Refresh from the server after success.
 - Reuse the transactional bulk move and its snapshot-based Undo. A date/meal-only change leaves shopping provenance, quantities, pantry reservations and checked purchases alone; it never generates another list.
+
+**Swaps and reordering (decided November 8, 2026, for [#45](https://github.com/merran-app/merran/issues/45)).** Design in [superpowers/specs/2026-11-08-swap-and-reorder-meals-design.md](superpowers/specs/2026-11-08-swap-and-reorder-meals-design.md).
+
+- Swaps are dish for dish. Dropping a dish on a dated meal with dishes, or picking one for it from the handle's destination picker, offers **Swap with** each dish there beside **Move alongside**. Only that dish trades places; the meal's others stay. **Move or change** still moves alongside, since it saves other changes with the move.
+- A swapped dish takes the other's exact place on a day. Swapped into the pool, it keeps its own meal type and goes last among that type, as a move there does. Two pool dishes aren't swapped, and bulk **Move** of several selected dishes never swaps.
+- A meal's dishes reorder by dragging within the meal, with a line showing where the dish goes, or **Move up** / **Move down** in its menus. The pool sorts by meal type, so it reorders within each type.
+- `POST /plan/entries/bulk` takes `swap` (exactly two ids) and `order` (one meal's dishes; others in the meal follow as they were, so a live addition never fails a reorder). Both answer with `before` snapshots, so `/plan/restore` is Undo, and neither changes the list or the pantry.
 
 ## See recipes already planned for the week
 

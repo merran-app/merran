@@ -55,7 +55,7 @@ Replaces today's **Move alongside** prompt and uses the app's `Dialog`, which is
 
 ### The destination picker
 
-When **one** dish is being moved (the handle's tap or keyboard path, or **Move or change**) and the chosen destination is a dated meal with dishes, it asks the same question with the same buttons. Bulk **Move** for several selected dishes is unchanged: they go alongside.
+When **one** dish is being moved through the handle's tap or keyboard path and the chosen destination is a dated meal with dishes, it asks the same question with the same buttons. **Move or change** still moves alongside: it saves servings, side and note with the move, and a swap would split that save (ruled while building, November 8, 2026). Bulk **Move** for several selected dishes is unchanged: they go alongside.
 
 ### The insertion line
 
