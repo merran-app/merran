@@ -44,6 +44,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio, which thes
 | [store-product-mappings.md](store-product-mappings.md) | Proposed page for preparing a household's usual products at multiple stores, and choosing the ordering store on shopping day |
 | [pantry.md](pantry.md) | A pantry that keeps itself: checking off puts food away, it learns where things go, what ran out after cooking, cooking off the plan, and asking about meals nobody marked (planned November 5, 2026) |
 | [flaresolverr-imports.md](flaresolverr-imports.md) | Importing links from sites that turn Merran away, through the server admin's own FlareSolverr, and what stays honest (released in alpha.7) |
+| [mobile-gestures.md](mobile-gestures.md) | Swiping rows on the list and in the pantry, pull to refresh and swiping back in the installed app (planned November 8, 2026) |
 | [features.md](features.md) | Every feature with its importance and status, for the marketing and docs sites |
 | [scope.md](scope.md) | Where each REFERENCE feature lands, what's not coming over, and the build order |
 | [foods.md](foods.md) | One vocabulary of foods: names in every language, kinds of, brands, what Merran knows about each, and matching a line to its food |
