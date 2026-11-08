@@ -1,13 +1,25 @@
 import {
+  CheckmarkSquare02Icon,
+  Delete02Icon,
+  Edit02Icon,
   LinkSquare02Icon,
+  RotateLeft01Icon,
   Search01Icon,
   Tag01Icon,
+  Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useTranslation } from "react-i18next"
 import type { ReactNode } from "react"
 
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -143,7 +155,7 @@ export function ItemRow({
       .join(" ")
   }
 
-  return (
+  const row = (
     <li className="flex min-w-0 items-start gap-3 py-2.5 @2xl:gap-4">
       {selecting ? (
         <span
@@ -261,34 +273,83 @@ export function ItemRow({
             <span className="hidden @lg:inline">{t("list.findMenu")}</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>
-                {t("list.findAtLabel", { name: item.name })}
-              </DropdownMenuLabel>
-              {finding.stores.map((store) => (
-                <DropdownMenuItem
-                  key={store.key}
-                  onClick={() => finding.onFind(item, store)}
-                >
-                  <span className="flex-1">{store.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {store.connected ? (
-                      t("list.findPick")
-                    ) : (
-                      <HugeiconsIcon
-                        icon={LinkSquare02Icon}
-                        strokeWidth={2}
-                        className="size-3.5"
-                      />
-                    )}
-                  </span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
+            <FindItems item={item} finding={finding} />
           </DropdownMenuContent>
         </DropdownMenu>
       )}
     </li>
+  )
+
+  // While selecting, a click picks the row; there's no menu.
+  if (selecting) return row
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger render={row} />
+      <ContextMenuContent className="w-60">
+        <ContextMenuItem onClick={onEdit}>
+          <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} />
+          {t("list.menu.change")}
+        </ContextMenuItem>
+        <ContextMenuItem
+          onClick={() => void actions.change(item, { checked: !item.checked })}
+        >
+          <HugeiconsIcon
+            icon={item.checked ? RotateLeft01Icon : Tick02Icon}
+            strokeWidth={2}
+          />
+          {item.checked ? t("list.bulk.uncheck") : t("list.bulk.check")}
+        </ContextMenuItem>
+        {finding && (
+          <>
+            <ContextMenuSeparator />
+            <FindItems item={item} finding={finding} />
+          </>
+        )}
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={() => selection.start(item.id)}>
+          <HugeiconsIcon icon={CheckmarkSquare02Icon} strokeWidth={2} />
+          {t("select.start")}
+        </ContextMenuItem>
+        <ContextMenuItem
+          variant="destructive"
+          onClick={() => void actions.remove(item)}
+        >
+          <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+          {t("list.bulk.remove")}
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  )
+}
+
+/** Find a thing at each of the household's stores: in Find and a right click. */
+function FindItems({ item, finding }: { item: ListItem; finding: RowFind }) {
+  const { t } = useTranslation()
+  return (
+    <DropdownMenuGroup>
+      <DropdownMenuLabel>
+        {t("list.findAtLabel", { name: item.name })}
+      </DropdownMenuLabel>
+      {finding.stores.map((store) => (
+        <DropdownMenuItem
+          key={store.key}
+          onClick={() => finding.onFind(item, store)}
+        >
+          <span className="flex-1">{store.name}</span>
+          <span className="text-xs text-muted-foreground">
+            {store.connected ? (
+              t("list.findPick")
+            ) : (
+              <HugeiconsIcon
+                icon={LinkSquare02Icon}
+                strokeWidth={2}
+                className="size-3.5"
+              />
+            )}
+          </span>
+        </DropdownMenuItem>
+      ))}
+    </DropdownMenuGroup>
   )
 }
 

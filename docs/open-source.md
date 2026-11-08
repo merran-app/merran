@@ -140,7 +140,7 @@ The generated reference is only as good as the spec. A check on October 15, 2026
 
 - **Search** with Pagefind, which comes with Starlight.
 - **Screenshots** taken by a Playwright script from the demo household (see [operations.md](operations.md#a-public-demo)), in light and dark, and taken again each release, so no page shows an old screen.
-- **One version** of the docs until 1.0, following the latest release; anything only on `edge` says so. Versioned docs can come with 1.0, if old majors need them.
+- **One version** of the docs until 1.0, describing main. The site is published with each release, so what it says goes out with the features it describes, and guides don't mark anything as not released yet (decided November 8, 2026; before, the site followed the latest release and marked newer work). Versioned docs can come with 1.0, if old majors need them.
 - **CI** builds the site on every pull request, checks every link, and fails when a generated page is out of date, as it already does for `openapi.json`.
 
 ## Funding

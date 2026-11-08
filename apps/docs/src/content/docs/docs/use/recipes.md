@@ -79,7 +79,9 @@ cards show **Planned this week** when the recipe is on the household's current w
 
 On **Recipes**, use **Search recipes**, tags, **Filters**, and **Sort by** to find meals. **Manage tags** can rename a tag across recipes; renaming it to an existing tag merges them. Deleting a tag removes the tag, not the recipes.
 
-**Delete** moves a recipe to **Recently deleted** for 30 days. **Put back** restores it during that period. **Delete for good** and **Empty** are permanent.
+With a mouse or trackpad, right-click a recipe card for **Open in a new tab**, **Start cooking**, **Plan it**, **Edit**, **Tags**, **Select** and **Delete**. On a phone, a long press still selects the card.
+
+**Delete** moves a recipe to **Recently deleted** for 30 days. **Put back** restores it during that period. **Delete for good** and **Empty** are permanent. Right-click a recipe in **Recently deleted** for **Put back**, **Select** and **Delete for good**.
 
 Optional **Tidy up** uses AI and asks you to review suggested changes. In alpha.5, **Tidy up** and a recipe’s **Review** button open a bottom drawer on mobile with a fixed heading and **Close** button; larger screens keep the dialog. Treat imported or inferred diet labels, nutrition, and costs as information to check: they depend on recognizable ingredients and available data, and are not guaranteed for every recipe.
 

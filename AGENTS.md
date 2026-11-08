@@ -55,7 +55,7 @@ A change isn't done until everything that describes it says the same, in the sam
 | Something the homepage says (`apps/docs/src/components/landing/`) | Check it's still true when the feature it's about changes |
 | A decision | The doc in `docs/` it belongs to, with the date it was decided |
 
-The public site describes the latest release. Mark anything newer as not released yet.
+Guides describe what's on main, as if it's released: the site is published with each release, so whatever the guides say goes out with the features they describe. Don't mark anything as not released yet.
 
 ## Pull requests and releases
 

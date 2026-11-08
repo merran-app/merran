@@ -103,7 +103,7 @@ Done when: optional-service failure leaves the core meal workflow usable, enviro
 
 ## Documentation and release checks
 
-Each batch updates `features.md` and the relevant platform/operations plan. User-visible changes update `apps/web/src/locales/en.json` and the matching public guides in the same PR, marked not released until included in a release. Installation/code changes also update README, installation, troubleshooting and operations guidance; configuration or backup changes update their guides and `.env.example` when applicable.
+Each batch updates `features.md` and the relevant platform/operations plan. User-visible changes update `apps/web/src/locales/en.json` and the matching public guides in the same PR. Installation/code changes also update README, installation, troubleshooting and operations guidance; configuration or backup changes update their guides and `.env.example` when applicable.
 
 New APIs require server OpenAPI regeneration and matching web/extension schemas. New entities require generated SQLite and Postgres migrations. Run the affected server tests, typecheck, named-file formatting and public docs build/link checks. Do not run Prettier over internal `docs/`.
 

@@ -2,6 +2,7 @@ import {
   Add01Icon,
   Calendar03Icon,
   CheckmarkCircle02Icon,
+  CheckmarkSquare02Icon,
   FridgeIcon,
   MoreHorizontalIcon,
   ReceiptDollarIcon,
@@ -18,6 +19,13 @@ import { TermHelp } from "@/features/onboarding/term-help"
 
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -499,10 +507,8 @@ function PantryRow({
       tone: "plain",
     })
 
-  const elsewhere = STORAGE_PLACES.filter((place) => place !== item.storedIn)
-
   // A narrow card: tags under the name. A wide one: all in a line.
-  return (
+  const row = (
     <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 py-3 @3xl:grid-cols-[minmax(0,1fr)_auto_auto] @3xl:gap-x-4">
       <button
         type="button"
@@ -590,28 +596,64 @@ function PantryRow({
             <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem onClick={onEdit}>
-              {t("pantry.edit")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => void actions.toList([item.name])}>
-              <HugeiconsIcon icon={ShoppingBasketAdd01Icon} strokeWidth={2} />
-              {t("pantry.toListName", { name: item.name })}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {elsewhere.map((place: StoragePlace) => (
-              <DropdownMenuItem
-                key={place}
-                onClick={() => void actions.change(item, { storedIn: place })}
-              >
-                {t("pantry.moveTo", {
-                  place: t(`pantry.places.${place}`).toLowerCase(),
-                })}
-              </DropdownMenuItem>
-            ))}
+            <PantryMenuItems item={item} onEdit={onEdit} />
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
     </li>
+  )
+
+  if (selecting) return row
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger render={row} />
+      <ContextMenuContent className="w-52">
+        <PantryMenuItems item={item} onEdit={onEdit} />
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={() => void actions.remove(item)}>
+          <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} />
+          {t("pantry.usedUp")}
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => selection.start(item.id)}>
+          <HugeiconsIcon icon={CheckmarkSquare02Icon} strokeWidth={2} />
+          {t("select.start")}
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  )
+}
+
+/** Change it, put it on the list, or move it: in either of a row's menus. */
+function PantryMenuItems({
+  item,
+  onEdit,
+}: {
+  item: PantryItem
+  onEdit: () => void
+}) {
+  const { t } = useTranslation()
+  const actions = usePantryActions()
+  const elsewhere = STORAGE_PLACES.filter((place) => place !== item.storedIn)
+
+  return (
+    <>
+      <DropdownMenuItem onClick={onEdit}>{t("pantry.edit")}</DropdownMenuItem>
+      <DropdownMenuItem onClick={() => void actions.toList([item.name])}>
+        <HugeiconsIcon icon={ShoppingBasketAdd01Icon} strokeWidth={2} />
+        {t("pantry.toListName", { name: item.name })}
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      {elsewhere.map((place: StoragePlace) => (
+        <DropdownMenuItem
+          key={place}
+          onClick={() => void actions.change(item, { storedIn: place })}
+        >
+          {t("pantry.moveTo", {
+            place: t(`pantry.places.${place}`).toLowerCase(),
+          })}
+        </DropdownMenuItem>
+      ))}
+    </>
   )
 }
 

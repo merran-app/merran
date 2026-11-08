@@ -25,9 +25,9 @@ These steps follow the current repository implementation, pending fresh-install 
 
 When something is gone, choose **Used up**. For partial use outside a planned meal, edit **How much** to the amount left.
 
-:::note[Not released yet (after alpha.7): Ran out of anything?]
+With a mouse or trackpad, right-click a pantry item for its menu, plus **Used up** and **Select**. Right-click a thing on the list for **Change**, **Check off** or **Uncheck**, **Find** at each of your stores, **Select** and **Remove**. On a phone, a long press still selects.
+
 After cooking, **Ran out of anything?** uses up what ran out and can put it on the list, without opening the pantry. See [Cooking](../cooking/#finish-and-keep-notes).
-:::
 
 :::note[Available in alpha.6: putting food back on the list]
 When something you use up was set aside for a meal on the list, the message says which meal and offers **Put on the list** beside **Undo**. Ignore it to leave the list as it is.
