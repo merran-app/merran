@@ -1,6 +1,6 @@
 # A pantry that keeps itself
 
-November 5, 2026. Planned with the user. Parts 1 and 2 were built on November 6, 2026, and go out in alpha.8, ahead of the rest (decided November 7, 2026). Parts 3 and 4 were built on November 7, 2026; part 5 is still planned. The pantry works, but keeping it right is work: pressing **Put away**, fixing where things went, and noticing what ran out. When it drifts from what's really at home, the list leaves out things you need, which is worse than having no pantry at all. This plan makes the pantry stay roughly right using only moments when you're already in the app: finishing the shopping and finishing cooking.
+November 5, 2026. Planned with the user. Parts 1 and 2 were built on November 6, 2026, and go out in alpha.8, ahead of the rest (decided November 7, 2026). Parts 3 to 5 were built on November 7, 2026, for alpha.8 too. The pantry works, but keeping it right is work: pressing **Put away**, fixing where things went, and noticing what ran out. When it drifts from what's really at home, the list leaves out things you need, which is worse than having no pantry at all. This plan makes the pantry stay roughly right using only moments when you're already in the app: finishing the shopping and finishing cooking.
 
 Five parts, built in this order:
 
@@ -102,9 +102,9 @@ When you finish the cook view or press **I made this** and the recipe has no mea
 
 ## 5. Did you make these?
 
-A card on Today, above **Coming up**, lists recipe meals that are still marked planned from the past six days, and pool meals from a week that's over. Six days is how long the pantry keeps food set aside for a meal. Note meals like "eat out" aren't asked about: they take nothing from the pantry.
+A card on Today, above **Coming up**, lists recipe meals that are still marked planned from the past six days, and pool meals from a week that's over, for six days after it ends. Six days is how long the pantry keeps food set aside for a meal. Note meals like "eat out" aren't asked about: they take nothing from the pantry.
 
-- **Made it** marks the meal cooked on its own day, which takes from the pantry and records it. The message offers **How did it go?**
+- **Made it** marks the meal cooked on its own day (at midday in the household's time zone), which takes from the pantry and records it. The message offers **How did it go?**
 - **Didn't** marks it skipped, so what was set aside for it shows under **Use soon** as "was skipped". That part already works.
 - **Made them all** shows when there are several.
 
@@ -127,8 +127,8 @@ Anyone in the household can answer, and the meal leaves the card on every phone 
 - `GET /api/list/put-away`: what checked rows put away that hasn't been looked over, for one list or all. `POST /api/list/put-away/looked-over` marks them.
 - `POST /api/pantry/items/{itemId}/split`: **Freeze some** (how much, and where it goes).
 - `GET /api/pantry/ran-out?meal=`: the chips, worked out on the server so they're the foods the pantry and the list know. `POST /api/pantry/ran-out`: the foods, the meal, and whether to list them. It answers with what the pantry was and the lines it added, for Undo through the existing restore routes.
-- `POST /api/recipes/{recipe}/made` takes the servings cooked.
-- Today's data includes the meals to ask about. Answering uses the plan routes that are already there.
+- `POST /api/recipes/{recipe}/made` takes the servings cooked, and answers with the meal it cooked, so the cook view can ask what ran out.
+- `GET /api/plan/unmarked`: the meals to ask about. Today has no data of its own (it reads the plan), so this is its one new read. Answering uses the plan routes that are already there.
 - `PATCH /api/pantry/items/{itemId}` and the pantry bulk route remember a whole move's place.
 
 Then `openapi`, and the web and extension API types.

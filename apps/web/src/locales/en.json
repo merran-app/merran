@@ -2709,6 +2709,17 @@
       "andMore_one": "{{when}}, and {{count}} more",
       "andMore_other": "{{when}}, and {{count}} more"
     },
+    "didYouMake": {
+      "title": "Did you make these?",
+      "hint": "Saying keeps the pantry right.",
+      "when": "{{day}}'s {{meal}}",
+      "pool": "Last week, any day",
+      "madeIt": "Made it",
+      "didnt": "Didn't",
+      "all": "Made them all",
+      "skipped": "{{name}} marked as not made.",
+      "undo": "Undo"
+    },
     "comingUp": {
       "restOfWeek": "The rest of the week",
       "next": "Coming up",

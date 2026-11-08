@@ -130,7 +130,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 |---|---|---|---|
 | A week of meals, with the meals your household eats | Headline | Built | Breakfast, lunch and dinner each optional |
 | A pool of meals for the week, cooked in any order | Key | Built | |
-| Did you make these? Past meals nobody marked, asked about on Today | Key | Planned | [pantry.md](pantry.md): recipe meals from the past six days and pool meals from weeks that are over; Made it or Didn't, so the pantry stays right |
+| Did you make these? Past meals nobody marked, asked about on Today | Key | Built | Not released yet (after alpha.7), see [pantry.md](pantry.md): recipe meals from the past six days, and last week's pool for six days after it ends; Made it (cooked on its own day), Didn't, or Made them all, so the pantry stays right |
 | See which recipes are already planned for the week | Detail | Built | Available in alpha.4: Already planned badges in meal and side pickers for the destination week; Planned this week on recipe-library cards. Includes sides and any-day meals, counts cooked meals and excludes skipped ones ([decision](shopping-and-planning-feedback.md#see-recipes-already-planned-for-the-week)) |
 | What's next: tonight's dinner, this afternoon's lunch | Key | Built | |
 | Fill the week, re-roll, Something else | Headline | Built | No AI needed |

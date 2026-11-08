@@ -1,4 +1,4 @@
-import { householdClock } from "../households/clock.ts"
+import { householdClock, middayOn } from "../households/clock.ts"
 import {
   addDays,
   daysBetween,
@@ -224,14 +224,24 @@ async function nextPosition(
   return last ? last.position + 1 : 0
 }
 
+/** The household's day and time zone, to say when a meal was cooked. */
+type Day = { today: string; timeZone: string }
+
 /**
- * Cooked now: the recipe and its side were made now. Once it's saved,
- * `remade()` puts that on them, and takes it off if it stops being cooked.
+ * Cooked now: the recipe and its side were made now, or, for a meal on a
+ * day gone by, that day. Once it's saved, `remade()` puts that on them,
+ * and takes it off if it stops being cooked.
  */
-function setStatus(entry: PlanEntry, status: PlanStatus) {
+function setStatus(entry: PlanEntry, status: PlanStatus, day?: Day) {
   if (status === entry.status) return
   entry.status = status
-  entry.cookedAt = status === "cooked" ? new Date() : null
+  entry.cookedAt = status === "cooked" ? cookedTime(entry, day) : null
+}
+
+/** Now; but a meal on a day gone by was cooked that day, at midday. */
+function cookedTime(entry: PlanEntry, day?: Day) {
+  if (!day || entry.anyDay || entry.date >= day.today) return new Date()
+  return middayOn(entry.date, day.timeZone)
 }
 
 /** The recipes a meal says were made: its recipe and side, once it's cooked. */
@@ -436,7 +446,9 @@ async function change(
       : null
   }
   if (changes.servings !== undefined) entry.servings = changes.servings
-  if (changes.status !== undefined) setStatus(entry, changes.status)
+  if (changes.status !== undefined) {
+    setStatus(entry, changes.status, await householdClock(em, householdId))
+  }
   const recipes = [entry.recipe?.id, entry.withRecipe?.id]
   entry.variants =
     entry.variants?.filter((recipe) => recipes.includes(recipe.recipeId)) ??
@@ -793,6 +805,45 @@ export async function whatsNext(em: EntityManager, householdId: string) {
     mealNow: mealOfTheHour(clock.hour),
     entry: next ? describeEntry(next) : null,
   }
+}
+
+/**
+ * How long a meal nobody marked is asked about: as long as the pantry
+ * keeps its food set aside.
+ */
+const ASK_DAYS = 6
+
+/**
+ * Did you make these? Recipe meals still planned from the past six days,
+ * and the pool of a week that ended in that time, oldest first. Note
+ * meals take nothing from the pantry, so they aren't asked about.
+ */
+export async function toAsk(em: EntityManager, householdId: string) {
+  const { today } = await householdClock(em, householdId)
+  const entries = await em.find(
+    PlanEntry,
+    {
+      status: "planned",
+      recipe: { $ne: null },
+      $or: [
+        {
+          anyDay: false,
+          date: { $gte: addDays(today, -ASK_DAYS), $lt: today },
+        },
+        // A pool is dated to its week's first day, and its week is over
+        // seven days on.
+        {
+          anyDay: true,
+          date: {
+            $gte: addDays(today, -ASK_DAYS - 6),
+            $lte: addDays(today, -7),
+          },
+        },
+      ],
+    },
+    { populate: POPULATE, ...WITH_DELETED }
+  )
+  return sortEntries(entries.filter(shown)).map(describeEntry)
 }
 
 /**

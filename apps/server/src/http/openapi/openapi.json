@@ -25903,6 +25903,60 @@
         }
       }
     },
+    "/api/plan/unmarked": {
+      "get": {
+        "operationId": "getUnmarkedMeals",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Past meals nobody marked",
+        "description": "Recipe meals still planned from the past six days, and the pool of a week that ended in that time, oldest first: whether they were made is worth asking, since the pantry keeps their food set aside for six days. Note meals aren't included. Answer by marking them cooked or skipped; a meal from a day gone by that's marked cooked counts as cooked on its day, at midday in the household's time zone. With an API key, it needs the `plan: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "plan:read",
+        "responses": {
+          "200": {
+            "description": "The meals to ask about.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanEntries"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/proposals": {
       "get": {
         "operationId": "listProposals",

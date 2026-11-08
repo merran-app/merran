@@ -2296,6 +2296,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/plan/unmarked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Past meals nobody marked
+         * @description Recipe meals still planned from the past six days, and the pool of a week that ended in that time, oldest first: whether they were made is worth asking, since the pantry keeps their food set aside for six days. Note meals aren't included. Answer by marking them cooked or skipped; a meal from a day gone by that's marked cooked counts as cooked on its day, at midday in the household's time zone. With an API key, it needs the `plan: read` permission.
+         */
+        get: operations["getUnmarkedMeals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/proposals": {
         parameters: {
             query?: never;
@@ -19596,6 +19616,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Suggestions"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getUnmarkedMeals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The meals to ask about. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanEntries"];
                 };
             };
             /** @description Not signed in. */
