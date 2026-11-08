@@ -30,8 +30,7 @@ The order choice is per trip/list, not a permanent preferred store on every food
 - Reuse `store_products` and its unique household/store/food constraint. No new table is needed for one product per food per store. A data migration should not be needed unless implementation finds a field that cannot be represented there.
 - Share each retailer's product validation and saving between list picks and Usual products. Keep Walmart's extension requirements explicit. Invalidate store and list queries affected by a changed pick.
 - Extend Send's choice state with an explicit order store. An explicit store wins over the current newest-pick default for unsent items; item-level overrides still win over the order store. The selected store's own product must be used in its basket. Preserve sent-item routing and snapshots.
-- Add labels to `apps/web/src/locales/en.json`, document the workflow in the public shopping guide, regenerate OpenAPI and both clients for the new endpoints, and update this plan and `docs/features.md` as work lands. The public guide must mark the feature as not released until it ships.
-
+- Add labels to `apps/web/src/locales/en.json`, document the workflow in the public shopping guide, regenerate OpenAPI and both clients for the new endpoints, and update this plan and `docs/features.md` as work lands.
 ## Done when
 
 1. A household can save different products for the same food at Kroger and Walmart without adding it to a shopping list, then see and change both on one page.

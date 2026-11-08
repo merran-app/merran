@@ -395,6 +395,16 @@ Carried over from the REFERENCE app, plus what a public project needs:
 
 October 19, 2026, included in alpha.5: forms, confirmations and other content opened through the web app's shared dialog components use a bottom drawer below 768px. The drawer can be dismissed by swiping down or tapping outside and keeps long content scrollable above the phone's safe area. At 768px and above, the same actions keep their existing dialogs. Screen-specific mobile drawers for assistant review, shopping and recipe work remain in place.
 
+## Context menus
+
+November 8, 2026: a right click on an item opens a menu of what can be done to it. It's on recipe cards on **Recipes** (open in a new tab, start cooking, plan it, edit, tags, select, delete), meals on **Plan**, pantry items, things on the list, and recipes in **Recently deleted**. Each menu has **Select**, which starts selecting with that item, as a long press does on a phone. The rules:
+
+- **Only with a mouse or trackpad.** A long press on a touch screen still starts selecting, so the context menu ignores touch, including the context menu event Android sends at the end of a long press.
+- **Never the only way.** Everything in a context menu can also be done another way: on the item's own page, in its "⋯" menu, or in select mode.
+- **The same items as the "⋯" menu.** Base UI builds context menus and dropdown menus from the same parts, so where an item has both, one component lists the items for both (`MealMenuItems`, `PantryMenuItems`, the list's `FindItems`). A context menu may add the row's own buttons, like **Used up**, and **Select**. `components/ui/context-menu.tsx` reuses the dropdown's items.
+- **No wrapper in a layout.** The trigger renders as the row's own element (`render={row}`), so lists and grids keep their layout. Where it has to wrap a component, as on recipe cards, the wrapper gets `min-w-0` so a grid column can still shrink it.
+- **Not everywhere.** Not on a recipe's own page or on Today, where there's no single item to act on, and not while selecting, when a click picks the item.
+
 ## Help and guided tours
 
 Implementation status, October 17, 2026: [Setup and first-use experience](onboarding.md). Core-page tours, assistant orientation, Help replay, a shared glossary and contextual explanations are implemented and released in alpha.4. Real-device acceptance and the optional What's new tour system below remain planned. The same record covers implemented password confirmation, operator recovery, atomic claiming, household review and first-meal progress.

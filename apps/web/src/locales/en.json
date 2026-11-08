@@ -1242,6 +1242,9 @@
   "recipes": {
     "add": "Add a recipe",
     "more": "More",
+    "menu": {
+      "newTab": "Open in a new tab"
+    },
     "manageTags": "Manage tags",
     "search": "Search recipes",
     "clearSearch": "Clear search",
@@ -2053,6 +2056,9 @@
     },
     "everyWeekBadge": "Every week",
     "removed": "Took {{name}} off the list.",
+    "menu": {
+      "change": "Change"
+    },
     "bulk": {
       "check": "Check off",
       "uncheck": "Uncheck",

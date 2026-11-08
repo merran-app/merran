@@ -76,11 +76,10 @@ Dropping into an empty slot moves immediately. If a dated slot already has dishe
 
 For a destination picker, tap the handle or focus it and press Enter, then select **When** and **Meal** and choose **Move**. Bulk **Move** remains available when selecting several meals. Moves appear immediately while saving; a failed save restores their previous locations and shows an error. Successful moves offer **Undo**, which also updates immediately. Moving meals preserves existing shopping quantities and checked items.
 
-Use a meal's menu to **Move or change**, **Skip**, or **Remove** it. **Plan it again** reverses a skip. **Repeat last week** in the week's menu can reuse meals without replacing already planned slots. Review servings and dates after repeating.
+Use a meal's menu to **Move or change**, **Skip**, or **Remove** it. With a mouse or trackpad, right-click a meal for the same menu, with **Select** too. **Plan it again** reverses a skip. **Repeat last week** in the week's menu can reuse meals without replacing already planned slots. Review servings and dates after repeating.
 
 Choose **Mark cooked** when a planned meal has been made. This can consume its pantry stock. **Not cooked yet** reverses that status and restores recorded pantry deductions. Avoid marking meals cooked simply to hide them; use **Skip** when you did not make them.
 
-:::note[Not released yet (after alpha.7): Did you make these?]
 **Today** asks **Did you make these?** about recipe meals from the past six days that are still planned, and about last week's **This week, any day** meals for six days after that week ends. Meals that are only a note, like eating out, aren't asked about.
 
 - **Made it** marks the meal cooked on its own day, which takes from the pantry. The message offers **How did it go?**.
@@ -90,7 +89,6 @@ Choose **Mark cooked** when a planned meal has been made. This can consume its p
 Anyone in the household can answer, and the meal leaves the card on every phone. After six days a meal drops off the card, and its food is no longer set aside for it.
 
 Marking a meal from an earlier day cooked, here or on **Plan**, counts it as cooked at midday on that day, and a pool meal from a week that's over as cooked on that week's last day, so the recipe says when it was really last made.
-:::
 
 ## Troubleshooting and limits
 

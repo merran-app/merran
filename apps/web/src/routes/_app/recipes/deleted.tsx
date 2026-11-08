@@ -1,5 +1,6 @@
 import {
   ArrowLeft01Icon,
+  CheckmarkSquare02Icon,
   Delete02Icon,
   RotateLeft01Icon,
 } from "@hugeicons/core-free-icons"
@@ -20,6 +21,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
 import {
   Empty,
   EmptyDescription,
@@ -201,6 +209,7 @@ function DeletedRow({
   const { t, i18n } = useTranslation()
   const refresh = useRefreshRecipes()
   const [busy, setBusy] = React.useState(false)
+  const [purging, setPurging] = React.useState(false)
 
   async function restore() {
     setBusy(true)
@@ -262,7 +271,7 @@ function DeletedRow({
     )
   }
 
-  return (
+  const row = (
     <li className="flex flex-wrap items-center gap-3 p-4">
       {about}
       <div className="ml-auto flex items-center gap-2">
@@ -289,5 +298,39 @@ function DeletedRow({
         />
       </div>
     </li>
+  )
+
+  return (
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger render={row} />
+        <ContextMenuContent>
+          <ContextMenuItem disabled={busy} onClick={() => void restore()}>
+            <HugeiconsIcon icon={RotateLeft01Icon} strokeWidth={2} />
+            {t("recipes.deleted.restore")}
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => selection.start(recipe.id)}>
+            <HugeiconsIcon icon={CheckmarkSquare02Icon} strokeWidth={2} />
+            {t("select.start")}
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            variant="destructive"
+            onClick={() => setPurging(true)}
+          >
+            <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+            {t("recipes.deleted.deleteForGoodConfirm")}
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+      {purging && (
+        <PurgeRecipesDialog
+          recipes={[recipe]}
+          open
+          onOpenChange={setPurging}
+          onPurged={() => setPurging(false)}
+        />
+      )}
+    </>
   )
 }

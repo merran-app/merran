@@ -56,6 +56,7 @@ import {
 } from "@/features/recipes/queries"
 import { RecipeCard } from "@/features/recipes/recipe-card"
 import { RecipeFilters } from "@/features/recipes/recipe-filters"
+import { RecipeMenu } from "@/features/recipes/recipe-menu"
 import { useDeals } from "@/features/stores/queries"
 import {
   SelectButton,
@@ -285,20 +286,33 @@ function RecipesPage() {
               {t("recipes.count", { count: total })}
             </p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {items.map((recipe) => (
-                <RecipeCard
-                  key={recipe.id}
-                  recipe={recipe}
-                  planned={planned.has(recipe.id)}
-                  onSale={deals.recipes.get(recipe.id)}
-                  select={{
-                    selecting: selection.selecting,
-                    picked: selection.isPicked(recipe.id),
-                    onToggle: () => selection.toggle(recipe.id),
-                    onLongPress: () => selection.start(recipe.id),
-                  }}
-                />
-              ))}
+              {items.map((recipe) => {
+                const card = (
+                  <RecipeCard
+                    key={recipe.id}
+                    recipe={recipe}
+                    planned={planned.has(recipe.id)}
+                    onSale={deals.recipes.get(recipe.id)}
+                    select={{
+                      selecting: selection.selecting,
+                      picked: selection.isPicked(recipe.id),
+                      onToggle: () => selection.toggle(recipe.id),
+                      onLongPress: () => selection.start(recipe.id),
+                    }}
+                  />
+                )
+                // While selecting, a click picks the card; there's no menu.
+                if (selection.selecting) return card
+                return (
+                  <RecipeMenu
+                    key={recipe.id}
+                    recipe={recipe}
+                    onSelect={() => selection.start(recipe.id)}
+                  >
+                    {card}
+                  </RecipeMenu>
+                )
+              })}
             </div>
             {recipes.hasNextPage && (
               <div className="flex justify-center">
