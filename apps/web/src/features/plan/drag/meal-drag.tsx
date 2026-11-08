@@ -4,20 +4,12 @@ import * as React from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { MoveMealsDialog } from "../change-meal-dialog"
-import { formatDay } from "../format"
 import type { Meal, PlanEntry } from "../queries"
 import { usePlanActions } from "../use-plan-actions"
 import { whenValue } from "../when"
+import { OccupiedPrompt } from "./occupied-prompt"
 
 type Destination = { date: string; anyDay: boolean; meal?: Meal }
 const nameOf = (entry: PlanEntry) => entry.recipe?.name ?? entry.note ?? ""
@@ -69,7 +61,7 @@ export function MealDragProvider({
   disabled: boolean
   children: React.ReactNode
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const actions = usePlanActions()
   const [id, setId] = React.useState<string | null>(null)
   const [over, setOver] = React.useState<string | null>(null)
@@ -150,18 +142,28 @@ export function MealDragProvider({
     }
   }
 
+  async function swap(entry: PlanEntry, other: PlanEntry) {
+    if (saving.current || disabled) return
+    saving.current = true
+    setBusy(true)
+    setPending(null)
+    try {
+      await actions.swap(entry, other)
+    } finally {
+      saving.current = false
+      setBusy(false)
+    }
+  }
+
   function drop(entryId: string, to: Destination) {
     const entry = entries.find((entry) => entry.id === entryId)
     if (!entry || sameSlot(entry, to) || saving.current || disabled) return
-    // An occupied slot can hold several dishes. Ask before adding alongside.
+    // An occupied slot can hold several dishes. Ask: swap with one, or alongside.
     if (!to.anyDay && entries.some((entry) => sameSlot(entry, to)))
       setPending({ id: entry.id, to })
     else void move(entry.id, to)
   }
 
-  const destination = pending
-    ? `${formatDay(pending.to.date, i18n.language)} · ${t(`plan.meals.${pending.to.meal!}`)}`
-    : ""
   return (
     <DragContext
       value={{
@@ -244,42 +246,18 @@ export function MealDragProvider({
       <p className="sr-only" role="status">
         {source ? t("plan.drag.pickedUp", { name: nameOf(source) }) : ""}
       </p>
-      <Dialog
-        open={pendingEntry !== undefined}
-        onOpenChange={(open) => {
-          if (!open && !saving.current) setPending(null)
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("plan.drag.occupiedTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("plan.drag.occupied", {
-                name: pendingEntry ? nameOf(pendingEntry) : "",
-                when: destination,
-                meals: occupants.map(nameOf).join(", "),
-              })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => setPending(null)}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              disabled={busy || disabled}
-              onClick={() => {
-                if (pending && pendingEntry) void move(pending.id, pending.to)
-              }}
-            >
-              {t("plan.drag.alongside")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {pending && pendingEntry && (
+        <OccupiedPrompt
+          entry={pendingEntry}
+          occupants={occupants}
+          date={pending.to.date}
+          meal={pending.to.meal!}
+          busy={busy || disabled}
+          onSwap={(other) => void swap(pendingEntry, other)}
+          onAlongside={() => void move(pending.id, pending.to)}
+          onCancel={() => setPending(null)}
+        />
+      )}
     </DragContext>
   )
 }
@@ -315,6 +293,7 @@ export function MealDragHandle({ entry }: { entry: PlanEntry }) {
       {moving && (
         <MoveMealsDialog
           ids={[entry.id]}
+          entry={entry}
           week={drag.week}
           initialWhen={whenValue(entry)}
           initialMeal={entry.meal}
