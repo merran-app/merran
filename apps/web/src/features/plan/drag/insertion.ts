@@ -7,8 +7,11 @@ const BAR = 3
 /** Where the bar goes beyond the first or last dish: half the usual gap. */
 const OUTSIDE = 3
 
-/** A grid, like the pool on wide screens: some dishes share a row. */
-function inRows(boxes: Box[]) {
+/**
+ * A grid, like the pool on wide screens: some dishes share a row. Ask with
+ * every dish's tile, the dragged one included: it may be what makes a row.
+ */
+export function inRows(boxes: Box[]) {
   return boxes.some((box, index) =>
     boxes.some((other, otherIndex) => {
       return otherIndex !== index && other.top === box.top
@@ -21,8 +24,11 @@ function inRows(boxes: Box[]) {
  * index to put the dragged dish at. In a stack it's past a dish below the
  * dish's middle; in a grid, right of its middle within its row.
  */
-export function insertionIndex(boxes: Box[], point: { x: number; y: number }) {
-  const rows = inRows(boxes)
+export function insertionIndex(
+  boxes: Box[],
+  point: { x: number; y: number },
+  rows = inRows(boxes)
+) {
   let index = 0
   for (const box of boxes) {
     const bottom = box.top + box.height
@@ -40,13 +46,17 @@ export function insertionIndex(boxes: Box[], point: { x: number; y: number }) {
 }
 
 /** The bar showing where the dish will go: across a stack, upright in a row. */
-export function insertionBar(boxes: Box[], index: number): Box {
+export function insertionBar(
+  boxes: Box[],
+  index: number,
+  rows = inRows(boxes)
+): Box {
   // The dish the bar goes after, and the one it goes before.
   const after = boxes[index - 1]
   const before = boxes[index]
   const next = before ?? after!
 
-  if (inRows(boxes)) {
+  if (rows) {
     let centre: number
     if (!before) {
       centre = after!.left + after!.width + OUTSIDE

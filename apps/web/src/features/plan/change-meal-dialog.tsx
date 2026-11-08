@@ -23,6 +23,7 @@ import { RecipePicker } from "@/features/recipes/recipe-picker"
 
 import { MealField, WhenField } from "./fields"
 import { OccupiedPrompt } from "./drag/occupied-prompt"
+import { swapTargets } from "./drag/swap-targets"
 import {
   planQuery,
   useHouseholdClock,
@@ -243,16 +244,10 @@ export function MoveMealsDialog({
     occupants: PlanEntry[]
   } | null>(null)
 
-  /** The dishes already in a dated meal, from the plan as saved. */
-  async function occupantsOf(date: string, slot: Meal) {
+  /** The dishes it could swap with in a dated meal, from the plan as saved. */
+  async function occupantsOf(moving: PlanEntry, date: string, slot: Meal) {
     const plan = await queryClient.fetchQuery(planQuery(date, date))
-    return plan.entries.filter(
-      (other) =>
-        !other.anyDay &&
-        other.date === date &&
-        other.meal === slot &&
-        other.id !== entry?.id
-    )
+    return swapTargets(plan.entries, moving, { date, meal: slot })
   }
 
   function finish() {
@@ -281,7 +276,7 @@ export function MoveMealsDialog({
     const slot = (meal || entry?.meal) as Meal | undefined
     if (entry && !to.anyDay && slot) {
       setBusy(true)
-      const occupants = await occupantsOf(to.date, slot).catch(() => [])
+      const occupants = await occupantsOf(entry, to.date, slot).catch(() => [])
       setBusy(false)
       if (occupants.length > 0) {
         setOccupied({ date: to.date, meal: slot, occupants })

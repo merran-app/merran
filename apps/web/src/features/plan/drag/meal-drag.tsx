@@ -9,7 +9,13 @@ import { MoveMealsDialog } from "../change-meal-dialog"
 import type { Meal, PlanEntry } from "../queries"
 import { usePlanActions } from "../use-plan-actions"
 import { whenValue } from "../when"
-import { insertionBar, insertionIndex, reorderFor, type Box } from "./insertion"
+import {
+  inRows,
+  insertionBar,
+  insertionIndex,
+  reorderFor,
+  type Box,
+} from "./insertion"
 import { OccupiedPrompt } from "./occupied-prompt"
 
 type Destination = { date: string; anyDay: boolean; meal?: Meal }
@@ -127,13 +133,16 @@ export function MealDragProvider({
     if (!entry || !to || !sameSlot(entry, to)) return null
     const ids = groupOf(entries, entry).map((other) => other.id)
     if (ids.length < 2) return null
+    const own = boxOf(entryId)
     const boxes = ids
       .filter((other) => other !== entryId)
       .map(boxOf)
       .filter((box): box is Box => box !== null)
-    if (boxes.length !== ids.length - 1) return null
-    const index = insertionIndex(boxes, { x, y })
-    return { ids, index, bar: insertionBar(boxes, index) }
+    if (!own || boxes.length !== ids.length - 1) return null
+    // The dragged tile stays where it was, and may be what makes a row.
+    const rows = inRows([...boxes, own])
+    const index = insertionIndex(boxes, { x, y }, rows)
+    return { ids, index, bar: insertionBar(boxes, index, rows) }
   }
 
   /** What's under the pointer: a meal to drop on, or a place among the dishes. */

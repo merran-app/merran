@@ -45,7 +45,7 @@ Decided and implemented October 18, 2026, released in alpha.4: a move handle on 
 **Swaps and reordering (decided November 8, 2026, for [#45](https://github.com/merran-app/merran/issues/45)).** Design in [superpowers/specs/2026-11-08-swap-and-reorder-meals-design.md](superpowers/specs/2026-11-08-swap-and-reorder-meals-design.md).
 
 - Swaps are dish for dish. Dropping a dish on a dated meal with dishes, or picking one for it from the handle's destination picker, offers **Swap with** each dish there beside **Move alongside**. Only that dish trades places; the meal's others stay. **Move or change** still moves alongside, since it saves other changes with the move.
-- A swapped dish takes the other's exact place on a day. Swapped into the pool, it keeps its own meal type and goes last among that type, as a move there does. Two pool dishes aren't swapped, and bulk **Move** of several selected dishes never swaps.
+- A swapped dish takes the other's exact place on a day. Swapped into the pool, it keeps its own meal type: it takes the pool dish's place when they're the same type, and otherwise goes last among its type, as a move there does. Two pool dishes aren't swapped, and bulk **Move** of several selected dishes never swaps.
 - A meal's dishes reorder by dragging within the meal, with a line showing where the dish goes, or **Move up** / **Move down** in its menus. The pool sorts by meal type, so it reorders within each type.
 - `POST /plan/entries/bulk` takes `swap` (exactly two ids) and `order` (one meal's dishes; others in the meal follow as they were, so a live addition never fails a reorder). Both answer with `before` snapshots, so `/plan/restore` is Undo, and neither changes the list or the pantry.
 

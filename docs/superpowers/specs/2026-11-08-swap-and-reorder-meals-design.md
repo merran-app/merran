@@ -29,7 +29,7 @@ Dragging dish A onto a meal that holds dish B and choosing **Swap with B**:
 - Everything else stays with each dish: recipe, side, servings, note, status, `cookedAt`, `listedAt`, `pantryUsed`, shopping variants and `why`.
 - Nothing is regenerated. Theme nights aren't enforced, as with **Move or change**. The shopping list and the pantry are untouched.
 - Swapping with a dish in the same meal isn't offered: that's reordering.
-- **Pool:** a pool dish dropped on a dated meal can swap. The pool dish takes the dated meal's place, meal type included. The dated dish goes into the pool keeping its own meal type, last among that type, as a move into the pool does. Dropping on the pool itself moves, with no prompt, as today, so two pool dishes are never swapped.
+- **Pool:** a pool dish dropped on a dated meal can swap. The pool dish takes the dated meal's place, meal type included. The dated dish goes into the pool keeping its own meal type: in the pool dish's exact place when they're the same type, otherwise last among its type, as a move into the pool does. Dropping on the pool itself moves, with no prompt, as today, so two pool dishes are never swapped.
 - Skipped and cooked dishes can be swapped; their status goes with them.
 
 ### Reorder
@@ -81,7 +81,7 @@ The dish's **More** menu and its right-click menu get **Move up** and **Move dow
 ### `swap`
 
 - `ids` is exactly two dishes, both on the plan, in different meals, at least one of them on a day. Otherwise the answer is 400, "Swap needs two meals in different places", and nothing changes. Unlike the other actions, a missing id isn't passed over: half a swap means nothing.
-- A dish going to a day takes the other's `date`, `meal`, `anyDay` and `position` exactly. A dish going into the pool keeps its `meal` and goes last among that meal type. Positions are set directly rather than through `change()`, which would append. The same `followPlan` and `followCooking` calls as a move run afterwards, so cooking and shopping provenance behave as they do for a move.
+- A dish going to a day takes the other's `date`, `meal`, `anyDay` and `position` exactly. A dish going into the pool keeps its `meal`: it takes the other's exact place when the meals match, and otherwise goes last among its meal type. Positions are set directly rather than through `change()`, which would append. The same `followPlan` and `followCooking` calls as a move run afterwards, so cooking and shopping provenance behave as they do for a move.
 
 ### `order`
 

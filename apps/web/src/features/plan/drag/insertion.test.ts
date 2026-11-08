@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { insertionBar, insertionIndex, reorderFor } from "./insertion.ts"
+import {
+  inRows,
+  insertionBar,
+  insertionIndex,
+  reorderFor,
+} from "./insertion.ts"
 
 const stacked = [0, 46, 92].map((top) => ({
   left: 0,
@@ -71,4 +76,21 @@ test("the new order, or none when nothing would change", () => {
   assert.deepEqual(reorderFor(["a", "b", "c"], "c", 0), ["c", "a", "b"])
   assert.equal(reorderFor(["a", "b", "c"], "b", 1), null)
   assert.equal(reorderFor(["a"], "a", 0), null)
+})
+
+test("two side by side stay a row when only the other is measured", () => {
+  // The dragged dish's own tile makes the row: the caller says so.
+  const left = [{ left: 0, top: 0, width: 200, height: 40 }]
+  assert.equal(insertionIndex(left, { x: 50, y: 35 }, true), 0)
+  assert.equal(insertionIndex(left, { x: 150, y: 5 }, true), 1)
+  assert.deepEqual(insertionBar(left, 0, true), {
+    left: -4.5,
+    top: 0,
+    width: 3,
+    height: 40,
+  })
+  assert.equal(
+    inRows([...left, { left: 210, top: 0, width: 200, height: 40 }]),
+    true
+  )
 })

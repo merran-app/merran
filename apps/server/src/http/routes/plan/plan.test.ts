@@ -429,6 +429,43 @@ describe("swapping meals", () => {
     expect(await find(pooledDinner.id)).toEqual(pooledDinner)
   })
 
+  test("into the pool, takes the place of a pool meal of the same meal type", async () => {
+    await clearAll()
+    const first = await add({
+      date: week,
+      anyDay: true,
+      meal: "dinner",
+      note: "Pizza",
+    })
+    const pooled = await add({
+      date: week,
+      anyDay: true,
+      meal: "dinner",
+      recipe: "soda-bread",
+    })
+    await add({ date: week, anyDay: true, meal: "dinner", note: "Curry" })
+    const dinner = await add({
+      date: addDays(week, 2),
+      meal: "dinner",
+      recipe: "tomato-soup",
+    })
+
+    const res = await swap([pooled.id, dinner.id])
+    expect(res.status, await res.clone().text()).toBe(200)
+    expect(await find(dinner.id)).toMatchObject({
+      date: week,
+      anyDay: true,
+      meal: "dinner",
+      position: 1,
+    })
+    expect(await find(pooled.id)).toMatchObject({
+      date: addDays(week, 2),
+      anyDay: false,
+      position: 0,
+    })
+    expect(await find(first.id)).toEqual(first)
+  })
+
   test("leaves the list and the pantry alone", async () => {
     await clearAll()
     const soup = await add({
