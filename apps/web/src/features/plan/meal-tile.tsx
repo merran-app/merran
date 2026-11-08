@@ -1,5 +1,7 @@
 import {
+  ArrowDown01Icon,
   ArrowMoveUpRightIcon,
+  ArrowUp01Icon,
   Cancel01Icon,
   CheckmarkSquare02Icon,
   CookingPotIcon,
@@ -37,6 +39,7 @@ import { useLongPress, type Selection } from "@/features/select/use-selection"
 import { cn } from "@/lib/utils"
 
 import { ChangeMealDialog } from "./change-meal-dialog"
+import { reorderFor } from "./drag/insertion"
 import { MealDragHandle } from "./drag/meal-drag"
 import { useHouseholdClock, type PlanEntry } from "./queries"
 import { usePlanActions } from "./use-plan-actions"
@@ -67,9 +70,12 @@ export const servingsOf = (entry: PlanEntry) =>
 export function MealTile({
   entry,
   selection,
+  group = [],
 }: {
   entry: PlanEntry
   selection: Selection
+  /** The dishes it can be moved up and down among, in order, itself included. */
+  group?: string[]
 }) {
   const { t } = useTranslation()
   const whyText = useWhyText()
@@ -129,7 +135,11 @@ export function MealTile({
   }
 
   return (
-    <MealContextMenu entry={entry} onSelect={() => selection.start(entry.id)}>
+    <MealContextMenu
+      entry={entry}
+      group={group}
+      onSelect={() => selection.start(entry.id)}
+    >
       <li
         data-meal-dish={entry.id}
         className="flex min-h-17 items-center gap-3 rounded-2xl bg-muted/50 p-2.5"
@@ -223,7 +233,7 @@ export function MealTile({
             </span>
           )}
         </div>
-        <MealMenu entry={entry} name={name} />
+        <MealMenu entry={entry} name={name} group={group} />
       </li>
     </MealContextMenu>
   )
@@ -234,11 +244,14 @@ export function MealMenu({
   entry,
   name,
   large = false,
+  group = [],
 }: {
   entry: PlanEntry
   name: string
   /** As What's next shows it, beside its big buttons. */
   large?: boolean
+  /** The dishes it can be moved up and down among. */
+  group?: string[]
 }) {
   const { t } = useTranslation()
   const [changing, setChanging] = React.useState(false)
@@ -262,6 +275,7 @@ export function MealMenu({
           <MealMenuItems
             entry={entry}
             large={large}
+            group={group}
             onChange={() => setChanging(true)}
           />
         </DropdownMenuContent>
@@ -283,10 +297,12 @@ export function MealMenu({
  */
 function MealContextMenu({
   entry,
+  group,
   onSelect,
   children,
 }: {
   entry: PlanEntry
+  group: string[]
   /** Starts selecting, with this meal picked. */
   onSelect: () => void
   children: React.ReactElement
@@ -299,7 +315,11 @@ function MealContextMenu({
       <ContextMenu>
         <ContextMenuTrigger render={children} />
         <ContextMenuContent className="w-52">
-          <MealMenuItems entry={entry} onChange={() => setChanging(true)} />
+          <MealMenuItems
+            entry={entry}
+            group={group}
+            onChange={() => setChanging(true)}
+          />
           <ContextMenuSeparator />
           <ContextMenuItem onClick={onSelect}>
             <HugeiconsIcon icon={CheckmarkSquare02Icon} strokeWidth={2} />
@@ -325,16 +345,27 @@ function MealContextMenu({
 function MealMenuItems({
   entry,
   large = false,
+  group,
   onChange,
 }: {
   entry: PlanEntry
   large?: boolean
+  group: string[]
   /** Opens Move or change. */
   onChange: () => void
 }) {
   const { t } = useTranslation()
   const clock = useHouseholdClock()
   const actions = usePlanActions()
+  const place = group.indexOf(entry.id)
+  const canMoveUp = group.length > 1 && place > 0
+  const canMoveDown = group.length > 1 && place >= 0 && place < group.length - 1
+
+  /** One place up or down among its meal's dishes. */
+  function moveBy(step: -1 | 1) {
+    const order = reorderFor(group, entry.id, place + step)
+    if (order) void actions.reorder(entry, order, step < 0 ? "up" : "down")
+  }
 
   function tonight() {
     void actions.change(entry, {
@@ -410,6 +441,18 @@ function MealMenuItems({
         <HugeiconsIcon icon={ArrowMoveUpRightIcon} strokeWidth={2} />
         {t("plan.change")}
       </DropdownMenuItem>
+      {canMoveUp && (
+        <DropdownMenuItem onClick={() => moveBy(-1)}>
+          <HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2} />
+          {t("plan.moveUp")}
+        </DropdownMenuItem>
+      )}
+      {canMoveDown && (
+        <DropdownMenuItem onClick={() => moveBy(1)}>
+          <HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} />
+          {t("plan.moveDown")}
+        </DropdownMenuItem>
+      )}
       <DropdownMenuSeparator />
       <DropdownMenuItem
         variant="destructive"
