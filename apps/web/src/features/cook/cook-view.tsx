@@ -60,7 +60,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { CookNoteDialog, LastCookNote } from "@/features/recipes/cook-notes"
+import { LastCookNote } from "@/features/recipes/cook-notes"
 import { formatServings } from "@/features/recipes/format"
 import {
   convertible,
@@ -92,6 +92,7 @@ import {
   useTextSize,
   type TextSize,
 } from "./progress"
+import { AfterCookingDialog, type AfterCooking } from "./after-cooking"
 import { NewTimerButton, startTimer, TimerChips, type Cooking } from "./timers"
 import { formatDuration, stepWords } from "./durations"
 import { handsFreeSupported, useHandsFree } from "./hands-free"
@@ -185,7 +186,7 @@ export function CookView({
   const [textSize, setTextSize] = useTextSize()
   useWakeLock()
   const [finishing, setFinishing] = React.useState(false)
-  const [asking, setAsking] = React.useState(false)
+  const [asking, setAsking] = React.useState<AfterCooking | null>(null)
   const swipe = React.useRef<{ x: number; y: number } | null>(null)
 
   const onPrep = hasPrep && page === 0
@@ -366,8 +367,9 @@ export function CookView({
       ])
       toast.success(t("cook.made"))
       celebrate()
-      // Then "How did it go?", and back where cooking started.
-      setAsking(true)
+      // Then "Ran out of anything?" and "How did it go?", and back where
+      // cooking started.
+      setAsking({ meal: mealId ?? null, recipe })
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       toast.error(error.message)
@@ -1042,12 +1044,11 @@ export function CookView({
           if (!open) setSwapping(null)
         }}
       />
-      <CookNoteDialog
-        recipe={recipe}
-        open={asking}
+      <AfterCookingDialog
+        asking={asking}
         onDone={() => {
-          setAsking(false)
-          leave()
+          setAsking(null)
+          void leave()
         }}
       />
     </div>

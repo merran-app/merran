@@ -1,6 +1,6 @@
 # A pantry that keeps itself
 
-November 5, 2026. Planned with the user. Parts 1 and 2 were built on November 6, 2026, and go out in alpha.8, ahead of the rest (decided November 7, 2026). Parts 3 to 5 are still planned. The pantry works, but keeping it right is work: pressing **Put away**, fixing where things went, and noticing what ran out. When it drifts from what's really at home, the list leaves out things you need, which is worse than having no pantry at all. This plan makes the pantry stay roughly right using only moments when you're already in the app: finishing the shopping and finishing cooking.
+November 5, 2026. Planned with the user. Parts 1 and 2 were built on November 6, 2026, and go out in alpha.8, ahead of the rest (decided November 7, 2026). Part 3 was built on November 7, 2026; parts 4 and 5 are still planned. The pantry works, but keeping it right is work: pressing **Put away**, fixing where things went, and noticing what ran out. When it drifts from what's really at home, the list leaves out things you need, which is worse than having no pantry at all. This plan makes the pantry stay roughly right using only moments when you're already in the app: finishing the shopping and finishing cooking.
 
 Five parts, built in this order:
 
@@ -83,7 +83,7 @@ When cooking is done, the drawer has two steps.
 **Next** saves straight away, so skipping the second step loses nothing. Each ticked food:
 
 - is used up at home: every pantry item of it, apart from the freezer, unless the freezer is where cooking took it from. Running out of chicken mid-cook doesn't mean the frozen pack is gone.
-- goes on the list, with the switch on, as a plain line for no meal. Staples too, which makes this the way a staple gets on the list without you tapping it on the pantry page.
+- goes on the list, with the switch on, as a plain line for no meal, unless an unchecked line of it is there already. Staples too, which makes this the way a staple gets on the list without you tapping it on the pantry page.
 
 The message says what was used up and put on the list, with **Undo**, which puts the pantry back and takes those lines off the list. Marking the meal not cooked later doesn't bring them back: what ran out really ran out.
 
@@ -126,7 +126,7 @@ Anyone in the household can answer, and the meal leaves the card on every phone 
 - The existing list item, bulk and mark-bought routes put away when they check. Their answers say what went into the pantry, so the web app can refresh both.
 - `GET /api/list/put-away`: what checked rows put away that hasn't been looked over, for one list or all. `POST /api/list/put-away/looked-over` marks them.
 - `POST /api/pantry/items/{itemId}/split`: **Freeze some** (how much, and where it goes).
-- `POST /api/pantry/ran-out`: the foods, the meal, and whether to list them. It answers with what the pantry and list were, for Undo through the existing restore routes.
+- `GET /api/pantry/ran-out?meal=`: the chips, worked out on the server so they're the foods the pantry and the list know. `POST /api/pantry/ran-out`: the foods, the meal, and whether to list them. It answers with what the pantry was and the lines it added, for Undo through the existing restore routes.
 - `POST /api/recipes/{recipe}/made` takes the servings cooked.
 - Today's data includes the meals to ask about. Answering uses the plan routes that are already there.
 - `PATCH /api/pantry/items/{itemId}` and the pantry bulk route remember a whole move's place.
@@ -183,3 +183,13 @@ Decided while building, November 6, 2026:
 | Sending a checked row's same name again | Keeps the row's food | A row from the plan can be a food someone chose for the recipe's line, rather than its name's, and unchecking finds its purchase by that food |
 | What teaches a place | Only a real move | Editing an item without moving it says nothing about where the food goes |
 | Shopping mode's button | Keeps **Finish trip** | It was already there, and does what plain **Finish** was meant to |
+
+Decided while building parts 3 to 5, November 7, 2026:
+
+| Decision | Choice | Why |
+|---|---|---|
+| Ran out of something already on the list | No second line: an unchecked line of that food counts | Two lines for the same salt would be noise |
+| Pool meals on **Did you make these?** | Asked about for six days after their week ends. Their food still stops being set aside when the week ends | A pool meal is dated to its week's first day, so the pantry frees its food as the week ends; changing that would change the list's maths too |
+| When a past meal was cooked | A meal on an earlier day counts as cooked on its own day, at midday in the household's time zone, wherever it's marked | **Made it** on Saturday for Tuesday's meal shouldn't say the recipe was last made Saturday |
+| **I made this** with today's meal of it already cooked | That meal counts: no second meal, and nothing more taken from the pantry | A second press is far more often a mistake than a second batch |
+| Who else uses the made route | API keys only: the assistant and MCP have no tool for it | Corrects part 4, which said they did |

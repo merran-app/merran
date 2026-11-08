@@ -2,6 +2,7 @@ import { Outlet } from "@tanstack/react-router"
 
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AssistantProvider } from "@/features/assistant/assistant-context"
+import { AfterCookingProvider } from "@/features/cook/after-cooking-context"
 import { AssistantPanel } from "@/features/assistant/assistant-panel"
 import { InstallGuide } from "@/features/install/install-ui"
 import { LiveUpdates } from "@/features/live/live-updates"
@@ -19,26 +20,28 @@ export function AppShell() {
     <OnboardingProvider>
       <TourProvider>
         <AssistantProvider>
-          <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset>
-              <TopBar />
-              {/* Bottom padding keeps content clear of the phone's tab bar. */}
-              <main
-                data-tour="page"
-                className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 md:px-8 md:pb-12"
-              >
-                <AutomaticTour />
-                <LiveUpdates>
-                  <Outlet />
-                </LiveUpdates>
-              </main>
-            </SidebarInset>
-            <BottomNav />
-            <InstallGuide />
-            <TelemetryQuestion />
-            <AssistantPanel />
-          </SidebarProvider>
+          <AfterCookingProvider>
+            <SidebarProvider>
+              <AppSidebar />
+              <SidebarInset>
+                <TopBar />
+                {/* Bottom padding keeps content clear of the phone's tab bar. */}
+                <main
+                  data-tour="page"
+                  className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 md:px-8 md:pb-12"
+                >
+                  <AutomaticTour />
+                  <LiveUpdates>
+                    <Outlet />
+                  </LiveUpdates>
+                </main>
+              </SidebarInset>
+              <BottomNav />
+              <InstallGuide />
+              <TelemetryQuestion />
+              <AssistantPanel />
+            </SidebarProvider>
+          </AfterCookingProvider>
         </AssistantProvider>
       </TourProvider>
     </OnboardingProvider>

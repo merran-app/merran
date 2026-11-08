@@ -3,6 +3,7 @@ import { weekStartOf } from "@merran/shared"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+import { useAfterCooking } from "@/features/cook/after-cooking-context"
 import { useRefreshRecipes } from "@/features/recipes/queries"
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
 import { celebrate } from "@/lib/celebrations/celebrate"
@@ -28,6 +29,7 @@ const UNDO_MS = 10_000
  */
 export function usePlanActions() {
   const { t } = useTranslation()
+  const afterCooking = useAfterCooking()
   const refreshRecipes = useRefreshRecipes()
   const queryClient = useQueryClient()
   const { weekStartsOn } = useHouseholdClock()
@@ -95,6 +97,15 @@ export function usePlanActions() {
   const nameOf = (entry: Pick<PlanEntry, "recipe" | "note">) =>
     entry.recipe?.name ?? entry.note ?? ""
 
+  /** A recipe meal just cooked: the message offers "How did it go?". */
+  const offerAfterCooking = (entry: PlanEntry) => {
+    if (!entry.recipe) return
+    afterCooking.offer(t("cook.cookedToast", { name: entry.recipe.name }), {
+      meal: entry.id,
+      recipe: entry.recipe,
+    })
+  }
+
   return {
     add: (body: NewEntry) =>
       run(() => unwrap(api.POST("/api/plan/entries", { body }))),
@@ -108,8 +119,10 @@ export function usePlanActions() {
           })
         )
       )
-      if (done && changes.status === "cooked" && entry.status !== "cooked")
+      if (done && changes.status === "cooked" && entry.status !== "cooked") {
         celebrate()
+        offerAfterCooking(entry)
+      }
       return done
     },
 

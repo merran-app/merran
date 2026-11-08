@@ -58,7 +58,7 @@ export function CookNoteDialog({
   )
 }
 
-function CookNoteForm({
+export function CookNoteForm({
   recipe,
   onDone,
 }: {

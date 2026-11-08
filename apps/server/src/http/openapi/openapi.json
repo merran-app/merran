@@ -7270,6 +7270,128 @@
           "storedIn": "freezer"
         }
       },
+      "RanOutFoods": {
+        "type": "object",
+        "properties": {
+          "foods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "food": {
+                  "type": "string",
+                  "description": "The food, as the pantry and the list know it."
+                },
+                "name": {
+                  "type": "string"
+                },
+                "staple": {
+                  "type": "boolean",
+                  "description": "One of the household's always-on-hand foods."
+                }
+              },
+              "required": [
+                "food",
+                "name",
+                "staple"
+              ]
+            },
+            "description": "Each food once: the recipe's in order, then its side's. Water is left out."
+          }
+        },
+        "required": [
+          "foods"
+        ],
+        "example": {
+          "foods": [
+            {
+              "food": "chicken thigh",
+              "name": "chicken thighs",
+              "staple": false
+            },
+            {
+              "food": "salt",
+              "name": "salt",
+              "staple": true
+            }
+          ]
+        }
+      },
+      "RanOutResult": {
+        "type": "object",
+        "properties": {
+          "usedUp": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PantrySnapshot"
+            },
+            "description": "What was used up, as it was: for Undo with /pantry/restore."
+          },
+          "listed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListItem"
+            },
+            "description": "What went on the list: for Undo, their ids go in /list/restore's `remove`."
+          }
+        },
+        "required": [
+          "usedUp",
+          "listed"
+        ],
+        "example": {
+          "usedUp": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+              "name": "chicken thighs",
+              "foodKey": "chicken thigh",
+              "quantity": 1,
+              "unit": "pound",
+              "amountText": null,
+              "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+              "storedIn": "fridge",
+              "useBy": "2026-10-18",
+              "forMeals": null,
+              "createdAt": "2026-10-15T18:30:00.000Z"
+            }
+          ],
+          "listed": []
+        }
+      },
+      "RanOut": {
+        "type": "object",
+        "properties": {
+          "meal": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The cooked meal."
+          },
+          "foods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "description": "Foods that ran out, from what could have. Others are passed over."
+          },
+          "list": {
+            "type": "boolean",
+            "description": "Put them on the list too, as plain lines for no meal, unless they're on it already."
+          }
+        },
+        "required": [
+          "meal",
+          "foods",
+          "list"
+        ],
+        "example": {
+          "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+          "foods": [
+            "chicken thigh"
+          ],
+          "list": true
+        }
+      },
       "ReceiptList": {
         "type": "object",
         "properties": {
@@ -23366,6 +23488,156 @@
           },
           "404": {
             "description": "Not in the pantry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pantry/ran-out": {
+      "get": {
+        "operationId": "getRanOutFoods",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "What could have run out cooking a meal",
+        "description": "The foods a meal's recipe and side take, each once, for asking what ran out: always-on-hand foods like salt among them, water left out. A note meal has none. With an API key, it needs the `pantry: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "pantry:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The cooked meal.",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000001b"
+            },
+            "required": true,
+            "description": "The cooked meal.",
+            "name": "meal",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What could have run out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RanOutFoods"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such meal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "ranOut",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "Say what ran out cooking a meal",
+        "description": "Everything of each food at home is used up, except what's in the freezer, unless cooking the meal took that food from the freezer. With `list`, each goes on the list as a plain line for no meal, unless it's on already: always-on-hand foods too. What the meal took when it was cooked stays as it was, so marking it not cooked later doesn't bring back what ran out. It takes the pantry permission, though it adds to the list. With an API key, it needs the `pantry: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "pantry:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RanOut"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Used up, and listed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RanOutResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such meal.",
             "content": {
               "application/json": {
                 "schema": {

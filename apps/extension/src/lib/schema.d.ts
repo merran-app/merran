@@ -1793,6 +1793,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/pantry/ran-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What could have run out cooking a meal
+         * @description The foods a meal's recipe and side take, each once, for asking what ran out: always-on-hand foods like salt among them, water left out. A note meal has none. With an API key, it needs the `pantry: read` permission.
+         */
+        get: operations["getRanOutFoods"];
+        put?: never;
+        /**
+         * Say what ran out cooking a meal
+         * @description Everything of each food at home is used up, except what's in the freezer, unless cooking the meal took that food from the freezer. With `list`, each goes on the list as a plain line for no meal, unless it's on already: always-on-hand foods too. What the meal took when it was cooked stays as it was, so marking it not cooked later doesn't bring back what ran out. It takes the pantry permission, though it adds to the list. With an API key, it needs the `pantry: write` permission.
+         */
+        post: operations["ranOut"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pantry/receipts": {
         parameters: {
             query?: never;
@@ -8298,6 +8322,78 @@ export interface components {
             /** @description How much to move, as typed: "1 lb". It has to be less than what's there. */
             amount: string;
             storedIn: components["schemas"]["StoredIn"];
+        };
+        /**
+         * @example {
+         *       "foods": [
+         *         {
+         *           "food": "chicken thigh",
+         *           "name": "chicken thighs",
+         *           "staple": false
+         *         },
+         *         {
+         *           "food": "salt",
+         *           "name": "salt",
+         *           "staple": true
+         *         }
+         *       ]
+         *     }
+         */
+        RanOutFoods: {
+            /** @description Each food once: the recipe's in order, then its side's. Water is left out. */
+            foods: {
+                /** @description The food, as the pantry and the list know it. */
+                food: string;
+                name: string;
+                /** @description One of the household's always-on-hand foods. */
+                staple: boolean;
+            }[];
+        };
+        /**
+         * @example {
+         *       "usedUp": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *           "name": "chicken thighs",
+         *           "foodKey": "chicken thigh",
+         *           "quantity": 1,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "storedIn": "fridge",
+         *           "useBy": "2026-10-18",
+         *           "forMeals": null,
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ],
+         *       "listed": []
+         *     }
+         */
+        RanOutResult: {
+            /** @description What was used up, as it was: for Undo with /pantry/restore. */
+            usedUp: components["schemas"]["PantrySnapshot"][];
+            /** @description What went on the list: for Undo, their ids go in /list/restore's `remove`. */
+            listed: components["schemas"]["ListItem"][];
+        };
+        /**
+         * @example {
+         *       "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *       "foods": [
+         *         "chicken thigh"
+         *       ],
+         *       "list": true
+         *     }
+         */
+        RanOut: {
+            /**
+             * Format: uuid
+             * @description The cooked meal.
+             */
+            meal: string;
+            /** @description Foods that ran out, from what could have. Others are passed over. */
+            foods: string[];
+            /** @description Put them on the list too, as plain lines for no meal, unless they're on it already. */
+            list: boolean;
         };
         /**
          * @example {
@@ -17892,6 +17988,107 @@ export interface operations {
                 };
             };
             /** @description Not in the pantry. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getRanOutFoods: {
+        parameters: {
+            query: {
+                /** @description The cooked meal. */
+                meal: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What could have run out. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RanOutFoods"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such meal. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    ranOut: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RanOut"];
+            };
+        };
+        responses: {
+            /** @description Used up, and listed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RanOutResult"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such meal. */
             404: {
                 headers: {
                     [name: string]: unknown;

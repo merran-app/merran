@@ -1861,6 +1861,20 @@
     "resumed": "Picked up where you left off.",
     "startOver": "Start over",
     "made": "Nice work. Marked as made today.",
+    "ranOut": {
+      "title": "Ran out of anything?",
+      "description": "Tap what's run out. It comes out of the pantry, apart from anything in the freezer that cooking didn't use.",
+      "foods": "What {{name}} used",
+      "toList": "Put them on the list",
+      "next": "Next",
+      "nothing": "Nothing ran out",
+      "usedUp": "Noted: {{foods}} ran out.",
+      "usedUpListed": "Noted: {{foods}} ran out, and went on the list.",
+      "undo": "Undo",
+      "undone": "Put back as it was."
+    },
+    "cookedToast": "{{name}} is cooked.",
+    "howDidItGo": "How did it go?",
     "textSize": {
       "label": "Text size",
       "standard": "Standard",
