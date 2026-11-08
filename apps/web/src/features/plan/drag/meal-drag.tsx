@@ -4,20 +4,19 @@ import * as React from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { MoveMealsDialog } from "../change-meal-dialog"
-import { formatDay } from "../format"
 import type { Meal, PlanEntry } from "../queries"
 import { usePlanActions } from "../use-plan-actions"
 import { whenValue } from "../when"
+import {
+  inRows,
+  insertionBar,
+  insertionIndex,
+  reorderFor,
+  type Box,
+} from "./insertion"
+import { OccupiedPrompt } from "./occupied-prompt"
 
 type Destination = { date: string; anyDay: boolean; meal?: Meal }
 const nameOf = (entry: PlanEntry) => entry.recipe?.name ?? entry.note ?? ""
@@ -26,6 +25,28 @@ const sameSlot = (entry: PlanEntry, to: Destination) =>
   entry.anyDay === to.anyDay &&
   (to.meal === undefined || entry.meal === to.meal)
 const destinationKey = (to: Destination) => JSON.stringify(to)
+
+/** The dishes a dish can be reordered among: its own meal, or its meal type in the pool. */
+const groupOf = (entries: PlanEntry[], entry: PlanEntry) =>
+  entries
+    .filter(
+      (other) =>
+        other.date === entry.date &&
+        other.anyDay === entry.anyDay &&
+        other.meal === entry.meal
+    )
+    .sort((a, b) => a.position - b.position)
+
+/** Where a dish's tile is on screen, if it's showing. */
+function boxOf(id: string): Box | null {
+  const tile = document.querySelector(`[data-meal-dish="${CSS.escape(id)}"]`)
+  if (!tile) return null
+  const { left, top, width, height } = tile.getBoundingClientRect()
+  return { left, top, width, height }
+}
+
+/** A dish dragged within its own group: its new order, and the bar to show. */
+type Insertion = { ids: string[]; index: number; bar: Box }
 
 // Only zones rendered by this planner are destinations. Pointer capture keeps
 // dragging on the handle while hit testing finds the slot beneath it.
@@ -69,11 +90,12 @@ export function MealDragProvider({
   disabled: boolean
   children: React.ReactNode
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const actions = usePlanActions()
   const [id, setId] = React.useState<string | null>(null)
   const [over, setOver] = React.useState<string | null>(null)
   const [point, setPoint] = React.useState({ x: 0, y: 0 })
+  const [insertion, setInsertion] = React.useState<Insertion | null>(null)
   const pointer = React.useRef<PointerDrag | null>(null)
   const suppressClick = React.useRef(false)
   const saving = React.useRef(false)
@@ -94,7 +116,44 @@ export function MealDragProvider({
     pointer.current = null
     setId(null)
     setOver(null)
+    setInsertion(null)
   }, [])
+
+  /**
+   * Over its own meal, or its own meal type in the pool, a dish goes
+   * between the others: where, from the pointer and their tiles.
+   */
+  function insertionAt(
+    entryId: string,
+    to: Destination | null,
+    x: number,
+    y: number
+  ): Insertion | null {
+    const entry = entries.find((other) => other.id === entryId)
+    if (!entry || !to || !sameSlot(entry, to)) return null
+    const ids = groupOf(entries, entry).map((other) => other.id)
+    if (ids.length < 2) return null
+    const own = boxOf(entryId)
+    const boxes = ids
+      .filter((other) => other !== entryId)
+      .map(boxOf)
+      .filter((box): box is Box => box !== null)
+    if (!own || boxes.length !== ids.length - 1) return null
+    // The dragged tile stays where it was, and may be what makes a row.
+    const rows = inRows([...boxes, own])
+    const index = insertionIndex(boxes, { x, y }, rows)
+    return { ids, index, bar: insertionBar(boxes, index, rows) }
+  }
+
+  /** What's under the pointer: a meal to drop on, or a place among the dishes. */
+  const aim = React.useCallback(
+    (entryId: string, x: number, y: number) => {
+      const to = destinationAt(x, y)
+      setOver(to ? destinationKey(to) : null)
+      setInsertion(insertionAt(entryId, to, x, y))
+    },
+    [entries]
+  )
 
   // Native scrolling still works everywhere except the small drag handle.
   // Near a viewport edge, scroll continuously so distant days can be reached.
@@ -116,8 +175,7 @@ export function MealDragProvider({
             : 0
       if (speed) {
         window.scrollBy(0, speed)
-        const to = destinationAt(current.x, current.y)
-        setOver(to ? destinationKey(to) : null)
+        aim(current.id, current.x, current.y)
       }
       frame = requestAnimationFrame(scroll)
     }
@@ -135,7 +193,7 @@ export function MealDragProvider({
       window.removeEventListener("keydown", onKey)
       window.removeEventListener("blur", cancel)
     }
-  }, [id, disabled, cancel])
+  }, [id, disabled, cancel, aim])
 
   async function move(entryId: string, to: Destination) {
     if (saving.current || disabled) return
@@ -150,18 +208,48 @@ export function MealDragProvider({
     }
   }
 
+  async function swap(entry: PlanEntry, other: PlanEntry) {
+    if (saving.current || disabled) return
+    saving.current = true
+    setBusy(true)
+    setPending(null)
+    try {
+      await actions.swap(entry, other)
+    } finally {
+      saving.current = false
+      setBusy(false)
+    }
+  }
+
+  async function reorder(entry: PlanEntry, ids: string[]) {
+    if (saving.current || disabled) return
+    saving.current = true
+    setBusy(true)
+    try {
+      await actions.reorder(entry, ids, "drag")
+    } finally {
+      saving.current = false
+      setBusy(false)
+    }
+  }
+
+  /** Dropped among its own meal's dishes: a new order, unless it's the same. */
+  function dropBetween(entryId: string, placed: Insertion) {
+    const entry = entries.find((other) => other.id === entryId)
+    const order = reorderFor(placed.ids, entryId, placed.index)
+    if (!entry || !order || saving.current || disabled) return
+    void reorder(entry, order)
+  }
+
   function drop(entryId: string, to: Destination) {
     const entry = entries.find((entry) => entry.id === entryId)
     if (!entry || sameSlot(entry, to) || saving.current || disabled) return
-    // An occupied slot can hold several dishes. Ask before adding alongside.
+    // An occupied slot can hold several dishes. Ask: swap with one, or alongside.
     if (!to.anyDay && entries.some((entry) => sameSlot(entry, to)))
       setPending({ id: entry.id, to })
     else void move(entry.id, to)
   }
 
-  const destination = pending
-    ? `${formatDay(pending.to.date, i18n.language)} · ${t(`plan.meals.${pending.to.meal!}`)}`
-    : ""
   return (
     <DragContext
       value={{
@@ -205,8 +293,7 @@ export function MealDragProvider({
           suppressClick.current = true
           setId(current.id)
           setPoint({ x: current.x, y: current.y })
-          const to = destinationAt(current.x, current.y)
-          setOver(to ? destinationKey(to) : null)
+          aim(current.id, current.x, current.y)
         },
         finish: (event) => {
           const current = pointer.current
@@ -214,8 +301,15 @@ export function MealDragProvider({
           const to = current.active
             ? destinationAt(event.clientX, event.clientY)
             : null
+          const placed = insertionAt(
+            current.id,
+            to,
+            event.clientX,
+            event.clientY
+          )
           cancel()
-          if (to) drop(current.id, to)
+          if (placed) dropBetween(current.id, placed)
+          else if (to) drop(current.id, to)
         },
         cancel,
         preventClick: () => {
@@ -241,46 +335,45 @@ export function MealDragProvider({
           {nameOf(source)}
         </div>
       )}
+      {source && !disabled && insertion && (
+        <InsertionBar bar={insertion.bar} label={t("plan.drag.dropBetween")} />
+      )}
       <p className="sr-only" role="status">
         {source ? t("plan.drag.pickedUp", { name: nameOf(source) }) : ""}
       </p>
-      <Dialog
-        open={pendingEntry !== undefined}
-        onOpenChange={(open) => {
-          if (!open && !saving.current) setPending(null)
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("plan.drag.occupiedTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("plan.drag.occupied", {
-                name: pendingEntry ? nameOf(pendingEntry) : "",
-                when: destination,
-                meals: occupants.map(nameOf).join(", "),
-              })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => setPending(null)}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              disabled={busy || disabled}
-              onClick={() => {
-                if (pending && pendingEntry) void move(pending.id, pending.to)
-              }}
-            >
-              {t("plan.drag.alongside")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {pending && pendingEntry && (
+        <OccupiedPrompt
+          entry={pendingEntry}
+          occupants={occupants}
+          date={pending.to.date}
+          meal={pending.to.meal!}
+          busy={busy || disabled}
+          onSwap={(other) => void swap(pendingEntry, other)}
+          onAlongside={() => void move(pending.id, pending.to)}
+          onCancel={() => setPending(null)}
+        />
+      )}
     </DragContext>
+  )
+}
+
+/** Where a dragged dish will go among its meal's dishes, drawn over them. */
+function InsertionBar({ bar, label }: { bar: Box; label: string }) {
+  return (
+    <>
+      <div
+        aria-hidden
+        className="pointer-events-none fixed z-40 rounded-full bg-primary"
+        style={bar}
+      />
+      <p
+        aria-hidden
+        className="pointer-events-none fixed z-40 rounded-lg bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
+        style={{ left: bar.left, top: bar.top + bar.height + 4 }}
+      >
+        {label}
+      </p>
+    </>
   )
 }
 
@@ -315,6 +408,7 @@ export function MealDragHandle({ entry }: { entry: PlanEntry }) {
       {moving && (
         <MoveMealsDialog
           ids={[entry.id]}
+          entry={entry}
           week={drag.week}
           initialWhen={whenValue(entry)}
           initialMeal={entry.meal}

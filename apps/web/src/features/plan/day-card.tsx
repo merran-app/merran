@@ -180,6 +180,7 @@ export function DayCard({
                     key={entry.id}
                     entry={entry}
                     selection={selection}
+                    group={byMeal.get(meal)!.map((dish) => dish.id)}
                   />
                 ))}
               </ul>
@@ -234,6 +235,15 @@ export function PoolCard({
 }) {
   const { t } = useTranslation()
   const id = React.useId()
+
+  /** The pool's dishes of a meal type: a dish moves up and down among them. */
+  function poolGroup(entry: PlanEntry) {
+    return entries
+      .filter((dish) => dish.meal === entry.meal)
+      .sort((a, b) => a.position - b.position)
+      .map((dish) => dish.id)
+  }
+
   return (
     <section aria-labelledby={id} className={FRAME}>
       <header className="grid gap-0.5">
@@ -246,7 +256,12 @@ export function PoolCard({
       <MealDropZone to={{ date: week, anyDay: true }}>
         <ul className="grid min-w-0 grid-cols-1 gap-1.5 @2xl:grid-cols-2 @2xl:gap-3 @4xl:grid-cols-3">
           {entries.map((entry) => (
-            <MealTile key={entry.id} entry={entry} selection={selection} />
+            <MealTile
+              key={entry.id}
+              entry={entry}
+              selection={selection}
+              group={poolGroup(entry)}
+            />
           ))}
           {!selection.selecting && (
             <li>

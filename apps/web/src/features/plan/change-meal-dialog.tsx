@@ -1,4 +1,5 @@
 import { weekStartOf } from "@merran/shared"
+import { useQueryClient } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
@@ -21,7 +22,14 @@ import { Spinner } from "@/components/ui/spinner"
 import { RecipePicker } from "@/features/recipes/recipe-picker"
 
 import { MealField, WhenField } from "./fields"
-import { useHouseholdClock, type Meal, type PlanEntry } from "./queries"
+import { OccupiedPrompt } from "./drag/occupied-prompt"
+import { swapTargets } from "./drag/swap-targets"
+import {
+  planQuery,
+  useHouseholdClock,
+  type Meal,
+  type PlanEntry,
+} from "./queries"
 import { usePlanActions } from "./use-plan-actions"
 import { parseWhen, whenValue } from "./when"
 
@@ -200,9 +208,13 @@ export function ChangeMealDialog({
   )
 }
 
-/** Moving several meals: to a day or a week's pool, and a meal or each its own. */
+/**
+ * Moving meals to a day or the pool. Moving one dish to a meal that already
+ * has dishes asks first: swap it with one of them, or put it alongside.
+ */
 export function MoveMealsDialog({
   ids,
+  entry,
   week,
   open,
   onOpenChange,
@@ -211,6 +223,8 @@ export function MoveMealsDialog({
   initialMeal,
 }: {
   ids: string[]
+  /** The one dish being moved, so it can be swapped. */
+  entry?: PlanEntry
   week: string
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -220,11 +234,29 @@ export function MoveMealsDialog({
 }) {
   const { t } = useTranslation()
   const actions = usePlanActions()
+  const queryClient = useQueryClient()
   const [when, setWhen] = React.useState(initialWhen ?? `any:${week}`)
   const [meal, setMeal] = React.useState<string>(initialMeal ?? "")
   const [busy, setBusy] = React.useState(false)
+  const [occupied, setOccupied] = React.useState<{
+    date: string
+    meal: Meal
+    occupants: PlanEntry[]
+  } | null>(null)
 
-  async function move() {
+  /** The dishes it could swap with in a dated meal, from the plan as saved. */
+  async function occupantsOf(moving: PlanEntry, date: string, slot: Meal) {
+    const plan = await queryClient.fetchQuery(planQuery(date, date))
+    return swapTargets(plan.entries, moving, { date, meal: slot })
+  }
+
+  function finish() {
+    setOccupied(null)
+    onOpenChange(false)
+    onMoved()
+  }
+
+  async function moveAlongside() {
     const to = parseWhen(when)
     setBusy(true)
     const saving = actions.bulk(ids, {
@@ -234,10 +266,48 @@ export function MoveMealsDialog({
       ...(meal ? { meal: meal as Meal } : {}),
     })
     // The cache moves the meals immediately; a failed save restores them.
-    onOpenChange(false)
-    onMoved()
+    finish()
     await saving
     setBusy(false)
+  }
+
+  async function move() {
+    const to = parseWhen(when)
+    const slot = (meal || entry?.meal) as Meal | undefined
+    if (entry && !to.anyDay && slot) {
+      setBusy(true)
+      const occupants = await occupantsOf(entry, to.date, slot).catch(() => [])
+      setBusy(false)
+      if (occupants.length > 0) {
+        setOccupied({ date: to.date, meal: slot, occupants })
+        return
+      }
+    }
+    await moveAlongside()
+  }
+
+  async function swap(other: PlanEntry) {
+    if (!entry) return
+    setBusy(true)
+    const saving = actions.swap(entry, other)
+    finish()
+    await saving
+    setBusy(false)
+  }
+
+  if (occupied && entry) {
+    return (
+      <OccupiedPrompt
+        entry={entry}
+        occupants={occupied.occupants}
+        date={occupied.date}
+        meal={occupied.meal}
+        busy={busy}
+        onSwap={(other) => void swap(other)}
+        onAlongside={() => void moveAlongside()}
+        onCancel={() => setOccupied(null)}
+      />
+    )
   }
 
   return (
