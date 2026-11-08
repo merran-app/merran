@@ -796,22 +796,40 @@ export async function whatsNext(em: EntityManager, householdId: string) {
 }
 
 /**
- * Made it, from the recipe or the cook view: today's planned meal of it is
- * cooked. Failing that, one in this week's pool becomes today's, cooked.
- * Says how many were; with none, it was made off the plan (`markMade`).
+ * Made it, from the recipe or the cook view. A meal of it already cooked
+ * today counts, so pressing it twice doesn't cook it twice. Otherwise
+ * today's planned meals of it are cooked; failing those, one in this
+ * week's pool becomes today's, cooked; failing that, one's added to today,
+ * cooked. So it takes from the pantry like any cooked meal, and marking it
+ * not cooked puts that back. `servings`, when given, is how many it made.
+ * Says which meal it was.
  */
-export async function cookedToday(
+export async function cookToday(
   em: EntityManager,
   householdId: string,
-  recipeId: string
+  recipeId: string,
+  servings?: number
 ) {
   const clock = await householdClock(em, householdId)
-  const today = await em.find(
+  const onToday = { recipe: recipeId, date: clock.today, anyDay: false }
+  const done = await em.findOne(
     PlanEntry,
-    { recipe: recipeId, date: clock.today, anyDay: false, status: "planned" },
-    { populate: POPULATE }
+    { ...onToday, status: "cooked" },
+    { orderBy: { cookedAt: "desc" } }
   )
-  let entries = today
+  if (done) return done.id
+
+  // At the meal that fits the time of day, as moving a pool meal does.
+  const meal: Meal = clock.meals.includes(mealOfTheHour(clock.hour))
+    ? mealOfTheHour(clock.hour)
+    : "dinner"
+  let entries: PlanEntry[] = sortEntries(
+    await em.find(
+      PlanEntry,
+      { ...onToday, status: "planned" },
+      { populate: POPULATE }
+    )
+  )
   if (entries.length === 0) {
     const pooled = await em.findOne(
       PlanEntry,
@@ -824,9 +842,6 @@ export async function cookedToday(
       { populate: POPULATE }
     )
     if (pooled) {
-      const meal: Meal = clock.meals.includes(mealOfTheHour(clock.hour))
-        ? mealOfTheHour(clock.hour)
-        : "dinner"
       pooled.position = await nextPosition(em, {
         date: clock.today,
         meal,
@@ -838,7 +853,19 @@ export async function cookedToday(
       entries = [pooled]
     }
   }
+  if (entries.length === 0) {
+    entries = [
+      await createEntry(
+        em,
+        householdId,
+        { date: clock.today, meal, recipe: recipeId },
+        clock.weekStartsOn
+      ),
+    ]
+  }
   for (const entry of entries) setStatus(entry, "cooked")
+  // How many it made is the first meal's: the one it says it was.
+  if (servings !== undefined) entries[0]!.servings = servings
   await em.flush()
   await remade(em, entries.flatMap(madeBy))
   await followCooking(
@@ -846,5 +873,5 @@ export async function cookedToday(
     householdId,
     entries.map((entry) => ({ entry, was: false, now: true }))
   )
-  return entries.length
+  return entries[0]!.id
 }

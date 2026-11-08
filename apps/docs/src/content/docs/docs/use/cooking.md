@@ -79,6 +79,10 @@ From alpha.8, a rating can be half stars. Tap the left half of a star for half o
 
 **Expected result:** the recipe is marked made today. Merran marks a matching meal on today's plan cooked, or moves a matching meal from this week's any-day pool to today and marks it cooked. A cooked plan entry can consume its pantry stock. Cooking a recipe with no matching plan entry records that it was made; do not assume it deducts an unplanned meal from the pantry.
 
+:::note[Not released yet (after alpha.7): cooking off the plan uses the pantry]
+Finishing a recipe, or choosing **Made it** on the recipe, with no meal of it today or in the week's pool adds one to today, already cooked, at the meal that fits the time of day and with the servings you cooked. It takes from the pantry like any cooked meal and shows on **Plan**. Mark it not cooked to put everything back. If a meal of it is already cooked today, that one counts, so pressing **Made it** twice doesn't cook it twice. The message after **Made it** offers **How did it go?**.
+:::
+
 Cooking notes record what happened on a particular occasion. Use **Edit → Notes** for lasting recipe instructions. When optional AI note suggestions are available, a note may produce a proposed recipe change in **Review**; inspect it before applying it.
 
 :::note[Available in alpha.4]

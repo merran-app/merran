@@ -574,3 +574,24 @@ export const ImportResultSchema = z
     }),
   })
   .openapi("ImportResult", { example: { recipe: RECIPE, duplicate: false } })
+
+export const MadeSchema = z
+  .object({
+    servings: z
+      .number()
+      .positive("Use a number above 0.")
+      .max(1000, "Use 1,000 or fewer.")
+      .optional()
+      .openapi({
+        description:
+          "How many servings were made, for the meal it cooks. Left out, it's as planned, or the recipe's own.",
+      }),
+  })
+  .openapi("Made", { example: { servings: 2 } })
+
+export const MadeRecipeSchema = RecipeSchema.extend({
+  meal: z.string().openapi({
+    description:
+      "The meal on the plan it cooked: today's, or one added to today for it.",
+  }),
+}).openapi("MadeRecipe", { example: { ...RECIPE, meal: IDS.planEntry } })

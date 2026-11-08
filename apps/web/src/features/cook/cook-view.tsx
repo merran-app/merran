@@ -338,6 +338,7 @@ export function CookView({
     if (finishing || savingServings) return
     setFinishing(true)
     try {
+      let cooked = mealId ?? null
       if (mealId) {
         const changed = await unwrap(
           api.PATCH("/api/plan/entries/{entryId}", {
@@ -351,11 +352,17 @@ export function CookView({
         queryClient.setQueryData(planEntryQuery(mealId).queryKey, changed)
         setSavedAmount(amount)
       } else {
-        await unwrap(
+        // Off the plan: a meal's added to today, with the servings cooked.
+        const made = await unwrap(
           api.POST("/api/recipes/{recipe}/made", {
             params: { path: { recipe: recipe.id } },
+            body:
+              baseServings && amount !== baseServings
+                ? { servings: amount }
+                : {},
           })
         )
+        cooked = made.meal
       }
       saveProgress(progressId, null)
       // Swaps are for this time: next time starts as written.
@@ -365,11 +372,10 @@ export function CookView({
         queryClient.invalidateQueries({ queryKey: ["list"] }),
         queryClient.invalidateQueries({ queryKey: ["pantry"] }),
       ])
-      toast.success(t("cook.made"))
       celebrate()
       // Then "Ran out of anything?" and "How did it go?", and back where
-      // cooking started.
-      setAsking({ meal: mealId ?? null, recipe })
+      // cooking started. They say it's done, so no message covers them.
+      setAsking({ meal: cooked, recipe })
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       toast.error(error.message)

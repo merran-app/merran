@@ -11877,6 +11877,150 @@
           }
         }
       },
+      "MadeRecipe": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Recipe"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "meal": {
+                "type": "string",
+                "description": "The meal on the plan it cooked: today's, or one added to today for it."
+              }
+            },
+            "required": [
+              "meal"
+            ]
+          }
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+          "slug": "lemon-chicken",
+          "name": "Lemon Chicken",
+          "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+          "servings": 4,
+          "totalMinutes": 50,
+          "rating": 5,
+          "tags": [
+            "chicken",
+            "dinner"
+          ],
+          "diets": [
+            "gluten-free",
+            "dairy-free",
+            "egg-free",
+            "nut-free"
+          ],
+          "photo": {
+            "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+          },
+          "lastMadeAt": "2026-10-09T01:15:00.000Z",
+          "createdAt": "2026-10-01T17:30:00.000Z",
+          "updatedAt": "2026-10-15T18:30:00.000Z",
+          "origin": "link",
+          "photoByAi": false,
+          "sourceUrl": "https://example.com/lemon-chicken",
+          "yieldText": null,
+          "prepMinutes": 10,
+          "cookMinutes": 40,
+          "notes": "Bone-in thighs work too: give them 10 minutes more.",
+          "dietOverrides": {},
+          "needs": [],
+          "nutrition": {
+            "source": "calculated",
+            "calories": 412,
+            "protein": 31.5,
+            "carbs": 6.2,
+            "fat": 28.1,
+            "fiber": 1.4,
+            "sugar": 1.2,
+            "sodium": 640,
+            "missing": [],
+            "servings": 4
+          },
+          "ingredients": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000011",
+              "section": null,
+              "text": "2 lb chicken thighs",
+              "quantity": 2,
+              "quantityMax": null,
+              "unit": "pound",
+              "food": "chicken thighs",
+              "note": null,
+              "mark": "needed"
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+              "section": null,
+              "text": "1 tbsp olive oil",
+              "quantity": 1,
+              "quantityMax": null,
+              "unit": "tablespoon",
+              "food": "olive oil",
+              "note": null,
+              "mark": "optional"
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000013",
+              "section": null,
+              "text": "2 lemons, juiced",
+              "quantity": 2,
+              "quantityMax": null,
+              "unit": null,
+              "food": "lemons",
+              "note": "juiced",
+              "mark": "needed"
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000014",
+              "section": null,
+              "text": "4 cloves garlic, smashed",
+              "quantity": 4,
+              "quantityMax": null,
+              "unit": "clove",
+              "food": "garlic",
+              "note": "smashed",
+              "mark": "swappable"
+            }
+          ],
+          "steps": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+              "section": null,
+              "text": "Heat the oven to 425°F."
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000016",
+              "section": null,
+              "text": "Toss the chicken with the oil, lemon juice, garlic, salt and pepper."
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000017",
+              "section": null,
+              "text": "Roast skin side up for 40 minutes, until crisp."
+            }
+          ],
+          "meal": "0199e8b0-5a10-7a01-8b00-00000000001b"
+        }
+      },
+      "Made": {
+        "type": "object",
+        "properties": {
+          "servings": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1000,
+            "description": "How many servings were made, for the meal it cooks. Left out, it's as planned, or the recipe's own."
+          }
+        },
+        "example": {
+          "servings": 2
+        }
+      },
       "NeedsInput": {
         "type": "object",
         "properties": {
@@ -29117,7 +29261,7 @@
           "Recipes"
         ],
         "summary": "Mark a recipe made",
-        "description": "The recipe was made now: today's meal of it on the plan is marked cooked (or, failing that, one in this week's pool becomes today's, cooked), and its `lastMadeAt` is set. Marking that meal not cooked again puts `lastMadeAt` back. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
+        "description": "The recipe was made now, so a meal of it today is cooked: one already cooked today counts, so marking it twice doesn't cook it twice. Failing that, today's planned meal of it is cooked; failing that, one in this week's pool becomes today's, cooked; failing that, one's added to today at the meal that fits the time of day, cooked. Either way it takes from the pantry as any cooked meal does, and its `lastMadeAt` is set. Marking that meal not cooked puts both back. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -29143,13 +29287,23 @@
             "in": "path"
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Made"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "The recipe, made now.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Recipe"
+                  "$ref": "#/components/schemas/MadeRecipe"
                 }
               }
             }

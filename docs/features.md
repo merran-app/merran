@@ -80,7 +80,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Diet labels worked out from the ingredients, with corrections | Key | Built | |
 | Goes with: pair recipes, like chicken with any of your sauces | Key | Built | |
 | "I made this", and a New badge for ones you haven't cooked | Detail | Built | |
-| Cooking off the plan uses the pantry too | Detail | Planned | [pantry.md](pantry.md): a recipe made with no meal of it planned is added to today, cooked, so it takes from the pantry and can be undone |
+| Cooking off the plan uses the pantry too | Detail | Built | Not released yet (after alpha.7), see [pantry.md](pantry.md): a recipe made with no meal of it planned is added to today, cooked, with the servings cooked, so it takes from the pantry and can be undone. A meal of it already cooked today counts instead |
 | How did it go? Stars and notes after cooking | Key | Built | Available in alpha.8: half stars, from ½ to 5; the left half of a star picks half of it. Mealie's half stars come in as they are, and household exports are version 2 ([export format](export-format.md)) |
 | Select and act on many recipes; Recently deleted for 30 days | Detail | Built | |
 | Nutrition from the recipe's site | Detail | Built | |

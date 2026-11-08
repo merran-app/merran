@@ -1,6 +1,6 @@
 # A pantry that keeps itself
 
-November 5, 2026. Planned with the user. Parts 1 and 2 were built on November 6, 2026, and go out in alpha.8, ahead of the rest (decided November 7, 2026). Part 3 was built on November 7, 2026; parts 4 and 5 are still planned. The pantry works, but keeping it right is work: pressing **Put away**, fixing where things went, and noticing what ran out. When it drifts from what's really at home, the list leaves out things you need, which is worse than having no pantry at all. This plan makes the pantry stay roughly right using only moments when you're already in the app: finishing the shopping and finishing cooking.
+November 5, 2026. Planned with the user. Parts 1 and 2 were built on November 6, 2026, and go out in alpha.8, ahead of the rest (decided November 7, 2026). Parts 3 and 4 were built on November 7, 2026; part 5 is still planned. The pantry works, but keeping it right is work: pressing **Put away**, fixing where things went, and noticing what ran out. When it drifts from what's really at home, the list leaves out things you need, which is worse than having no pantry at all. This plan makes the pantry stay roughly right using only moments when you're already in the app: finishing the shopping and finishing cooking.
 
 Five parts, built in this order:
 
@@ -98,7 +98,7 @@ A recipe with no foods to show starts at the second step.
 
 ## 4. Cooking off the plan uses the pantry too
 
-When you finish the cook view or press **I made this** and the recipe has no meal today or in the week's pool, Merran adds one to today, already cooked. It goes at the meal that fits the time of day, the way moving a pool meal to today already works, with the servings you cooked. So it takes from the pantry like any cooked meal, shows on the plan and in history, and marking it not cooked puts everything back. The assistant and MCP use the same route, so they get this too.
+When you finish the cook view or press **I made this** and the recipe has no meal today or in the week's pool, Merran adds one to today, already cooked. It goes at the meal that fits the time of day, the way moving a pool meal to today already works, with the servings you cooked. So it takes from the pantry like any cooked meal, shows on the plan and in history, and marking it not cooked puts everything back. A meal of it already cooked today counts instead, so pressing **I made this** twice doesn't cook it twice. API keys use the same route, so they get this too; the assistant and MCP have no tool for it.
 
 ## 5. Did you make these?
 

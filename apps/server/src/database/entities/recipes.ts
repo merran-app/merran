@@ -83,8 +83,8 @@ export const Recipe = defineEntity({
      */
     lastMadeAt: p.datetime().nullable(),
     /**
-     * When it was last made with no meal of it on the plan to mark cooked:
-     * "I made this" with none planned, or another app's date on import.
+     * When it was last made with no meal of it on the plan: another app's
+     * date on import, or "I made this" from before it added a meal to today.
      */
     madeOffPlanAt: p.datetime().nullable(),
     /** When tidy up last looked at it, whatever it found: library runs skip it. */
