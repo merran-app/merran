@@ -507,6 +507,63 @@ describe("swapping meals", () => {
   })
 })
 
+describe("putting a meal's dishes in order", () => {
+  const order = (ids: string[]) =>
+    kyle.post("/api/plan/entries/bulk", { ids, action: "order" })
+  const positions = async () =>
+    Object.fromEntries(
+      (await plan()).map((entry: { note: string; position: number }) => [
+        entry.note,
+        entry.position,
+      ])
+    )
+  const dinners = async (notes: string[], date = addDays(week, 1)) => {
+    const meals = []
+    for (const note of notes) {
+      meals.push(await add({ date, meal: "dinner", note }))
+    }
+    return meals
+  }
+
+  test("saves the new order, and Undo puts it back", async () => {
+    await clearAll()
+    const [a, b, c] = await dinners(["a", "b", "c"])
+    const res = await order([c!.id, a!.id, b!.id])
+    expect(res.status, await res.clone().text()).toBe(200)
+    expect(await positions()).toEqual({ c: 0, a: 1, b: 2 })
+
+    await kyle.post("/api/plan/restore", { entries: (await res.json()).before })
+    expect(await positions()).toEqual({ a: 0, b: 1, c: 2 })
+  })
+
+  test("dishes not named keep their order after the named ones", async () => {
+    await clearAll()
+    const [a, , c] = await dinners(["a", "b", "c", "d"])
+    expect((await order([c!.id, a!.id])).status).toBe(200)
+    expect(await positions()).toEqual({ c: 0, a: 1, b: 2, d: 3 })
+  })
+
+  test("orders the pool within a meal type", async () => {
+    await clearAll()
+    const x = await add({ date: week, anyDay: true, meal: "lunch", note: "x" })
+    const y = await add({ date: week, anyDay: true, meal: "lunch", note: "y" })
+    await add({ date: week, anyDay: true, meal: "dinner", note: "z" })
+    expect((await order([y.id, x.id])).status).toBe(200)
+    expect(await positions()).toEqual({ y: 0, x: 1, z: 0 })
+  })
+
+  test("refuses dishes from different meals", async () => {
+    await clearAll()
+    const [tuesday] = await dinners(["a"])
+    const [wednesday] = await dinners(["b"], addDays(week, 2))
+    const before = await plan()
+    const res = await order([tuesday!.id, wednesday!.id])
+    expect(res.status).toBe(400)
+    expect((await res.json()).error.code).toBe("bad_order")
+    expect(await plan()).toEqual(before)
+  })
+})
+
 describe("a week", () => {
   test("can repeat last week's, into what's still empty", async () => {
     await clearAll()

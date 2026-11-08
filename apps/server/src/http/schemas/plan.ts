@@ -271,8 +271,9 @@ export const PlanEntryParam = z.object({
 export const PlanBulkSchema = z
   .object({
     ids: z.array(z.uuid()).min(1).max(200),
-    action: z.enum(["remove", "move", "status", "swap"]).openapi({
-      description: "`swap` trades two meals' places.",
+    action: z.enum(["remove", "move", "status", "swap", "order"]).openapi({
+      description:
+        "`swap` trades two meals' places; `order` puts one meal's dishes in the order given, the rest after them.",
     }),
     date: Day.optional().openapi({ description: "Where to move them." }),
     meal: MealSchema.optional().openapi({

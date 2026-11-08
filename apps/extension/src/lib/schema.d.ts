@@ -2179,7 +2179,7 @@ export interface paths {
         put?: never;
         /**
          * Change several meals at once
-         * @description Take them off, move them (to another day or meal, or the week's pool), or mark them planned, cooked or skipped: all or none. The answer says what they were before, for Undo with /plan/restore. Ids not on the plan are passed over. With an API key, it needs the `plan: write` permission.
+         * @description Take them off, move them (to another day or meal, or the week's pool), or mark them planned, cooked or skipped: all or none. Swap two meals' places, or put one meal's dishes in order. The answer says what they were before, for Undo with /plan/restore. Ids not on the plan are passed over, except in a swap. With an API key, it needs the `plan: write` permission.
          */
         post: operations["changePlanEntries"];
         delete?: never;
@@ -9250,8 +9250,11 @@ export interface components {
          */
         PlanBulk: {
             ids: string[];
-            /** @enum {string} */
-            action: "remove" | "move" | "status";
+            /**
+             * @description `swap` trades two meals' places; `order` puts one meal's dishes in the order given, the rest after them.
+             * @enum {string}
+             */
+            action: "remove" | "move" | "status" | "swap" | "order";
             /**
              * @description Where to move them.
              * @example 2026-10-15

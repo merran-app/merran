@@ -518,6 +518,7 @@ export type BulkAction =
   | { action: "move"; date: string; meal?: Meal; anyDay?: boolean }
   | { action: "status"; status: PlanStatus }
   | { action: "swap" }
+  | { action: "order" }
 
 type Place = Pick<PlanEntry, "date" | "meal" | "anyDay" | "position">
 
@@ -568,6 +569,35 @@ async function swapPlaces(em: EntityManager, entries: PlanEntry[]) {
   moveTo(b, bGoesTo)
 }
 
+/**
+ * One meal's dishes in their new order: the named ones as given, then the
+ * rest as they were, so a dish someone just added never fails a reorder.
+ * All of them, so Undo puts every one back.
+ */
+async function dishesInOrder(
+  em: EntityManager,
+  ids: readonly string[],
+  named: PlanEntry[]
+) {
+  const [first] = named
+  if (!first || !named.every((entry) => samePlace(entry, first))) {
+    throw new AppError(
+      "invalid",
+      "bad_order",
+      "Put dishes in order one meal at a time."
+    )
+  }
+  const meal = await em.find(
+    PlanEntry,
+    { date: first.date, meal: first.meal, anyDay: first.anyDay },
+    { orderBy: { position: "asc" }, populate: POPULATE, ...WITH_DELETED }
+  )
+  const byId = new Map(named.map((entry) => [entry.id, entry]))
+  const inOrder = [...new Set(ids)].flatMap((id) => byId.get(id) ?? [])
+  const rest = meal.filter((entry) => shown(entry) && !byId.has(entry.id))
+  return [...inOrder, ...rest]
+}
+
 function moveTo(entry: PlanEntry, place: Place) {
   entry.date = place.date
   entry.meal = place.meal
@@ -591,7 +621,10 @@ export async function bulkPlan(
       { id: { $in: ids.filter((id) => UUID.test(id)) } },
       { populate: POPULATE, ...WITH_DELETED }
     )
-    const entries = sortEntries(found.filter(shown))
+    const entries =
+      action.action === "order"
+        ? await dishesInOrder(tx, ids, found.filter(shown))
+        : sortEntries(found.filter(shown))
     const before = entries.map(snapshotOf)
     const made = entries.flatMap(madeBy)
     const was = new Map(entries.map((entry) => [entry, shoppingFor(entry)]))
@@ -615,7 +648,13 @@ export async function bulkPlan(
       )
     }
     if (action.action === "swap") await swapPlaces(tx, entries)
-    for (const entry of action.action === "swap" ? [] : entries) {
+    if (action.action === "order") {
+      entries.forEach((entry, position) => {
+        entry.position = position
+      })
+    }
+    const oneByOne = action.action !== "swap" && action.action !== "order"
+    for (const entry of oneByOne ? entries : []) {
       if (action.action === "remove") tx.remove(entry)
       else if (action.action === "move") {
         await change(tx, householdId, entry, {
