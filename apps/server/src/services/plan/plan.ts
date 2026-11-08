@@ -517,6 +517,63 @@ export type BulkAction =
   | { action: "remove" }
   | { action: "move"; date: string; meal?: Meal; anyDay?: boolean }
   | { action: "status"; status: PlanStatus }
+  | { action: "swap" }
+
+type Place = Pick<PlanEntry, "date" | "meal" | "anyDay" | "position">
+
+const placeOf = (entry: PlanEntry): Place => ({
+  date: entry.date,
+  meal: entry.meal,
+  anyDay: entry.anyDay,
+  position: entry.position,
+})
+
+const samePlace = (a: Place, b: Place) =>
+  a.date === b.date && a.meal === b.meal && a.anyDay === b.anyDay
+
+/**
+ * Where a swapped meal goes: the other's exact place on a day. Into the
+ * week's pool it keeps its own meal, as a move there does, and goes after
+ * the pool's others of that meal unless it takes the other's place in it.
+ */
+async function swappedPlace(
+  em: EntityManager,
+  entry: PlanEntry,
+  other: Place
+): Promise<Place> {
+  if (!other.anyDay || other.meal === entry.meal) return other
+  const slot = { date: other.date, meal: entry.meal, anyDay: true }
+  return { ...slot, position: await nextPosition(em, slot) }
+}
+
+/** Two meals trade places, keeping everything else. Both or neither. */
+async function swapPlaces(em: EntityManager, entries: PlanEntry[]) {
+  const [a, b] = entries
+  const valid =
+    entries.length === 2 &&
+    a !== undefined &&
+    b !== undefined &&
+    !samePlace(a, b) &&
+    !(a.anyDay && b.anyDay)
+  if (!valid) {
+    throw new AppError(
+      "invalid",
+      "bad_swap",
+      "Swap needs two meals in different places."
+    )
+  }
+  const aGoesTo = await swappedPlace(em, a, placeOf(b))
+  const bGoesTo = await swappedPlace(em, b, placeOf(a))
+  moveTo(a, aGoesTo)
+  moveTo(b, bGoesTo)
+}
+
+function moveTo(entry: PlanEntry, place: Place) {
+  entry.date = place.date
+  entry.meal = place.meal
+  entry.anyDay = place.anyDay
+  entry.position = place.position
+}
 
 /**
  * Several meals at once, all or nothing. Says what they were before, so
@@ -557,7 +614,8 @@ export async function bulkPlan(
         }))
       )
     }
-    for (const entry of entries) {
+    if (action.action === "swap") await swapPlaces(tx, entries)
+    for (const entry of action.action === "swap" ? [] : entries) {
       if (action.action === "remove") tx.remove(entry)
       else if (action.action === "move") {
         await change(tx, householdId, entry, {
@@ -567,7 +625,9 @@ export async function bulkPlan(
         })
         // Each after the one moved before it.
         await tx.flush()
-      } else await change(tx, householdId, entry, { status: action.status })
+      } else if (action.action === "status") {
+        await change(tx, householdId, entry, { status: action.status })
+      }
     }
     await tx.flush()
     if (action.action !== "remove") made.push(...entries.flatMap(madeBy))

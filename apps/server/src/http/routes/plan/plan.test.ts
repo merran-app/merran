@@ -323,6 +323,190 @@ describe("several meals at once", () => {
   })
 })
 
+describe("swapping meals", () => {
+  const swap = (ids: string[]) =>
+    kyle.post("/api/plan/entries/bulk", { ids, action: "swap" })
+  const find = async (id: string) =>
+    (await plan()).find((entry: { id: string }) => entry.id === id)
+
+  test("trades places and keeps everything else, with Undo", async () => {
+    await clearAll()
+    const tuesday = addDays(week, 1)
+    const thursday = addDays(week, 3)
+    const first = await add({
+      date: tuesday,
+      meal: "dinner",
+      note: "Leftovers",
+    })
+    const soup = await add({
+      date: tuesday,
+      meal: "dinner",
+      recipe: "tomato-soup",
+      withRecipe: "garlic-rice",
+      servings: 6,
+    })
+    await kyle.patch(`/api/plan/entries/${soup.id}`, { status: "skipped" })
+    const bread = await add({
+      date: thursday,
+      meal: "lunch",
+      recipe: "soda-bread",
+    })
+
+    const res = await swap([soup.id, bread.id])
+    expect(res.status, await res.clone().text()).toBe(200)
+    const swapped = await res.json()
+    expect(await find(soup.id)).toMatchObject({
+      date: thursday,
+      meal: "lunch",
+      anyDay: false,
+      position: 0,
+      status: "skipped",
+      servings: 6,
+      recipe: { slug: "tomato-soup" },
+      withRecipe: { slug: "garlic-rice" },
+    })
+    expect(await find(bread.id)).toMatchObject({
+      date: tuesday,
+      meal: "dinner",
+      anyDay: false,
+      position: 1,
+      status: "planned",
+      recipe: { slug: "soda-bread" },
+    })
+    expect(await find(first.id)).toEqual(first)
+
+    await kyle.post("/api/plan/restore", { entries: swapped.before })
+    expect(await find(soup.id)).toMatchObject({
+      date: tuesday,
+      meal: "dinner",
+      position: 1,
+      status: "skipped",
+    })
+    expect(await find(bread.id)).toMatchObject({
+      date: thursday,
+      meal: "lunch",
+      position: 0,
+    })
+  })
+
+  test("puts a pool meal on the day, and the day's meal in the pool as it was", async () => {
+    await clearAll()
+    const wednesday = addDays(week, 2)
+    const pooledDinner = await add({
+      date: week,
+      anyDay: true,
+      meal: "dinner",
+      note: "Pizza",
+    })
+    const lunch = await add({
+      date: week,
+      anyDay: true,
+      meal: "lunch",
+      recipe: "soda-bread",
+    })
+    await add({ date: wednesday, meal: "dinner", note: "Leftovers" })
+    const dinner = await add({
+      date: wednesday,
+      meal: "dinner",
+      recipe: "tomato-soup",
+    })
+
+    const res = await swap([lunch.id, dinner.id])
+    expect(res.status, await res.clone().text()).toBe(200)
+    expect(await find(lunch.id)).toMatchObject({
+      date: wednesday,
+      anyDay: false,
+      meal: "dinner",
+      position: 1,
+    })
+    // Still a dinner, after the pool's other dinner.
+    expect(await find(dinner.id)).toMatchObject({
+      date: week,
+      anyDay: true,
+      meal: "dinner",
+      position: 1,
+    })
+    expect(await find(pooledDinner.id)).toEqual(pooledDinner)
+  })
+
+  test("leaves the list and the pantry alone", async () => {
+    await clearAll()
+    const soup = await add({
+      date: addDays(week, 1),
+      meal: "dinner",
+      recipe: "tomato-soup",
+    })
+    const bread = await add({
+      date: addDays(week, 4),
+      meal: "dinner",
+      recipe: "soda-bread",
+    })
+    const listed = await kyle.post("/api/list/from-plan", {
+      from: week,
+      to: addDays(week, 6),
+    })
+    expect(listed.status, await listed.clone().text()).toBe(200)
+    const list = await (await kyle.get("/api/list")).json()
+    const pantry = await (await kyle.get("/api/pantry")).json()
+
+    expect((await swap([soup.id, bread.id])).status).toBe(200)
+    expect(await (await kyle.get("/api/list")).json()).toEqual(list)
+    expect(await (await kyle.get("/api/pantry")).json()).toEqual(pantry)
+  })
+
+  test.each([
+    ["one meal", 1],
+    ["three meals", 3],
+  ])("refuses %s", async (_, count) => {
+    await clearAll()
+    const meals = []
+    for (let day = 0; day < count; day++) {
+      meals.push(
+        await add({ date: addDays(week, day), meal: "dinner", note: "Soup" })
+      )
+    }
+    const res = await swap(meals.map((meal) => meal.id))
+    expect(res.status).toBe(400)
+    expect(await plan()).toEqual(meals)
+  })
+
+  test("refuses a meal that isn't on the plan", async () => {
+    await clearAll()
+    const meal = await add({ date: week, meal: "dinner", note: "Soup" })
+    const res = await swap([meal.id, crypto.randomUUID()])
+    expect(res.status).toBe(400)
+    expect((await res.json()).error.code).toBe("bad_swap")
+    expect(await plan()).toEqual([meal])
+  })
+
+  test("refuses two meals in the same place, or both in the pool", async () => {
+    await clearAll()
+    const a = await add({ date: week, meal: "dinner", note: "Soup" })
+    const b = await add({ date: week, meal: "dinner", note: "Bread" })
+    const lunch = await add({
+      date: week,
+      anyDay: true,
+      meal: "lunch",
+      note: "Salad",
+    })
+    const dinner = await add({
+      date: week,
+      anyDay: true,
+      meal: "dinner",
+      note: "Pizza",
+    })
+    for (const ids of [
+      [a.id, b.id],
+      [lunch.id, dinner.id],
+    ]) {
+      const res = await swap(ids)
+      expect(res.status).toBe(400)
+      expect((await res.json()).error.code).toBe("bad_swap")
+    }
+    expect(await plan()).toEqual([lunch, dinner, a, b])
+  })
+})
+
 describe("a week", () => {
   test("can repeat last week's, into what's still empty", async () => {
     await clearAll()
