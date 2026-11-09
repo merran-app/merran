@@ -12318,6 +12318,51 @@
           "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000012"
         }
       },
+      "RecipeShareStatus": {
+        "type": "object",
+        "properties": {
+          "share": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecipeShare"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Its link, or null while it isn't shared."
+          }
+        },
+        "required": [
+          "share"
+        ],
+        "example": {
+          "share": {
+            "url": "https://merran.example.com/r/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c",
+            "createdAt": "2026-11-08T17:30:00.000Z"
+          }
+        }
+      },
+      "RecipeShare": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The link anyone can open to see and cook the recipe."
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "createdAt"
+        ],
+        "example": {
+          "url": "https://merran.example.com/r/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c",
+          "createdAt": "2026-11-08T17:30:00.000Z"
+        }
+      },
       "SavedSwap": {
         "type": "object",
         "properties": {
@@ -30321,6 +30366,236 @@
           },
           "502": {
             "description": "The AI provider failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/share": {
+      "get": {
+        "operationId": "getRecipeShare",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "See whether a recipe is shared by link",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Its link, or null while it isn't shared.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeShareStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "With an API key, it needs the `recipes: read` permission."
+      },
+      "post": {
+        "operationId": "shareRecipe",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Share a recipe by link",
+        "description": "Returns the recipe's link, making one if it has none. Anyone with the link can see and cook the recipe, but not change it. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The recipe's link.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeShare"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No public URL is configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed: the household has turned off sharing by link.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "stopSharingRecipe",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Stop sharing a recipe",
+        "description": "Ends its link at once. Sharing it again makes a new link, and the old one stays dead. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Not shared anymore."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
             "content": {
               "application/json": {
                 "schema": {

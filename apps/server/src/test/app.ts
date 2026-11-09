@@ -36,8 +36,8 @@ export async function createTestApp(
   options: {
     modules?: readonly Module[]
     env?: Record<string, string>
-    /** Stable secure origin for WebAuthn protocol tests. */
-    publicUrl?: string
+    /** Stable secure origin for WebAuthn protocol tests. Null leaves it unset. */
+    publicUrl?: string | null
     /** What fetching from the internet answers with. Tests never reach it. */
     fetcher?: Fetcher
     /** The AI models to call. Tests never reach a provider. */
@@ -68,7 +68,10 @@ export async function createTestApp(
     ...loadConfig(options.env ?? {}, definitions),
     database: databaseConfig,
     secret: TEST_SECRET,
-    publicUrl: options.publicUrl ?? TEST_ORIGIN,
+    publicUrl:
+      options.publicUrl === null
+        ? undefined
+        : (options.publicUrl ?? TEST_ORIGIN),
     webDir: null,
     // Uploads and the like go in the test's own folder, never the repo's.
     dataDir: filesDir,

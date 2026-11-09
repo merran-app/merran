@@ -41,6 +41,8 @@ export type HouseholdSettings = {
   /** Dinner's theme each weekday, Sunday first. */
   themes?: WeekThemes
   weeklyBudget?: { amount: number; currency: string } | null
+  /** Recipe sharing by link: on unless a household turns it off. */
+  sharing?: { recipes: boolean }
   /** Calendar feed and its default local event times. */
   calendar?: {
     enabled: boolean
