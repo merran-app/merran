@@ -58,7 +58,7 @@ export default (router: Router, _deps: AppDeps) => {
     if (recipeSharing !== undefined) {
       household.settings = {
         ...household.settings,
-        sharing: { recipes: recipeSharing },
+        sharing: { ...household.settings?.sharing, recipes: recipeSharing },
       }
     }
     if (turnedOn) {

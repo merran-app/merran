@@ -28,8 +28,6 @@ const route = createRoute({
 export default (router: Router, { config }: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em } = asHouseholdAdmin(c)
-    // Links are built from the public URL, so without one there's none to list.
-    if (!config.publicUrl) return c.json({ shares: [] }, 200)
     return c.json({ shares: await listShares(em, config.publicUrl) }, 200)
   })
 }

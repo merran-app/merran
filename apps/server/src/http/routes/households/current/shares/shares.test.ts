@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../../app.ts"
+import { RecipeShare } from "../../../../../database/entities/index.ts"
 import {
   account,
   createTestApp,
@@ -92,5 +93,62 @@ describe("the admin's list of shared recipes", () => {
     expect(mine[1].recipe).toEqual({ slug: byMember, name: "Member's Mousse" })
     expect(mine[1].sharedBy).toEqual({ name: "list_member" })
     expect(mine[1].openedAt).toBeNull()
+  })
+})
+
+describe("a deleted recipe's link", () => {
+  test("stays listed, and can still be stopped", async () => {
+    const slug = await makeRecipe("Trashed Tart")
+    await owner.post(shareUrlOf(slug))
+    expect((await owner.delete(`/api/recipes/${slug}`)).status).toBe(204)
+
+    const listed = async () =>
+      (await (await owner.get("/api/households/current/shares")).json()).shares
+    const hasIt = (shares: { recipe: { slug: string } }[]) =>
+      shares.some((share) => share.recipe.slug === slug)
+    expect(hasIt(await listed())).toBe(true)
+
+    expect((await owner.get(shareUrlOf(slug))).status).toBe(200)
+    expect((await owner.delete(shareUrlOf(slug))).status).toBe(204)
+    expect(hasIt(await listed())).toBe(false)
+  })
+})
+
+describe("without a public URL", () => {
+  test("links already made are still listed and looked up, with no url", async () => {
+    const testApp = await createTestApp({ publicUrl: null })
+    try {
+      const client = await setUpServer(testApp.app, testApp.setupCode)
+      const recipe = await (
+        await client.post("/api/recipes", { name: "Unlinked Toast" })
+      ).json()
+      const home = await (await client.get("/api/households/current")).json()
+      const em = testApp.database.em.fork()
+      em.create(RecipeShare, {
+        household: home.id,
+        recipe: recipe.id,
+        token: "A".repeat(43),
+      })
+      await em.flush()
+
+      const list = await (
+        await client.get("/api/households/current/shares")
+      ).json()
+      expect(list.shares).toHaveLength(1)
+      expect(list.shares[0].recipe.slug).toBe(recipe.slug)
+      expect(list.shares[0].url).toBeNull()
+
+      const one = await (
+        await client.get(`/api/recipes/${recipe.slug}/share`)
+      ).json()
+      expect(one.share.url).toBeNull()
+      expect(typeof one.share.createdAt).toBe("string")
+
+      expect(
+        (await client.delete(`/api/recipes/${recipe.slug}/share`)).status
+      ).toBe(204)
+    } finally {
+      await testApp.close()
+    }
   })
 })

@@ -6732,8 +6732,8 @@ export interface components {
                 slug: string;
                 name: string;
             };
-            /** @description The link anyone can open to see and cook the recipe. */
-            url: string;
+            /** @description The link anyone can open to see and cook the recipe. Null while MERRAN_PUBLIC_URL isn't set, because links are built from it. */
+            url: string | null;
             /** @description Who shared it, or null once they've left the household. */
             sharedBy: {
                 name: string;
@@ -11133,8 +11133,8 @@ export interface components {
          *     }
          */
         RecipeShare: {
-            /** @description The link anyone can open to see and cook the recipe. */
-            url: string;
+            /** @description The link anyone can open to see and cook the recipe. Null while MERRAN_PUBLIC_URL isn't set, because links are built from it. */
+            url: string | null;
             createdAt: string;
         };
         /**

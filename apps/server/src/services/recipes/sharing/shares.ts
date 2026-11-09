@@ -4,10 +4,34 @@ import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../../core/errors.ts"
 import {
   Household,
+  Recipe,
   RecipeShare,
   type HouseholdSettings,
 } from "../../../database/entities/index.ts"
-import { findRecipe } from "../recipes.ts"
+import { NOT_DELETED_FILTER } from "../../../database/scope.ts"
+import { findRecipe, UUID } from "../recipes.ts"
+
+const SEE_DELETED = { filters: { [NOT_DELETED_FILTER]: false } }
+
+/**
+ * A recipe, even one in Recently deleted: its link can still be looked at and
+ * stopped there, because deleting a recipe doesn't end its link.
+ */
+async function findRecipeEvenDeleted(em: EntityManager, idOrSlug: string) {
+  const recipe = await em.findOne(
+    Recipe,
+    UUID.test(idOrSlug) ? { id: idOrSlug } : { slug: idOrSlug },
+    SEE_DELETED
+  )
+  if (!recipe) {
+    throw new AppError(
+      "not_found",
+      "recipe_not_found",
+      "There's no such recipe."
+    )
+  }
+  return recipe
+}
 
 /** Households can share recipes by link unless they've turned it off. */
 export function recipeSharingOn(
@@ -18,7 +42,7 @@ export function recipeSharingOn(
 
 /** A recipe's link, or null while it isn't shared. */
 export async function shareOf(em: EntityManager, idOrSlug: string) {
-  const recipe = await findRecipe(em, idOrSlug)
+  const recipe = await findRecipeEvenDeleted(em, idOrSlug)
   return em.findOne(RecipeShare, { recipe: recipe.id })
 }
 
@@ -63,18 +87,23 @@ export async function shareRecipe(
 
 /** Ends the link. Sharing again makes a new one. */
 export async function stopSharing(em: EntityManager, idOrSlug: string) {
-  const recipe = await findRecipe(em, idOrSlug)
+  const recipe = await findRecipeEvenDeleted(em, idOrSlug)
   await em.nativeDelete(RecipeShare, { recipe: recipe.id })
 }
 
 /** Everything the household has shared, newest first, for its admins. */
-export async function listShares(em: EntityManager, publicUrl: string) {
+export async function listShares(
+  em: EntityManager,
+  publicUrl: string | null | undefined
+) {
   const shares = await em.find(
     RecipeShare,
     {},
     {
       populate: ["recipe", "createdBy"],
       orderBy: { createdAt: "desc", id: "desc" },
+      // A deleted recipe's link stays listed, so an admin can still stop it.
+      ...SEE_DELETED,
     }
   )
   return shares.map((share) => {
@@ -82,7 +111,7 @@ export async function listShares(em: EntityManager, publicUrl: string) {
     const sharedBy = share.createdBy?.getEntity()
     return {
       recipe: { slug: recipe.slug, name: recipe.name },
-      url: shareUrl(publicUrl, share.token),
+      url: publicUrl ? shareUrl(publicUrl, share.token) : null,
       sharedBy: sharedBy ? { name: sharedBy.name } : null,
       createdAt: share.createdAt.toISOString(),
       openedAt: share.openedAt?.toISOString() ?? null,

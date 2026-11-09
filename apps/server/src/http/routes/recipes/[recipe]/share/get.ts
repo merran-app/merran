@@ -36,11 +36,13 @@ export default (router: Router, { config }: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em } = inHousehold(c)
     const share = await shareOf(em, c.req.valid("param").recipe)
-    if (!share || !config.publicUrl) return c.json({ share: null }, 200)
+    if (!share) return c.json({ share: null }, 200)
     return c.json(
       {
         share: {
-          url: shareUrl(config.publicUrl, share.token),
+          url: config.publicUrl
+            ? shareUrl(config.publicUrl, share.token)
+            : null,
           createdAt: share.createdAt.toISOString(),
         },
       },

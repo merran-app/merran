@@ -7,8 +7,9 @@ const EXAMPLE_SHARE = {
 
 export const RecipeShareSchema = z
   .object({
-    url: z.string().openapi({
-      description: "The link anyone can open to see and cook the recipe.",
+    url: z.string().nullable().openapi({
+      description:
+        "The link anyone can open to see and cook the recipe. Null while MERRAN_PUBLIC_URL isn't set, because links are built from it.",
     }),
     createdAt: z.string(),
   })
@@ -25,8 +26,9 @@ const EXAMPLE_HOUSEHOLD_SHARE = {
 export const HouseholdShareSchema = z
   .object({
     recipe: z.object({ slug: z.string(), name: z.string() }),
-    url: z.string().openapi({
-      description: "The link anyone can open to see and cook the recipe.",
+    url: z.string().nullable().openapi({
+      description:
+        "The link anyone can open to see and cook the recipe. Null while MERRAN_PUBLIC_URL isn't set, because links are built from it.",
     }),
     sharedBy: z.object({ name: z.string() }).nullable().openapi({
       description: "Who shared it, or null once they've left the household.",

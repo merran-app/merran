@@ -3838,8 +3838,11 @@
             ]
           },
           "url": {
-            "type": "string",
-            "description": "The link anyone can open to see and cook the recipe."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The link anyone can open to see and cook the recipe. Null while MERRAN_PUBLIC_URL isn't set, because links are built from it."
           },
           "sharedBy": {
             "type": [
@@ -12456,8 +12459,11 @@
         "type": "object",
         "properties": {
           "url": {
-            "type": "string",
-            "description": "The link anyone can open to see and cook the recipe."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The link anyone can open to see and cook the recipe. Null while MERRAN_PUBLIC_URL isn't set, because links are built from it."
           },
           "createdAt": {
             "type": "string"

@@ -51,7 +51,8 @@ import { saveVersion, type VersionSource } from "./versions.ts"
 
 export type RecipeOrigin = (typeof RECIPE_ORIGINS)[number]
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+export const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /** A recipe by its id or slug, with its lines. Not one in Recently deleted. */
 export async function findRecipe(em: EntityManager, idOrSlug: string) {
