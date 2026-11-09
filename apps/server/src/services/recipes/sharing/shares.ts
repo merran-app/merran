@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto"
 import { UniqueConstraintViolationException } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
+import type { Logger } from "pino"
 import { AppError } from "../../../core/errors.ts"
 import {
   Household,
@@ -135,7 +136,7 @@ const HOUR = 3_600_000
 export async function sharedForToken(
   em: EntityManager,
   token: string,
-  { noteOpened = true } = {}
+  { noteOpened = true, logger }: { noteOpened?: boolean; logger?: Logger } = {}
 ) {
   if (!TOKEN_SHAPE.test(token)) return null
 
@@ -163,7 +164,13 @@ export async function sharedForToken(
     (!share.openedAt || now.getTime() - share.openedAt.getTime() > HOUR)
   ) {
     share.openedAt = now
-    await em.flush()
+    try {
+      await em.flush()
+    } catch (error) {
+      // Noting the open is only a courtesy to the admins' list: a failure
+      // here mustn't stop someone reading the recipe.
+      logger?.warn({ err: error }, "A shared recipe's open wasn't noted")
+    }
   }
   return { recipe, household, token: share.token }
 }

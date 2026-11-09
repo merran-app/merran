@@ -72,9 +72,10 @@ export default (router: Router, { files }: AppDeps) => {
     if (!photo) throw notShared()
 
     c.header("Content-Type", "image/webp")
-    // A link naming this photo always shows it, so it can be kept for good.
+    // A link naming this photo always shows it, so a browser can keep it for
+    // good. It's private, so no shared cache or CDN outlives a stopped link.
     if (v === recipe.image) {
-      c.header("Cache-Control", "public, max-age=31536000, immutable")
+      c.header("Cache-Control", "private, max-age=31536000, immutable")
     }
     return c.body(new Uint8Array(photo), 200)
   })

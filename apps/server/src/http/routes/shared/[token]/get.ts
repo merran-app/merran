@@ -34,7 +34,9 @@ const readLimit = new KeyRateLimit(120)
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const token = c.req.valid("param").token
-    const shared = await sharedForToken(c.var.em, token)
+    const shared = await sharedForToken(c.var.em, token, {
+      logger: c.var.logger,
+    })
     c.header("Cache-Control", "no-store")
     c.header("Referrer-Policy", "no-referrer")
     if (!shared) {

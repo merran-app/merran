@@ -1,7 +1,12 @@
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../app.ts"
-import { Household, RecipeShare } from "../../../database/entities/index.ts"
+import {
+  Household,
+  Recipe,
+  RecipeShare,
+  type Nutrition,
+} from "../../../database/entities/index.ts"
 import { ACROSS_HOUSEHOLDS } from "../../../database/scope.ts"
 import type { Database } from "../../../database/orm.ts"
 import {
@@ -295,6 +300,48 @@ describe("a shared recipe", () => {
   }, 30_000)
 })
 
+describe("a shared recipe's nutrition", () => {
+  test("has only the known keys", async () => {
+    const recipe = await makeRecipe("Counted Pasta")
+    const token = await shareToken(recipe.slug)
+    const em = database.em.fork()
+    const stored = await em.findOneOrFail(Recipe, recipe.id, ACROSS_HOUSEHOLDS)
+    stored.nutrition = {
+      source: "calculated",
+      calories: 400,
+      protein: 20,
+      carbs: 50,
+      fat: 10,
+      fiber: 4,
+      sugar: 3,
+      sodium: 500,
+      missing: ["1 bay leaf"],
+      servings: 4,
+      // Loose JSON from an import can carry anything.
+      secret: "not for strangers",
+    } as Nutrition
+    await em.flush()
+
+    const body = await (await signedOut(`/api/shared/${token}`)).json()
+
+    expect(Object.keys(body.nutrition).sort()).toEqual(
+      [
+        "source",
+        "calories",
+        "protein",
+        "carbs",
+        "fat",
+        "fiber",
+        "sugar",
+        "sodium",
+        "missing",
+        "servings",
+      ].sort()
+    )
+    expect(JSON.stringify(body)).not.toContain("not for strangers")
+  })
+})
+
 describe("a shared recipe's photo", () => {
   test("is served for the link's own recipe, and only that one", async () => {
     const red = await makeRecipe("Red Pasta")
@@ -317,6 +364,7 @@ describe("a shared recipe's photo", () => {
     expect(page.photo.full).toMatch(
       new RegExp(`^/api/shared/${redToken}/photo\\?size=full&v=\\w+$`)
     )
+    expect(Object.keys(page.photo).sort()).toEqual(["card", "full"])
     expect(page.photo.card).toContain("size=card")
     expect(JSON.stringify(page.photo)).not.toContain(red.id)
 
@@ -324,7 +372,7 @@ describe("a shared recipe's photo", () => {
     expect(res.status).toBe(200)
     expect(res.headers.get("content-type")).toBe("image/webp")
     expect(res.headers.get("cache-control")).toBe(
-      "public, max-age=31536000, immutable"
+      "private, max-age=31536000, immutable"
     )
     expect(res.headers.get("referrer-policy")).toBe("no-referrer")
 

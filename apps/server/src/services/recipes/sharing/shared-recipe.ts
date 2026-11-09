@@ -1,7 +1,26 @@
 import { toNumber } from "../../../database/numbers.ts"
-import type { Recipe } from "../../../database/entities/index.ts"
+import type { Nutrition, Recipe } from "../../../database/entities/index.ts"
 import { decodeDiets } from "../diet-labels.ts"
 import { totalMinutes } from "../recipes.ts"
+
+/**
+ * Nutrition's known keys, copied one by one: it's stored as loose JSON (an
+ * import writes it as given), so whatever else is in there stays private.
+ */
+function sharedNutrition(nutrition: Nutrition | null | undefined) {
+  if (!nutrition) return null
+  const shared: Nutrition = { source: nutrition.source }
+  if (nutrition.calories !== undefined) shared.calories = nutrition.calories
+  if (nutrition.protein !== undefined) shared.protein = nutrition.protein
+  if (nutrition.carbs !== undefined) shared.carbs = nutrition.carbs
+  if (nutrition.fat !== undefined) shared.fat = nutrition.fat
+  if (nutrition.fiber !== undefined) shared.fiber = nutrition.fiber
+  if (nutrition.sugar !== undefined) shared.sugar = nutrition.sugar
+  if (nutrition.sodium !== undefined) shared.sodium = nutrition.sodium
+  if (nutrition.missing !== undefined) shared.missing = nutrition.missing
+  if (nutrition.servings !== undefined) shared.servings = nutrition.servings
+  return shared
+}
 
 /**
  * A recipe as anyone with its link sees it. Every field is set by hand, never
@@ -26,7 +45,7 @@ export function describeShared(
     cookMinutes: recipe.cookMinutes ?? null,
     totalMinutes: totalMinutes(recipe),
     diets: decodeDiets(recipe.diets),
-    nutrition: recipe.nutrition ?? null,
+    nutrition: sharedNutrition(recipe.nutrition),
     sourceUrl: recipe.sourceUrl ?? null,
     photo: recipe.image ? { full: photo("full"), card: photo("card") } : null,
     ingredients: recipe.ingredients.getItems().map((line, index) => ({
