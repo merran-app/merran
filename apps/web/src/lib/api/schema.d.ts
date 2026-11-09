@@ -3163,12 +3163,12 @@ export interface paths {
         put?: never;
         /**
          * Share a recipe by link
-         * @description Returns the recipe's link, making one if it has none. Anyone with the link can see and cook the recipe, but not change it. With an API key, it needs the `recipes: read` permission.
+         * @description Returns the recipe's link, making one if it has none. Anyone with the link can see and cook the recipe, but not change it. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["shareRecipe"];
         /**
          * Stop sharing a recipe
-         * @description Ends its link at once. Sharing it again makes a new link, and the old one stays dead. With an API key, it needs the `recipes: read` permission.
+         * @description Ends its link at once. Sharing it again makes a new link, and the old one stays dead. With an API key, it needs the `recipes: write` permission.
          */
         delete: operations["stopSharingRecipe"];
         options?: never;

@@ -17,7 +17,7 @@ const route = createRoute({
   summary: "Stop sharing a recipe",
   description:
     "Ends its link at once. Sharing it again makes a new link, and the old one stays dead.",
-  ...openToKeys("recipes", "read"),
+  ...openToKeys("recipes", "write"),
   request: { params: RecipeParam },
   responses: {
     204: { description: "Not shared anymore." },

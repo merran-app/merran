@@ -134,6 +134,41 @@ describe("sharing a recipe by link", () => {
   })
 })
 
+describe("sharing with an API key", () => {
+  test("needs recipes:write to share or stop, and recipes:read to look", async () => {
+    const slug = await makeRecipe("Keyed Kebab")
+    const made = await (
+      await owner.post("/api/auth/api-keys", {
+        name: "Read only",
+        permissions: { recipes: "read" },
+        expiresInDays: 90,
+      })
+    ).json()
+    const withKey = (method: string) =>
+      app.request(`http://merran.test${shareUrlOf(slug)}`, {
+        method,
+        headers: { authorization: `Bearer ${made.key}` },
+      })
+
+    expect((await withKey("POST")).status).toBe(403)
+    expect((await withKey("DELETE")).status).toBe(403)
+    expect((await withKey("GET")).status).toBe(200)
+
+    const writer = await (
+      await owner.post("/api/auth/api-keys", {
+        name: "Writer",
+        permissions: { recipes: "write" },
+        expiresInDays: 90,
+      })
+    ).json()
+    const shared = await app.request(`http://merran.test${shareUrlOf(slug)}`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${writer.key}` },
+    })
+    expect(shared.status).toBe(200)
+  })
+})
+
 describe("without a public URL", () => {
   test("sharing explains why", async () => {
     const testApp = await createTestApp({ publicUrl: null })

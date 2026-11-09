@@ -30459,7 +30459,7 @@
           "Recipes"
         ],
         "summary": "Share a recipe by link",
-        "description": "Returns the recipe's link, making one if it has none. Anyone with the link can see and cook the recipe, but not change it. With an API key, it needs the `recipes: read` permission.",
+        "description": "Returns the recipe's link, making one if it has none. Anyone with the link can see and cook the recipe, but not change it. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -30471,7 +30471,7 @@
             "oauth": []
           }
         ],
-        "x-merran-permission": "recipes:read",
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -30544,7 +30544,7 @@
           "Recipes"
         ],
         "summary": "Stop sharing a recipe",
-        "description": "Ends its link at once. Sharing it again makes a new link, and the old one stays dead. With an API key, it needs the `recipes: read` permission.",
+        "description": "Ends its link at once. Sharing it again makes a new link, and the old one stays dead. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -30556,7 +30556,7 @@
             "oauth": []
           }
         ],
-        "x-merran-permission": "recipes:read",
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {

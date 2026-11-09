@@ -23,7 +23,7 @@ const route = createRoute({
   summary: "Share a recipe by link",
   description:
     "Returns the recipe's link, making one if it has none. Anyone with the link can see and cook the recipe, but not change it.",
-  ...openToKeys("recipes", "read"),
+  ...openToKeys("recipes", "write"),
   request: { params: RecipeParam },
   responses: {
     200: jsonResponse(RecipeShareSchema, "The recipe's link."),
