@@ -223,8 +223,8 @@ describe("findDuplicatePairs", () => {
       sourceUrl: `https://example.com/dish-${i}`,
       foods: [`food ${i}`, `spice ${i}`, `herb ${i}`],
     }))
-    const started = performance.now()
+    const started = Date.now()
     expect(findDuplicatePairs(library)).toEqual([])
-    expect(performance.now() - started).toBeLessThan(500)
+    expect(Date.now() - started).toBeLessThan(500)
   })
 })

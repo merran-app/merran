@@ -19,6 +19,9 @@ export const TRACKING_PARAM =
 /** Parameters that ask for another version of the same page. */
 const VERSION_PARAM = /^(amp|print)$/i
 
+/** A web link's host, path and query, without its scheme or #part. */
+const WEB_LINK = /^https?:\/\/(?:[^@/?#]*@)?([^/?#]*)([^?#]*)(?:\?([^#]*))?/i
+
 /**
  * A link reduced to the page it's for: no scheme, no "www.", "m." or
  * "amp.", no trailing slash, print or AMP ending, tracking or #part. So
@@ -27,23 +30,25 @@ const VERSION_PARAM = /^(amp|print)$/i
  * isn't a web link.
  */
 export function linkKey(url: string): string | null {
-  let parsed: URL
-  try {
-    parsed = new URL(url.trim())
-  } catch {
-    return null
-  }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null
-  const host = parsed.hostname.toLowerCase().replace(/^(www|m|amp)\./, "")
-  const path = parsed.pathname
+  // Parsed by hand: this package runs everywhere, with no URL class to lean on.
+  const parts = WEB_LINK.exec(url.trim())
+  if (!parts) return null
+  const [, rawHost = "", rawPath = "", rawQuery = ""] = parts
+  const host = rawHost.toLowerCase().replace(/^(www|m|amp)\./, "")
+  if (!host) return null
+  const path = rawPath
     .replace(/\/+$/, "")
     .replace(/\/(amp|print)$/i, "")
     .replace(/\/+$/, "")
-  const params = [...parsed.searchParams.entries()]
-    .filter(([key]) => !TRACKING_PARAM.test(key) && !VERSION_PARAM.test(key))
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-  const query = new URLSearchParams(params).toString()
-  return `${host}${path}${query ? `?${query}` : ""}`
+  const params = rawQuery
+    .split("&")
+    .filter(Boolean)
+    .filter((param) => {
+      const key = param.split("=")[0] ?? ""
+      return !TRACKING_PARAM.test(key) && !VERSION_PARAM.test(key)
+    })
+    .sort()
+  return `${host}${path}${params.length ? `?${params.join("&")}` : ""}`
 }
 
 /** Words that say nothing about which dish a recipe is. */
