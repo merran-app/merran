@@ -32,7 +32,7 @@ From alpha.7, on the many food blogs that use the WordPress Recipe Maker card, M
 
 When a site turns Merran away, you'll see **That site turned Merran away. Type the recipe in instead.** The [browser extension](../../integrations/browser-extension/) can import the page from your own browser. From alpha.7, a server admin can also connect [FlareSolverr](../../integrations/flaresolverr/), so those links come in from here and from your phone.
 
-If **You have this one** appears, choose **Open it** to use the existing recipe. **Add it again** creates a separate recipe; it does not update the earlier copy.
+If **You have this one** appears, choose **Open it** to use the existing recipe. **Add it again** creates a separate recipe; it does not update the earlier copy. It also knows the same page under another address: `http` or `https`, with or without `www.`, or its print version.
 
 ### Several links
 
@@ -80,6 +80,8 @@ cards show **Planned this week** when the recipe is on the household's current w
 On **Recipes**, use **Search recipes**, tags, **Filters**, and **Sort by** to find meals. **Manage tags** can rename a tag across recipes; renaming it to an existing tag merges them. Deleting a tag removes the tag, not the recipes.
 
 With a mouse or trackpad, right-click a recipe card for **Open in a new tab**, **Start cooking**, **Plan it**, **Edit**, **Tags**, **Select** and **Delete**. On a phone, a long press still selects the card.
+
+**More → Possible duplicates** lists recipes that look like the same one, in pairs side by side: **Same link** when they came from the same page under any address, **Same name** when their names have the same words, whatever their order or small words like "easy". A name inside another, such as "Sticky Lemon Chicken" and "Lemon Chicken", counts only when most of their ingredients match too. Each recipe has **Open** and **Delete**; **Not the same** takes the pair off the list for everyone in the household. A recipe added in the last 7 days also says so when you open it: "You may have this one already:", with **Open it** and **Not the same**. Tidy up's Review lists them too. None of this needs AI.
 
 **Delete** moves a recipe to **Recently deleted** for 30 days. **Put back** restores it during that period. **Delete for good** and **Empty** are permanent. Right-click a recipe in **Recently deleted** for **Put back**, **Select** and **Delete for good**.
 
