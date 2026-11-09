@@ -64,6 +64,13 @@ describe("nameWords", () => {
     expect(nameWords("Recipe").size).toBe(0)
     expect(nameWords("The Best Easy Recipe").size).toBe(0)
   })
+
+  test("keeps the marks other scripts spell with", () => {
+    // Dal and dil differ only in a vowel sign, which isn't an accent.
+    expect(nameWords("दाल मखनी")).toEqual(new Set(["दाल", "मखनी"]))
+    expect(nameWords("दाल मखनी")).not.toEqual(nameWords("दिल मखनी"))
+    expect(nameWords("鶏の唐揚げ")).toEqual(new Set(["鶏の唐揚げ"]))
+  })
 })
 
 describe("duplicateReasons", () => {

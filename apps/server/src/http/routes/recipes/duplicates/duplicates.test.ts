@@ -186,4 +186,33 @@ describe("possible duplicates", () => {
     expect(res.status, await res.clone().text()).toBe(201)
     expect((await res.json()).slug).not.toBe("duplicates")
   })
+
+  test("matches a name inside another by the foods in its ingredient lines", async () => {
+    // Three of Lemon Chicken's four foods: chicken thighs, lemons, garlic.
+    await kyle.post("/api/recipes", {
+      name: "Sticky Lemon Chicken",
+      ingredients: [
+        "1 lb chicken thighs",
+        "1 lemon, zested",
+        "4 cloves garlic, minced",
+        "3 tbsp honey",
+      ],
+    })
+    // Only two: not enough.
+    await kyle.post("/api/recipes", {
+      name: "Lemon Chicken Salad",
+      ingredients: [
+        "2 chicken thighs",
+        "1 lemon",
+        "1 head lettuce",
+        "1 cucumber",
+      ],
+    })
+    const sticky = await duplicatesOf("sticky-lemon-chicken")
+    expect(sticky.map((d) => [d.name, d.reasons])).toEqual([
+      ["Lemon Chicken", ["name"]],
+    ])
+    const salad = await duplicatesOf("lemon-chicken-salad")
+    expect(salad.map((d) => d.name)).not.toContain("Lemon Chicken")
+  })
 })

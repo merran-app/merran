@@ -90,14 +90,19 @@ function singular(word: string) {
   return word
 }
 
-/** Lowercase words of letters and digits, accents dropped. */
+/**
+ * Lowercase words of letters and digits, accents dropped. Only the marks
+ * Latin accents come apart into go ("Crème" is "creme"): other scripts
+ * spell with theirs, so "दाल" (dal) and "दिल" (dil) stay apart.
+ */
 function words(text: string) {
   return (
     text
       .normalize("NFD")
-      .replace(/\p{M}/gu, "")
+      .replace(/[̀-ͯ]/g, "")
+      .normalize("NFC")
       .toLowerCase()
-      .match(/[\p{L}\p{N}]+/gu) ?? []
+      .match(/[\p{L}\p{M}\p{N}]+/gu) ?? []
   )
 }
 

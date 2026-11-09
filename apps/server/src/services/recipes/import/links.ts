@@ -21,15 +21,17 @@ export function isVideoLink(url: string) {
   return VIDEO_HOSTS.test(new URL(url).hostname)
 }
 
+/** A link compared as the page it's for, or as it is when it has no key. */
+const keyOf = (url: string) => linkKey(url) ?? url
+
 /**
- * A recipe the household already has from one of these links, if any:
- * the same page under any address, so "http://www.example.com/soup/" finds
- * the recipe from "https://example.com/soup". The oldest, when there are
- * several.
+ * For each of these links, the recipe the household already has from it,
+ * if any: the same page under any address, so
+ * "http://www.example.com/soup/" finds the recipe from
+ * "https://example.com/soup". The oldest, when there are several. The
+ * library is read once, however many links there are.
  */
-export async function findBySourceUrl(em: EntityManager, urls: string[]) {
-  const keyOf = (url: string) => linkKey(url) ?? url
-  const wanted = new Set(urls.map(keyOf))
+export async function findBySourceUrls(em: EntityManager, urls: string[]) {
   const recipes = await em.find(
     Recipe,
     { sourceUrl: { $ne: null } },
@@ -38,8 +40,25 @@ export async function findBySourceUrl(em: EntityManager, urls: string[]) {
       orderBy: { createdAt: "asc", id: "asc" },
     }
   )
-  const found = recipes.find(
-    (recipe) => recipe.sourceUrl && wanted.has(keyOf(recipe.sourceUrl))
-  )
-  return found ?? null
+  // Oldest first, so the first recipe for a page is the one kept.
+  const byKey = new Map<string, (typeof recipes)[number]>()
+  for (const recipe of recipes) {
+    const key = keyOf(recipe.sourceUrl!)
+    if (!byKey.has(key)) byKey.set(key, recipe)
+  }
+  const found = new Map<string, (typeof recipes)[number]>()
+  for (const url of urls) {
+    const recipe = byKey.get(keyOf(url))
+    if (recipe) found.set(url, recipe)
+  }
+  return found
+}
+
+/** A recipe the household already has from one of these links, if any: the oldest. */
+export async function findBySourceUrl(em: EntityManager, urls: string[]) {
+  const found = [...(await findBySourceUrls(em, urls)).values()]
+  const oldest = found.sort(
+    (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+  )[0]
+  return oldest ?? null
 }
