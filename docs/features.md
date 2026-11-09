@@ -111,7 +111,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Import from a link | Headline | Built | Honest user agent. Available in alpha.7: a WordPress Recipe Maker card's ingredient groups, notes and summary, which its recipe data leaves out; a summary section before the steps ("Abbreviated recipe") is left out |
 | Type one in | Detail | Built | |
 | Paste many links at once | Key | Built | Runs in the background |
-| Import from text, photos, PDFs, or pages with no recipe data | Headline | Built | AI; any model that reads images and PDFs |
+| Import from text, photos, PDFs, or pages with no recipe data | Headline | Built | AI; any model that reads images and PDFs, or the household's model for photos and PDFs |
 | Move from Mealie: a backup file, an export, or connecting to it | Headline | Built | |
 | Import from Paprika | Key | Built | |
 | Merran export and import of a whole household | Key | Built | |
@@ -190,10 +190,11 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | The server admin doesn't pay for everyone: household keys, a policy, monthly limits | Headline | Built | |
 | Usage and cost by key; warnings when a key runs low | Detail | Built | |
 | A suggested model for each task | Detail | Built | |
+| A model for photos and PDFs | Detail | Built | Household and server default; used for every photo and PDF call, ahead of a task's own model |
 | The AI proposes, people apply: a Review queue | Key | Built | |
 | A cooking assistant to chat with, that can plan and edit with your OK | Headline | Built | AI; knows the recipe or week on screen, and offers changes as cards to apply |
-| Show the assistant a photo: is it done, is the sauce thick enough? | Key | Built | AI; any model that reads images; take one with a phone's camera or a computer's webcam |
-| Send the assistant a recipe as a PDF or photo, and it drafts it for your library | Key | Built | AI; any model that reads PDFs or images |
+| Show the assistant a photo: is it done, is the sauce thick enough? | Key | Built | AI; any model that reads images, or the household's model for photos and PDFs; take one with a phone's camera or a computer's webcam |
+| Send the assistant a recipe as a PDF or photo, and it drafts it for your library | Key | Built | AI; any model that reads PDFs or images, or the household's model for photos and PDFs |
 | Ask what to use instead, and get a swap to use this time or save | Detail | Built | AI |
 | Finding recipes online in chat | Key | Built | AI, with web search |
 
