@@ -241,11 +241,13 @@ function Swiping({
     if (!swiped.current && !open) return
     event.preventDefault()
     event.stopPropagation()
-    swiped.current = false
-    if (open) {
-      setOffset(0)
-      setOpen(false)
+    // The click that ends a swipe only ends it: the row may have just opened.
+    if (swiped.current) {
+      swiped.current = false
+      return
     }
+    setOffset(0)
+    setOpen(false)
   }
 
   const shown = offset === 0 ? null : actionFor(sideOf(offset))
@@ -257,12 +259,18 @@ function Swiping({
       className={cn("relative overflow-hidden", className)}
       {...props}
     >
+      {/*
+        The action fills only the gap the swipe opens, so the row itself
+        needs no background of its own and looks the same on any card.
+      */}
       {shown && (
         <div
           aria-hidden
+          style={{ width: Math.abs(offset) }}
           className={cn(
-            "absolute inset-0 flex",
-            side === "start" ? "justify-start" : "justify-end",
+            "absolute inset-y-0 flex overflow-hidden",
+            side === "start" ? "left-0 justify-start" : "right-0 justify-end",
+            !dragging && "transition-[width] duration-200 ease-out",
             TONES[shown.tone]
           )}
         >
@@ -270,8 +278,8 @@ function Swiping({
             type="button"
             tabIndex={-1}
             onClick={() => void act(side)}
-            style={{ width: OPEN_PX }}
-            className="flex flex-col items-center justify-center gap-1 text-xs font-medium"
+            style={{ minWidth: OPEN_PX }}
+            className="flex w-full shrink-0 flex-col items-center justify-center gap-1 text-xs font-medium"
           >
             <HugeiconsIcon
               icon={shown.icon}
@@ -291,7 +299,7 @@ function Swiping({
         onClickCapture={swallowClick}
         style={{ transform: offset ? `translateX(${offset}px)` : undefined }}
         className={cn(
-          "relative touch-pan-y bg-card",
+          "relative touch-pan-y",
           !dragging && "transition-transform duration-200 ease-out",
           contentClassName
         )}
