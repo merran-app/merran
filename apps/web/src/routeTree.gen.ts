@@ -39,6 +39,8 @@ import { Route as AppSettingsImportExportRouteImport } from './routes/_app/setti
 import { Route as AppSettingsServerRouteImport } from './routes/_app/settings/server'
 import { Route as AppSettingsYouRouteImport } from './routes/_app/settings/you'
 import { Route as FocusExtensionConnectRouteImport } from './routes/_focus/extension/connect'
+import { Route as RTokenIndexRouteImport } from './routes/r/$token/index'
+import { Route as RTokenCookRouteImport } from './routes/r/$token/cook'
 import { Route as AppPantryReceiptsIndexRouteImport } from './routes/_app/pantry/receipts/index'
 import { Route as AppPantryReceiptsReceiptIdRouteImport } from './routes/_app/pantry/receipts/$receiptId'
 import { Route as AppRecipesSlugIndexRouteImport } from './routes/_app/recipes/$slug/index'
@@ -196,6 +198,16 @@ const FocusExtensionConnectRoute = FocusExtensionConnectRouteImport.update({
   path: '/extension/connect',
   getParentRoute: () => FocusRoute,
 } as any)
+const RTokenIndexRoute = RTokenIndexRouteImport.update({
+  id: '/r/$token/',
+  path: '/r/$token/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RTokenCookRoute = RTokenCookRouteImport.update({
+  id: '/r/$token/cook',
+  path: '/r/$token/cook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppPantryReceiptsIndexRoute = AppPantryReceiptsIndexRouteImport.update({
   id: '/pantry/receipts/',
   path: '/pantry/receipts/',
@@ -265,10 +277,12 @@ export interface FileRoutesByFullPath {
   '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
   '/extension/connect': typeof FocusExtensionConnectRoute
+  '/r/$token/cook': typeof RTokenCookRoute
   '/list/': typeof AppListIndexRoute
   '/pantry/': typeof AppPantryIndexRoute
   '/recipes/': typeof AppRecipesIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
+  '/r/$token/': typeof RTokenIndexRoute
   '/pantry/receipts/$receiptId': typeof AppPantryReceiptsReceiptIdRoute
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
   '/recipes/find/$collection': typeof AppRecipesFindCollectionRoute
@@ -302,10 +316,12 @@ export interface FileRoutesByTo {
   '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
   '/extension/connect': typeof FocusExtensionConnectRoute
+  '/r/$token/cook': typeof RTokenCookRoute
   '/list': typeof AppListIndexRoute
   '/pantry': typeof AppPantryIndexRoute
   '/recipes': typeof AppRecipesIndexRoute
   '/settings': typeof AppSettingsIndexRoute
+  '/r/$token': typeof RTokenIndexRoute
   '/pantry/receipts/$receiptId': typeof AppPantryReceiptsReceiptIdRoute
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
   '/recipes/find/$collection': typeof AppRecipesFindCollectionRoute
@@ -343,10 +359,12 @@ export interface FileRoutesById {
   '/_app/settings/server': typeof AppSettingsServerRoute
   '/_app/settings/you': typeof AppSettingsYouRoute
   '/_focus/extension/connect': typeof FocusExtensionConnectRoute
+  '/r/$token/cook': typeof RTokenCookRoute
   '/_app/list/': typeof AppListIndexRoute
   '/_app/pantry/': typeof AppPantryIndexRoute
   '/_app/recipes/': typeof AppRecipesIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
+  '/r/$token/': typeof RTokenIndexRoute
   '/_app/pantry/receipts/$receiptId': typeof AppPantryReceiptsReceiptIdRoute
   '/_app/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
   '/_app/recipes/find/$collection': typeof AppRecipesFindCollectionRoute
@@ -383,10 +401,12 @@ export interface FileRouteTypes {
     | '/settings/server'
     | '/settings/you'
     | '/extension/connect'
+    | '/r/$token/cook'
     | '/list/'
     | '/pantry/'
     | '/recipes/'
     | '/settings/'
+    | '/r/$token/'
     | '/pantry/receipts/$receiptId'
     | '/recipes/$slug/edit'
     | '/recipes/find/$collection'
@@ -420,10 +440,12 @@ export interface FileRouteTypes {
     | '/settings/server'
     | '/settings/you'
     | '/extension/connect'
+    | '/r/$token/cook'
     | '/list'
     | '/pantry'
     | '/recipes'
     | '/settings'
+    | '/r/$token'
     | '/pantry/receipts/$receiptId'
     | '/recipes/$slug/edit'
     | '/recipes/find/$collection'
@@ -460,10 +482,12 @@ export interface FileRouteTypes {
     | '/_app/settings/server'
     | '/_app/settings/you'
     | '/_focus/extension/connect'
+    | '/r/$token/cook'
     | '/_app/list/'
     | '/_app/pantry/'
     | '/_app/recipes/'
     | '/_app/settings/'
+    | '/r/$token/'
     | '/_app/pantry/receipts/$receiptId'
     | '/_app/recipes/$slug/edit'
     | '/_app/recipes/find/$collection'
@@ -485,6 +509,8 @@ export interface RootRouteChildren {
   AuthorizeHouseholdRoute: typeof AuthorizeHouseholdRoute
   JoinTokenRoute: typeof JoinTokenRoute
   AuthorizeIndexRoute: typeof AuthorizeIndexRoute
+  RTokenCookRoute: typeof RTokenCookRoute
+  RTokenIndexRoute: typeof RTokenIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -699,6 +725,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FocusExtensionConnectRouteImport
       parentRoute: typeof FocusRoute
     }
+    '/r/$token/': {
+      id: '/r/$token/'
+      path: '/r/$token'
+      fullPath: '/r/$token/'
+      preLoaderRoute: typeof RTokenIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/r/$token/cook': {
+      id: '/r/$token/cook'
+      path: '/r/$token/cook'
+      fullPath: '/r/$token/cook'
+      preLoaderRoute: typeof RTokenCookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/pantry/receipts/': {
       id: '/_app/pantry/receipts/'
       path: '/pantry/receipts'
@@ -851,6 +891,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthorizeHouseholdRoute: AuthorizeHouseholdRoute,
   JoinTokenRoute: JoinTokenRoute,
   AuthorizeIndexRoute: AuthorizeIndexRoute,
+  RTokenCookRoute: RTokenCookRoute,
+  RTokenIndexRoute: RTokenIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

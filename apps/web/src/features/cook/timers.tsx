@@ -355,7 +355,7 @@ const PRESETS = [1, 3, 5, 10, 15, 20, 30, 45, 60]
 const MOST_MINUTES = 24 * 60
 
 /** A timer for something the steps don't time, like resting the dough. */
-export function NewTimerButton({ cooking }: { cooking: Cooking }) {
+export function NewTimerButton({ cooking }: { cooking: Cooking | null }) {
   const { t } = useTranslation()
   const [open, setOpen] = React.useState(false)
   const [minutes, setMinutes] = React.useState("")

@@ -48,10 +48,13 @@ export function handsFreeSupported() {
  */
 export function useHandsFree({
   enabled,
+  serverVoice = true,
   onCommand,
   onDenied,
 }: {
   enabled: boolean
+  /** Whether the server's voice may read; off for a guest, who gets the device's. */
+  serverVoice?: boolean
   onCommand: (command: CookCommand) => void
   /** The microphone was refused. */
   onDenied: () => void
@@ -68,7 +71,7 @@ export function useHandsFree({
   })
   /** Each thing said takes a turn; a newer one cuts off the older. */
   const turn = React.useRef(0)
-  const serverOn = useServerVoice()
+  const serverOn = useServerVoice(serverVoice)
   /** One player for the server's readings, let play by the first tap. */
   const player = React.useRef<HTMLAudioElement | null>(null)
 

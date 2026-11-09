@@ -33,12 +33,16 @@ const NONE: RecipeTastes = {
 /**
  * What the household's tastes make of a recipe: the lines to leave out for
  * someone who doesn't like them, and the foods that keep it from being
- * suggested.
+ * suggested. Turned off, as for a guest on a shared recipe, it leaves
+ * nothing out and doesn't ask the server.
  */
-export function useRecipeTastes(recipe: Recipe | undefined): RecipeTastes {
-  const { data } = useQuery(tastesQuery)
+export function useRecipeTastes(
+  recipe: Recipe | undefined,
+  enabled = true
+): RecipeTastes {
+  const { data } = useQuery({ ...tastesQuery, enabled })
   return React.useMemo(() => {
-    if (!recipe || !data || data.avoid.length === 0) return NONE
+    if (!enabled || !recipe || !data || data.avoid.length === 0) return NONE
     const avoid: AvoidedFood[] = data.avoid.map((item) => ({
       ...item,
       who: item.who ?? null,
@@ -61,7 +65,7 @@ export function useRecipeTastes(recipe: Recipe | undefined): RecipeTastes {
       }
     }
     return { ...check, lines }
-  }, [recipe, data])
+  }, [enabled, recipe, data])
 }
 
 /** The lines to leave out of a recipe and the one it's cooked with. */

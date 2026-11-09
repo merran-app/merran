@@ -44,16 +44,19 @@ export function readAhead(text: string) {
   void fetchReading(text)
 }
 
-/** Whether the server reads aloud for this household. */
-export function useServerVoice() {
-  const capable = useCapability("voice")
+/**
+ * Whether the server reads aloud for this household. Turned off, as for a
+ * guest on a shared recipe, it doesn't ask: the server's voice is AI.
+ */
+export function useServerVoice(enabled = true) {
+  const capable = useCapability("voice", enabled)
   const { data } = useQuery({
     queryKey: ["voice"],
     queryFn: () => unwrap(api.GET("/api/voice")),
-    enabled: capable,
+    enabled: enabled && capable,
     staleTime: 5 * 60_000,
   })
-  return capable && data?.on === true
+  return enabled && capable && data?.on === true
 }
 
 /** A moment of silence, played from a tap so the phone lets later readings play. */

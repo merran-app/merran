@@ -1264,6 +1264,13 @@
       "neverOpened": "not opened yet",
       "noAddress": "Link hidden until the server's admin sets the public address.",
       "loadFailed": "Couldn't load the shared recipes."
+    },
+    "page": {
+      "sharedBy": "Shared by {{household}}",
+      "madeWith": "Made with Merran",
+      "recipeAppHint": "Use a recipe app? Paste this link into it to save a copy.",
+      "unavailable": "This recipe isn't shared anymore",
+      "tooManyVisits": "Too many visits; try again in a minute"
     }
   },
   "share": {

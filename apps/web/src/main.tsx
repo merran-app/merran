@@ -31,7 +31,10 @@ declare module "@tanstack/react-router" {
   }
 }
 
-void startErrorTracking(queryClient)
+// A shared recipe's link asks the server for that recipe and nothing else.
+if (!window.location.pathname.startsWith("/r/")) {
+  void startErrorTracking(queryClient)
+}
 listenForInstall()
 registerServiceWorker()
 
