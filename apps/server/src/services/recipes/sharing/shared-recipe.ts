@@ -66,3 +66,6 @@ export function describeShared(
     household: { name: householdName },
   }
 }
+
+/** A recipe as anyone with its link sees it. */
+export type SharedRecipe = ReturnType<typeof describeShared>

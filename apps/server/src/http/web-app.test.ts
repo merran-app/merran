@@ -2,7 +2,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pino } from "pino"
-import { afterAll, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { createTestApp, setUpServer, type TestClient } from "../test/app.ts"
 import { handleNotFound } from "./errors.ts"
 import { createRouter } from "./router.ts"
 import { serveWebApp } from "./web-app.ts"
@@ -19,7 +20,7 @@ afterAll(() => rmSync(dir, { recursive: true, force: true }))
 function createApp(webDir: string) {
   const app = createRouter()
   app.get("/api/health", (c) => c.json({ ok: true }))
-  serveWebApp(app, webDir, logger)
+  serveWebApp(app, webDir, logger, null)
   app.notFound(handleNotFound)
   return app
 }
@@ -106,5 +107,83 @@ describe("without a built web app", () => {
     const app = createApp(join(dir, "not-built"))
     expect((await app.request("/api/health")).status).toBe(200)
     expect((await app.request("/")).status).toBe(404)
+  })
+})
+
+describe("a shared recipe's page", () => {
+  let owner: TestClient
+  let app: Awaited<ReturnType<typeof createTestApp>>["app"]
+  let close: () => Promise<void>
+  let token: string
+
+  const metaContent = (html: string, property: string) =>
+    new RegExp(`<meta (?:property|name)="${property}" content="([^"]*)"`).exec(
+      html
+    )?.[1]
+
+  beforeAll(async () => {
+    const testApp = await createTestApp({ webDir: dir })
+    ;({ app, close } = testApp)
+    owner = await setUpServer(app, testApp.setupCode)
+    const created = await owner.post("/api/recipes", {
+      name: "Lemon Pasta",
+      servings: 4,
+      ingredients: ["1 cup pasta"],
+      steps: ["Boil the pasta."],
+    })
+    const { slug } = (await created.json()) as { slug: string }
+    const shared = await owner.post(`/api/recipes/${slug}/share`)
+    const { url } = (await shared.json()) as { url: string }
+    token = url.split("/r/")[1]!
+  })
+
+  afterAll(() => close())
+
+  it("has the recipe's name and data in its head", async () => {
+    for (const path of [`/r/${token}`, `/r/${token}/cook`]) {
+      const res = await app.request(path)
+      expect(res.status, path).toBe(200)
+      expect(res.headers.get("cache-control")).toBe("no-cache")
+      expect(res.headers.get("referrer-policy")).toBe("no-referrer")
+      const html = await res.text()
+      expect(metaContent(html, "og:title")).toBe("Lemon Pasta")
+      expect(html).toContain("application/ld+json")
+      expect(html).not.toContain("<title>Merran</title>")
+    }
+  })
+
+  it("doesn't count a preview bot's fetch as the link being opened", async () => {
+    const openedAt = async () => {
+      const res = await owner.get("/api/households/current/shares")
+      const { shares } = (await res.json()) as {
+        shares: { openedAt: string | null }[]
+      }
+      return shares[0]!.openedAt
+    }
+    expect(await openedAt()).toBeNull()
+    await app.request(`/r/${token}`)
+    expect(await openedAt()).toBeNull()
+  })
+
+  it("leaves other pages and unknown links as they are", async () => {
+    for (const path of [`/r/${"b".repeat(43)}`, "/r/short", "/recipes/x"]) {
+      const res = await app.request(path)
+      expect(res.status, path).toBe(200)
+      expect(await res.text(), path).toBe(
+        "<!doctype html><title>Merran</title>"
+      )
+    }
+  })
+})
+
+describe("a shared recipe's page without a public URL", () => {
+  it("is the page unchanged", async () => {
+    const testApp = await createTestApp({ webDir: dir, publicUrl: null })
+    try {
+      const res = await testApp.app.request(`/r/${"b".repeat(43)}`)
+      expect(await res.text()).toBe("<!doctype html><title>Merran</title>")
+    } finally {
+      await testApp.close()
+    }
   })
 })

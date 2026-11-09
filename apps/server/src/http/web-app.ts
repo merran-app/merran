@@ -3,6 +3,12 @@ import { join } from "node:path"
 import { serveStatic } from "@hono/node-server/serve-static"
 import { bodyLimit } from "hono/body-limit"
 import type { Logger } from "pino"
+import {
+  sharedPageHead,
+  withHead,
+} from "../services/recipes/sharing/page-head.ts"
+import { describeShared } from "../services/recipes/sharing/shared-recipe.ts"
+import { sharedForToken, shareUrl } from "../services/recipes/sharing/shares.ts"
 import type { Router } from "./router.ts"
 
 /** Vite names these after their contents, so a file there never changes. */
@@ -10,6 +16,9 @@ const ASSETS = "/assets/"
 
 /** A share's photos, past which its text is let go too. */
 const MAX_SHARE_BYTES = 25_000_000
+
+/** A shared recipe's page and its cook view. */
+const SHARED_PAGE = /^\/r\/([A-Za-z0-9_-]{43})(\/cook)?$/
 
 function isApi(path: string) {
   return path === "/api" || path.startsWith("/api/")
@@ -20,7 +29,12 @@ function isApi(path: string) {
  * page, so the app's own router can show it. Does nothing when the app
  * hasn't been built, as in development, where Vite serves it instead.
  */
-export function serveWebApp(app: Router, dir: string, logger: Logger) {
+export function serveWebApp(
+  app: Router,
+  dir: string,
+  logger: Logger,
+  publicUrl: string | null
+) {
   const indexFile = join(dir, "index.html")
   if (!existsSync(indexFile)) {
     logger.info(`No web app built at ${dir}, so serving only the API`)
@@ -67,12 +81,34 @@ export function serveWebApp(app: Router, dir: string, logger: Logger) {
     }
   )
 
-  app.get("*", (c) => {
+  app.get("*", async (c) => {
     const path = c.req.path
     // A missing script or API route is a real 404, not a page.
     if (isApi(path) || path.startsWith(ASSETS)) return c.notFound()
     // Always check for a new version, so an update shows on the next load.
     c.header("Cache-Control", "no-cache")
+
+    const token = SHARED_PAGE.exec(path)?.[1]
+    if (token && publicUrl) {
+      // Link-preview bots fetch this when someone pastes the link, so it
+      // doesn't count as the link being opened: the page's own call does.
+      const found = await sharedForToken(c.var.em, token, { noteOpened: false })
+      if (found) {
+        // The token is in this page's address: keep it from other sites.
+        c.header("Referrer-Policy", "no-referrer")
+        const shared = describeShared(
+          found.recipe,
+          found.household.name,
+          found.token
+        )
+        const head = sharedPageHead(
+          shared,
+          shareUrl(publicUrl, found.token),
+          publicUrl
+        )
+        return c.html(withHead(index, head))
+      }
+    }
     return c.html(index)
   })
 }

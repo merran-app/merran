@@ -50,6 +50,8 @@ export async function createTestApp(
     video?: VideoTools
     /** Kinds of job beyond Merran's own, for tests of the runner. */
     jobHandlers?: readonly JobHandler[]
+    /** A built web app to serve. By default there isn't one. */
+    webDir?: string
   } = {}
 ) {
   const {
@@ -72,7 +74,7 @@ export async function createTestApp(
       options.publicUrl === null
         ? undefined
         : (options.publicUrl ?? TEST_ORIGIN),
-    webDir: null,
+    webDir: options.webDir ?? null,
     // Uploads and the like go in the test's own folder, never the repo's.
     dataDir: filesDir,
   }
