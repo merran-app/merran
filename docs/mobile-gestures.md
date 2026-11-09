@@ -29,12 +29,12 @@ The maths (which way a finger's going, how far is far enough, how fast is a flic
 
 ### Swiping a row
 
-`useSwipeRow` and a `<SwipeRow>` that wraps a row's content, with an action on each side.
+`<SwipeRow>` wraps a row's content, with an action on each side.
 
 - **Touch and pen only.** A mouse never swipes; a computer has the "⋯" menu and right clicks. Below 768px only, and never while selecting, when a tap picks the row.
 - **Scrolling stays the phone's own.** The row is `touch-action: pan-y`. It only becomes a swipe once a finger has gone 10px sideways, and further sideways than up or down; until then it's a scroll, and a long press can still start.
 - **A short swipe** of more than 72px opens the row on its action's button, and it stays open. A tap on the button does it. A tap anywhere else, a scroll, or opening another row closes it: one row is open at a time.
-- **A long swipe,** past half the row's width or a quick flick, does the action as the finger lifts. The phone buzzes (10ms, as a long press does) when the swipe goes past halfway, so you know letting go will do it, and dragging back cancels.
+- **A long swipe,** past half the row's width, does the action as the finger lifts. A quick flick past 72px does too, but only for an action that keeps the row (check off, add to the list): **Remove** and **Used up** always need halfway, so a fast swipe can't take a row away by accident (decided November 8, 2026, after a fast test swipe removed real rows). How fast is measured over the last 100ms, and a pause before lifting isn't a flick. The phone buzzes (10ms, as a long press does) when the swipe goes past halfway, so you know letting go will do it, and dragging back cancels.
 - **Every action is one that's there already,** with the message and **Undo** it already has:
 
 | Row | Swipe left (red) | Swipe right |
@@ -46,15 +46,15 @@ The maths (which way a finger's going, how far is far enough, how fast is a flic
 
 ### Pull to refresh
 
-`usePullToRefresh`, mounted once in the app's layout.
+`<PullToRefresh>`, mounted once in the app's layout.
 
-- **Only in the installed app** (`display-mode: standalone`, the same test as `features/install/install.ts`). Chrome on Android and Safari in a tab pull to refresh by themselves, and two would fight. In the installed app the page is `overscroll-behavior-y: contain`.
+- **Only in the installed app** (`display-mode: standalone`, the same test as `features/install/install.ts`). Chrome on Android and Safari in a tab pull to refresh by themselves, and two would fight. In the installed app the page is `overscroll-behavior-y: none`: with `contain`, iOS still bounces the page itself.
 - **Only from the top:** the page is scrolled all the way up, no drawer or dialog is open, and the finger is going down.
 - **The pull resists** (it moves less than the finger), and a spinner comes down with it. Let go past 64px and Merran fetches everything on screen again (`queryClient.refetchQueries({ type: "active" })`); the spinner stays until it's done. Let go sooner and it slides back.
 
 ### Swiping back from the edge
 
-`useEdgeBack`, in the app's layout too.
+`<EdgeBack>`, in the app's layout too.
 
 - **Only in the installed app on iOS,** which has no back button and no back gesture. Android phones have their own, and Safari in a tab swipes back by itself.
 - **From the left edge:** a touch that starts within 20px of it and goes 80px right goes back (`router.history.back()`). A chevron follows the finger, so it's clear what letting go will do.
@@ -64,7 +64,7 @@ The maths (which way a finger's going, how far is far enough, how fast is a flic
 ## Checking it
 
 - The tests for `swipe-math.ts`, added to the web app's `test` script.
-- By hand in the dev server with a phone-sized window and touch on, then on a real iPhone and Android phone, installed and in the browser: rows swipe and scroll, long presses still select, pull to refresh and the edge swipe only where they should be.
+- By hand in the dev server with a phone-sized window and touch on, then on a real iPhone and Android phone, installed and in the browser: rows swipe and scroll, long presses still select, pull to refresh and the edge swipe only where they should be. The real-phone check is still to do: the build was checked with Chrome's touch emulation, which doesn't show how iOS bounces or hands a touch to its own scrolling.
 
 ## Keeping it current
 

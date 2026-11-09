@@ -7,7 +7,7 @@ import { onIos, standalone } from "@/features/install/install"
 import { cn } from "@/lib/utils"
 
 import { overlayOpen } from "./overlay-open"
-import { EDGE_BACK_PX, edgeEnd, inEdgeZone } from "./swipe-math"
+import { EDGE_BACK_PX, edgeEnd, edgeStart, inEdgeZone } from "./swipe-math"
 
 /**
  * Swipe in from the left edge to go back. Only in the installed app on an
@@ -29,6 +29,7 @@ function Edge() {
   React.useEffect(() => {
     if (!canGoBack) return
     let from: { x: number; y: number } | null = null
+    let going = false
     let last = { dx: 0, dy: 0 }
 
     function begin(event: TouchEvent) {
@@ -36,6 +37,7 @@ function Edge() {
       if (event.touches.length !== 1 || !touch) return
       if (!inEdgeZone(touch.clientX) || overlayOpen()) return
       from = { x: touch.clientX, y: touch.clientY }
+      going = false
       last = { dx: 0, dy: 0 }
     }
 
@@ -43,11 +45,17 @@ function Edge() {
       const touch = event.touches[0]
       if (!from || !touch) return
       last = { dx: touch.clientX - from.x, dy: touch.clientY - from.y }
-      // Mostly up or down: a scroll that began at the edge.
-      if (Math.abs(last.dy) > Math.abs(last.dx) && Math.abs(last.dy) > 10) {
-        from = null
-        setDrag(null)
-        return
+
+      // Nothing's held back until the finger's clearly going right, so a
+      // scroll that starts at the edge stays the phone's own.
+      if (!going) {
+        const start = edgeStart(last.dx, last.dy)
+        if (start === "wait") return
+        if (start === "scroll") {
+          from = null
+          return
+        }
+        going = true
       }
       event.preventDefault()
       setDrag({ dx: Math.max(0, last.dx), y: touch.clientY })

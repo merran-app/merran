@@ -27,10 +27,11 @@ function Pulling() {
   const [refreshing, setRefreshing] = React.useState(false)
 
   // The page stops bouncing at the top, so the pull is ours to draw.
+  // "none", not "contain": iOS still bounces the page itself with contain.
   React.useEffect(() => {
     const root = document.documentElement
     const was = root.style.overscrollBehaviorY
-    root.style.overscrollBehaviorY = "contain"
+    root.style.overscrollBehaviorY = "none"
     return () => {
       root.style.overscrollBehaviorY = was
     }

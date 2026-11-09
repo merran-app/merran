@@ -12,6 +12,8 @@ import {
   OPEN_PX,
   pastCommit,
   swipeEnd,
+  velocityOf,
+  FLICK_WINDOW_MS,
   type Axis,
   type SwipeSide,
 } from "./swipe-math"
@@ -34,7 +36,7 @@ type Gesture = {
   axis: Axis | null
   /** The offset the row had when the finger went down, if it was open. */
   from: number
-  /** The last two places it was, for how fast it's going. */
+  /** Where it's been lately, for how fast it's going. */
   samples: { x: number; t: number }[]
   buzzed: boolean
 }
@@ -161,8 +163,11 @@ function Swiping({
     }
     if (now.axis !== "x") return
 
+    // Only the moves in the last FLICK_WINDOW_MS count towards a flick.
     now.samples = [
-      ...now.samples.slice(-1),
+      ...now.samples.filter(
+        (sample) => event.timeStamp - sample.t <= FLICK_WINDOW_MS
+      ),
       { x: event.clientX, t: event.timeStamp },
     ]
     const next = limit(now.from + dx)
@@ -190,8 +195,13 @@ function Swiping({
     const result = swipeEnd({
       offset,
       width: width(),
-      velocity: velocityOf(now.samples),
+      velocity: velocityOf(now.samples, event.timeStamp),
       has: { start: Boolean(start), end: Boolean(end) },
+      // A flick never takes a row away: Remove and Used up need halfway.
+      flicks: {
+        start: start?.tone !== "destructive",
+        end: end?.tone !== "destructive",
+      },
     })
     if (result.kind === "commit") {
       void act(result.side)
@@ -299,7 +309,8 @@ function Swiping({
         onClickCapture={swallowClick}
         style={{ transform: offset ? `translateX(${offset}px)` : undefined }}
         className={cn(
-          "relative touch-pan-y",
+          // Scrolling and zooming stay the phone's own; sideways is ours.
+          "relative touch-pan-y touch-pinch-zoom",
           !dragging && "transition-transform duration-200 ease-out",
           contentClassName
         )}
@@ -312,12 +323,4 @@ function Swiping({
 
 function sideOf(offset: number): SwipeSide {
   return offset > 0 ? "start" : "end"
-}
-
-/** How fast the finger was going as it let go, in px per ms. */
-function velocityOf(samples: { x: number; t: number }[]) {
-  const [a, b] = samples
-  if (!a || !b) return 0
-  const time = b.t - a.t
-  return time > 0 ? (b.x - a.x) / time : 0
 }

@@ -10,6 +10,8 @@ export const OPEN_PX = 72
 export const COMMIT_FRACTION = 0.5
 /** A finger this fast is a flick, which does the action sooner. */
 export const FLICK_PX_PER_MS = 0.5
+/** How far back a flick's speed is measured, and how long a pause undoes it. */
+export const FLICK_WINDOW_MS = 100
 /** How far the spinner has to come down before letting go refreshes. */
 export const PULL_PX = 64
 /** A touch this close to the left edge is the start of going back. */
@@ -39,20 +41,24 @@ export function lockAxis(dx: number, dy: number): Axis | null {
 
 /**
  * What letting go of a row does. `offset` and `velocity` are positive to
- * the right; a side without an action always closes.
+ * the right; a side without an action always closes. A flick only does
+ * what `flicks` allows: something that takes a row away, like Remove,
+ * always needs the swipe past halfway, where the phone buzzes.
  */
 export function swipeEnd(input: {
   offset: number
   width: number
   velocity: number
   has: { start: boolean; end: boolean }
+  flicks: { start: boolean; end: boolean }
 }): SwipeEnd {
-  const { offset, width, velocity, has } = input
+  const { offset, width, velocity, has, flicks } = input
   const side: SwipeSide = offset > 0 ? "start" : "end"
   if (offset === 0 || !has[side]) return { kind: "close" }
 
   const distance = Math.abs(offset)
   const flicked =
+    flicks[side] &&
     Math.abs(velocity) >= FLICK_PX_PER_MS &&
     Math.sign(velocity) === Math.sign(offset)
 
@@ -60,6 +66,22 @@ export function swipeEnd(input: {
   if (flicked && distance >= OPEN_PX) return { kind: "commit", side }
   if (distance >= OPEN_PX) return { kind: "open", side }
   return { kind: "close" }
+}
+
+/**
+ * How fast a finger was going as it let go, in px per ms: over the moves
+ * in the last `FLICK_WINDOW_MS`, so one jumpy sample doesn't make a flick,
+ * and none at all if it stopped before letting go.
+ */
+export function velocityOf(
+  samples: readonly { x: number; t: number }[],
+  now: number
+): number {
+  const last = samples.at(-1)
+  if (!last || now - last.t > FLICK_WINDOW_MS) return 0
+  const first = samples.find((sample) => last.t - sample.t <= FLICK_WINDOW_MS)
+  if (!first || first === last) return 0
+  return (last.x - first.x) / (last.t - first.t)
 }
 
 /** Whether letting go here does the action: where the phone buzzes. */
@@ -86,4 +108,15 @@ export function inEdgeZone(x: number): boolean {
 /** What letting go of a swipe from the edge does: far enough, and mostly sideways. */
 export function edgeEnd(dx: number, dy: number): "back" | "cancel" {
   return dx >= EDGE_BACK_PX && dx > Math.abs(dy) ? "back" : "cancel"
+}
+
+/**
+ * Whether a touch from the left edge is going back yet. It waits until
+ * the finger's clearly going right, so a scroll that starts at the edge
+ * stays a scroll.
+ */
+export function edgeStart(dx: number, dy: number): "wait" | "back" | "scroll" {
+  const axis = lockAxis(dx, dy)
+  if (axis === null) return "wait"
+  return axis === "x" && dx > 0 ? "back" : "scroll"
 }
