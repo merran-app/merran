@@ -294,6 +294,32 @@ describe("a video link", () => {
     expect(targets.at(-1)).toMatchObject({ model: "claude-haiku-5-5" })
     await kyle.put("/api/households/current/ai", picks)
   })
+
+  test("says why before downloading, when the model for photos and PDFs can't read its frames", async () => {
+    const picks = { large: null, small: null, tasks: {}, monthlyLimit: null }
+    // A model there's no key for.
+    await kyle.put("/api/households/current/ai", {
+      ...picks,
+      vision: "google:gemini-3.8-flash",
+    })
+    videos.set("https://www.youtube.com/shorts/soup", {
+      url: "https://www.youtube.com/watch?v=soup",
+      title: "Soup in 20 minutes",
+      description: "Soup! 1 onion.",
+      uploader: "Sam Cooks",
+      duration: 45,
+      thumbnail: "https://thumbs.example/lemon.jpg",
+      captions: { url: "https://captions.example/lemon.vtt", lang: "en" },
+    })
+    downloads.length = 0
+    const { status, body } = await importLink(
+      "https://www.youtube.com/shorts/soup"
+    )
+    expect(status, JSON.stringify(body)).toBe(403)
+    expect(body.error.code).toBe("ai_noKey")
+    expect(downloads).toEqual([])
+    await kyle.put("/api/households/current/ai", picks)
+  })
 })
 
 describe("video import", () => {

@@ -3055,6 +3055,12 @@
       "lowUnknown": "{{whose}} is low on credit."
     },
     "needs": {
+      "vision": {
+        "noKey": "Reading photos and PDFs needs AI, and there's no key for the model that reads them.",
+        "notCovered": "Reading photos and PDFs needs AI, and the server's keys don't cover the model that reads them.",
+        "overLimit": "This month's AI on the server's keys is used up. It's back next month.",
+        "ownLimit": "This month's limit on the household's own AI keys is reached."
+      },
       "import": {
         "noKey": "Reading text and photos needs AI, and this household has no AI key yet.",
         "notCovered": "Reading text and photos needs AI, and this household has no AI key yet.",
