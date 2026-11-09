@@ -14,6 +14,36 @@ export const RecipeShareSchema = z
   })
   .openapi("RecipeShare", { example: EXAMPLE_SHARE })
 
+const EXAMPLE_HOUSEHOLD_SHARE = {
+  recipe: { slug: "lemon-pasta", name: "Lemon Pasta" },
+  url: EXAMPLE_SHARE.url,
+  sharedBy: { name: "Sam Rivera" },
+  createdAt: EXAMPLE_SHARE.createdAt,
+  openedAt: "2026-11-09T12:00:00.000Z",
+}
+
+export const HouseholdShareSchema = z
+  .object({
+    recipe: z.object({ slug: z.string(), name: z.string() }),
+    url: z.string().openapi({
+      description: "The link anyone can open to see and cook the recipe.",
+    }),
+    sharedBy: z.object({ name: z.string() }).nullable().openapi({
+      description: "Who shared it, or null once they've left the household.",
+    }),
+    createdAt: z.string(),
+    openedAt: z.string().nullable().openapi({
+      description: "When someone last opened the link, or null if none has.",
+    }),
+  })
+  .openapi("HouseholdShare", { example: EXAMPLE_HOUSEHOLD_SHARE })
+
+export const HouseholdSharesSchema = z
+  .object({ shares: z.array(HouseholdShareSchema) })
+  .openapi("HouseholdShares", {
+    example: { shares: [EXAMPLE_HOUSEHOLD_SHARE] },
+  })
+
 export const RecipeShareStatusSchema = z
   .object({
     share: z.union([RecipeShareSchema, z.null()]).openapi({

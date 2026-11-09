@@ -1929,6 +1929,10 @@
             "type": "boolean",
             "description": "Whether checking something off on the list puts it in the pantry, and unchecking takes it back out. On unless the household turns it off."
           },
+          "recipeSharing": {
+            "type": "boolean",
+            "description": "Whether members can share recipes by link. On unless the household turns it off. Turning it off pauses every link, and turning it on brings them back."
+          },
           "role": {
             "type": "string",
             "enum": [
@@ -1947,6 +1951,7 @@
           "weekStartsOn",
           "meals",
           "putAwayWhenChecked",
+          "recipeSharing",
           "role"
         ],
         "example": {
@@ -1960,6 +1965,7 @@
             "dinner"
           ],
           "putAwayWhenChecked": true,
+          "recipeSharing": true,
           "role": "owner"
         }
       },
@@ -2010,6 +2016,10 @@
           "putAwayWhenChecked": {
             "type": "boolean",
             "description": "Whether checking something off on the list puts it in the pantry, and unchecking takes it back out."
+          },
+          "recipeSharing": {
+            "type": "boolean",
+            "description": "Whether members can share recipes by link."
           }
         },
         "example": {
@@ -3779,6 +3789,104 @@
           ]
         }
       },
+      "HouseholdShares": {
+        "type": "object",
+        "properties": {
+          "shares": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HouseholdShare"
+            }
+          }
+        },
+        "required": [
+          "shares"
+        ],
+        "example": {
+          "shares": [
+            {
+              "recipe": {
+                "slug": "lemon-pasta",
+                "name": "Lemon Pasta"
+              },
+              "url": "https://merran.example.com/r/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c",
+              "sharedBy": {
+                "name": "Sam Rivera"
+              },
+              "createdAt": "2026-11-08T17:30:00.000Z",
+              "openedAt": "2026-11-09T12:00:00.000Z"
+            }
+          ]
+        }
+      },
+      "HouseholdShare": {
+        "type": "object",
+        "properties": {
+          "recipe": {
+            "type": "object",
+            "properties": {
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "slug",
+              "name"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "description": "The link anyone can open to see and cook the recipe."
+          },
+          "sharedBy": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "description": "Who shared it, or null once they've left the household."
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "openedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When someone last opened the link, or null if none has."
+          }
+        },
+        "required": [
+          "recipe",
+          "url",
+          "sharedBy",
+          "createdAt",
+          "openedAt"
+        ],
+        "example": {
+          "recipe": {
+            "slug": "lemon-pasta",
+            "name": "Lemon Pasta"
+          },
+          "url": "https://merran.example.com/r/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c",
+          "sharedBy": {
+            "name": "Sam Rivera"
+          },
+          "createdAt": "2026-11-08T17:30:00.000Z",
+          "openedAt": "2026-11-09T12:00:00.000Z"
+        }
+      },
       "Tastes": {
         "type": "object",
         "properties": {
@@ -3961,6 +4069,7 @@
               "dinner"
             ],
             "putAwayWhenChecked": true,
+            "recipeSharing": true,
             "role": "owner"
           },
           "job": {
@@ -20496,6 +20605,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OnHand"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/shares": {
+      "get": {
+        "operationId": "listHouseholdShares",
+        "tags": [
+          "Households"
+        ],
+        "summary": "See every recipe the household shares by link",
+        "description": "Newest first, with who shared each and when its link was last opened. Household admins only.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What it shares.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseholdShares"
                 }
               }
             }

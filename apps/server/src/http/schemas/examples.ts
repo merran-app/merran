@@ -67,6 +67,7 @@ export const HOUSEHOLD = {
   weekStartsOn: 0,
   meals: ["dinner" as const],
   putAwayWhenChecked: true,
+  recipeSharing: true,
   role: "owner" as const,
 }
 

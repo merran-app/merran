@@ -1037,6 +1037,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/households/current/shares": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * See every recipe the household shares by link
+         * @description Newest first, with who shared each and when its link was last opened. Household admins only.
+         */
+        get: operations["listHouseholdShares"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/households/current/tastes": {
         parameters: {
             query?: never;
@@ -5939,6 +5959,7 @@ export interface components {
          *         "dinner"
          *       ],
          *       "putAwayWhenChecked": true,
+         *       "recipeSharing": true,
          *       "role": "owner"
          *     }
          */
@@ -5953,6 +5974,8 @@ export interface components {
             meals: ("breakfast" | "lunch" | "dinner" | "snack")[];
             /** @description Whether checking something off on the list puts it in the pantry, and unchecking takes it back out. On unless the household turns it off. */
             putAwayWhenChecked: boolean;
+            /** @description Whether members can share recipes by link. On unless the household turns it off. Turning it off pauses every link, and turning it on brings them back. */
+            recipeSharing: boolean;
             /** @enum {string} */
             role: "owner" | "admin" | "member";
         };
@@ -5972,6 +5995,8 @@ export interface components {
             meals?: ("breakfast" | "lunch" | "dinner" | "snack")[];
             /** @description Whether checking something off on the list puts it in the pantry, and unchecking takes it back out. */
             putAwayWhenChecked?: boolean;
+            /** @description Whether members can share recipes by link. */
+            recipeSharing?: boolean;
         };
         /**
          * @example {
@@ -6669,6 +6694,56 @@ export interface components {
         };
         /**
          * @example {
+         *       "shares": [
+         *         {
+         *           "recipe": {
+         *             "slug": "lemon-pasta",
+         *             "name": "Lemon Pasta"
+         *           },
+         *           "url": "https://merran.example.com/r/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c",
+         *           "sharedBy": {
+         *             "name": "Sam Rivera"
+         *           },
+         *           "createdAt": "2026-11-08T17:30:00.000Z",
+         *           "openedAt": "2026-11-09T12:00:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        HouseholdShares: {
+            shares: components["schemas"]["HouseholdShare"][];
+        };
+        /**
+         * @example {
+         *       "recipe": {
+         *         "slug": "lemon-pasta",
+         *         "name": "Lemon Pasta"
+         *       },
+         *       "url": "https://merran.example.com/r/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c",
+         *       "sharedBy": {
+         *         "name": "Sam Rivera"
+         *       },
+         *       "createdAt": "2026-11-08T17:30:00.000Z",
+         *       "openedAt": "2026-11-09T12:00:00.000Z"
+         *     }
+         */
+        HouseholdShare: {
+            recipe: {
+                slug: string;
+                name: string;
+            };
+            /** @description The link anyone can open to see and cook the recipe. */
+            url: string;
+            /** @description Who shared it, or null once they've left the household. */
+            sharedBy: {
+                name: string;
+            } | null;
+            createdAt: string;
+            /** @description When someone last opened the link, or null if none has. */
+            openedAt: string | null;
+        };
+        /**
+         * @example {
          *       "avoid": [
          *         {
          *           "food": "peanuts",
@@ -6748,6 +6823,7 @@ export interface components {
          *           "dinner"
          *         ],
          *         "putAwayWhenChecked": true,
+         *         "recipeSharing": true,
          *         "role": "owner"
          *       },
          *       "job": {
@@ -16014,6 +16090,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OnHand"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listHouseholdShares: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What it shares. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdShares"];
                 };
             };
             /** @description Not signed in. */

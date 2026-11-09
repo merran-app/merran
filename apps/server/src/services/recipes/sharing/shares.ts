@@ -67,6 +67,29 @@ export async function stopSharing(em: EntityManager, idOrSlug: string) {
   await em.nativeDelete(RecipeShare, { recipe: recipe.id })
 }
 
+/** Everything the household has shared, newest first, for its admins. */
+export async function listShares(em: EntityManager, publicUrl: string) {
+  const shares = await em.find(
+    RecipeShare,
+    {},
+    {
+      populate: ["recipe", "createdBy"],
+      orderBy: { createdAt: "desc", id: "desc" },
+    }
+  )
+  return shares.map((share) => {
+    const recipe = share.recipe.getEntity()
+    const sharedBy = share.createdBy?.getEntity()
+    return {
+      recipe: { slug: recipe.slug, name: recipe.name },
+      url: shareUrl(publicUrl, share.token),
+      sharedBy: sharedBy ? { name: sharedBy.name } : null,
+      createdAt: share.createdAt.toISOString(),
+      openedAt: share.openedAt?.toISOString() ?? null,
+    }
+  })
+}
+
 export function shareUrl(publicUrl: string, token: string) {
   return `${publicUrl}/r/${token}`
 }
