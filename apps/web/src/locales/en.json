@@ -2641,6 +2641,9 @@
       "lookOver": "Look it over"
     }
   },
+  "gestures": {
+    "refreshing": "Refreshing…"
+  },
   "install": {
     "title": "Put Merran on your home screen",
     "hint": "It opens like an app: full screen, from its own icon.",
