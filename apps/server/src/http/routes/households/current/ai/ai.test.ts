@@ -364,6 +364,46 @@ describe("AI calls", () => {
     expect((await call()).text).toBe("ok")
     await setPolicy({})
   })
+
+  test("with a photo or PDF, go to the Photos and PDFs model and count under the task", async () => {
+    await setPolicy({})
+    const picks = { large: null, small: null, tasks: {}, monthlyLimit: null }
+    const picked = await kyle.put("/api/households/current/ai", {
+      ...picks,
+      vision: "anthropic:claude-haiku-5-5",
+    })
+    expect(picked.status, await picked.clone().text()).toBe(200)
+    const withPhoto = () =>
+      useAi(
+        { settings, fetcher, ai },
+        forHousehold(database.em.fork(), homeId),
+        {
+          householdId: homeId,
+          userId: kyleId,
+          task: "import",
+          needs: ["structured", "images"],
+        },
+        (model) => generateText({ model, prompt: "This photo's recipe." })
+      )
+
+    await withPhoto()
+    expect(targets.at(-1)).toMatchObject({ model: "claude-haiku-5-5" })
+    await call()
+    expect(targets.at(-1)).toMatchObject({ model: "claude-sonnet-5-5" })
+
+    const home = await householdAi(kyle)
+    expect(home.usage.tasks.map((task: { task: string }) => task.task)).toEqual(
+      ["import"]
+    )
+    const server = await (await kyle.get("/api/settings/server/ai")).json()
+    expect(server.usage.models).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ model: "claude-haiku-5-5" }),
+        expect.objectContaining({ model: "claude-sonnet-5-5" }),
+      ])
+    )
+    await kyle.put("/api/households/current/ai", picks)
+  })
 })
 
 describe("a key's credit", () => {

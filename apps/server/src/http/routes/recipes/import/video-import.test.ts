@@ -54,6 +54,8 @@ let tools: { ytDlp: string | null; ffmpeg: string | null } = {
 }
 const downloads: { url: string; audioOnly: boolean }[] = []
 const heard: AiTarget[] = []
+/** Where AI calls went, for the model that read them. */
+const targets: AiTarget[] = []
 let frame: Buffer
 
 const video: VideoTools = {
@@ -124,7 +126,7 @@ beforeAll(async () => {
     .toBuffer()
   const test = await createTestApp({
     fetcher,
-    ai: mockAiModels(undefined, [], undefined, reply),
+    ai: mockAiModels(undefined, targets, undefined, reply),
     video,
     transcribe: async (target) => {
       heard.push(target)
@@ -267,6 +269,30 @@ describe("a video link", () => {
     )
     expect(status).toBe(422)
     expect(body.error.code).toBe("video_unavailable")
+  })
+
+  test("reads a video's frames with the model for photos and PDFs", async () => {
+    const picks = { large: null, small: null, tasks: {}, monthlyLimit: null }
+    const picked = await kyle.put("/api/households/current/ai", {
+      ...picks,
+      vision: "anthropic:claude-haiku-5-5",
+    })
+    expect(picked.status, await picked.clone().text()).toBe(200)
+    videos.set("https://www.youtube.com/shorts/pasta", {
+      url: "https://www.youtube.com/watch?v=pasta",
+      title: "Pasta in 10 minutes",
+      description: "Pasta! 200 g spaghetti.",
+      uploader: "Sam Cooks",
+      duration: 40,
+      thumbnail: "https://thumbs.example/lemon.jpg",
+      captions: { url: "https://captions.example/lemon.vtt", lang: "en" },
+    })
+    const { status, body } = await importLink(
+      "https://www.youtube.com/shorts/pasta"
+    )
+    expect(status, JSON.stringify(body)).toBe(201)
+    expect(targets.at(-1)).toMatchObject({ model: "claude-haiku-5-5" })
+    await kyle.put("/api/households/current/ai", picks)
   })
 })
 
