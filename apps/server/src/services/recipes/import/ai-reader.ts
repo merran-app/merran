@@ -41,7 +41,9 @@ const ReadRecipe = z.object({
   description: z
     .string()
     .nullable()
-    .describe("A sentence or two about the dish, from the source."),
+    .describe(
+      "The source's own introduction or summary of the dish, a sentence or two, as written. Null when it has none."
+    ),
   servings: z.number().nullable(),
   yieldText: z
     .string()
@@ -77,6 +79,7 @@ What you're given is a web page's text, pasted text, or photos of a recipe: a co
 - When there's more than one recipe, take the main one.
 - Times are whole minutes, and servings a number. Use null for anything the source doesn't say.
 - Name: the dish's name, without words like "Best Ever" or "Easy" unless they're part of it.
+- Description: the source's own words about the dish, a sentence or two: its introduction, its summary, a "Description" section, or the page's description at the top. Keep them as written. When the source has none, it's null: never write one.
 - Tags: up to 5 short ones, like the cuisine, the meal or the main ingredient: "Mexican", "Dinner", "Chicken". Use the household's own tags where they fit.
 - When there's no recipe at all, found is false and the rest is empty.`
 
