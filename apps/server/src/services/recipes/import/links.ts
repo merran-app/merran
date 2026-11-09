@@ -1,9 +1,7 @@
+import { TRACKING_PARAM } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { Recipe } from "../../../database/entities/index.ts"
 import { checkLink } from "../../fetch/public-fetch.ts"
-
-const TRACKING_PARAM =
-  /^(utm_\w+|fbclid|gclid|mc_cid|mc_eid|igshid|igsh|si|feature|_r|_t)$/i
 
 /** A link tidied to compare and keep: no #part, no tracking parameters. */
 export function normalizeLink(raw: string) {
