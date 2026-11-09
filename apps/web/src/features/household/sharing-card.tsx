@@ -132,12 +132,6 @@ function ShareRow({ share }: { share: HouseholdShare }) {
     }
   }
 
-  const sharedBy = t("sharing.settings.sharedBy", {
-    name: share.sharedBy?.name ?? t("sharing.settings.memberLeft"),
-  })
-  const sharedOn = t("sharing.settings.sharedOn", {
-    when: formatRelativeDate(share.createdAt, i18n.language),
-  })
   const opened = share.openedAt
     ? t("sharing.settings.opened", {
         when: formatRelativeDate(share.openedAt, i18n.language),
@@ -149,7 +143,11 @@ function ShareRow({ share }: { share: HouseholdShare }) {
       <div className="min-w-0">
         <p className="truncate font-medium">{share.recipe.name}</p>
         <p className="text-sm text-muted-foreground">
-          {sharedBy}, {sharedOn}, {opened}
+          {t("sharing.settings.line", {
+            name: share.sharedBy?.name ?? t("sharing.settings.memberLeft"),
+            when: formatRelativeDate(share.createdAt, i18n.language),
+            opened,
+          })}
         </p>
         {!share.url && (
           <p className="text-sm text-muted-foreground">

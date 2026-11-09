@@ -89,11 +89,11 @@ Filled `/r/` pages also send `Referrer-Policy: no-referrer`. A link-preview fetc
 - A **Share** button in the recipe page's header, and **Share** in the recipe menu (`apps/web/src/features/recipes/recipe-menu.tsx`), which also reaches cards' right-click menus.
 - The recipe page reads `GET …/share` when it loads, so the link is in hand when Share is tapped. Share then:
   1. Makes the link with `POST …/share` if there isn't one.
-  2. Calls `navigator.share({ title, text, url })` where the browser has it (iPhone, Android, Safari and Edge on desktop): the phone's own share sheet, so Messages, Mail, WhatsApp, Copy and the rest.
+  2. Calls `navigator.share({ title, text, url })` where the browser has it (phones, and Chrome, Edge and Safari on desktop): the phone's own share sheet, so Messages, Mail, WhatsApp, Copy and the rest.
   3. Otherwise copies the link and shows **Link copied**.
   4. Closing the share sheet without choosing is not an error.
 - Safari only opens the share sheet straight from a tap. If making the link first loses that on a real iPhone, the first share opens the panel below instead, where **Share…** is a second tap.
-- Once a recipe is shared, Share opens a panel (a drawer on phones, a popover on larger screens): the link, **Copy link**, **Share…**, "Anyone with this link can see and cook this recipe. They can't change it.", and **Stop sharing**, which asks first.
+- Once a recipe is shared, Share opens a panel (a drawer on phones, a dialog on larger screens): the link, **Copy link**, **Share…**, "Anyone with this link can see and cook this recipe. They can't change it.", and **Stop sharing**, which asks first.
 - A small **Shared** badge on the recipe page.
 - With sharing off for the household, Share isn't shown, and admins see why in Settings.
 

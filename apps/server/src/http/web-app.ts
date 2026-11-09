@@ -119,6 +119,8 @@ export function serveWebApp(
         if (html) {
           // The token is in this page's address: keep it from other sites.
           c.header("Referrer-Policy", "no-referrer")
+          // Only the filled page is made for one token: keep it out of shared caches.
+          c.header("Cache-Control", "private, no-cache")
           return c.html(html)
         }
       } catch (error) {

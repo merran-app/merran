@@ -3857,7 +3857,7 @@
             "required": [
               "name"
             ],
-            "description": "Who shared it, or null once they've left the household."
+            "description": "Who shared it, or null once their account is deleted. A member removed from the household keeps their name."
           },
           "createdAt": {
             "type": "string"

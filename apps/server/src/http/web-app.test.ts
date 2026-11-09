@@ -144,7 +144,7 @@ describe("a shared recipe's page", () => {
     for (const path of [`/r/${token}`, `/r/${token}/cook`]) {
       const res = await app.request(path)
       expect(res.status, path).toBe(200)
-      expect(res.headers.get("cache-control")).toBe("no-cache")
+      expect(res.headers.get("cache-control")).toBe("private, no-cache")
       expect(res.headers.get("referrer-policy")).toBe("no-referrer")
       const html = await res.text()
       expect(metaContent(html, "og:title")).toBe("Lemon Pasta")

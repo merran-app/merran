@@ -89,11 +89,14 @@ describe("sharing a recipe by link", () => {
     try {
       expect((await owner.get(shareUrlOf(slug))).status).toBe(404)
       expect((await owner.post(shareUrlOf(slug))).status).toBe(404)
+      expect((await owner.delete(shareUrlOf(slug))).status).toBe(404)
     } finally {
       await owner.post("/api/auth/organization/set-active", {
         organizationId: home.id,
       })
     }
+    // The refused DELETE left the original share in place.
+    expect((await owner.get(shareUrlOf(slug))).status).toBe(200)
   })
 
   test("sharing is refused while the household has it off", async () => {
