@@ -27,7 +27,7 @@ When something is gone, choose **Used up**. For partial use outside a planned me
 
 With a mouse or trackpad, right-click a pantry item for its menu, plus **Used up** and **Select**. Right-click a thing on the list for **Change**, **Check off** or **Uncheck**, **Find** at each of your stores, **Select** and **Remove**. On a phone, a long press still selects.
 
-On a phone, swipe instead. Swipe a thing on the list left to **Remove** it, or right to **Check off** (or **Uncheck**). Swipe a pantry item left when it's **Used up**, or right to **Add to list**. A short swipe shows the button to tap; a long swipe does it straight away. A quick flick does too, except for **Remove** and **Used up**, which need the swipe past halfway: the phone buzzes there. After **Remove** or **Used up**, the message offers **Undo**, as it does from the menu. Rows don't swipe while you're selecting.
+On a phone, swipe instead. Swipe a thing on the list left to **Remove** it, or right to **Check off** (or **Uncheck**). Swipe a pantry item left when it's **Used up**, or right to **Add to list**; if it's on the list already and not yet bought, Merran says so instead of adding it again. A short swipe shows the button to tap; a long swipe does it straight away. A quick flick does too, except for **Remove** and **Used up**, which need the swipe past halfway: the phone buzzes there. After **Remove** or **Used up**, the message offers **Undo**, as it does from the menu. Rows don't swipe while you're selecting.
 
 With Merran installed on your home screen, pull down at the top of any page to refresh it. On an iPhone or iPad, swipe in from the left edge to go back.
 
@@ -119,7 +119,7 @@ Checking the last outstanding item on a list, or emptying a list with **Clear ch
 ## Start a shopping trip
 
 :::note[Available in alpha.4]
-Choose **Start shopping** on **List** for a focused aisle view with larger checkboxes. Select your shopping list and optionally a store under **Shopping at**; **All stores** keeps the whole trip in view. No retailer connection is required. The mode requests that the screen stay awake while visible and shows whether that request is active. Your device may decline it.
+Choose **Start shopping** on **List** for a focused aisle view with larger checkboxes. Select your shopping list and optionally a store under **Shopping at**; **All stores** keeps the whole trip in view. No retailer connection is required. Rows swipe here as on the list, but a long press doesn't start selecting. The mode requests that the screen stay awake while visible and shows whether that request is active. Your device may decline it.
 
 Check items off as you buy them. **Couldn’t find it** offers **Set aside for this trip**, **Try [store] instead**, or **Find a substitute**. Set-aside items stay needed on the household list and appear in a collapsed section with **Restore**. Try-another-store choices appear under **At another store**. They are not purchases. Trip focus and deferred choices are remembered for this household on this device; the list itself remains shared.
 

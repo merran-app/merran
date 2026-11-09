@@ -92,9 +92,11 @@ export function ItemRow({
 }) {
   const { t, i18n } = useTranslation()
   const actions = useListActions({ onListDone })
+  // Shopping has no selection bar, so selecting there would be a dead end.
+  const selectable = !trip
   const press = useLongPress(
     () => selection.start(item.id),
-    !selection.selecting
+    selectable && !selection.selecting
   )
   const selecting = selection.selecting
   const picked = selection.isPicked(item.id)
@@ -329,10 +331,12 @@ export function ItemRow({
           </>
         )}
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={() => selection.start(item.id)}>
-          <HugeiconsIcon icon={CheckmarkSquare02Icon} strokeWidth={2} />
-          {t("select.start")}
-        </ContextMenuItem>
+        {selectable && (
+          <ContextMenuItem onClick={() => selection.start(item.id)}>
+            <HugeiconsIcon icon={CheckmarkSquare02Icon} strokeWidth={2} />
+            {t("select.start")}
+          </ContextMenuItem>
+        )}
         <ContextMenuItem
           variant="destructive"
           onClick={() => void actions.remove(item)}
