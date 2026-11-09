@@ -1297,6 +1297,21 @@
     "toRecipes": "Go to recipes"
   },
   "recipes": {
+    "duplicates": {
+      "title": "Possible duplicates",
+      "description": "Recipes that look like the same one: the same page, or the same name.",
+      "note_one": "You may have this one already:",
+      "note_other": "You may have these already:",
+      "open": "Open it",
+      "openRecipe": "Open",
+      "notSame": "Not the same",
+      "reasons": {
+        "link": "Same link",
+        "name": "Same name"
+      },
+      "added": "Added {{date}}",
+      "empty": "No possible duplicates. Recipes with the same link or the same name show here."
+    },
     "add": "Add a recipe",
     "more": "More",
     "menu": {
