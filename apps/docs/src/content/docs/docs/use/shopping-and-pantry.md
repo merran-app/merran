@@ -27,6 +27,10 @@ When something is gone, choose **Used up**. For partial use outside a planned me
 
 With a mouse or trackpad, right-click a pantry item for its menu, plus **Used up** and **Select**. Right-click a thing on the list for **Change**, **Check off** or **Uncheck**, **Find** at each of your stores, **Select** and **Remove**. On a phone, a long press still selects.
 
+On a phone, swipe instead. Swipe a thing on the list left to **Remove** it, or right to **Check off** (or **Uncheck**). Swipe a pantry item left when it's **Used up**, or right to **Add to list**. A short swipe shows the button to tap; a long swipe does it straight away. The message after offers **Undo**, as it does from the menu. Rows don't swipe while you're selecting.
+
+With Merran installed on your home screen, pull down at the top of any page to refresh it. On an iPhone or iPad, swipe in from the left edge to go back.
+
 After cooking, **Ran out of anything?** uses up what ran out and can put it on the list, without opening the pantry. See [Cooking](../cooking/#finish-and-keep-notes).
 
 :::note[Available in alpha.6: putting food back on the list]

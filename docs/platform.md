@@ -405,6 +405,17 @@ November 8, 2026: a right click on an item opens a menu of what can be done to i
 - **No wrapper in a layout.** The trigger renders as the row's own element (`render={row}`), so lists and grids keep their layout. Where it has to wrap a component, as on recipe cards, the wrapper gets `min-w-0` so a grid column can still shrink it.
 - **Not everywhere.** Not on a recipe's own page or on Today, where there's no single item to act on, and not while selecting, when a click picks the item.
 
+## Mobile gestures
+
+November 8, 2026: on a phone, things on the list and pantry items swipe, and the installed app pulls to refresh and swipes back from the left edge. The plan and its reasons are in [mobile-gestures.md](mobile-gestures.md). The rules:
+
+- **Never the only way.** Every swipe does something the row's "⋯" menu, its buttons or select mode does too, with the same message and **Undo**. Screen readers use those; the swiped buttons are hidden from them.
+- **Touch only, below 768px, and not while selecting.** A mouse never swipes a row. The row is `touch-action: pan-y`, so scrolling stays the phone's own; a finger has to go 10px, and further sideways than up or down, before a row moves.
+- **A short swipe shows, a long one does.** Past 72px the row stays open on its button; past half its width, or a flick past 72px, it does the action as the finger lifts, with a buzz at halfway. One row is open at a time, and a tap elsewhere or a scroll closes it.
+- **Only where the phone doesn't do it.** Pull to refresh is only in the installed app (`display-mode: standalone`), since browsers pull to refresh themselves; swiping back is only there on iOS, since Android and Safari in a tab have their own. Neither starts while a drawer, dialog or menu is open.
+- **The left edge is for going back.** In the installed app on iOS, a row ignores a touch that starts within 20px of the left edge, so going back always works on the list and in the pantry.
+- **Shared parts.** `features/gestures/`: the sums in `swipe-math.ts` (tested with `node --test`), `SwipeRow` for rows, and `PullToRefresh` and `EdgeBack` in the app's layout. Cooking is outside that layout, so its own swipes between steps never meet them.
+
 ## Help and guided tours
 
 Implementation status, October 17, 2026: [Setup and first-use experience](onboarding.md). Core-page tours, assistant orientation, Help replay, a shared glossary and contextual explanations are implemented and released in alpha.4. Real-device acceptance and the optional What's new tour system below remain planned. The same record covers implemented password confirmation, operator recovery, atomic claiming, household review and first-meal progress.

@@ -1,6 +1,6 @@
 # Mobile gestures
 
-Planned November 8, 2026. Merran is made for a phone on the kitchen counter, but on a phone today everything is a tap: a "⋯" menu, then an item. This plan adds the gestures people expect from apps on their phone, so the common things are a swipe away. It doesn't take any tap away: every gesture has another way to do the same thing.
+Planned and built November 8, 2026. Merran is made for a phone on the kitchen counter, but on a phone today everything is a tap: a "⋯" menu, then an item. This plan adds the gestures people expect from apps on their phone, so the common things are a swipe away. It doesn't take any tap away: every gesture has another way to do the same thing.
 
 What's there already, and stays:
 
@@ -58,7 +58,8 @@ The maths (which way a finger's going, how far is far enough, how fast is a flic
 
 - **Only in the installed app on iOS,** which has no back button and no back gesture. Android phones have their own, and Safari in a tab swipes back by itself.
 - **From the left edge:** a touch that starts within 20px of it and goes 80px right goes back (`router.history.back()`). A chevron follows the finger, so it's clear what letting go will do.
-- **Not** when there's nowhere to go back to, when a drawer or dialog is open, while cooking (which swipes between steps), or when the touch began on a row that swipes.
+- **Not** when there's nowhere to go back to, when a drawer or dialog is open, or while cooking (which swipes between steps).
+- **Rows give way at the edge.** In the installed app on iOS, a row ignores a touch that starts within 20px of the left edge, so going back works on the list and in the pantry, where rows fill the screen. (Decided while planning the build, November 8, 2026: the first plan had edge back give way to rows instead, which would have left it almost unusable there.)
 
 ## Checking it
 
