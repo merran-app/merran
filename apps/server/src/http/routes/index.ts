@@ -15,6 +15,7 @@ import proposalsRoutes from "./proposals/index.ts"
 import recipesRoutes from "./recipes/index.ts"
 import settingsRoutes from "./settings/index.ts"
 import shareRoutes from "./share/index.ts"
+import sharedRoutes from "./shared/index.ts"
 import sitesRoutes from "./sites/index.ts"
 import storesRoutes from "./stores/index.ts"
 import telemetryRoutes from "./telemetry/index.ts"
@@ -41,6 +42,7 @@ export default (router: Router, deps: AppDeps) => {
   recipesRoutes(router, deps)
   settingsRoutes(router, deps)
   shareRoutes(router, deps)
+  sharedRoutes(router, deps)
   sitesRoutes(router, deps)
   storesRoutes(router, deps)
   telemetryRoutes(router, deps)

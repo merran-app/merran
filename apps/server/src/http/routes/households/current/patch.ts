@@ -41,7 +41,8 @@ export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { householdId, role, em } = asHouseholdAdmin(c)
     const household = await em.findOneOrFail(Household, householdId)
-    const { meals, putAwayWhenChecked, ...changes } = c.req.valid("json")
+    const { meals, putAwayWhenChecked, recipeSharing, ...changes } =
+      c.req.valid("json")
     // Only turning it on from off puts away what's already checked.
     const turnedOn =
       putAwayWhenChecked === true && !putsAwayWhenChecked(household.settings)
@@ -52,6 +53,12 @@ export default (router: Router, _deps: AppDeps) => {
       household.settings = {
         ...household.settings,
         pantry: { ...household.settings?.pantry, putAwayWhenChecked },
+      }
+    }
+    if (recipeSharing !== undefined) {
+      household.settings = {
+        ...household.settings,
+        sharing: { ...household.settings?.sharing, recipes: recipeSharing },
       }
     }
     if (turnedOn) {

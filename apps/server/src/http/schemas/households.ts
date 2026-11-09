@@ -12,6 +12,7 @@ import {
   putsAwayWhenChecked,
   type HouseholdRole,
 } from "../../services/households/households.ts"
+import { recipeSharingOn } from "../../services/recipes/sharing/shares.ts"
 import { HOUSEHOLD, INVITE_LINK, MEMBER } from "./examples.ts"
 
 function isTimeZone(zone: string) {
@@ -38,6 +39,10 @@ export const HouseholdSchema = z
     putAwayWhenChecked: z.boolean().openapi({
       description:
         "Whether checking something off on the list puts it in the pantry, and unchecking takes it back out. On unless the household turns it off.",
+    }),
+    recipeSharing: z.boolean().openapi({
+      description:
+        "Whether members can share recipes by link. On unless the household turns it off. Turning it off pauses every link, and turning it on brings them back.",
     }),
     /** Your role in it. */
     role: z.enum(HOUSEHOLD_ROLES),
@@ -70,6 +75,9 @@ export const HouseholdChangesSchema = z
     putAwayWhenChecked: z.boolean().openapi({
       description:
         "Whether checking something off on the list puts it in the pantry, and unchecking takes it back out.",
+    }),
+    recipeSharing: z.boolean().openapi({
+      description: "Whether members can share recipes by link.",
     }),
   })
   .partial()
@@ -129,6 +137,7 @@ export function describeHousehold(household: Household, role: HouseholdRole) {
     weekStartsOn: household.weekStartsOn,
     meals: plannedMeals(household.settings?.meals),
     putAwayWhenChecked: putsAwayWhenChecked(household.settings),
+    recipeSharing: recipeSharingOn(household.settings),
     role,
   }
 }

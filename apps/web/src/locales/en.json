@@ -1235,6 +1235,53 @@
     "weekCost": "About {{cost}} of food",
     "weekCostOf": "About {{cost}} of your {{budget}}"
   },
+  "sharing": {
+    "share": "Share",
+    "shareEllipsis": "Share…",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "copyFailed": "Couldn't copy the link.",
+    "stopSharing": "Stop sharing",
+    "shared": "Shared",
+    "offerText": "A recipe from Merran",
+    "dialog": {
+      "title": "Share {{name}}",
+      "hint": "Anyone with this link can see and cook this recipe. They can't change it.",
+      "notShared": "This recipe isn't shared yet. Make a link to send to anyone.",
+      "linkLabel": "Link",
+      "noAddress": "The link can't be shown until the server's admin sets the public address (MERRAN_PUBLIC_URL). You can still stop sharing.",
+      "loadFailed": "Couldn't check whether this recipe is shared."
+    },
+    "stop": {
+      "title": "Stop sharing this recipe?",
+      "description": "The link stops working for everyone who has it. Sharing again makes a new link.",
+      "done": "Sharing stopped."
+    },
+    "settings": {
+      "title": "Sharing",
+      "description": "Let people send recipes to anyone with a link, and see what's shared.",
+      "cardTitle": "Recipe links",
+      "cardDescription": "Anyone with a recipe's link can see and cook it without signing in. They can't change it.",
+      "allow": "Let members share recipes by link",
+      "allowHint": "Turn it off to hide Share and pause every link. Turn it back on and the same links work again.",
+      "saved": "Saved.",
+      "listTitle": "Shared recipes",
+      "empty": "No recipes are shared.",
+      "line": "Shared by {{name}} {{when}}, {{opened}}",
+      "memberLeft": "a member who has left",
+      "opened": "last opened {{when}}",
+      "neverOpened": "not opened yet",
+      "noAddress": "Link hidden until the server's admin sets the public address.",
+      "loadFailed": "Couldn't load the shared recipes."
+    },
+    "page": {
+      "sharedBy": "Shared by {{household}}",
+      "madeWith": "Made with Merran",
+      "recipeAppHint": "Use a recipe app? Paste this link into it to save a copy.",
+      "unavailable": "This recipe isn't shared anymore",
+      "tooManyVisits": "Too many visits; try again in a minute"
+    }
+  },
   "share": {
     "title": "Shared to Merran",
     "adding": "Adding the recipe from {{site}}…",

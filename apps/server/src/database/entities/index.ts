@@ -48,6 +48,7 @@ import { Purchase } from "./purchases.ts"
 import { Receipt } from "./receipts.ts"
 import { RateLimit } from "./rate_limits.ts"
 import { RecipeIngredient } from "./recipe_ingredients.ts"
+import { RecipeShare } from "./recipe_shares.ts"
 import { RecipeSite } from "./recipe_sites.ts"
 import { RecipePairing } from "./recipe_pairings.ts"
 import { RecipeStep } from "./recipe_steps.ts"
@@ -98,6 +99,7 @@ export * from "./purchases.ts"
 export * from "./receipts.ts"
 export * from "./rate_limits.ts"
 export * from "./recipe_ingredients.ts"
+export * from "./recipe_shares.ts"
 export * from "./recipe_sites.ts"
 export * from "./recipe_pairings.ts"
 export * from "./recipe_steps.ts"
@@ -161,6 +163,7 @@ export const entities = [
   Recipe,
   RecipeIngredient,
   RecipePairing,
+  RecipeShare,
   RecipeSite,
   RecipeStep,
   RecipeTag,

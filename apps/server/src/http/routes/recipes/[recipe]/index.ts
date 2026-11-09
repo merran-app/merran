@@ -12,6 +12,7 @@ import photoRoutes from "./photo/index.ts"
 import put from "./put.ts"
 import ratingRoutes from "./rating/index.ts"
 import standInsRoutes from "./stand-ins/index.ts"
+import shareRoutes from "./share/index.ts"
 import swapRoutes from "./swap/index.ts"
 import tidyRoutes from "./tidy/index.ts"
 import versionsRoutes from "./versions/index.ts"
@@ -29,6 +30,7 @@ export default (router: Router, deps: AppDeps) => {
   photoRoutes(router, deps)
   ratingRoutes(router, deps)
   standInsRoutes(router, deps)
+  shareRoutes(router, deps)
   swapRoutes(router, deps)
   tidyRoutes(router, deps)
   versionsRoutes(router, deps)

@@ -14,13 +14,19 @@ import { recipeQuery, type Recipe } from "./queries"
 /**
  * What a serving has: calories, protein and the rest, where it came from,
  * and the lines that couldn't be counted. Worked out by itself after a
- * save; this can do it again.
+ * save; this can do it again. A guest on a shared recipe only reads it.
  */
-export function NutritionSection({ recipe }: { recipe: Recipe }) {
+export function NutritionSection({
+  recipe,
+  guest = false,
+}: {
+  recipe: Recipe
+  guest?: boolean
+}) {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
-  const usda = useCapability("nutrition")
-  const ai = useCapability("ai")
+  const usda = useCapability("nutrition", !guest)
+  const ai = useCapability("ai", !guest)
   const [busy, setBusy] = React.useState(false)
   const nutrition = recipe.nutrition
   const canWorkOut = usda || ai

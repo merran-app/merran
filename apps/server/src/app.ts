@@ -115,7 +115,14 @@ export function createApp(deps: AppDeps) {
     })
   )
 
-  if (deps.config.webDir) serveWebApp(app, deps.config.webDir, deps.logger)
+  if (deps.config.webDir) {
+    serveWebApp(
+      app,
+      deps.config.webDir,
+      deps.logger,
+      deps.config.publicUrl ?? null
+    )
+  }
 
   app.notFound(handleNotFound)
   app.onError(handleError)

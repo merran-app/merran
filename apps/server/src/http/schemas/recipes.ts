@@ -17,7 +17,7 @@ const minutes = z.number().int().min(0).max(100_000).nullish()
 const stars = () =>
   z.number().min(STAR_STEP).max(MAX_STARS).multipleOf(STAR_STEP)
 
-const DietSchema = z.enum(DIETS).openapi("Diet")
+export const DietSchema = z.enum(DIETS).openapi("Diet")
 
 /** The household's corrections to a recipe's diet labels: true adds one, false takes it away. */
 const DietOverridesSchema = z

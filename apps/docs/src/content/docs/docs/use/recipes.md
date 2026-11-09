@@ -140,4 +140,4 @@ For importing from another device, follow [Browser extension](../../integrations
 
 For optional imports and recipe suggestions, read [AI setup and costs](../../run/ai-setup/), [AI privacy](../../project/ai-privacy/), and [proposal review](../assistant/).
 
-[Plan meals for the week](../planning/), then [build a shopping list](../shopping-and-pantry/). To use a recipe right now, [start cooking](../cooking/).
+[Plan meals for the week](../planning/), then [build a shopping list](../shopping-and-pantry/). To use a recipe right now, [start cooking](../cooking/). To send one to someone outside your household, [share it as a link](../sharing-recipes/).

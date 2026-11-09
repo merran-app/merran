@@ -24,6 +24,7 @@ import { PhotosCard } from "@/features/household/photos-card"
 import { NewHouseholdCard } from "@/features/household/new-household-card"
 import { PantryCard } from "@/features/household/pantry-card"
 import { PlanningCard } from "@/features/household/planning-card"
+import { SharingCard } from "@/features/household/sharing-card"
 import { StoresCard } from "@/features/stores/stores-card"
 import { YourStoresCard } from "@/features/stores/your-stores-card"
 import {
@@ -36,6 +37,7 @@ import {
 } from "@/features/household/queries"
 import { TastesCard } from "@/features/household/tastes-card"
 import { ThemeNightsCard } from "@/features/household/theme-nights-card"
+import { householdSharesQuery } from "@/features/sharing/queries"
 import { autoplanQuery } from "@/features/plan/queries"
 import { calendarSettingsQuery } from "@/features/plan/calendar-queries"
 import { SettingsPage } from "@/features/settings/settings-page"
@@ -69,6 +71,8 @@ export const Route = createFileRoute("/_app/settings/household")({
       isAdminRole(active.role) && queryClient.ensureQueryData(autoplanQuery),
       isAdminRole(active.role) && queryClient.ensureQueryData(householdAiQuery),
       isAdminRole(active.role) && queryClient.ensureQueryData(invitesQuery),
+      isAdminRole(active.role) &&
+        queryClient.ensureQueryData(householdSharesQuery),
     ])
   },
   component: HouseholdSettings,
@@ -132,6 +136,12 @@ function HouseholdSettings() {
                         <PhotosCard />
                       </>
                     ),
+                  },
+                  {
+                    id: "sharing",
+                    title: t("sharing.settings.title"),
+                    description: t("sharing.settings.description"),
+                    content: <SharingCard />,
                   },
                   {
                     id: "shopping-and-stores",

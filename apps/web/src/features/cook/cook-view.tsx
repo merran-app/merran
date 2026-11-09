@@ -116,18 +116,26 @@ const DETAIL_TEXT: Record<TextSize, string> = {
 /**
  * Cooking a recipe: getting everything out first, then one step at a time in
  * big text, with timers, the step's ingredients, and the screen kept on.
+ *
+ * A guest cooks a shared recipe without signing in. They get the steps,
+ * timers and the device's own voice, and nothing of the household's: no
+ * tastes, stand-ins, cook notes or server voice, and finishing saves
+ * nothing, so it asks the server for nothing at all.
  */
 export function CookView({
   recipe,
   paired,
   scale,
   mealId,
+  guest,
 }: {
   recipe: Recipe
   /** A recipe it goes with, cooked with it: its lines first. */
   paired?: Recipe
   scale: number
   mealId?: string
+  /** Cooking from a shared link, by someone outside the household. */
+  guest?: { token: string }
 }) {
   const { t } = useTranslation()
   const router = useRouter()
@@ -144,11 +152,20 @@ export function CookView({
   const currentScale = baseServings ? amount / baseServings : amount
   const servingsChanged = amount !== savedAmount
   const servingStep = amount <= 2 ? 0.5 : 1
-  const progressId = mealId ? `${recipe.id}:${mealId}` : recipe.id
+  const household = !guest
+  // Where cooking got to is kept per shared link, per meal, or per recipe.
+  let progressId: string
+  if (guest) {
+    progressId = `shared:${guest.token}`
+  } else if (mealId) {
+    progressId = `${recipe.id}:${mealId}`
+  } else {
+    progressId = recipe.id
+  }
   // Stand-ins used this time, from the recipe page or picked while cooking.
   const thisTime = useSwapsThisTime(recipe.id)
   const { swaps } = thisTime
-  const aiOn = useCapability("ai")
+  const aiOn = useCapability("ai", household)
   const [swapping, setSwapping] = React.useState<Line | null>(null)
   const swapped = React.useMemo(() => withSwaps(recipe, swaps), [recipe, swaps])
   const both = paired ? pairRecipes(swapped.recipe, paired, currentScale) : null
@@ -158,8 +175,8 @@ export function CookView({
   const factorOf = (lineId: string) => both?.factors.get(lineId) ?? currentScale
   /** Lines left out for someone who doesn't like them. */
   const leftOut = mergeLeftOut(
-    useRecipeTastes(swapped.recipe),
-    useRecipeTastes(paired)
+    useRecipeTastes(swapped.recipe, household),
+    useRecipeTastes(paired, household)
   )
   const name = paired
     ? t("recipes.pairing.name", { base: recipe.name, paired: paired.name })
@@ -218,11 +235,15 @@ export function CookView({
   const stepLines = ingredients.filter((line) => highlighted.has(line.id))
   const stepIngredients = stepLines.filter((line) => !leftOut.has(line.id))
   const stepLeftOut = stepLines.filter((line) => leftOut.has(line.id))
-  const cooking: Cooking = {
-    slug: recipe.slug,
-    scale: currentScale,
-    ...(paired ? { with: paired.slug } : {}),
-  }
+  // Where a timer leads back to. A guest's lead nowhere: the app's own
+  // cooking pages are for the household.
+  const cooking: Cooking | null = household
+    ? {
+        slug: recipe.slug,
+        scale: currentScale,
+        ...(paired ? { with: paired.slug } : {}),
+      }
+    : null
   const showUnits = convertible(ingredients)
 
   const go = React.useCallback(
@@ -304,7 +325,16 @@ export function CookView({
   async function leave() {
     if (mealId && servingsChanged && !(await saveServings())) return
     if (canGoBack) router.history.back()
-    else void navigate({ to: "/recipes/$slug", params: { slug: recipe.slug } })
+    else goToRecipe()
+  }
+
+  /** The recipe's page: the household's, or the shared link's for a guest. */
+  function goToRecipe() {
+    if (guest) {
+      void navigate({ to: "/r/$token", params: { token: guest.token } })
+    } else {
+      void navigate({ to: "/recipes/$slug", params: { slug: recipe.slug } })
+    }
   }
 
   async function saveServings() {
@@ -334,7 +364,21 @@ export function CookView({
     }
   }
 
+  /**
+   * A guest's cooking is theirs alone: nothing's marked made or saved, and
+   * it ends back on the shared recipe.
+   */
+  function finishAsGuest(token: string) {
+    saveProgress(progressId, null)
+    celebrate()
+    void navigate({ to: "/r/$token", params: { token }, replace: true })
+  }
+
   async function finish() {
+    if (guest) {
+      finishAsGuest(guest.token)
+      return
+    }
     if (finishing || savingServings) return
     setFinishing(true)
     try {
@@ -422,6 +466,7 @@ export function CookView({
   }
   const voice = useHandsFree({
     enabled: handsFree,
+    serverVoice: household,
     onDenied: () => {
       setHandsFree(false)
       toast.error(t("cook.handsFree.denied"))
@@ -521,7 +566,8 @@ export function CookView({
       leftOut={leftOut}
       swapped={swapped.lines}
       // A pairing's lines are another recipe's: swap those from its page.
-      onSwap={aiOn && !paired ? setSwapping : undefined}
+      // Stand-ins are the household's, never a guest's.
+      onSwap={household && aiOn && !paired ? setSwapping : undefined}
       onUnswap={thisTime.undo}
       size={size}
     />
@@ -773,7 +819,7 @@ export function CookView({
                     })}`}
                 </p>
               </div>
-              <LastCookNote recipeId={recipe.id} />
+              {household && <LastCookNote recipeId={recipe.id} />}
               {showUnits && (
                 <UnitToggle
                   system={system}
@@ -1037,25 +1083,29 @@ export function CookView({
         </AlertDialogContent>
       </AlertDialog>
 
-      <SwapDialog
-        mealId={mealId}
-        recipe={recipe}
-        line={swapping}
-        factor={currentScale}
-        system={system}
-        onUse={thisTime.use}
-        onUndo={thisTime.undo}
-        onOpenChange={(open) => {
-          if (!open) setSwapping(null)
-        }}
-      />
-      <AfterCookingDialog
-        asking={asking}
-        onDone={() => {
-          setAsking(null)
-          void leave()
-        }}
-      />
+      {household && (
+        <>
+          <SwapDialog
+            mealId={mealId}
+            recipe={recipe}
+            line={swapping}
+            factor={currentScale}
+            system={system}
+            onUse={thisTime.use}
+            onUndo={thisTime.undo}
+            onOpenChange={(open) => {
+              if (!open) setSwapping(null)
+            }}
+          />
+          <AfterCookingDialog
+            asking={asking}
+            onDone={() => {
+              setAsking(null)
+              void leave()
+            }}
+          />
+        </>
+      )}
     </div>
   )
 }
@@ -1072,7 +1122,8 @@ function StepText({
 }: {
   text: string
   system: UnitSystem
-  cooking: Cooking
+  /** Where its timers lead back to, if anywhere. */
+  cooking: Cooking | null
   /** Names to mark: a stand-in used this time. */
   marks?: readonly string[]
 }) {

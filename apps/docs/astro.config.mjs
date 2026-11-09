@@ -51,6 +51,7 @@ export default defineConfig({
               slug: "docs/use/shopping-and-pantry",
             },
             { label: "Cooking", slug: "docs/use/cooking" },
+            { label: "Sharing recipes", slug: "docs/use/sharing-recipes" },
             { label: "Assistant and approvals", slug: "docs/use/assistant" },
           ],
         },
