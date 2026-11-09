@@ -1,6 +1,8 @@
 # Recipe sharing
 
-Planned November 8, 2026. This scopes "Recipe sharing outside the household" in [features.md](features.md): send one recipe to friends and family as a link, through the phone's share sheet (Messages, Mail and the rest) or by copying it, so they can read it and cook from it without an account. They can't change it, and they can't use Merran's AI.
+Planned November 8, 2026, and implemented the same day. This scopes "Recipe sharing outside the household" in [features.md](features.md): send one recipe to friends and family as a link, through the phone's share sheet (Messages, Mail and the rest) or by copying it, so they can read it and cook from it without an account. They can't change it, and they can't use Merran's AI.
+
+Implemented November 8, 2026: the share routes, the public routes and the head, the **Share** button, panel and **Shared** badge, the admin switch and list, the shared page and its cook mode, and the guide. The real-phone checks under Tests are still to do.
 
 ## Goal
 
@@ -13,7 +15,9 @@ Someone in a household taps **Share** on a recipe and sends it the way they send
 | What a link shows | The recipe as it is now, one link per recipe | Fixes reach everyone who has the link; there's one thing to stop sharing |
 | Who can share | Anyone in the household who can read recipes; an admin can turn sharing off | Matches calendar subscriptions ([calendar-subscriptions.md](calendar-subscriptions.md)) |
 | Turning sharing off | Pauses every link (they answer 404) without deleting them; turning it back on brings them back | One switch, nothing to recreate |
-| Stop sharing a recipe | Revokes its link for good; sharing again makes a new one | A link someone shouldn't have stays dead |
+| Stop sharing a recipe | Deletes the share; sharing again makes a new token. The recipe column is unique, so a double-tap can't make two links | A link someone shouldn't have stays dead, and there's no revoked row to filter out (November 8, 2026) |
+| API keys | Making or stopping a share needs `recipes:write`; reading one needs `recipes:read`. Signed-in members are unchanged | A key that can only read recipes can't open them to the world |
+| The member who shared leaves | The share stays, owned by the household, and an admin can stop it | A link people were sent shouldn't break because someone moved on |
 | The token | Stored as itself, not as a hash | The same link has to be shown again each time someone shares it. It grants read access to one recipe the household chose to share, like a document's "anyone with the link" |
 | Saving a copy | schema.org `Recipe` data in the shared page's HTML, so Import from a link (on any Merran server), the browser extension and other recipe apps can take it | No accounts or servers to link; it works with everything that already imports recipes |
 | How the page is built | A page in the web app at `/r/{token}` that reuses the recipe and cook views in a guest mode, with the server filling in the HTML head for link previews and recipe data | Recipients get the real cooking experience; previews and importers don't run JavaScript, so what they need is in the HTML the server sends |
@@ -24,13 +28,13 @@ Someone in a household taps **Share** on a recipe and sends it the way they send
 
 ### Data
 
-- `RecipeShare`, household-scoped: the recipe, a 43-character random URL-safe token, who created it, created at, last opened at (updated at most once an hour, so reads don't write on every visit), revoked at. A recipe has at most one share that isn't revoked.
+- `RecipeShare`, household-scoped: the recipe, a 43-character random URL-safe token, who created it (set to null if that member is deleted, so the share outlives them), created at, last opened at (updated at most once an hour, so reads don't write on every visit). **Stop sharing** deletes the row rather than setting a "revoked at", and the recipe column is unique, so a recipe has at most one share.
 - A household setting, **recipe sharing**, on by default, next to the household's other settings.
 - One migration for SQLite and one for Postgres (`pnpm --filter @merran/server db:migration recipe-shares`).
 
 ### Routes for the household
 
-Session or API key, with recipe-read permission, in `apps/server/src/http/routes/recipes/[recipe]/share/`:
+Session or API key, with recipe-read permission to read and `recipes:write` to make or stop a share (API keys; signed-in members are unchanged), in `apps/server/src/http/routes/recipes/[recipe]/share/`:
 
 - `GET /api/recipes/{recipe}/share`: the active link, or none.
 - `POST /api/recipes/{recipe}/share`: the active link, made first if there isn't one. Calling it again changes nothing. Refused while the household has sharing off.
@@ -38,10 +42,10 @@ Session or API key, with recipe-read permission, in `apps/server/src/http/routes
 
 For admins:
 
-- `GET /api/households/current/shares`: every shared recipe, who shared it, when, and when it was last opened.
+- `GET /api/households/current/shares`: every shared recipe, who shared it, when, and when it was last opened. Shares on recipes in Recently deleted stay on the list and can be stopped.
 - The household settings `PATCH` gains the sharing switch.
 
-Links are built from `MERRAN_PUBLIC_URL`, never from the request's Host header. Without it, responses say so, and the app explains the link only works where this server can be reached.
+Links are built from `MERRAN_PUBLIC_URL`, never from the request's Host header. Without it, `POST` answers 400 `share_public_url`, while `GET` and the admin list still return their rows with `url: null`, and the app explains the link only works where this server can be reached.
 
 ### The public routes
 
@@ -54,13 +58,16 @@ Both, like the calendar feed:
 
 - `security: []` in OpenAPI; they don't look at cookies or API keys, so being signed in changes nothing about what they return.
 - Check the token's shape before any lookup, rate-limit per token, and send `Cache-Control: no-store` and `Referrer-Policy: no-referrer`.
-- Answer the same 404 for an unknown token, a revoked link, a household with sharing off, and a deleted recipe.
+- Answer the same 404 for an unknown token, a stopped link, a household with sharing off, and a recipe in Recently deleted. Restoring the recipe brings the same link back.
+- Redact the token from the request log, for `/api/shared/…` and `/r/…`.
 - Resolve the household from the token, then read through `forHousehold` like every other route.
 
 The response is a `SharedRecipe` schema built field by field, not the full recipe with fields removed, so a field added to recipes later isn't shared unless someone adds it here:
 
 - **Included:** title, summary, photo (as the token's photo URL), servings, prep, cook and total times, ingredient groups with each line's parsed quantity, unit and food (so the page can scale and convert), steps, nutrition, diet labels, the original source's name and link, and the household's name for "Shared by".
 - **Left out:** IDs, cook notes, ratings, versions, tags, collections, cost and prices, pantry matches, stand-ins and swaps, plan entries, household tastes, who made it and when.
+
+The photo is cached `private, max-age=31536000, immutable` when the `v` query matches the recipe's photo, and `no-store` otherwise. The source's name shows the link's host as its credit.
 
 There are no public routes for stand-ins, swaps, tidy, voice, nutrition lookups, saving or editing, so the shared page has nothing to call even if someone changes it in their browser.
 
@@ -73,7 +80,7 @@ There are no public routes for stand-ins, swaps, tidy, voice, nutrition lookups,
 - A `<script type="application/ld+json">` with the schema.org `Recipe`: name, description, image, `recipeYield`, times in ISO 8601, `recipeIngredient` as the lines' text, `recipeInstructions` as `HowToStep`s, `nutrition`, and `author` as the household's name.
 - Text is escaped for HTML attributes, and the JSON-LD escapes `<` so a title like `</script>` can't end the block.
 
-For a token that doesn't resolve, the head is left as it is.
+Filled `/r/` pages also send `Referrer-Policy: no-referrer`. A link-preview fetch of `/r/` doesn't count as an open; only the page's own API call does. For a token that doesn't resolve, the head is left as it is, and if the lookup itself fails, the plain app page is served.
 
 ## The web app
 
@@ -104,7 +111,7 @@ For a token that doesn't resolve, the head is left as it is.
 - Ingredients, steps and nutrition through the existing components with a `guest` flag: no stand-ins, swaps, pantry marks, cost, editing or menus.
 - **Start cooking**, opening `/r/$token/cook`: `CookView` in guest mode, with steps, timers, the screen kept awake and progress kept on the device. No plan entry, no After cooking, no **Made it**, and no server voice (it's AI). The browser's own speech still reads steps aloud where the device has it.
 - At the foot: **Made with Merran**, linking to merran.app, and "Use a recipe app? Paste this link into it to save a copy."
-- A link that doesn't work shows **This recipe isn't shared anymore** and nothing else.
+- A link that doesn't work shows **This recipe isn't shared anymore** and nothing else. A recipe already loaded stays on screen until the guest reloads, even if the share is stopped meanwhile.
 
 The page uses only `/api/shared/…` and doesn't start the app's signed-in queries, the guided tours or the assistant.
 
@@ -122,6 +129,11 @@ Server tests, on SQLite and Postgres:
 - `POST …/share` twice gives one link; after **Stop sharing**, it gives a new one.
 
 By hand:
+
+- A desktop browser check passed on November 8, 2026. It ran in headless Chrome at desktop and phone widths, on a copy of the dev data: sharing, the panel, previews, the guest page and cook mode, stopping, and the admin switch.
+- Still to do on real phones: an iPhone and an Android share sheet, previews in Messages, Mail, WhatsApp and Slack, and importing into a second household.
+
+The full list:
 
 - The share sheet on an iPhone and an Android phone, from Safari, Chrome and the installed app.
 - Link previews in Messages, Mail, WhatsApp and Slack.

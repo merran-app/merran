@@ -105,4 +105,4 @@ For speech setup, see [Kokoro, OpenAI, and device voices](../../integrations/opt
 
 For provider-backed voice and note suggestions, see [AI setup and costs](../../run/ai-setup/) and [AI privacy](../../project/ai-privacy/).
 
-[Correct pantry stock](../shopping-and-pantry/) after substitutions, [edit the recipe](../recipes/) with improvements, or [plan next week's meals](../planning/).
+[Correct pantry stock](../shopping-and-pantry/) after substitutions, [edit the recipe](../recipes/) with improvements, or [plan next week's meals](../planning/). Someone outside your household can cook a recipe too if you [share it as a link](../sharing-recipes/).
