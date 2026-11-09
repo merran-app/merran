@@ -1090,16 +1090,26 @@
     "unskip": "Plan it again",
     "tonight": "Tonight",
     "change": "Move or change",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
     "moveFailed": "Couldn't save the move. The meal is back where it was.",
     "undoMoveFailed": "Couldn't undo the move. The meal is still in its saved place.",
+    "swapped": "Swapped {{a}} and {{b}}.",
+    "reordered": {
+      "up": "Moved {{name}} up.",
+      "down": "Moved {{name}} down.",
+      "drag": "Moved {{name}}."
+    },
     "drag": {
       "move": "Move {{name}}",
       "handleHint": "Drag to another meal, or choose a destination",
-      "pickedUp": "Moving {{name}}. Drop on a meal or the any-day pool. Press Escape to cancel.",
+      "pickedUp": "Moving {{name}}. Drop on a meal, the any-day pool, or between this meal's dishes. Press Escape to cancel.",
       "dropPool": "Drop to move to any day",
       "dropMeal": "Drop to move here",
-      "occupiedTitle": "This meal already has dishes",
-      "occupied": "{{when}} already has {{meals}}. Move {{name}} alongside them? Existing dishes will stay.",
+      "dropBetween": "Drop to put it here",
+      "occupiedTitle": "{{when}} already has dishes",
+      "occupied": "Swap {{name}} with one of them, or put it alongside them.",
+      "swapWith": "Swap with {{name}}",
       "alongside": "Move alongside"
     },
     "remove": "Remove",
@@ -2586,6 +2596,11 @@
     "addedToList": "Added {{name}} to the list.",
     "addedSomeToList_one": "Added {{count}} thing to the list.",
     "addedSomeToList_other": "Added {{count}} things to the list.",
+    "onListAlready": "{{name}} is on the list already.",
+    "allOnListAlready_one": "That's on the list already.",
+    "allOnListAlready_other": "Those {{count}} are on the list already.",
+    "someOnListAlready_one": "{{count}} was on the list already.",
+    "someOnListAlready_other": "{{count}} were on the list already.",
     "options": "More for {{name}}",
     "edit": "Change",
     "moveTo": "Move to the {{place}}",
@@ -2677,6 +2692,9 @@
       "waitingFrom": "A receipt from {{store}} to look over",
       "lookOver": "Look it over"
     }
+  },
+  "gestures": {
+    "refreshing": "Refreshing…"
   },
   "install": {
     "title": "Put Merran on your home screen",

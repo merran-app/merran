@@ -125,6 +125,9 @@ export function useLongPress(onLongPress: () => void, enabled = true) {
     },
     onPointerUp: cancel,
     onPointerCancel: cancel,
+    // Something else took the finger, like a row that swipes: from then on
+    // this sees no more moves and no lift, so it has to give up now.
+    onLostPointerCapture: cancel,
     onContextMenu: (event: React.MouseEvent) => {
       if (from.current || fired.current) event.preventDefault()
     },

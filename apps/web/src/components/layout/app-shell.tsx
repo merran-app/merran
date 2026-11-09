@@ -4,6 +4,8 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AssistantProvider } from "@/features/assistant/assistant-context"
 import { AfterCookingProvider } from "@/features/cook/after-cooking-context"
 import { AssistantPanel } from "@/features/assistant/assistant-panel"
+import { EdgeBack } from "@/features/gestures/edge-back"
+import { PullToRefresh } from "@/features/gestures/pull-to-refresh"
 import { InstallGuide } from "@/features/install/install-ui"
 import { LiveUpdates } from "@/features/live/live-updates"
 import { TelemetryQuestion } from "@/features/server/telemetry-question"
@@ -38,6 +40,9 @@ export function AppShell() {
               </SidebarInset>
               <BottomNav />
               <InstallGuide />
+              {/* Only in the installed app, where the phone doesn't do these itself. */}
+              <PullToRefresh />
+              <EdgeBack />
               <TelemetryQuestion />
               <AssistantPanel />
             </SidebarProvider>

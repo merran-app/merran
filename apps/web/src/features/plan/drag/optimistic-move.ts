@@ -4,7 +4,8 @@ import type { QueryClient, QueryKey } from "@tanstack/react-query"
 import type { Meal, PlanEntry, PlanSnapshot } from "../queries"
 
 type Plan = { entries: PlanEntry[] }
-type Place = Pick<PlanEntry, "date" | "anyDay" | "meal" | "position">
+export type Place = Pick<PlanEntry, "date" | "anyDay" | "meal" | "position">
+type Slot = Omit<Place, "position">
 type Change = { before: PlanEntry; after: PlanEntry }
 const ranges = {
   predicate: ({ queryKey }: { queryKey: QueryKey }) =>
@@ -106,6 +107,86 @@ async function placeEntries(
   return () => apply(true)
 }
 
+/** After the last cached meal in a slot, as the server puts a meal moved there. */
+function nextPosition(entries: Map<string, PlanEntry>, slot: Slot) {
+  const positions = [...entries.values()]
+    .filter(
+      (other) =>
+        other.date === slot.date &&
+        other.anyDay === slot.anyDay &&
+        other.meal === slot.meal
+    )
+    .map((other) => other.position)
+  return Math.max(-1, ...positions) + 1
+}
+
+const placeOf = ({ date, anyDay, meal, position }: Place): Place => ({
+  date,
+  anyDay,
+  meal,
+  position,
+})
+
+/**
+ * Where a swapped meal goes, as the server puts it: the other's exact place
+ * on a day. Into the week's pool it keeps its own meal, after the pool's
+ * others of that meal, unless it takes the other's place there.
+ */
+function swappedPlace(
+  entries: Map<string, PlanEntry>,
+  entry: Place,
+  other: Place
+): Place {
+  if (!other.anyDay || other.meal === entry.meal) return placeOf(other)
+  const slot = { date: other.date, anyDay: true, meal: entry.meal }
+  return { ...slot, position: nextPosition(entries, slot) }
+}
+
+/**
+ * Two meals trade places. `partner` is where `b` is when it isn't cached,
+ * as when the picker swaps with a meal in a week that isn't loaded.
+ */
+export function optimisticSwap(
+  client: QueryClient,
+  a: string,
+  b: string,
+  partner?: Place
+) {
+  return placeEntries(client, (entries) => {
+    const locations = new Map<string, Place>()
+    const first = entries.get(a)
+    const second = entries.get(b)
+    const secondPlace = second ?? partner
+    if (!first || !secondPlace) return locations
+    locations.set(a, swappedPlace(entries, first, secondPlace))
+    if (second) locations.set(b, swappedPlace(entries, second, first))
+    return locations
+  })
+}
+
+/** A meal's dishes in a new order: those named first, the rest after them. */
+export function optimisticOrder(client: QueryClient, ids: string[]) {
+  return placeEntries(client, (entries) => {
+    const locations = new Map<string, Place>()
+    const named = ids.flatMap((id) => entries.get(id) ?? [])
+    const [first] = named
+    if (!first) return locations
+    const rest = [...entries.values()]
+      .filter(
+        (entry) =>
+          entry.date === first.date &&
+          entry.anyDay === first.anyDay &&
+          entry.meal === first.meal &&
+          !ids.includes(entry.id)
+      )
+      .sort((x, y) => x.position - y.position)
+    for (const [position, entry] of [...named, ...rest].entries()) {
+      locations.set(entry.id, { ...placeOf(entry), position })
+    }
+    return locations
+  })
+}
+
 /** The server appends a moved meal to its destination slot. */
 export function optimisticMove(
   client: QueryClient,
@@ -124,16 +205,7 @@ export function optimisticMove(
         entry.meal === slot.meal
       )
         continue
-      const positions = [...entries.values()]
-        .filter(
-          (other) =>
-            other.date === slot.date &&
-            other.anyDay === slot.anyDay &&
-            other.meal === slot.meal
-        )
-        .map((other) => other.position)
-      const position = Math.max(-1, ...positions) + 1
-      const moved = { ...entry, ...slot, position }
+      const moved = { ...entry, ...slot, position: nextPosition(entries, slot) }
       entries.set(id, moved)
       locations.set(id, moved)
     }

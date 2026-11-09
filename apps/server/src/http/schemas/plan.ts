@@ -271,7 +271,10 @@ export const PlanEntryParam = z.object({
 export const PlanBulkSchema = z
   .object({
     ids: z.array(z.uuid()).min(1).max(200),
-    action: z.enum(["remove", "move", "status"]),
+    action: z.enum(["remove", "move", "status", "swap", "order"]).openapi({
+      description:
+        "`swap` trades two meals' places; `order` puts one meal's dishes in the order given, the rest after them.",
+    }),
     date: Day.optional().openapi({ description: "Where to move them." }),
     meal: MealSchema.optional().openapi({
       description: "The meal to move them to; their own if left out.",
@@ -288,6 +291,10 @@ export const PlanBulkSchema = z
   .refine((bulk) => bulk.action !== "status" || bulk.status !== undefined, {
     message: "Say what they are now.",
     path: ["status"],
+  })
+  .refine((bulk) => bulk.action !== "swap" || bulk.ids.length === 2, {
+    message: "Swap needs two meals in different places.",
+    path: ["ids"],
   })
   .openapi("PlanBulk", {
     example: { ids: [IDS.planEntry], action: "status", status: "cooked" },

@@ -51,6 +51,7 @@ import { useCapability } from "@/features/capabilities/queries"
 import { OnHandDialog } from "@/features/list/list-dialogs"
 import { onHandQuery } from "@/features/list/queries"
 import { useHouseholdClock } from "@/features/plan/queries"
+import { SwipeRow, type SwipeAction } from "@/features/gestures/swipe-row"
 import { SelectMark } from "@/features/select/select-mark"
 import { SelectionBar, SelectionHeader } from "@/features/select/selection-bar"
 import {
@@ -454,7 +455,8 @@ const TAG_TONES: Record<Tag["tone"], string> = {
 
 /**
  * Something at home: its name and how much (tap to change it), what it's
- * for and when to use it by, and Used up. A long press starts selecting.
+ * for and when to use it by, and Used up. A long press starts selecting,
+ * and on a phone a swipe marks it used up or adds it to the list.
  */
 function PantryRow({
   item,
@@ -508,8 +510,29 @@ function PantryRow({
     })
 
   // A narrow card: tags under the name. A wide one: all in a line.
+  // On a phone, swipe left when it's used up and right to add it to the list.
+  const usedUpSwipe: SwipeAction = {
+    label: t("pantry.usedUp"),
+    icon: CheckmarkCircle02Icon,
+    tone: "destructive",
+    leaves: true,
+    onAction: () => actions.remove(item),
+  }
+  const toListSwipe: SwipeAction = {
+    label: t("pantry.bulk.toList"),
+    icon: ShoppingBasketAdd01Icon,
+    tone: "primary",
+    leaves: false,
+    onAction: () => actions.toList([item.name]),
+  }
+
   const row = (
-    <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 py-3 @3xl:grid-cols-[minmax(0,1fr)_auto_auto] @3xl:gap-x-4">
+    <SwipeRow
+      enabled={!selecting}
+      start={toListSwipe}
+      end={usedUpSwipe}
+      contentClassName="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 py-3 @3xl:grid-cols-[minmax(0,1fr)_auto_auto] @3xl:gap-x-4"
+    >
       <button
         type="button"
         onClick={selecting ? () => selection.toggle(item.id) : onEdit}
@@ -600,7 +623,7 @@ function PantryRow({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </li>
+    </SwipeRow>
   )
 
   if (selecting) return row

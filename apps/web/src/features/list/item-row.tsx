@@ -28,6 +28,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { SwipeRow, type SwipeAction } from "@/features/gestures/swipe-row"
 import { SelectMark } from "@/features/select/select-mark"
 import { useLongPress, type Selection } from "@/features/select/use-selection"
 import {
@@ -61,7 +62,8 @@ const MEALS_SHOWN = 2
  * One thing to buy, in at most two lines: a box to check it off, its name
  * and how much (tap to change it), and under that what it's for. On the
  * right, what it costs and what a sale saves, and Find, at any of the
- * household's stores. A long press starts selecting with it.
+ * household's stores. A long press starts selecting with it, and on a
+ * phone a swipe removes it or checks it off.
  */
 export function ItemRow({
   item,
@@ -90,9 +92,11 @@ export function ItemRow({
 }) {
   const { t, i18n } = useTranslation()
   const actions = useListActions({ onListDone })
+  // Shopping has no selection bar, so selecting there would be a dead end.
+  const selectable = !trip
   const press = useLongPress(
     () => selection.start(item.id),
-    !selection.selecting
+    selectable && !selection.selecting
   )
   const selecting = selection.selecting
   const picked = selection.isPicked(item.id)
@@ -155,8 +159,29 @@ export function ItemRow({
       .join(" ")
   }
 
+  // On a phone, swipe left to remove it and right to check it off.
+  const removeSwipe: SwipeAction = {
+    label: t("list.bulk.remove"),
+    icon: Delete02Icon,
+    tone: "destructive",
+    leaves: true,
+    onAction: () => actions.remove(item),
+  }
+  const checkSwipe: SwipeAction = {
+    label: item.checked ? t("list.bulk.uncheck") : t("list.bulk.check"),
+    icon: item.checked ? RotateLeft01Icon : Tick02Icon,
+    tone: "primary",
+    leaves: false,
+    onAction: () => actions.change(item, { checked: !item.checked }),
+  }
+
   const row = (
-    <li className="flex min-w-0 items-start gap-3 py-2.5 @2xl:gap-4">
+    <SwipeRow
+      enabled={!selecting}
+      start={checkSwipe}
+      end={removeSwipe}
+      contentClassName="flex min-w-0 items-start gap-3 py-2.5 @2xl:gap-4"
+    >
       {selecting ? (
         <span
           onClick={() => selection.toggle(item.id)}
@@ -277,7 +302,7 @@ export function ItemRow({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-    </li>
+    </SwipeRow>
   )
 
   // While selecting, a click picks the row; there's no menu.
@@ -306,10 +331,12 @@ export function ItemRow({
           </>
         )}
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={() => selection.start(item.id)}>
-          <HugeiconsIcon icon={CheckmarkSquare02Icon} strokeWidth={2} />
-          {t("select.start")}
-        </ContextMenuItem>
+        {selectable && (
+          <ContextMenuItem onClick={() => selection.start(item.id)}>
+            <HugeiconsIcon icon={CheckmarkSquare02Icon} strokeWidth={2} />
+            {t("select.start")}
+          </ContextMenuItem>
+        )}
         <ContextMenuItem
           variant="destructive"
           onClick={() => void actions.remove(item)}

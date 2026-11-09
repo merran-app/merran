@@ -34,7 +34,7 @@ const subscribe = (listener: () => void) => {
 }
 
 /** Opened from the home screen, or installed as an app on a computer. */
-function standalone() {
+export function standalone() {
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
     (navigator as Navigator & { standalone?: boolean }).standalone === true
@@ -42,7 +42,7 @@ function standalone() {
 }
 
 /** An iPhone or iPad, including an iPad that says it's a Mac. */
-function onIos() {
+export function onIos() {
   return (
     /iPhone|iPad|iPod/.test(navigator.userAgent) ||
     (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)

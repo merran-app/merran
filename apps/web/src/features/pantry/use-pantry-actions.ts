@@ -6,6 +6,7 @@ import { listQuery } from "@/features/list/queries"
 import { useForMeals } from "@/features/list/use-for-meals"
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
 
+import { splitOnList } from "./on-list"
 import { pantryQuery, type PantryItem, type PantrySnapshot } from "./queries"
 import { useDayLabel } from "./use-soon"
 
@@ -216,16 +217,41 @@ export function usePantryActions() {
         )
     },
 
-    /** Running low: these go on the shopping list. */
+    /**
+     * Running low: these go on the shopping list, unless they're on it
+     * already and not yet bought, so doing it twice doesn't add two rows.
+     */
     async toList(names: string[]) {
       try {
-        for (const text of names) {
+        // The list as it is now, not as it was when the page loaded.
+        const list = await queryClient.fetchQuery({
+          ...listQuery,
+          staleTime: 0,
+        })
+        const { adding, already } = splitOnList(names, list.items)
+
+        if (adding.length === 0) {
+          toast(
+            already.length === 1
+              ? t("pantry.onListAlready", { name: already[0] })
+              : t("pantry.allOnListAlready", { count: already.length })
+          )
+          return true
+        }
+        for (const text of adding) {
           await unwrap(api.POST("/api/list/items", { body: { text } }))
         }
         toast.success(
-          names.length === 1
-            ? t("pantry.addedToList", { name: names[0] })
-            : t("pantry.addedSomeToList", { count: names.length })
+          adding.length === 1
+            ? t("pantry.addedToList", { name: adding[0] })
+            : t("pantry.addedSomeToList", { count: adding.length }),
+          already.length > 0
+            ? {
+                description: t("pantry.someOnListAlready", {
+                  count: already.length,
+                }),
+              }
+            : undefined
         )
         return true
       } catch (err) {
