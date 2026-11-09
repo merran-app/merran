@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { serveStatic } from "@hono/node-server/serve-static"
 import { bodyLimit } from "hono/body-limit"
+import type { EntityManager } from "@mikro-orm/sql"
 import type { Logger } from "pino"
 import {
   sharedPageHead,
@@ -22,6 +23,29 @@ const SHARED_PAGE = /^\/r\/([A-Za-z0-9_-]{43})(\/cook)?$/
 
 function isApi(path: string) {
   return path === "/api" || path.startsWith("/api/")
+}
+
+/**
+ * The page with a shared recipe's preview and data in its head, or null when
+ * the link doesn't resolve. Link-preview bots fetch this when someone pastes
+ * the link, so it doesn't count as the link being opened: the page's own call
+ * does.
+ */
+async function filledPage(
+  em: EntityManager,
+  index: string,
+  token: string,
+  publicUrl: string
+) {
+  const found = await sharedForToken(em, token, { noteOpened: false })
+  if (!found) return null
+  const shared = describeShared(found.recipe, found.household.name, found.token)
+  const head = sharedPageHead(
+    shared,
+    shareUrl(publicUrl, found.token),
+    publicUrl
+  )
+  return withHead(index, head)
 }
 
 /**
@@ -90,23 +114,20 @@ export function serveWebApp(
 
     const token = SHARED_PAGE.exec(path)?.[1]
     if (token && publicUrl) {
-      // Link-preview bots fetch this when someone pastes the link, so it
-      // doesn't count as the link being opened: the page's own call does.
-      const found = await sharedForToken(c.var.em, token, { noteOpened: false })
-      if (found) {
-        // The token is in this page's address: keep it from other sites.
-        c.header("Referrer-Policy", "no-referrer")
-        const shared = describeShared(
-          found.recipe,
-          found.household.name,
-          found.token
+      try {
+        const html = await filledPage(c.var.em, index, token, publicUrl)
+        if (html) {
+          // The token is in this page's address: keep it from other sites.
+          c.header("Referrer-Policy", "no-referrer")
+          return c.html(html)
+        }
+      } catch (error) {
+        // The preview is a courtesy: without it, the app still opens and
+        // asks for the recipe itself. Not logged with the token.
+        c.var.logger.warn(
+          { err: error },
+          "A shared recipe's page head wasn't filled"
         )
-        const head = sharedPageHead(
-          shared,
-          shareUrl(publicUrl, found.token),
-          publicUrl
-        )
-        return c.html(withHead(index, head))
       }
     }
     return c.html(index)

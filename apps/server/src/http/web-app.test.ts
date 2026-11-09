@@ -2,7 +2,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pino } from "pino"
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
+import * as shares from "../services/recipes/sharing/shares.ts"
 import { createTestApp, setUpServer, type TestClient } from "../test/app.ts"
 import { handleNotFound } from "./errors.ts"
 import { createRouter } from "./router.ts"
@@ -163,6 +164,20 @@ describe("a shared recipe's page", () => {
     expect(await openedAt()).toBeNull()
     await app.request(`/r/${token}`)
     expect(await openedAt()).toBeNull()
+  })
+
+  it("serves the plain page when the lookup fails", async () => {
+    const spy = vi
+      .spyOn(shares, "sharedForToken")
+      .mockRejectedValueOnce(new Error("database is locked"))
+    try {
+      const res = await app.request(`/r/${token}`)
+      expect(res.status).toBe(200)
+      expect(res.headers.get("cache-control")).toBe("no-cache")
+      expect(await res.text()).toBe("<!doctype html><title>Merran</title>")
+    } finally {
+      spy.mockRestore()
+    }
   })
 
   it("leaves other pages and unknown links as they are", async () => {

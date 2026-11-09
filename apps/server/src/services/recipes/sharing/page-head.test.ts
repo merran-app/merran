@@ -113,6 +113,14 @@ describe("a shared recipe's head", () => {
     expect(text).not.toMatch(/\n/)
   })
 
+  it("rounds durations before splitting them, so 59.6 minutes is an hour", () => {
+    const $ = load(
+      sharedPageHead(sharedRecipe({ prepMinutes: 59.6 }), URL, BASE)
+    )
+    const json = JSON.parse($('script[type="application/ld+json"]').text())
+    expect(json.prepTime).toBe("PT1H")
+  })
+
   it("falls back to the household's name without a summary", () => {
     expect(previewDescription(sharedRecipe({ description: null }))).toBe(
       "A recipe from The Johnsons"

@@ -23,8 +23,9 @@ export function previewDescription(shared: SharedRecipe) {
 /** Minutes as ISO 8601, which recipe apps read: 90 is "PT1H30M". */
 function isoDuration(minutes: number | null) {
   if (!minutes || minutes <= 0) return undefined
-  const hours = Math.floor(minutes / 60)
-  const rest = Math.round(minutes % 60)
+  const whole = Math.round(minutes)
+  const hours = Math.floor(whole / 60)
+  const rest = whole % 60
   return `PT${hours ? `${hours}H` : ""}${rest ? `${rest}M` : ""}`
 }
 
