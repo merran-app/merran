@@ -13953,6 +13953,251 @@
           "text": "Making this tonight! https://example.com/lemon-chicken"
         }
       },
+      "SharedRecipe": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "yieldText": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "prepMinutes": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "cookMinutes": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "totalMinutes": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "As given, or prep and cook added up."
+          },
+          "diets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Diet"
+            }
+          },
+          "nutrition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Nutrition"
+              },
+              {
+                "description": "Per serving; what isn't known is left out."
+              }
+            ]
+          },
+          "sourceUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "photo": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "full": {
+                "type": "string",
+                "description": "For the recipe page."
+              },
+              "card": {
+                "type": "string",
+                "description": "Cropped, for previews."
+              }
+            },
+            "required": [
+              "full",
+              "card"
+            ],
+            "description": "Where its photo is, in each size, or null. The links need no sign-in."
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Its place in the list."
+                },
+                "section": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "text": {
+                  "type": "string",
+                  "description": "The line as written."
+                },
+                "quantity": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "quantityMax": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "unit": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "food": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "note": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "section",
+                "text",
+                "quantity",
+                "quantityMax",
+                "unit",
+                "food",
+                "note"
+              ]
+            }
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Its place in the list."
+                },
+                "section": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "section",
+                "text"
+              ]
+            }
+          },
+          "household": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "description": "The household that shared it."
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "servings",
+          "yieldText",
+          "prepMinutes",
+          "cookMinutes",
+          "totalMinutes",
+          "diets",
+          "nutrition",
+          "sourceUrl",
+          "photo",
+          "ingredients",
+          "steps",
+          "household"
+        ],
+        "description": "A shared recipe as anyone with its link sees it: no notes, ratings, tags, history or ids.",
+        "example": {
+          "name": "Lemon Chicken",
+          "description": "Crisp-skinned chicken in a bright pan sauce.",
+          "servings": 4,
+          "yieldText": null,
+          "prepMinutes": 15,
+          "cookMinutes": 35,
+          "totalMinutes": 50,
+          "diets": [
+            "gluten-free"
+          ],
+          "nutrition": null,
+          "sourceUrl": null,
+          "photo": {
+            "full": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=full&v=0199e8b0",
+            "card": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=card&v=0199e8b0"
+          },
+          "ingredients": [
+            {
+              "id": "i1",
+              "section": null,
+              "text": "2 lemons, juiced",
+              "quantity": 2,
+              "quantityMax": null,
+              "unit": null,
+              "food": "lemon",
+              "note": "juiced"
+            }
+          ],
+          "steps": [
+            {
+              "id": "s1",
+              "section": null,
+              "text": "Sear the chicken, skin side down."
+            }
+          ],
+          "household": {
+            "name": "The Riveras"
+          }
+        }
+      },
       "SiteList": {
         "type": "object",
         "properties": {
@@ -32740,6 +32985,136 @@
           },
           "413": {
             "description": "Too big to share.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shared/{token}": {
+      "get": {
+        "operationId": "getSharedRecipe",
+        "tags": [
+          "Sharing"
+        ],
+        "summary": "Read a shared recipe",
+        "description": "No sign-in: the link's token alone grants read access to this one recipe, and only the fields in the answer. Every way a link can fail, from never made to stopped, gets the same 404.",
+        "security": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharedRecipe"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "This recipe isn't shared.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many reads of this link.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shared/{token}/photo": {
+      "get": {
+        "operationId": "getSharedRecipePhoto",
+        "tags": [
+          "Sharing"
+        ],
+        "summary": "A shared recipe's photo",
+        "description": "As WebP, with no sign-in: `full` for the page, or `card` for previews. Use the links in the recipe's `photo`.",
+        "security": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "full",
+                "card"
+              ],
+              "default": "full"
+            },
+            "required": false,
+            "name": "size",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Which photo: the links in `photo` say."
+            },
+            "required": false,
+            "description": "Which photo: the links in `photo` say.",
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The photo.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "This recipe isn't shared, or it has no photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many reads of this link.",
             "content": {
               "application/json": {
                 "schema": {

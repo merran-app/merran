@@ -8,7 +8,11 @@ import {
   RecipeShare,
   type HouseholdSettings,
 } from "../../../database/entities/index.ts"
-import { NOT_DELETED_FILTER } from "../../../database/scope.ts"
+import {
+  ACROSS_HOUSEHOLDS,
+  forHousehold,
+  NOT_DELETED_FILTER,
+} from "../../../database/scope.ts"
 import { findRecipe, UUID } from "../recipes.ts"
 
 const SEE_DELETED = { filters: { [NOT_DELETED_FILTER]: false } }
@@ -117,6 +121,51 @@ export async function listShares(
       openedAt: share.openedAt?.toISOString() ?? null,
     }
   })
+}
+
+const TOKEN_SHAPE = /^[A-Za-z0-9_-]{43}$/
+const HOUR = 3_600_000
+
+/**
+ * The recipe a link shows, or null however the link fails: it was never made,
+ * it was stopped, the household turned sharing off, or the recipe is in
+ * Recently deleted (which only pauses the link: restoring it brings it back).
+ * This is the one check that opens a recipe to someone with no sign-in.
+ */
+export async function sharedForToken(
+  em: EntityManager,
+  token: string,
+  { noteOpened = true } = {}
+) {
+  if (!TOKEN_SHAPE.test(token)) return null
+
+  const share = await em.findOne(
+    RecipeShare,
+    { token },
+    { ...ACROSS_HOUSEHOLDS, populate: ["household"] }
+  )
+  if (!share) return null
+
+  const household = share.household.getEntity()
+  if (!recipeSharingOn(household.settings)) return null
+
+  // From here on, only this household's rows are in reach.
+  const recipe = await forHousehold(em, household.id).findOne(
+    Recipe,
+    { id: share.recipe.id },
+    { populate: ["ingredients", "steps"] }
+  )
+  if (!recipe) return null
+
+  const now = new Date()
+  if (
+    noteOpened &&
+    (!share.openedAt || now.getTime() - share.openedAt.getTime() > HOUR)
+  ) {
+    share.openedAt = now
+    await em.flush()
+  }
+  return { recipe, household, token: share.token }
 }
 
 export function shareUrl(publicUrl: string, token: string) {

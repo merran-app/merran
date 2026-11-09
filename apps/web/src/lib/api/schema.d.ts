@@ -3688,6 +3688,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/shared/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a shared recipe
+         * @description No sign-in: the link's token alone grants read access to this one recipe, and only the fields in the answer. Every way a link can fail, from never made to stopped, gets the same 404.
+         */
+        get: operations["getSharedRecipe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/{token}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A shared recipe's photo
+         * @description As WebP, with no sign-in: `full` for the page, or `card` for previews. Use the links in the recipe's `photo`.
+         */
+        get: operations["getSharedRecipePhoto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sites": {
         parameters: {
             query?: never;
@@ -11912,6 +11952,91 @@ export interface components {
             title?: string;
             text?: string;
             url?: string;
+        };
+        /**
+         * @description A shared recipe as anyone with its link sees it: no notes, ratings, tags, history or ids.
+         * @example {
+         *       "name": "Lemon Chicken",
+         *       "description": "Crisp-skinned chicken in a bright pan sauce.",
+         *       "servings": 4,
+         *       "yieldText": null,
+         *       "prepMinutes": 15,
+         *       "cookMinutes": 35,
+         *       "totalMinutes": 50,
+         *       "diets": [
+         *         "gluten-free"
+         *       ],
+         *       "nutrition": null,
+         *       "sourceUrl": null,
+         *       "photo": {
+         *         "full": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=full&v=0199e8b0",
+         *         "card": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=card&v=0199e8b0"
+         *       },
+         *       "ingredients": [
+         *         {
+         *           "id": "i1",
+         *           "section": null,
+         *           "text": "2 lemons, juiced",
+         *           "quantity": 2,
+         *           "quantityMax": null,
+         *           "unit": null,
+         *           "food": "lemon",
+         *           "note": "juiced"
+         *         }
+         *       ],
+         *       "steps": [
+         *         {
+         *           "id": "s1",
+         *           "section": null,
+         *           "text": "Sear the chicken, skin side down."
+         *         }
+         *       ],
+         *       "household": {
+         *         "name": "The Riveras"
+         *       }
+         *     }
+         */
+        SharedRecipe: {
+            name: string;
+            description: string | null;
+            servings: number | null;
+            yieldText: string | null;
+            prepMinutes: number | null;
+            cookMinutes: number | null;
+            /** @description As given, or prep and cook added up. */
+            totalMinutes: number | null;
+            diets: components["schemas"]["Diet"][];
+            nutrition: components["schemas"]["Nutrition"] & unknown;
+            sourceUrl: string | null;
+            /** @description Where its photo is, in each size, or null. The links need no sign-in. */
+            photo: {
+                /** @description For the recipe page. */
+                full: string;
+                /** @description Cropped, for previews. */
+                card: string;
+            } | null;
+            ingredients: {
+                /** @description Its place in the list. */
+                id: string;
+                section: string | null;
+                /** @description The line as written. */
+                text: string;
+                quantity: number | null;
+                quantityMax: number | null;
+                unit: string | null;
+                food: string | null;
+                note: string | null;
+            }[];
+            steps: {
+                /** @description Its place in the list. */
+                id: string;
+                section: string | null;
+                text: string;
+            }[];
+            /** @description The household that shared it. */
+            household: {
+                name: string;
+            };
         };
         /**
          * @example {
@@ -24322,6 +24447,90 @@ export interface operations {
             };
             /** @description Too big to share. */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getSharedRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recipe. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedRecipe"];
+                };
+            };
+            /** @description This recipe isn't shared. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many reads of this link. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getSharedRecipePhoto: {
+        parameters: {
+            query?: {
+                size?: "full" | "card";
+                /** @description Which photo: the links in `photo` say. */
+                v?: string;
+            };
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The photo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/webp": string;
+                };
+            };
+            /** @description This recipe isn't shared, or it has no photo. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many reads of this link. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
