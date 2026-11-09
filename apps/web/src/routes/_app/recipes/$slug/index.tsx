@@ -477,18 +477,15 @@ function RecipeView({
               />
             )}
             <Button
-              size="lg"
+              size="icon-lg"
               variant="outline"
+              aria-label={t("recipes.edit")}
+              title={t("recipes.edit")}
               render={
                 <Link to="/recipes/$slug/edit" params={{ slug: recipe.slug }} />
               }
             >
-              <HugeiconsIcon
-                icon={Edit02Icon}
-                strokeWidth={2}
-                data-icon="inline-start"
-              />
-              {t("recipes.edit")}
+              <HugeiconsIcon icon={Edit02Icon} strokeWidth={2} />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger

@@ -40,22 +40,20 @@ export function ShareButton({
 
   return (
     <>
+      {/* An icon beside Edit and ⋯, so the page's actions fit on one row. */}
       <Button
-        size="lg"
+        size="icon-lg"
         variant="outline"
+        aria-label={t("sharing.share")}
+        title={t("sharing.share")}
         disabled={making}
         onClick={() => void onShare()}
       >
         {making ? (
-          <Spinner data-icon="inline-start" />
+          <Spinner />
         ) : (
-          <HugeiconsIcon
-            icon={Share08Icon}
-            strokeWidth={2}
-            data-icon="inline-start"
-          />
+          <HugeiconsIcon icon={Share08Icon} strokeWidth={2} />
         )}
-        {t("sharing.share")}
       </Button>
       {dialogOpen && (
         <ShareDialog
