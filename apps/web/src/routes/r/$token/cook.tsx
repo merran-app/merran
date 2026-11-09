@@ -13,7 +13,10 @@ type CookSearch = {
   scale?: number
 }
 
-/** Cooking a shared recipe, by anyone with its link: steps and timers, saved nowhere but this device. */
+/**
+ * Cooking a shared recipe, by anyone with its link: steps and timers, saved
+ * nowhere but this device.
+ */
 export const Route = createFileRoute("/r/$token/cook")({
   validateSearch: (search: Record<string, unknown>): CookSearch => {
     const scale = Number(search.scale)

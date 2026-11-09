@@ -153,11 +153,15 @@ export function CookView({
   const servingsChanged = amount !== savedAmount
   const servingStep = amount <= 2 ? 0.5 : 1
   const household = !guest
-  const progressId = guest
-    ? `shared:${guest.token}`
-    : mealId
-      ? `${recipe.id}:${mealId}`
-      : recipe.id
+  // Where cooking got to is kept per shared link, per meal, or per recipe.
+  let progressId: string
+  if (guest) {
+    progressId = `shared:${guest.token}`
+  } else if (mealId) {
+    progressId = `${recipe.id}:${mealId}`
+  } else {
+    progressId = recipe.id
+  }
   // Stand-ins used this time, from the recipe page or picked while cooking.
   const thisTime = useSwapsThisTime(recipe.id)
   const { swaps } = thisTime
@@ -233,13 +237,13 @@ export function CookView({
   const stepLeftOut = stepLines.filter((line) => leftOut.has(line.id))
   // Where a timer leads back to. A guest's lead nowhere: the app's own
   // cooking pages are for the household.
-  const cooking: Cooking | null = guest
-    ? null
-    : {
+  const cooking: Cooking | null = household
+    ? {
         slug: recipe.slug,
         scale: currentScale,
         ...(paired ? { with: paired.slug } : {}),
       }
+    : null
   const showUnits = convertible(ingredients)
 
   const go = React.useCallback(
@@ -562,7 +566,8 @@ export function CookView({
       leftOut={leftOut}
       swapped={swapped.lines}
       // A pairing's lines are another recipe's: swap those from its page.
-      onSwap={aiOn && !paired ? setSwapping : undefined}
+      // Stand-ins are the household's, never a guest's.
+      onSwap={household && aiOn && !paired ? setSwapping : undefined}
       onUnswap={thisTime.undo}
       size={size}
     />
