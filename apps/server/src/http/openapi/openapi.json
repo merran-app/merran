@@ -2582,6 +2582,61 @@
                 },
                 "description": "For each task, the model and whose key, or why none."
               },
+              "vision": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "ok": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
+                      },
+                      "ref": {
+                        "type": "string"
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "server",
+                          "household"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "ok",
+                      "ref",
+                      "source"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "ok": {
+                        "type": "boolean",
+                        "enum": [
+                          false
+                        ]
+                      },
+                      "why": {
+                        "type": "string",
+                        "enum": [
+                          "noKey",
+                          "notCovered",
+                          "overLimit",
+                          "ownLimit"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "ok",
+                      "why"
+                    ]
+                  }
+                ],
+                "description": "The model and whose key for a photo or PDF, or why none."
+              },
               "month": {
                 "type": "string"
               },
@@ -2703,6 +2758,7 @@
             "required": [
               "available",
               "tasks",
+              "vision",
               "month",
               "server",
               "own",
@@ -2883,6 +2939,11 @@
                 "source": "server"
               }
             },
+            "vision": {
+              "ok": true,
+              "ref": "anthropic:claude-opus-5-5",
+              "source": "server"
+            },
             "month": "2026-10",
             "server": {
               "covers": true,
@@ -2905,6 +2966,7 @@
             "large": null,
             "small": null,
             "tasks": {},
+            "vision": null,
             "monthlyLimit": null
           },
           "models": [],
@@ -3193,6 +3255,16 @@
             },
             "description": "A model for a task of its own."
           },
+          "vision": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 300,
+            "default": null,
+            "description": "The model for every photo and PDF: imports, receipts, and assistant chats with one in them. It's used ahead of a task's own model; null to go by each task's.",
+            "example": "anthropic:claude-opus-5-5"
+          },
           "monthlyLimit": {
             "type": [
               "number",
@@ -3218,6 +3290,7 @@
           "large": null,
           "small": null,
           "tasks": {},
+          "vision": null,
           "monthlyLimit": 10,
           "autoTidy": false
         }
@@ -13252,7 +13325,8 @@
             "householdKeys": true,
             "householdAddresses": false,
             "large": null,
-            "small": null
+            "small": null,
+            "vision": null
           },
           "models": [
             {
@@ -13383,6 +13457,14 @@
               "null"
             ],
             "maxLength": 300
+          },
+          "vision": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 300,
+            "default": null
           }
         },
         "required": [
@@ -13397,7 +13479,7 @@
           "large",
           "small"
         ],
-        "description": "Who may use the server's keys: `serverKeysFor` is admins, chosen, all, none (the server admins' households, the chosen `households`, every household, or none). `monthlyLimit` is each household's in US dollars on the server's keys (null for none), and `limits` a household's own instead. `tasks` and `models` are what the server's keys cover (no models means any). `householdKeys` and `householdAddresses` say whether households may add their own keys and addresses. `large` and `small` are the models households use when they haven't picked.",
+        "description": "Who may use the server's keys: `serverKeysFor` is admins, chosen, all, none (the server admins' households, the chosen `households`, every household, or none). `monthlyLimit` is each household's in US dollars on the server's keys (null for none), and `limits` a household's own instead. `tasks` and `models` are what the server's keys cover (no models means any). `householdKeys` and `householdAddresses` say whether households may add their own keys and addresses. `large` and `small` are the models households use when they haven't picked, and `vision` the model for photos and PDFs in households that haven't picked any.",
         "example": {
           "serverKeysFor": "admins",
           "households": [],
@@ -13419,7 +13501,8 @@
           "householdKeys": true,
           "householdAddresses": false,
           "large": null,
-          "small": null
+          "small": null,
+          "vision": null
         }
       },
       "JobList": {
