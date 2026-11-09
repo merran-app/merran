@@ -78,6 +78,8 @@ import { VersionsDialog } from "@/features/recipes/versions-dialog"
 import { useCapability } from "@/features/capabilities/queries"
 import { useAssistantPage } from "@/features/assistant/assistant-context"
 import { PlanItDialog } from "@/features/plan/plan-it-dialog"
+import { ShareButton } from "@/features/sharing/share-button"
+import { SharedBadge } from "@/features/sharing/shared-badge"
 import { formatPrice, useCosts } from "@/features/stores/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { formatRelativeDate } from "@/lib/format"
@@ -354,9 +356,12 @@ function RecipeView({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-10">
         <RecipePhoto recipe={recipe} actions={photo} />
         <div className="grid content-start gap-4">
-          <h1 className="text-3xl leading-tight font-semibold tracking-tight md:text-4xl">
-            {recipe.name}
-          </h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1 className="text-3xl leading-tight font-semibold tracking-tight md:text-4xl">
+              {recipe.name}
+            </h1>
+            <SharedBadge slug={recipe.slug} />
+          </div>
           {recipe.description && (
             <p className="text-lg text-muted-foreground lg:line-clamp-5">
               {recipe.description}
@@ -457,6 +462,7 @@ function RecipeView({
               />
               {t("plan.planIt")}
             </Button>
+            <ShareButton recipe={recipe} />
             {planning && (
               <PlanItDialog
                 recipe={recipe}

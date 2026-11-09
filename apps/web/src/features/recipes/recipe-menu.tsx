@@ -5,9 +5,11 @@ import {
   Delete02Icon,
   Edit02Icon,
   LinkSquare02Icon,
+  Share08Icon,
   Tag01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
@@ -19,12 +21,14 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
+import { householdQuery } from "@/features/household/queries"
 import { PlanItDialog } from "@/features/plan/plan-it-dialog"
+import { ShareDialog } from "@/features/sharing/share-dialog"
 
 import { DeleteRecipesDialog, TagRecipesDialog } from "./bulk-dialogs"
 import type { RecipeSummary } from "./queries"
 
-type Showing = "plan" | "tags" | "delete" | null
+type Showing = "plan" | "tags" | "share" | "delete" | null
 
 /**
  * What a right click on a recipe card offers: the things done to one recipe
@@ -42,6 +46,7 @@ export function RecipeMenu({
 }) {
   const { t } = useTranslation()
   const [showing, setShowing] = React.useState<Showing>(null)
+  const { data: household } = useQuery(householdQuery)
 
   function closeWhenShut(open: boolean) {
     if (!open) setShowing(null)
@@ -89,6 +94,12 @@ export function RecipeMenu({
             <HugeiconsIcon icon={Tag01Icon} strokeWidth={2} />
             {t("recipes.bulk.tags")}
           </ContextMenuItem>
+          {household?.recipeSharing && (
+            <ContextMenuItem onClick={() => setShowing("share")}>
+              <HugeiconsIcon icon={Share08Icon} strokeWidth={2} />
+              {t("sharing.share")}
+            </ContextMenuItem>
+          )}
           <ContextMenuSeparator />
           <ContextMenuItem onClick={onSelect}>
             <HugeiconsIcon icon={CheckmarkSquare02Icon} strokeWidth={2} />
@@ -117,6 +128,9 @@ export function RecipeMenu({
       )}
       {showing === "tags" && (
         <TagRecipesDialog ids={[recipe.id]} open onOpenChange={closeWhenShut} />
+      )}
+      {showing === "share" && (
+        <ShareDialog recipe={recipe} open onOpenChange={closeWhenShut} />
       )}
       {showing === "delete" && (
         <DeleteRecipesDialog
