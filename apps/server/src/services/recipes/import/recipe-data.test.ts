@@ -336,6 +336,80 @@ describe("a WordPress Recipe Maker card", () => {
   })
 })
 
+describe("a description from the page", () => {
+  const recipe = {
+    "@type": "Recipe",
+    name: "Sticky Lemon Chicken",
+    recipeIngredient: ["4 chicken thighs", "2 lemons"],
+    recipeInstructions: ["Roast it all."],
+  }
+  const url = "https://blog.example/lemon-chicken/"
+
+  /** The page, with these tags at the top of its head. */
+  const withHead = (html: string, ...tags: string[]) =>
+    html.replace("<head>", `<head>${tags.join("")}`)
+
+  test("fills in what the recipe data leaves out", () => {
+    const result = readRecipeData(
+      withHead(
+        page(recipe),
+        '<meta name="description" content="Bright, sticky lemon chicken for a weeknight.">'
+      ),
+      url
+    )!
+    expect(result.input.description).toBe(
+      "Bright, sticky lemon chicken for a weeknight."
+    )
+  })
+
+  test("can be the one the page gives for sharing", () => {
+    const result = readRecipeData(
+      withHead(
+        page(recipe),
+        '<meta property="og:description" content="Lemons and chicken thighs, roasted until sticky.">'
+      ),
+      url
+    )!
+    expect(result.input.description).toBe(
+      "Lemons and chicken thighs, roasted until sticky."
+    )
+  })
+
+  test("doesn't stand in for the recipe data's own", () => {
+    const result = readRecipeData(
+      withHead(
+        page({ ...recipe, description: "Our favourite Sunday dinner." }),
+        '<meta name="description" content="Bright, sticky lemon chicken for a weeknight.">'
+      ),
+      url
+    )!
+    expect(result.input.description).toBe("Our favourite Sunday dinner.")
+  })
+
+  test("is left out when it's about the site, not the dish", () => {
+    const result = readRecipeData(
+      withHead(
+        page(recipe),
+        '<meta name="description" content="The best easy recipes, from my kitchen to yours.">'
+      ),
+      url
+    )!
+    expect(result.input.description).toBeNull()
+  })
+
+  test("is left out when it only says the page's title", () => {
+    const result = readRecipeData(
+      withHead(
+        page(recipe),
+        "<title>Sticky Lemon Chicken | Some Blog</title>",
+        '<meta name="description" content="Sticky Lemon Chicken | Some Blog">'
+      ),
+      url
+    )!
+    expect(result.input.description).toBeNull()
+  })
+})
+
 describe("recipe photos", () => {
   const recipe = {
     "@type": "Recipe",

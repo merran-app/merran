@@ -7,6 +7,8 @@
 export type PageRead = {
   url: string
   title: string
+  /** What it says about itself, for search engines or for sharing. */
+  description: string
   jsonld: string[]
   images: string[]
   text: string
@@ -34,6 +36,10 @@ export function readPage(): PageRead {
     meta('meta[property="og:image"]'),
     meta('meta[name="twitter:image"]'),
   ].filter(Boolean)
+  const description =
+    meta('meta[name="description"]') ||
+    meta('meta[property="og:description"]') ||
+    meta('meta[name="twitter:description"]')
   const root =
     document.querySelector("main") ??
     document.querySelector("article") ??
@@ -41,6 +47,7 @@ export function readPage(): PageRead {
   return {
     url: location.href,
     title: document.title,
+    description: description.slice(0, 2000),
     jsonld,
     images,
     text: (root?.innerText ?? "").slice(0, 80_000),
