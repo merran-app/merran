@@ -107,7 +107,7 @@ export function ModelSelect({
       onValueChange={(next) => onChange(next ? String(next) : null)}
       disabled={disabled}
     >
-      <SelectTrigger id={id} className="w-full sm:w-[28rem]">
+      <SelectTrigger id={id} className="w-full">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

@@ -1,11 +1,10 @@
-import { ArrowDown01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
 import { AI_TASKS, TASK_SIZES } from "@merran/shared"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -14,11 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import {
   Field,
   FieldContent,
@@ -31,20 +25,27 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
 import { capabilitiesQuery } from "@/features/capabilities/queries"
-import { CardActions, SectionActions } from "@/features/settings/card-actions"
+import { CardActions } from "@/features/settings/card-actions"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
+import { ModelRow } from "../model-row"
 import { ModelSelect } from "../model-select"
 import {
   formatMoney,
   householdAiQuery,
+  type HouseholdAi,
   type HouseholdAiSettings,
 } from "../queries"
 import { StatusLine } from "./status"
 
+type AiTask = (typeof AI_TASKS)[number]
+type Size = "large" | "small"
+
 /**
  * Settings → AI: which model each task uses, a limit on the household's own
- * keys, and tidying up new recipes. Household admins only.
+ * keys, and tidying up new recipes. Tasks sit under the model for their
+ * size and follow it unless changed, so only the exceptions take room.
+ * Household admins only.
  */
 export function HouseholdAiModelsCard() {
   const { t, i18n } = useTranslation()
@@ -55,12 +56,6 @@ export function HouseholdAiModelsCard() {
   const [saving, setSaving] = React.useState(false)
   const id = React.useId()
   const money = (dollars: number) => formatMoney(dollars, i18n.language)
-  // A household's first key can turn AI on for the server.
-  const refresh = () =>
-    Promise.all([
-      queryClient.invalidateQueries({ queryKey: householdAiQuery.queryKey }),
-      queryClient.invalidateQueries({ queryKey: capabilitiesQuery.queryKey }),
-    ])
 
   if (!data) {
     return (
@@ -75,6 +70,11 @@ export function HouseholdAiModelsCard() {
   const change = (next: Partial<HouseholdAiSettings>) =>
     setDraft({ ...picked, ...next })
   const { own } = data.status
+  const anyPicked =
+    picked.large ||
+    picked.small ||
+    picked.vision ||
+    Object.keys(picked.tasks).length > 0
 
   async function save() {
     setSaving(true)
@@ -91,7 +91,10 @@ export function HouseholdAiModelsCard() {
           body: { ...picked, monthlyLimit: limit },
         })
       )
-      await refresh()
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: householdAiQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: capabilitiesQuery.queryKey }),
+      ])
       setDraft(null)
       setLimitText(null)
       toast.success(t("ai.household.saved"))
@@ -114,40 +117,23 @@ export function HouseholdAiModelsCard() {
           <StatusLine data={data} />
 
           {data.models.length > 0 && (
-            <>
-              <Field>
-                <FieldLabel htmlFor={`${id}-large`}>
-                  {t("ai.models.large")}
-                </FieldLabel>
-                <ModelSelect
-                  id={`${id}-large`}
-                  value={picked.large}
-                  options={data.models}
-                  noneLabel={t("ai.models.default")}
-                  showSource
-                  task="import"
-                  onChange={(large) => change({ large })}
+            <div className="grid divide-y rounded-2xl border">
+              {(["large", "small"] as const).map((size) => (
+                <SizeGroup
+                  key={size}
+                  size={size}
+                  id={`${id}-${size}`}
+                  data={data}
+                  picked={picked}
+                  change={change}
                 />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor={`${id}-small`}>
-                  {t("ai.models.small")}
-                </FieldLabel>
-                <ModelSelect
-                  id={`${id}-small`}
-                  value={picked.small}
-                  options={data.models}
-                  noneLabel={t("ai.models.default")}
-                  showSource
-                  task="swaps"
-                  onChange={(small) => change({ small })}
-                />
-                <FieldDescription>{t("ai.models.sizesHint")}</FieldDescription>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor={`${id}-vision`}>
-                  {t("ai.models.vision")}
-                </FieldLabel>
+              ))}
+              <ModelRow
+                id={`${id}-vision`}
+                label={t("ai.models.vision")}
+                hint={t("ai.models.visionShortHint")}
+                className="px-4 py-3"
+              >
                 <ModelSelect
                   id={`${id}-vision`}
                   value={picked.vision}
@@ -157,78 +143,29 @@ export function HouseholdAiModelsCard() {
                   task="import"
                   onChange={(vision) => change({ vision })}
                 />
-                <FieldDescription>{t("ai.models.visionHint")}</FieldDescription>
-              </Field>
-              {(picked.large ||
-                picked.small ||
-                picked.vision ||
-                Object.keys(picked.tasks).length > 0) && (
-                <SectionActions>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      change({
-                        large: null,
-                        small: null,
-                        tasks: {},
-                        vision: null,
-                      })
-                    }
-                  >
-                    {t("ai.models.useSuggested")}
-                  </Button>
-                </SectionActions>
-              )}
-              <Collapsible>
-                <CollapsibleTrigger
-                  render={
-                    <Button variant="ghost" size="sm" className="group -ms-3" />
-                  }
-                >
-                  <HugeiconsIcon
-                    icon={ArrowDown01Icon}
-                    strokeWidth={2}
-                    className="transition-transform group-data-[panel-open]:rotate-180"
-                  />
-                  {t("ai.models.perTask")}
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-3 grid gap-4">
-                  {AI_TASKS.map((task) => (
-                    <Field key={task}>
-                      <FieldLabel htmlFor={`${id}-${task}`}>
-                        {t(`ai.tasks.${task}`)}
-                      </FieldLabel>
-                      <ModelSelect
-                        id={`${id}-${task}`}
-                        value={picked.tasks[task] ?? null}
-                        options={data.models}
-                        noneLabel={t(`ai.models.${TASK_SIZES[task]}Default`)}
-                        showSource
-                        task={task}
-                        onChange={(ref) => {
-                          const tasks = { ...picked.tasks }
-                          if (ref) tasks[task] = ref
-                          else delete tasks[task]
-                          change({ tasks })
-                        }}
-                      />
-                    </Field>
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
-            </>
+              </ModelRow>
+            </div>
           )}
 
           {data.keys.length > 0 && (
-            <Field>
-              <FieldLabel htmlFor={`${id}-limit`}>
-                {t("ai.household.ownLimit")}
-              </FieldLabel>
+            <Field orientation="horizontal">
+              <FieldContent>
+                <FieldLabel htmlFor={`${id}-limit`}>
+                  {t("ai.household.ownLimit")}
+                </FieldLabel>
+                <FieldDescription>
+                  {own.limit === null
+                    ? t("ai.household.ownSpent", { spent: money(own.spent) })
+                    : t("ai.household.ownSpentOf", {
+                        spent: money(own.spent),
+                        limit: money(own.limit),
+                      })}
+                </FieldDescription>
+              </FieldContent>
               <Input
                 id={`${id}-limit`}
                 inputMode="decimal"
-                className="max-w-40"
+                className="w-28 shrink-0"
                 placeholder={t("ai.policy.noLimit")}
                 value={
                   limitText ??
@@ -238,14 +175,6 @@ export function HouseholdAiModelsCard() {
                 }
                 onChange={(event) => setLimitText(event.target.value)}
               />
-              <FieldDescription>
-                {own.limit === null
-                  ? t("ai.household.ownSpent", { spent: money(own.spent) })
-                  : t("ai.household.ownSpentOf", {
-                      spent: money(own.spent),
-                      limit: money(own.limit),
-                    })}
-              </FieldDescription>
             </Field>
           )}
 
@@ -271,6 +200,16 @@ export function HouseholdAiModelsCard() {
       {/* Something to save: models to pick, or a limit on its own keys. */}
       {(data.models.length > 0 || data.keys.length > 0) && (
         <CardActions>
+          {anyPicked && data.models.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() =>
+                change({ large: null, small: null, tasks: {}, vision: null })
+              }
+            >
+              {t("ai.models.useSuggested")}
+            </Button>
+          )}
           <Button
             disabled={(draft === null && limitText === null) || saving}
             onClick={() => void save()}
@@ -281,5 +220,114 @@ export function HouseholdAiModelsCard() {
         </CardActions>
       )}
     </Card>
+  )
+}
+
+/**
+ * The model for big or small tasks, and under it the tasks of that size.
+ * Folded to one line while none of them is changed; a changed task always
+ * shows, marked, so the exceptions are what you see.
+ */
+function SizeGroup({
+  size,
+  id,
+  data,
+  picked,
+  change,
+}: {
+  size: Size
+  id: string
+  data: HouseholdAi
+  picked: HouseholdAiSettings
+  change: (next: Partial<HouseholdAiSettings>) => void
+}) {
+  const { t } = useTranslation()
+  const tasks = AI_TASKS.filter((task) => TASK_SIZES[task] === size)
+  const changed = tasks.some((task) => picked.tasks[task])
+  const [open, setOpen] = React.useState(changed)
+  const showTasks = open || changed
+
+  function pickForTask(task: AiTask, ref: string | null) {
+    const next = { ...picked.tasks }
+    if (ref) next[task] = ref
+    else delete next[task]
+    change({ tasks: next })
+  }
+
+  return (
+    <div className="grid">
+      <ModelRow
+        id={id}
+        label={t(`ai.models.${size}`)}
+        hint={t(`ai.models.${size}ShortHint`)}
+        className="px-4 py-3"
+      >
+        <ModelSelect
+          id={id}
+          value={picked[size]}
+          options={data.models}
+          noneLabel={t("ai.models.default")}
+          showSource
+          task={size === "large" ? "import" : "swaps"}
+          onChange={(ref) => change({ [size]: ref })}
+        />
+      </ModelRow>
+      {showTasks ? (
+        <ul className="grid border-t bg-muted/30">
+          {tasks.map((task) => (
+            <li key={task} className="border-b last:border-b-0">
+              <ModelRow
+                id={`${id}-${task}`}
+                label={
+                  <span className="inline-flex flex-wrap items-center gap-2 font-normal">
+                    {t(`ai.tasks.${task}`)}
+                    {picked.tasks[task] && (
+                      <Badge variant="secondary">
+                        {t("ai.models.changed")}
+                      </Badge>
+                    )}
+                  </span>
+                }
+                className="py-2 ps-8 pe-4"
+              >
+                <ModelSelect
+                  id={`${id}-${task}`}
+                  value={picked.tasks[task] ?? null}
+                  options={data.models}
+                  noneLabel={t(`ai.models.${size}Default`)}
+                  showSource
+                  task={task}
+                  onChange={(ref) => pickForTask(task, ref)}
+                />
+              </ModelRow>
+            </li>
+          ))}
+          {!changed && (
+            <li className="flex justify-end px-4 py-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() => setOpen(false)}
+              >
+                {t("ai.models.hideTasks")}
+              </Button>
+            </li>
+          )}
+        </ul>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/30 py-2 ps-8 pe-4 text-sm text-muted-foreground">
+          <span className="min-w-0">
+            {t("ai.models.tasksUse", {
+              count: tasks.length,
+              tasks: tasks.map((task) => t(`ai.tasks.${task}`)).join(", "),
+            })}
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+            {t("ai.models.changeOne")}
+          </Button>
+        </div>
+      )}
+    </div>
   )
 }
