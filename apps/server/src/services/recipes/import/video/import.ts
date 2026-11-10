@@ -98,6 +98,12 @@ export async function importVideo(
     ? await fetchCaptions(deps.fetcher, info.captions.url)
     : null
   const short = info.duration === null || info.duration <= SHORT_VIDEO_SECONDS
+  // A short video's frames are photos, read by the household's model for
+  // those: checked too, before anything's downloaded or listened to.
+  if (short) {
+    const reading = await resolveTask(deps, em, householdId, "import", 0, true)
+    if (!reading.ok) throw aiUnavailable(reading.why)
+  }
   const listen =
     !transcript &&
     (info.duration ?? 0) <= MAX_LISTEN_SECONDS &&

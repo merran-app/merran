@@ -6094,6 +6094,11 @@ export interface components {
          *             "source": "server"
          *           }
          *         },
+         *         "vision": {
+         *           "ok": true,
+         *           "ref": "anthropic:claude-opus-5-5",
+         *           "source": "server"
+         *         },
          *         "month": "2026-10",
          *         "server": {
          *           "covers": true,
@@ -6116,6 +6121,7 @@ export interface components {
          *         "large": null,
          *         "small": null,
          *         "tasks": {},
+         *         "vision": null,
          *         "monthlyLimit": null
          *       },
          *       "models": [],
@@ -6272,6 +6278,19 @@ export interface components {
                         why: "noKey" | "notCovered" | "overLimit" | "ownLimit";
                     };
                 };
+                /** @description The model and whose key for a photo or PDF, or why none. */
+                vision: {
+                    /** @enum {boolean} */
+                    ok: true;
+                    ref: string;
+                    /** @enum {string} */
+                    source: "server" | "household";
+                } | {
+                    /** @enum {boolean} */
+                    ok: false;
+                    /** @enum {string} */
+                    why: "noKey" | "notCovered" | "overLimit" | "ownLimit";
+                };
                 month: string;
                 server: {
                     covers: boolean;
@@ -6407,6 +6426,7 @@ export interface components {
          *       "large": null,
          *       "small": null,
          *       "tasks": {},
+         *       "vision": null,
          *       "monthlyLimit": 10,
          *       "autoTidy": false
          *     }
@@ -6475,6 +6495,12 @@ export interface components {
                  */
                 reminders?: string;
             };
+            /**
+             * @description The model for every photo and PDF: imports, receipts, and assistant chats with one in them. It's used ahead of a task's own model; null to go by each task's.
+             * @default null
+             * @example anthropic:claude-opus-5-5
+             */
+            vision: string | null;
             /** @description A monthly limit on its own keys, in US dollars; null for none. */
             monthlyLimit: number | null;
             /**
@@ -11583,7 +11609,8 @@ export interface components {
          *         "householdKeys": true,
          *         "householdAddresses": false,
          *         "large": null,
-         *         "small": null
+         *         "small": null,
+         *         "vision": null
          *       },
          *       "models": [
          *         {
@@ -11669,7 +11696,7 @@ export interface components {
             };
         };
         /**
-         * @description Who may use the server's keys: `serverKeysFor` is admins, chosen, all, none (the server admins' households, the chosen `households`, every household, or none). `monthlyLimit` is each household's in US dollars on the server's keys (null for none), and `limits` a household's own instead. `tasks` and `models` are what the server's keys cover (no models means any). `householdKeys` and `householdAddresses` say whether households may add their own keys and addresses. `large` and `small` are the models households use when they haven't picked.
+         * @description Who may use the server's keys: `serverKeysFor` is admins, chosen, all, none (the server admins' households, the chosen `households`, every household, or none). `monthlyLimit` is each household's in US dollars on the server's keys (null for none), and `limits` a household's own instead. `tasks` and `models` are what the server's keys cover (no models means any). `householdKeys` and `householdAddresses` say whether households may add their own keys and addresses. `large` and `small` are the models households use when they haven't picked, and `vision` the model for photos and PDFs in households that haven't picked any.
          * @example {
          *       "serverKeysFor": "admins",
          *       "households": [],
@@ -11691,7 +11718,8 @@ export interface components {
          *       "householdKeys": true,
          *       "householdAddresses": false,
          *       "large": null,
-         *       "small": null
+         *       "small": null,
+         *       "vision": null
          *     }
          */
         AiPolicy: {
@@ -11708,6 +11736,8 @@ export interface components {
             householdAddresses: boolean;
             large: string | null;
             small: string | null;
+            /** @default null */
+            vision: string | null;
         };
         /**
          * @example {

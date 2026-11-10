@@ -33,7 +33,8 @@ import { recordUsage } from "./usage.ts"
 // are checked against a rough estimate first, and what the call took and
 // cost is recorded after, against the household, the person, the task and
 // the key. A key its provider says is out of credit is noted, and the call
-// goes to the next key there is.
+// goes to the next key there is. A call with photos or PDFs in it goes to
+// the household's model for those, when it has one.
 
 /** What calling AI takes: settings for whose key pays, and the models. */
 export type AiDeps = Pick<AppDeps, "settings" | "fetcher" | "ai">
@@ -127,6 +128,14 @@ function callFailed(error: unknown, provider: AiProvider) {
   return error
 }
 
+/**
+ * Whether a call has photos or PDFs in it, by what it needs the model to
+ * read: such calls go to the model picked for them.
+ */
+function isVisual(needs?: readonly ModelAbility[]) {
+  return Boolean(needs?.includes("images") || needs?.includes("pdfs"))
+}
+
 /** What a call can use besides the model. */
 export type AiExtras = {
   target: AiTarget
@@ -164,7 +173,9 @@ export async function prepareAi(
     deps,
     em,
     options.householdId,
-    options.task
+    options.task,
+    0,
+    isVisual(options.needs)
   )
   if (!resolution.ok) throw aiUnavailable(resolution.why)
   const { key, model } = resolution
@@ -242,7 +253,8 @@ export async function useAi<T extends { usage: LanguageModelUsage }>(
       em,
       options.householdId,
       options.task,
-      options.estimate
+      options.estimate,
+      isVisual(options.needs)
     )
     if (!resolution.ok) {
       if (outOfCredit.length > 0) throw outOfCreditError(outOfCredit[0]!)
