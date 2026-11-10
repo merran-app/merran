@@ -15,7 +15,7 @@
     "check:locales": "node scripts/check-locales.mjs"
   },
   "dependencies": {
-    "@ai-sdk/react": "4.0.163",
+    "@ai-sdk/react": "4.0.168",
     "@base-ui/react": "^1.9.0",
     "@better-auth/oauth-provider": "1.7.18",
     "@better-auth/passkey": "1.7.18",
@@ -24,11 +24,11 @@
     "@hugeicons/core-free-icons": "^4.3.5",
     "@hugeicons/react": "^1.1.10",
     "@merran/shared": "workspace:*",
-    "@sentry/browser": "11.10.0",
+    "@sentry/browser": "11.11.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-query": "^5.104.2",
     "@tanstack/react-router": "^1.170.44",
-    "ai": "7.0.159",
+    "ai": "7.0.164",
     "better-auth": "1.7.18",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.0",
