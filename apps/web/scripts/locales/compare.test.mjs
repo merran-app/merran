@@ -124,6 +124,27 @@ test("forms the language doesn't use are errors, and ones it needs are warnings"
   assert.deepEqual(zero.extraForms, [])
 })
 
+test("a plain key beside a plural of the same name is a key of its own", () => {
+  // As in English's plan.servings, "Servings", and plan.servings_one.
+  const result = compareLocale({
+    english: {
+      servings: "Servings",
+      servings_one: "{{count}} serving",
+      servings_other: "{{count}} servings",
+    },
+    translation: { servings: "人分", servings_other: "{{count}}人分" },
+    language: "ja",
+  })
+  assert.deepEqual(result, {
+    percent: 100,
+    missing: [],
+    extra: [],
+    placeholders: [],
+    missingForms: [],
+    extraForms: [],
+  })
+})
+
 test("a locale must be in the list and the folder both", () => {
   const errors = localeSetErrors(["en", "pl"], ["en", "de"])
   assert.equal(errors.length, 2)

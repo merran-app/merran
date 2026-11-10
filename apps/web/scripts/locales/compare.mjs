@@ -49,18 +49,25 @@ function flatten(object, prefix = "") {
 }
 
 /**
- * Strings grouped as keys: a plural's forms are one key, by its base path.
+ * Strings grouped as keys: a plural's forms are one key, named by its base
+ * path. A plain key can share that name ("Servings" beside
+ * "{{count}} servings"), so the two are kept apart, under different ids.
  * @param {Map<string, string>} strings
- * @returns {Map<string, { plural: boolean, forms: Map<string, string> }>}
+ * @returns {Map<string, { base: string, plural: boolean, forms: Map<string, string> }>}
  */
 function group(strings) {
   const keys = new Map()
   for (const [path, text] of strings) {
     const form = PLURAL.exec(path)?.[1]
     const base = form ? path.slice(0, -form.length - 1) : path
-    const key = keys.get(base) ?? { plural: Boolean(form), forms: new Map() }
+    const id = form ? `${base} (plural)` : base
+    const key = keys.get(id) ?? {
+      base,
+      plural: Boolean(form),
+      forms: new Map(),
+    }
     key.forms.set(form ?? "", text)
-    keys.set(base, key)
+    keys.set(id, key)
   }
   return keys
 }
@@ -91,8 +98,9 @@ export function compareLocale({ english, translation, language }) {
   const extraForms = []
   let done = 0
 
-  for (const [base, key] of englishKeys) {
-    const theirs = translatedKeys.get(base)
+  for (const [id, key] of englishKeys) {
+    const { base } = key
+    const theirs = translatedKeys.get(id)
     const filled = theirs
       ? [...theirs.forms.values()].some((text) => text.trim() !== "")
       : false
@@ -132,8 +140,8 @@ export function compareLocale({ english, translation, language }) {
     }
   }
 
-  for (const base of translatedKeys.keys()) {
-    if (!englishKeys.has(base)) extra.push(base)
+  for (const [id, key] of translatedKeys) {
+    if (!englishKeys.has(id)) extra.push(key.base)
   }
 
   return {
