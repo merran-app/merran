@@ -1,7 +1,7 @@
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link } from "@tanstack/react-router"
-import type { ReactNode } from "react"
+import { useEffect, useRef, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -81,6 +81,9 @@ function BackToSettings() {
   return (
     <Link
       to="/settings"
+      // Every settings address starts with /settings; this is only the way
+      // back, never the page that's open.
+      activeOptions={{ exact: true }}
       className="-ms-1 inline-flex w-fit items-center gap-1 rounded-lg py-1 pe-2 text-sm font-medium text-primary outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       <HugeiconsIcon
@@ -93,6 +96,9 @@ function BackToSettings() {
   )
 }
 
+/** The half the switch was just used to open, so the new switch can take focus. */
+let switchedTo: HalfId | null = null
+
 /**
  * The switch between a page's halves. Each half has its own address, so the
  * switch is a pair of links, and the server half is tinted so it's plain
@@ -100,6 +106,14 @@ function BackToSettings() {
  */
 function HalfSwitch({ page, current }: { page: VisiblePage; current: HalfId }) {
   const { t } = useTranslation()
+  const currentLink = useRef<HTMLAnchorElement>(null)
+
+  useEffect(() => {
+    // Each half is its own route, so following the switch draws a new one.
+    // Put focus back on it, where a tab bar that stayed put would have kept it.
+    if (switchedTo === current) currentLink.current?.focus()
+    switchedTo = null
+  }, [current])
 
   return (
     <nav
@@ -111,10 +125,14 @@ function HalfSwitch({ page, current }: { page: VisiblePage; current: HalfId }) {
         return (
           <Link
             key={half.id}
+            ref={isCurrent ? currentLink : undefined}
             to={half.to}
             // A household half's address starts the server half's, so only an
             // exact match marks a half as the one open.
             activeOptions={{ exact: true }}
+            onClick={() => {
+              if (!isCurrent) switchedTo = half.id
+            }}
             className={cn(
               "rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50",
               isCurrent && "text-foreground shadow-sm",

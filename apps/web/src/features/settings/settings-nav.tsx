@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { useSettingsViewer } from "./guard"
 import { pageAt, visiblePages } from "./pages"
 
-/** Settings' pages, beside the page on larger screens. */
+/** Settings' pages: a row above the page on a tablet, beside it on larger screens. */
 export function SettingsNav() {
   const { t } = useTranslation()
   const pages = visiblePages(useSettingsViewer())
@@ -20,7 +20,7 @@ export function SettingsNav() {
     <nav
       data-tour="page-actions"
       aria-label={t("settings.pagesLabel")}
-      className="sticky top-20 flex flex-col gap-1 self-start"
+      className="flex min-w-0 flex-row flex-wrap gap-1 lg:sticky lg:top-20 lg:flex-col lg:self-start"
     >
       {pages.map((page) => (
         <Link

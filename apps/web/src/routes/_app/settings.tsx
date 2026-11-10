@@ -28,7 +28,9 @@ function SettingsLayout() {
           description={t("settings.description")}
         />
       )}
-      <div className="grid min-w-0 gap-8 md:grid-cols-[12rem_minmax(0,1fr)] md:gap-10">
+      {/* The list sits beside the page only from lg: on a tablet the app's own
+          sidebar is open too, and a second column would squeeze the cards. */}
+      <div className="grid min-w-0 gap-8 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-10">
         {!isMobile && <SettingsNav />}
         <div className="flex min-w-0 flex-col gap-6">
           <Outlet />
