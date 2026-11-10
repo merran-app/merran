@@ -229,37 +229,63 @@
     }
   },
   "settings": {
-    "sections": "Settings sections",
-    "onThisPage": "On this page",
-    "description": "Choose who these settings apply to, then jump to the part you need.",
+    "pagesLabel": "Settings pages",
+    "description": "Everything you can change, by topic.",
+    "back": "Settings",
+    "halves": {
+      "label": "Whose settings",
+      "you": "You",
+      "household": "This household",
+      "server": "Whole server",
+      "serverNote": "Changes here reach every household on this server."
+    },
+    "topics": {
+      "profile": {
+        "title": "Profile",
+        "description": "How you appear, the language and look of Merran, and a copy of your data."
+      },
+      "signIn": {
+        "title": "Sign-in",
+        "description": "Ways to sign in and keep your account safe."
+      },
+      "apps": {
+        "title": "Apps and devices",
+        "description": "Merran on your devices, and other apps that connect to it."
+      },
+      "household": {
+        "title": "Household",
+        "description": "Its name, how its weeks work, and the people in it."
+      },
+      "planning": {
+        "title": "Planning",
+        "description": "Which meals fill, tastes, theme nights, the weekly plan and calendars."
+      },
+      "recipes": {
+        "title": "Recipes",
+        "description": "Nutrition, photos and sharing for the recipe library."
+      },
+      "ai": {
+        "title": "AI",
+        "description": "Which model each task uses, and whose key pays."
+      },
+      "shopping": {
+        "title": "Shopping and stores",
+        "description": "The pantry, the stores you shop at, and store accounts."
+      },
+      "importExport": {
+        "title": "Import and export",
+        "description": "Move a household, and bring recipes in from other places."
+      },
+      "server": {
+        "title": "Server",
+        "description": "What's running, outgoing email, and work in the background."
+      }
+    },
     "you": {
       "language": {
         "title": "Language",
         "description": "The language Merran shows you, on every device you sign in on.",
         "browser": "Match my browser"
-      },
-      "tab": "You",
-      "groups": {
-        "profile": {
-          "title": "Profile and appearance",
-          "description": "Your account details and how Merran looks on this device."
-        },
-        "security": {
-          "title": "Sign-in and security",
-          "description": "Ways to sign in and protect your account."
-        },
-        "connections": {
-          "title": "Connected apps and API keys",
-          "description": "Review access you have granted to other apps."
-        },
-        "devices": {
-          "title": "Devices and sharing",
-          "description": "Install Merran and send recipes or receipts from your devices."
-        },
-        "data": {
-          "title": "Your data",
-          "description": "Download a copy of your account data."
-        }
       },
       "profile": {
         "title": "Profile",
@@ -373,35 +399,12 @@
       }
     },
     "household": {
-      "groups": {
-        "details": {
-          "title": "Household details",
-          "description": "The shared name, region, time zone and other basics."
-        },
-        "people": {
-          "title": "People and households",
-          "description": "Members, invitations and other households."
-        },
-        "planning": {
-          "title": "Meal planning",
-          "description": "Set tastes, meals, themes and the weekly plan."
-        },
-        "recipes": {
-          "title": "Recipes and AI",
-          "description": "Choose AI models and work on nutrition or photos across the library."
-        },
-        "shopping": {
-          "title": "Shopping and stores",
-          "description": "Choose where this household shops, connect a store account, and how the pantry fills."
-        }
-      },
       "yourStores": {
         "title": "Your stores",
         "description": "The stores you shop at, for Find on the list. Merran offers only these, however many it knows.",
         "connected": "Merran can send to these, and pick their products:",
         "others": "And the others you shop at, whose sites Find searches:"
       },
-      "tab": "Household",
       "planning": {
         "title": "Planning",
         "description": "The meals Fill the week and Plan each week fill for you: all of them, unless you turn some off. Every meal still shows on the plan, so you can plan one you've turned off yourself whenever you like.",
@@ -436,8 +439,6 @@
         "revoked": "Calendar link revoked.",
         "refreshHint": "Add the link as a subscribed calendar. Changes made in Merran appear when your calendar app refreshes it. Calendar-side edits do not change Merran."
       },
-      "none": "You're not in a household",
-      "noneHint": "Ask someone in a household for an invite link.",
       "roles": {
         "owner": "Owner",
         "admin": "Admin",
@@ -663,33 +664,6 @@
     },
     "lockedBy": "Set on the server, by {{env}}",
     "server": {
-      "tab": "This server",
-      "groups": {
-        "overview": {
-          "title": "Server overview",
-          "description": "Version, installation and address details."
-        },
-        "access": {
-          "title": "Access and email",
-          "description": "Control sign-in, connected applications and outgoing email."
-        },
-        "ai": {
-          "title": "Shared AI",
-          "description": "Manage server keys, household access and server-key spending."
-        },
-        "recipes": {
-          "title": "Recipe services",
-          "description": "Configure imports, nutrition, recipe sites, photos and voice."
-        },
-        "stores": {
-          "title": "Store connections",
-          "description": "Set up the retailers households can use."
-        },
-        "operations": {
-          "title": "Operations",
-          "description": "Monitor jobs and choose how errors and telemetry are reported."
-        }
-      },
       "about": {
         "title": "This server",
         "description": "What's running, and where.",
@@ -933,17 +907,6 @@
       }
     },
     "transfer": {
-      "tab": "Import and export",
-      "groups": {
-        "household": {
-          "title": "Move a household",
-          "description": "Download a household archive or restore one from Merran."
-        },
-        "apps": {
-          "title": "Import from another app",
-          "description": "Bring recipes into this household from another meal planner."
-        }
-      },
       "export": {
         "title": "Export this household",
         "description": "A zip of its recipes, with their photos, versions, cooking notes and pairings, to keep or to move to another Merran. Recipes in Recently deleted, AI keys and other secrets stay behind.",
@@ -1099,7 +1062,7 @@
     "moveDown": "Move down",
     "moveFailed": "Couldn't save the move. The meal is back where it was.",
     "undoMoveFailed": "Couldn't undo the move. The meal is still in its saved place.",
-    "swapped": "Swapped {{a}} and {{b}}.",
+    "swapped": "Swapped in {{name}}.",
     "reordered": {
       "up": "Moved {{name}} up.",
       "down": "Moved {{name}} down.",
@@ -1228,7 +1191,6 @@
       "onSaleLowest": "{{foods}} at the lowest price in a while"
     },
     "somethingElse": "Something else",
-    "swapped": "Swapped in {{name}}.",
     "noOther": "No other ideas for this meal.",
     "addToList": "Add the week to the list",
     "calories_one": "{{value}} cal",
@@ -1263,8 +1225,6 @@
       "done": "Sharing stopped."
     },
     "settings": {
-      "title": "Sharing",
-      "description": "Let people send recipes to anyone with a link, and see what's shared.",
       "cardTitle": "Recipe links",
       "cardDescription": "Anyone with a recipe's link can see and cook it without signing in. They can't change it.",
       "allow": "Let members share recipes by link",
@@ -3481,7 +3441,7 @@
         "navigation": "Move between Today, Recipes, Plan, List and Pantry here. On a phone these sections are in the bottom tabs.",
         "help": "Come back to Help to replay this tour, restore getting started, or look up a Merran term.",
         "assistant": "The assistant is optional. It can suggest changes for you to review; its AI calls use an eligible provider key.",
-        "server-settings": "This server is for administrators: enable modules, decide AI access, and check jobs and updates. Household preferences live separately."
+        "server-settings": "As the server admin, you also get the Server page, and a Whole server switch on pages like AI and Shopping and stores. Changes there reach every household."
       },
       "today": {
         "title": "Today",
@@ -3515,8 +3475,8 @@
       },
       "settings": {
         "title": "Settings",
-        "overview": "You contains personal choices. Household contains shared preferences. Administrators also have This server for server-wide configuration.",
-        "action": "Review your household’s time zone, week start and planned meals. Invite links bring people into this household; they do not need the server setup code."
+        "overview": "Settings are grouped by topic. Each page has everything you can change about it.",
+        "action": "Pick a topic here. Profile, Sign-in, and Apps and devices are yours alone; the rest are shared with your household."
       },
       "assistant": {
         "title": "Assistant",
