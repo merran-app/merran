@@ -1,6 +1,8 @@
 import type { QueryClient } from "@tanstack/react-query"
 import { redirect } from "@tanstack/react-router"
 
+import { applyLanguage } from "@/i18n"
+
 import { meQuery, setupQuery } from "./queries"
 
 /**
@@ -11,7 +13,8 @@ export async function requireSignedIn(queryClient: QueryClient, href: string) {
   const me = await queryClient.ensureQueryData(meQuery)
   if (me?.requiresTwoFactor)
     throw redirect({ to: "/verify", search: { redirect: href } })
-  if (me) return
+  // The person's own language, before any page of the app draws.
+  if (me) return applyLanguage(me.language)
 
   const setup = await queryClient.fetchQuery(setupQuery)
   if (setup.needed) throw redirect({ to: "/setup" })

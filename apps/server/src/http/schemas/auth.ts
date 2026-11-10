@@ -1,6 +1,11 @@
 import { z } from "@hono/zod-openapi"
+import { isLocale } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
-import { HOUSEHOLD_ROLES, INVITE_ROLES } from "../../database/entities/index.ts"
+import {
+  HOUSEHOLD_ROLES,
+  INVITE_ROLES,
+  User,
+} from "../../database/entities/index.ts"
 import { membershipsOf } from "../../services/households/households.ts"
 import { ME, NEW_ACCOUNT, TIMES } from "./examples.ts"
 
@@ -42,6 +47,12 @@ export const MeSchema = z
     ),
     /** The household in use on this device. */
     activeHouseholdId: z.string().nullable(),
+    // A string rather than the list of codes, so adding a language changes
+    // nothing generated from this API.
+    language: z.string().nullable().openapi({
+      description:
+        'The language the person chose, as a code such as "en"; null to follow their browser.',
+    }),
   })
   .openapi("Me", { example: ME })
 
@@ -59,7 +70,10 @@ export async function describeMe(
   },
   activeHouseholdId: string | null
 ): Promise<Me> {
-  const memberships = await membershipsOf(em, user.id)
+  const [memberships, language] = await Promise.all([
+    membershipsOf(em, user.id),
+    chosenLanguage(em, user.id),
+  ])
   const households = memberships.map((member) => ({
     id: member.household.id,
     name: member.household.getEntity().name,
@@ -77,7 +91,22 @@ export async function describeMe(
     activeHouseholdId: households.some((h) => h.id === activeHouseholdId)
       ? activeHouseholdId
       : (households[0]?.id ?? null),
+    language,
   }
+}
+
+/**
+ * The language a person chose, or null to follow their browser. One Merran
+ * no longer has reads as none, rather than failing to describe them.
+ */
+async function chosenLanguage(em: EntityManager, userId: string) {
+  const person = await em.findOne(
+    User,
+    { id: userId },
+    { fields: ["preferences"] }
+  )
+  const language = person?.preferences?.language
+  return isLocale(language) ? language : null
 }
 
 export const InviteTokenParam = z.object({

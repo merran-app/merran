@@ -25,19 +25,25 @@ import {
   type ReceiptLine,
 } from "./queries"
 
-const DAY = new Intl.DateTimeFormat(undefined, {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-  timeZone: "UTC",
-})
+/** A receipt's day, like "Tue, Oct 14", in the app's language. */
+function useDay() {
+  const { i18n } = useTranslation()
+  const format = new Intl.DateTimeFormat(i18n.language, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  })
+  return (date: string) => format.format(new Date(`${date}T12:00:00Z`))
+}
 
 /** Prices, in the household's currency. */
 function useMoney() {
   const { data } = useQuery(householdQuery)
+  const { i18n } = useTranslation()
   const currency = data?.currency ?? "USD"
   return (value: number) =>
-    value.toLocaleString(undefined, { style: "currency", currency })
+    value.toLocaleString(i18n.language, { style: "currency", currency })
 }
 
 /** A receipt read and waiting: look it over, then add it to the pantry. */
@@ -91,6 +97,7 @@ function Review({ receipt }: { receipt: Receipt }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const money = useMoney()
+  const day = useDay()
   const refresh = useRefreshAfterReceipt()
   const [busy, setBusy] = React.useState<"add" | "discard" | null>(null)
   const [previewed, setPreviewed] = React.useState<Previewed | null>(null)
@@ -168,7 +175,7 @@ function Review({ receipt }: { receipt: Receipt }) {
   }
 
   const said = [
-    receipt.date && DAY.format(new Date(`${receipt.date}T12:00:00Z`)),
+    receipt.date && day(receipt.date),
     t("pantry.receipts.lines", { count: receipt.lines.length }),
     receipt.total !== null && money(receipt.total),
   ]

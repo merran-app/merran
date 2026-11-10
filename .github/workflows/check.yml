@@ -69,6 +69,7 @@ jobs:
       - run: pnpm exec prettier --check apps/web
       - run: pnpm --filter @merran/web typecheck
       - run: pnpm --filter @merran/web check:contrast
+      - run: pnpm --filter @merran/web check:locales
       - run: pnpm --filter @merran/web build
       - run: pnpm --filter @merran/web test
       - run: pnpm --filter @merran/web api

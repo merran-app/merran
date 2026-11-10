@@ -83,6 +83,7 @@ export const ME = {
     { id: IDS.household, name: "The Riveras", role: "owner" as const },
   ],
   activeHouseholdId: IDS.household,
+  language: null,
 }
 
 export const NEW_ACCOUNT = {

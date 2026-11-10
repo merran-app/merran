@@ -233,6 +233,11 @@
     "onThisPage": "On this page",
     "description": "Choose who these settings apply to, then jump to the part you need.",
     "you": {
+      "language": {
+        "title": "Language",
+        "description": "The language Merran shows you, on every device you sign in on.",
+        "browser": "Match my browser"
+      },
       "tab": "You",
       "groups": {
         "profile": {

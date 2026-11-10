@@ -26,6 +26,8 @@ for (const [paths, expected] of [
   [["apps/docs/astro.config.mjs"], ["docs"]],
   [["apps/web/src/features/recipes/card.tsx"], ["web", "image"]],
   [["apps/web/src/locales/en.json"], ["web", "image", "docs"]],
+  // The site quotes English labels; other languages are the web app's alone.
+  [["apps/web/src/locales/pl.json"], ["web", "image"]],
   [["apps/server/src/modules/recipes/service.ts"], ["server", "image", "docs"]],
   [
     ["apps/server/src/http/openapi/openapi.json"],

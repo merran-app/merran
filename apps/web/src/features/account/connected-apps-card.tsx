@@ -23,7 +23,7 @@ type Grant = {
   scopes: string[]
 }
 export function ConnectedAppsCard() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const enabled = useCapability("auth.oauth")
   const queryClient = useQueryClient()
   const [failed, setFailed] = useState(false)
@@ -67,13 +67,17 @@ export function ConnectedAppsCard() {
             <p>{grant.householdName ?? t("auth.oauth.formerHousehold")}</p>
             <p className="text-sm text-muted-foreground">
               {t("auth.oauth.approved", {
-                date: new Date(grant.createdAt).toLocaleDateString(),
+                date: new Date(grant.createdAt).toLocaleDateString(
+                  i18n.language
+                ),
               })}
             </p>
             <p className="text-sm text-muted-foreground">
               {grant.lastUsedAt
                 ? t("auth.oauth.lastUsed", {
-                    date: new Date(grant.lastUsedAt).toLocaleString(),
+                    date: new Date(grant.lastUsedAt).toLocaleString(
+                      i18n.language
+                    ),
                   })
                 : t("auth.oauth.unused")}
             </p>
