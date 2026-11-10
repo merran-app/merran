@@ -44,7 +44,7 @@ export function ProductSummary({
           {!product.inStock && ` · ${t("stores.basket.outOfStock")}`}
         </p>
       </div>
-      <div className="shrink-0 text-right">
+      <div className="shrink-0 text-end">
         {now.price !== null ? (
           <>
             <p className="text-sm font-semibold tabular-nums">

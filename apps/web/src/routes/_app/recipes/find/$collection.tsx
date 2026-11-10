@@ -76,10 +76,14 @@ function CollectionPage() {
       <Button
         variant="ghost"
         size="sm"
-        className="mt-2 -ml-3 md:mt-4"
+        className="-ms-3 mt-2 md:mt-4"
         render={<Link to="/recipes/find" search={{ tab: "collections" }} />}
       >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+        <HugeiconsIcon
+          icon={ArrowLeft01Icon}
+          strokeWidth={2}
+          className="rtl:-scale-x-100"
+        />
         {t("find.title")}
       </Button>
       {isPending ? (

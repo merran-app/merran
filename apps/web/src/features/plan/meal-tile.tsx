@@ -104,7 +104,7 @@ export function MealTile({
           aria-pressed={picked}
           onClick={() => selection.toggle(entry.id)}
           className={cn(
-            "flex min-h-17 w-full items-center gap-3 rounded-2xl bg-muted/50 p-2.5 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+            "flex min-h-17 w-full items-center gap-3 rounded-2xl bg-muted/50 p-2.5 text-start outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
             picked && "bg-accent ring-2 ring-primary"
           )}
         >

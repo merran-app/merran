@@ -221,7 +221,7 @@ export function FilePreview({
     <Dialog open={file !== null} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92dvh] gap-3 sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="truncate pr-8">
+          <DialogTitle className="truncate pe-8">
             {file?.name || t("assistant.files.photo")}
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -263,7 +263,7 @@ function PdfCard({ name, className }: { name: string; className?: string }) {
   return (
     <span
       className={cn(
-        "flex h-16 w-44 items-center gap-2.5 rounded-xl border bg-card px-3 text-left",
+        "flex h-16 w-44 items-center gap-2.5 rounded-xl border bg-card px-3 text-start",
         className
       )}
     >
@@ -323,7 +323,7 @@ export function AttachmentTray({
             type="button"
             variant="secondary"
             size="icon-xs"
-            className="absolute -top-1.5 -right-1.5 rounded-full border shadow-sm"
+            className="absolute -end-1.5 -top-1.5 rounded-full border shadow-sm"
             aria-label={t("assistant.files.remove", { name: file.name })}
             onClick={() => onRemove(file.key)}
           >
@@ -346,7 +346,7 @@ export function SentFiles({
   const { t } = useTranslation()
   if (parts.length === 0) return null
   return (
-    <div className="ml-auto flex max-w-[85%] flex-wrap justify-end gap-2">
+    <div className="ms-auto flex max-w-[85%] flex-wrap justify-end gap-2">
       {parts.map((part) => {
         const pdf = isPdf(part.mediaType)
         const name = part.filename ?? t("assistant.files.photo")

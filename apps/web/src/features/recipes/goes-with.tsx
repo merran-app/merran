@@ -108,7 +108,7 @@ export function GoesWith({
     <div className="grid gap-2">
       {options.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-sm text-muted-foreground">
+          <span className="me-1 text-sm text-muted-foreground">
             {t("recipes.pairing.goesWith")}
             <TermHelp term="goesWith" />
           </span>
@@ -191,7 +191,7 @@ export function GoesWith({
 
       {pairsWith.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-sm text-muted-foreground">
+          <span className="me-1 text-sm text-muted-foreground">
             {t("recipes.pairing.pairsWith")}
           </span>
           {pairsWith.map((base) => (
@@ -269,7 +269,7 @@ function ManagePairings({ recipe }: { recipe: Recipe }) {
             return (
               <span
                 key={rule.id}
-                className="inline-flex items-center gap-1 rounded-full bg-secondary py-0.5 pr-1 pl-3 text-sm text-secondary-foreground"
+                className="inline-flex items-center gap-1 rounded-full bg-secondary py-0.5 ps-3 pe-1 text-sm text-secondary-foreground"
               >
                 {name}
                 <button
@@ -436,7 +436,7 @@ function PickRecipes({ recipe }: { recipe: Recipe }) {
                 <button
                   type="button"
                   aria-pressed={on}
-                  className="flex w-full min-w-0 items-center gap-2 px-3 py-2 text-left hover:bg-secondary/50"
+                  className="flex w-full min-w-0 items-center gap-2 px-3 py-2 text-start hover:bg-secondary/50"
                   onClick={() =>
                     setPicked((current) => {
                       const next = new Set(current)
@@ -537,7 +537,7 @@ function PickTag({ recipe }: { recipe: Recipe }) {
               <button
                 type="button"
                 disabled={on || adding}
-                className="flex w-full min-w-0 items-center gap-2 px-3 py-2 text-left hover:bg-secondary/50 disabled:opacity-60"
+                className="flex w-full min-w-0 items-center gap-2 px-3 py-2 text-start hover:bg-secondary/50 disabled:opacity-60"
                 onClick={() => void add(option.name)}
               >
                 <span className="min-w-0 flex-1 truncate">

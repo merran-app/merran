@@ -261,7 +261,7 @@ function KokoroVoices({
       {others.length > 0 && (
         <Collapsible defaultOpen={others.some((voice) => voice.id === chosen)}>
           <CollapsibleTrigger
-            render={<Button variant="ghost" size="sm" className="-ml-2" />}
+            render={<Button variant="ghost" size="sm" className="-ms-2" />}
           >
             {t("settings.server.voice.otherLanguages", {
               count: others.length,
@@ -343,7 +343,7 @@ function VoiceList({
           <li
             key={voice.id}
             className={cn(
-              "flex items-center gap-2 rounded-2xl border p-1.5 pl-3",
+              "flex items-center gap-2 rounded-2xl border p-1.5 ps-3",
               picked && "border-primary bg-primary/5"
             )}
           >
@@ -353,7 +353,7 @@ function VoiceList({
               aria-checked={picked}
               disabled={disabled}
               onClick={() => onPick(voice.id)}
-              className="grid min-w-0 flex-1 text-left outline-none focus-visible:underline"
+              className="grid min-w-0 flex-1 text-start outline-none focus-visible:underline"
             >
               <span className="truncate font-medium">{voice.name}</span>
               {voice.about && (

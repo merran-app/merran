@@ -315,7 +315,7 @@ export function IngredientList({
                       )}
                       {rest}
                       {swap && (
-                        <span className="ml-1.5 text-sm text-primary">
+                        <span className="ms-1.5 text-sm text-primary">
                           {t("recipes.swaps.insteadOf", {
                             line: shownLine(swap.insteadOf, {
                               factor: factorOf?.(line.id) ?? factor,
@@ -343,6 +343,7 @@ export function IngredientList({
                           <HugeiconsIcon
                             icon={ArrowTurnBackwardIcon}
                             strokeWidth={2}
+                            className="rtl:-scale-x-100"
                           />
                         </Button>
                       )

@@ -72,10 +72,14 @@ export function SendPage({ list }: { list: string }) {
       <Button
         variant="ghost"
         size="sm"
-        className="mt-2 -ml-3 self-start md:mt-4"
+        className="-ms-3 mt-2 self-start md:mt-4"
         render={<Link to="/list" />}
       >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+        <HugeiconsIcon
+          icon={ArrowLeft01Icon}
+          strokeWidth={2}
+          className="rtl:-scale-x-100"
+        />
         {t("nav.list")}
       </Button>
       <PageHeader
@@ -296,6 +300,7 @@ function Plan({ list, plan }: { list: string; plan: SendPlan }) {
                       icon={ArrowRight01Icon}
                       strokeWidth={2}
                       data-icon="inline-end"
+                      className="rtl:-scale-x-100"
                     />
                   </Button>
                 </CardAction>

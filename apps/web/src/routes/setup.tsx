@@ -129,7 +129,7 @@ function SetupPage() {
           <div className="flex flex-col-reverse gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
             <Link
               to="/login"
-              className="text-center text-sm underline underline-offset-4 sm:text-left"
+              className="text-center text-sm underline underline-offset-4 sm:text-start"
             >
               {t("auth.setup.signIn")}
             </Link>

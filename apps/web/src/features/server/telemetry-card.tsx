@@ -150,7 +150,7 @@ export function TelemetryCard() {
           <Collapsible>
             <CollapsibleTrigger
               render={
-                <Button variant="ghost" size="sm" className="group -ml-3" />
+                <Button variant="ghost" size="sm" className="group -ms-3" />
               }
             >
               <HugeiconsIcon

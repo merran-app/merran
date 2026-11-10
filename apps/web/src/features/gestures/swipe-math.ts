@@ -1,6 +1,10 @@
 // The sums behind the phone's gestures: which way a finger's going, how far
 // is far enough, and what letting go does. Plain functions, so they can be
 // tested without a screen.
+//
+// They measure along the line of text, not across the screen: positive is
+// towards the end of a line, which is left in a right-to-left language.
+// `alongLine` turns a touch's screen x into that.
 
 /** How far a finger moves before we decide it's a swipe or a scroll. */
 export const LOCK_PX = 10
@@ -14,14 +18,18 @@ export const FLICK_PX_PER_MS = 0.5
 export const FLICK_WINDOW_MS = 100
 /** How far the spinner has to come down before letting go refreshes. */
 export const PULL_PX = 64
-/** A touch this close to the left edge is the start of going back. */
+/** A touch this close to the edge lines start from is the start of going back. */
 export const EDGE_START_PX = 20
 /** How far from the edge going back has to come. */
 export const EDGE_BACK_PX = 80
 
 export type Axis = "x" | "y"
 
-/** "start" is a swipe right, to the action on the left; "end" a swipe left. */
+/**
+ * "start" swipes towards the end of the line, showing the action at its
+ * start: in English, a swipe right shows the action on the left. "end" is
+ * the other way.
+ */
 export type SwipeSide = "start" | "end"
 
 export type SwipeEnd =
@@ -40,10 +48,10 @@ export function lockAxis(dx: number, dy: number): Axis | null {
 }
 
 /**
- * What letting go of a row does. `offset` and `velocity` are positive to
- * the right; a side without an action always closes. A flick only does
- * what `flicks` allows: something that takes a row away, like Remove,
- * always needs the swipe past halfway, where the phone buzzes.
+ * What letting go of a row does. `offset` and `velocity` are positive
+ * towards the end of the line; a side without an action always closes. A
+ * flick only does what `flicks` allows: something that takes a row away,
+ * like Remove, always needs the swipe past halfway, where the phone buzzes.
  */
 export function swipeEnd(input: {
   offset: number
@@ -100,7 +108,20 @@ export function pullEnd(distance: number): "refresh" | "cancel" {
   return resist(distance) >= PULL_PX ? "refresh" : "cancel"
 }
 
-/** Whether a touch starts close enough to the left edge to go back. */
+/**
+ * How far along the line a point on the screen is: from the left edge, or
+ * from the right in a right-to-left language. Distances between two points
+ * come out positive towards the end of the line.
+ */
+export function alongLine(
+  x: number,
+  screenWidth: number,
+  direction: "ltr" | "rtl"
+): number {
+  return direction === "rtl" ? screenWidth - x : x
+}
+
+/** Whether a touch, `alongLine`, starts close enough to the edge to go back. */
 export function inEdgeZone(x: number): boolean {
   return x <= EDGE_START_PX
 }
@@ -111,8 +132,8 @@ export function edgeEnd(dx: number, dy: number): "back" | "cancel" {
 }
 
 /**
- * Whether a touch from the left edge is going back yet. It waits until
- * the finger's clearly going right, so a scroll that starts at the edge
+ * Whether a touch from the edge is going back yet. It waits until the
+ * finger's clearly going along the line, so a scroll that starts at the edge
  * stays a scroll.
  */
 export function edgeStart(dx: number, dy: number): "wait" | "back" | "scroll" {

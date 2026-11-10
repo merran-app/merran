@@ -806,7 +806,7 @@ function ShoppingWith({ people }: { people: Person[] }) {
   return (
     <p
       role="status"
-      className="flex items-center gap-2.5 justify-self-start rounded-full bg-accent py-1 pr-3.5 pl-1 text-sm text-accent-foreground"
+      className="flex items-center gap-2.5 justify-self-start rounded-full bg-accent py-1 ps-1 pe-3.5 text-sm text-accent-foreground"
     >
       <span className="flex -space-x-1.5">
         {people.slice(0, 3).map((person) => (
@@ -930,7 +930,7 @@ function StoreCards({
                 role="tab"
                 aria-selected={selected}
                 onClick={() => onChoose(list.id)}
-                className="grid gap-2.5 text-left outline-none after:absolute after:inset-0 after:rounded-3xl focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50"
+                className="grid gap-2.5 text-start outline-none after:absolute after:inset-0 after:rounded-3xl focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50"
               >
                 {body}
               </button>
@@ -944,7 +944,7 @@ function StoreCards({
         <button
           type="button"
           onClick={onManage}
-          className="grid w-64 shrink-0 snap-start content-start gap-1.5 rounded-3xl border border-dashed p-5 text-left text-muted-foreground transition-colors outline-none hover:bg-muted/40 focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:w-auto"
+          className="grid w-64 shrink-0 snap-start content-start gap-1.5 rounded-3xl border border-dashed p-5 text-start text-muted-foreground transition-colors outline-none hover:bg-muted/40 focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:w-auto"
         >
           <span className="flex items-center gap-1.5 font-heading text-xl font-semibold text-foreground">
             <HugeiconsIcon

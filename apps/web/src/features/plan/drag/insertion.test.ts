@@ -5,6 +5,7 @@ import {
   inRows,
   insertionBar,
   insertionIndex,
+  mirrored,
   reorderFor,
 } from "./insertion.ts"
 
@@ -93,4 +94,31 @@ test("two side by side stay a row when only the other is measured", () => {
     inRows([...left, { left: 210, top: 0, width: 200, height: 40 }]),
     true
   )
+})
+
+test("a right-to-left grid goes in reading order, through a mirror", () => {
+  // The first dish is on the right, the third under it.
+  const rightToLeft = [
+    { left: 210, top: 0, width: 200, height: 40 },
+    { left: 0, top: 0, width: 200, height: 40 },
+    { left: 210, top: 50, width: 200, height: 40 },
+  ].map(mirrored)
+  const at = (x: number, y: number) => insertionIndex(rightToLeft, { x: -x, y })
+  assert.equal(at(370, 20), 0)
+  assert.equal(at(260, 20), 1)
+  assert.equal(at(150, 20), 1)
+  assert.equal(at(50, 20), 2)
+  assert.equal(at(300, 60), 3)
+  // Between the first two: in the gap from 200 to 210, back on screen.
+  assert.deepEqual(mirrored(insertionBar(rightToLeft, 1)), {
+    left: 203.5,
+    top: 0,
+    width: 3,
+    height: 40,
+  })
+})
+
+test("mirroring twice gives the box back", () => {
+  const box = { left: 12, top: 3, width: 40, height: 20 }
+  assert.deepEqual(mirrored(mirrored(box)), box)
 })

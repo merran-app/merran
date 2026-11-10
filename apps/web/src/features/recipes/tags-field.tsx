@@ -60,7 +60,7 @@ export function TagsField({
         >
           {value.map((tag) => (
             <li key={tag}>
-              <Badge variant="secondary" className="h-7 gap-1 pr-1 text-sm">
+              <Badge variant="secondary" className="h-7 gap-1 pe-1 text-sm">
                 {tag}
                 <button
                   type="button"

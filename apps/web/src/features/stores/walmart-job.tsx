@@ -173,7 +173,7 @@ export function WalmartJobCard({
         </div>
       </div>
       {fill && job.added.length > 0 && (
-        <ul className="grid gap-1 text-sm sm:pl-9">
+        <ul className="grid gap-1 text-sm sm:ps-9">
           {job.added.map((one, i) => (
             <li key={i} className="flex justify-between gap-3">
               <span className="min-w-0 truncate">{one.name}</span>
@@ -185,7 +185,7 @@ export function WalmartJobCard({
         </ul>
       )}
       {job.skipped.length > 0 && (
-        <div className="grid gap-1 text-sm sm:pl-9">
+        <div className="grid gap-1 text-sm sm:ps-9">
           <p className="font-medium">{t("stores.walmart.job.skipped")}</p>
           <ul className="grid gap-1">
             {job.skipped.map((one, i) => (
@@ -199,7 +199,7 @@ export function WalmartJobCard({
           </ul>
         </div>
       )}
-      <div className="flex flex-wrap gap-2 sm:pl-9">
+      <div className="flex flex-wrap gap-2 sm:ps-9">
         {fill && (
           <Button
             size="sm"

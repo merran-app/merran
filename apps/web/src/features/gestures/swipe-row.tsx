@@ -1,3 +1,4 @@
+import { useDirection } from "@base-ui/react/direction-provider"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import * as React from "react"
 
@@ -7,6 +8,7 @@ import { cn } from "@/lib/utils"
 
 import { useOpenRow } from "./open-row"
 import {
+  alongLine,
   inEdgeZone,
   lockAxis,
   OPEN_PX,
@@ -28,7 +30,7 @@ export type SwipeAction = {
   onAction: () => Promise<unknown> | void
 }
 
-/** Where a finger went down, and where it's been since. */
+/** Where a finger went down, and where it's been since, `alongLine`. */
 type Gesture = {
   pointerId: number
   x: number
@@ -48,10 +50,11 @@ const TONES = {
 
 /**
  * A row in a list that swipes on a phone: a short swipe opens it on an
- * action's button, a long one or a flick does the action. Swipe right for
- * `start`, left for `end`. Scrolling stays the phone's own, and a long
- * press still starts selecting. Anywhere else, and while `enabled` is
- * false, it's the plain row it wraps.
+ * action's button, a long one or a flick does the action. Swipe towards the
+ * end of the line for `start`, back for `end`: right and left in English,
+ * the other way round in a right-to-left language. Scrolling stays the
+ * phone's own, and a long press still starts selecting. Anywhere else, and
+ * while `enabled` is false, it's the plain row it wraps.
  */
 export function SwipeRow({
   start = null,
@@ -62,9 +65,9 @@ export function SwipeRow({
   children,
   ...props
 }: React.ComponentProps<"li"> & {
-  /** Swipe right: shown on the left. */
+  /** Shown at the start of the line, on the left in English. */
   start?: SwipeAction | null
-  /** Swipe left: shown on the right. */
+  /** Shown at the end of the line, on the right in English. */
   end?: SwipeAction | null
   enabled: boolean
   /** Classes for the sliding content, which used to be the row's <li>. */
@@ -113,6 +116,10 @@ function Swiping({
   /** The last gesture moved sideways, so the click that ends it is swallowed. */
   const swiped = React.useRef(false)
   const content = React.useRef<HTMLDivElement>(null)
+  const direction = useDirection()
+  /** Where a touch is along the line, so a right-to-left swipe mirrors. */
+  const along = (event: React.PointerEvent) =>
+    alongLine(event.clientX, window.innerWidth, direction)
 
   // Another row opened, or a tap elsewhere or a scroll closed this one.
   React.useEffect(() => {
@@ -128,15 +135,16 @@ function Swiping({
 
   function begin(event: React.PointerEvent) {
     if (event.pointerType === "mouse") return
-    // In the installed app on an iPhone, the left edge is for going back.
-    if (standalone() && onIos() && inEdgeZone(event.clientX)) return
+    // In the installed app on an iPhone, the edge lines start from is for
+    // going back.
+    if (standalone() && onIos() && inEdgeZone(along(event))) return
     gesture.current = {
       pointerId: event.pointerId,
-      x: event.clientX,
+      x: along(event),
       y: event.clientY,
       axis: null,
       from: offset,
-      samples: [{ x: event.clientX, t: event.timeStamp }],
+      samples: [{ x: along(event), t: event.timeStamp }],
       buzzed: false,
     }
     swiped.current = false
@@ -145,7 +153,7 @@ function Swiping({
   function track(event: React.PointerEvent) {
     const now = gesture.current
     if (!now || now.pointerId !== event.pointerId) return
-    const dx = event.clientX - now.x
+    const dx = along(event) - now.x
     const dy = event.clientY - now.y
 
     if (now.axis === null) {
@@ -168,7 +176,7 @@ function Swiping({
       ...now.samples.filter(
         (sample) => event.timeStamp - sample.t <= FLICK_WINDOW_MS
       ),
-      { x: event.clientX, t: event.timeStamp },
+      { x: along(event), t: event.timeStamp },
     ]
     const next = limit(now.from + dx)
     if (!now.buzzed && pastCommit(next, width()) && actionFor(sideOf(next))) {
@@ -279,7 +287,7 @@ function Swiping({
           style={{ width: Math.abs(offset) }}
           className={cn(
             "absolute inset-y-0 flex overflow-hidden",
-            side === "start" ? "left-0 justify-start" : "right-0 justify-end",
+            side === "start" ? "start-0 justify-start" : "end-0 justify-end",
             !dragging && "transition-[width] duration-200 ease-out",
             TONES[shown.tone]
           )}
@@ -307,7 +315,11 @@ function Swiping({
         onPointerUp={finish}
         onPointerCancel={cancel}
         onClickCapture={swallowClick}
-        style={{ transform: offset ? `translateX(${offset}px)` : undefined }}
+        style={{
+          transform: offset
+            ? `translateX(${direction === "rtl" ? -offset : offset}px)`
+            : undefined,
+        }}
         className={cn(
           // Scrolling and zooming stay the phone's own; sideways is ours.
           "relative touch-pan-y touch-pinch-zoom",

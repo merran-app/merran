@@ -80,7 +80,7 @@ export function ProposalReview({
   return (
     <div className={cn("grid gap-4", className)}>
       {proposal.note && (
-        <blockquote className="border-l-2 pl-3 text-sm italic">
+        <blockquote className="border-s-2 ps-3 text-sm italic">
           {t("recipes.review.fromNote", { note: proposal.note })}
         </blockquote>
       )}

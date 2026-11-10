@@ -6,6 +6,7 @@ import {
   PencilEdit02Icon,
   TimeQuarterPassIcon,
 } from "@hugeicons/core-free-icons"
+import { useDirection } from "@base-ui/react/direction-provider"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { UIMessage } from "ai"
@@ -89,6 +90,7 @@ export function AssistantPanel() {
   const startNew = () => show(null)
 
   const phone = useIsMobile()
+  const direction = useDirection()
   const Title = phone ? DrawerTitle : SheetTitle
   const Description = phone ? DrawerDescription : SheetDescription
   const Close = phone ? DrawerClose : SheetClose
@@ -109,7 +111,11 @@ export function AssistantPanel() {
             aria-label={t("assistant.back")}
             onClick={() => setListing(false)}
           >
-            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+            <HugeiconsIcon
+              icon={ArrowLeft01Icon}
+              strokeWidth={2}
+              className="rtl:-scale-x-100"
+            />
           </Button>
         ) : (
           <Button
@@ -189,10 +195,11 @@ export function AssistantPanel() {
   }
   return (
     <Sheet open={open} onOpenChange={setOpen}>
+      {/* At the end of the line the page reads along, away from the sidebar. */}
       <SheetContent
-        side="right"
+        side={direction === "rtl" ? "left" : "right"}
         showCloseButton={false}
-        className="gap-0 overflow-hidden p-0 data-[side=right]:rounded-l-3xl data-[side=right]:sm:max-w-md"
+        className="gap-0 overflow-hidden rounded-s-3xl p-0 data-[side=left]:sm:max-w-md data-[side=right]:sm:max-w-md"
       >
         {body}
       </SheetContent>
@@ -269,7 +276,7 @@ function ChatList({
             type="button"
             onClick={() => onPick(chat.id)}
             className={cn(
-              "grid min-w-0 flex-1 gap-0.5 rounded-xl px-3 py-2 text-left hover:bg-muted",
+              "grid min-w-0 flex-1 gap-0.5 rounded-xl px-3 py-2 text-start hover:bg-muted",
               chat.id === current && "bg-muted"
             )}
           >

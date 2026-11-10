@@ -114,7 +114,7 @@ export function PhotosCard() {
                 disabled={busy !== null}
                 onClick={() => void pick(style)}
                 className={cn(
-                  "flex items-start gap-3 rounded-2xl border p-3 text-left transition-colors outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                  "flex items-start gap-3 rounded-2xl border p-3 text-start transition-colors outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50",
                   chosen && "border-primary bg-primary/5"
                 )}
               >

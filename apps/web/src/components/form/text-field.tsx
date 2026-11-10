@@ -37,10 +37,10 @@ export function TextField({
             error || description ? `${inputId}-hint` : undefined
           }
           {...props}
-          className={cn(endAction && "pr-18", className)}
+          className={cn(endAction && "pe-18", className)}
         />
         {endAction && (
-          <div className="absolute inset-y-0 right-1 flex items-center">
+          <div className="absolute inset-y-0 end-1 flex items-center">
             {endAction}
           </div>
         )}

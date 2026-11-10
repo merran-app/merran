@@ -44,6 +44,10 @@ function SheetContent({
   showCloseButton = true,
   ...props
 }: SheetPrimitive.Popup.Props & {
+  /**
+   * The screen's side, not the text's: left is left in any language, so a
+   * sheet that belongs at the start or end picks its side by direction.
+   */
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
 }) {
@@ -66,7 +70,7 @@ function SheetContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-4 right-4"
+                className="absolute end-4 top-4"
                 size="icon-sm"
               />
             }

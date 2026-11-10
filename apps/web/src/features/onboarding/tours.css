@@ -41,7 +41,7 @@
   color: var(--muted-foreground);
   font: inherit;
   font-size: 0.75rem;
-  text-align: left;
+  text-align: start;
   text-decoration: underline;
   text-underline-offset: 0.2em;
   cursor: pointer;

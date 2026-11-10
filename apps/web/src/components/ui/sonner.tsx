@@ -1,3 +1,4 @@
+import { useDirection } from "@base-ui/react/direction-provider"
 import { useTheme } from "@/components/theme/theme-context"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -11,10 +12,15 @@ import {
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { resolvedMode } = useTheme()
+  // Toasts read the page's direction once, so they're told when it changes,
+  // and come up in the corner the line ends at.
+  const direction = useDirection()
 
   return (
     <Sonner
       theme={resolvedMode}
+      dir={direction}
+      position={direction === "rtl" ? "bottom-left" : "bottom-right"}
       className="toaster group"
       icons={{
         success: (

@@ -99,7 +99,7 @@ export function ExtensionSetup({
                     />
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <ul className="mt-2 grid list-disc gap-2 pl-5 text-sm">
+                    <ul className="mt-2 grid list-disc gap-2 ps-5 text-sm">
                       <li>{t("extension.setup.get.chrome")}</li>
                       <li>{t("extension.setup.get.firefox")}</li>
                     </ul>
@@ -172,7 +172,7 @@ export function ExtensionSetup({
               />
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <ul className="mt-2 grid list-disc gap-2 pl-5 text-sm text-muted-foreground">
+              <ul className="mt-2 grid list-disc gap-2 ps-5 text-sm text-muted-foreground">
                 <li>{t("extension.setup.stuck.browser")}</li>
                 <li>{t("extension.setup.stuck.reload")}</li>
                 <li>

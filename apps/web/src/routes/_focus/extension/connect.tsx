@@ -168,7 +168,7 @@ function ConnectExtension() {
                     aria-checked={one.id === householdId}
                     onClick={() => setPicked(one.id)}
                     className={cn(
-                      "rounded-2xl border px-4 py-3 text-left font-medium transition-colors outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                      "rounded-2xl border px-4 py-3 text-start font-medium transition-colors outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50",
                       one.id === householdId && "border-primary bg-primary/5"
                     )}
                   >
@@ -185,7 +185,7 @@ function ConnectExtension() {
               {t("extension.ask", { household: household?.name ?? "" })}
             </p>
           )}
-          <ul className="grid list-disc gap-1 pl-5 text-muted-foreground">
+          <ul className="grid list-disc gap-1 ps-5 text-muted-foreground">
             <li>{t("extension.can.recipes")}</li>
             <li>{t("extension.can.plan")}</li>
             <li>{t("extension.can.list")}</li>

@@ -75,7 +75,7 @@ Strings that change with a number have a form for each plural category, such as 
 
 Reviewers check the structure: the check passes and nothing else changes. The wording is trusted to people who speak the language.
 
-Merran's layout doesn't mirror for right-to-left languages yet: text and some controls flip, but the sidebar and spacing don't. A right-to-left language can still be added; mirroring the layout is planned.
+A right-to-left language, such as Arabic or Hebrew, gets a mirrored layout from its `rtl` direction: the sidebar moves to the right, and arrows point the other way.
 
 When Merran reaches 1.0, translations move to Weblate, and these files are kept up to date from there.
 

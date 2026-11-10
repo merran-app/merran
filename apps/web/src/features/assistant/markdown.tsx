@@ -3,9 +3,9 @@ import ReactMarkdown, { type Components } from "react-markdown"
 /** The assistant's replies: short paragraphs, lists and bold. */
 const COMPONENTS: Components = {
   p: (props) => <p className="leading-relaxed" {...props} />,
-  ul: (props) => <ul className="ml-5 list-disc space-y-1" {...props} />,
-  ol: (props) => <ol className="ml-5 list-decimal space-y-1" {...props} />,
-  li: (props) => <li className="pl-1" {...props} />,
+  ul: (props) => <ul className="ms-5 list-disc space-y-1" {...props} />,
+  ol: (props) => <ol className="ms-5 list-decimal space-y-1" {...props} />,
+  li: (props) => <li className="ps-1" {...props} />,
   strong: (props) => <strong className="font-semibold" {...props} />,
   h1: (props) => <p className="font-semibold" {...props} />,
   h2: (props) => <p className="font-semibold" {...props} />,

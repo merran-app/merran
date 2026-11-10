@@ -236,7 +236,7 @@ export function TimerChips({ className }: { className?: string }) {
           role="timer"
           aria-label={t("cook.timers.label", { label: timer.label })}
           className={cn(
-            "flex h-10 items-center gap-1.5 rounded-full pr-1 pl-3 text-sm font-semibold",
+            "flex h-10 items-center gap-1.5 rounded-full ps-3 pe-1 text-sm font-semibold",
             timer.done ? CHIP.done : CHIP.running
           )}
         >

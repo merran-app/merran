@@ -87,7 +87,7 @@ export function RecipePicker({
             <li key={recipe.id}>
               <button
                 type="button"
-                className="flex w-full min-w-0 items-center gap-3 px-3 py-2 text-left hover:bg-secondary/50"
+                className="flex w-full min-w-0 items-center gap-3 px-3 py-2 text-start hover:bg-secondary/50"
                 onClick={() => onPick(recipe)}
               >
                 {recipe.photo ? (

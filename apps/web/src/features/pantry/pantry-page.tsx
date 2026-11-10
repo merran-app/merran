@@ -414,7 +414,7 @@ function UseSoonCard({
                 }
                 aria-pressed={selection.selecting ? picked : undefined}
                 className={cn(
-                  "grid h-full w-full content-start gap-0.5 rounded-2xl bg-card px-3.5 py-3 text-left text-card-foreground transition-colors outline-none hover:bg-accent/60 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                  "grid h-full w-full content-start gap-0.5 rounded-2xl bg-card px-3.5 py-3 text-start text-card-foreground transition-colors outline-none hover:bg-accent/60 focus-visible:ring-[3px] focus-visible:ring-ring/50",
                   picked && "ring-2 ring-primary"
                 )}
               >
@@ -546,7 +546,7 @@ function PantryRow({
             : t("pantry.editItem.title", { name: item.name })
         }
         className={cn(
-          "col-start-1 row-start-1 flex min-w-0 items-baseline gap-1.5 rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          "col-start-1 row-start-1 flex min-w-0 items-baseline gap-1.5 rounded-md text-start outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
           selecting && "items-center gap-3"
         )}
       >
@@ -732,7 +732,7 @@ function AlwaysOnHand({ onEdit }: { onEdit: () => void }) {
             </Button>
           ))
         )}
-        <span className="ml-1 text-sm text-muted-foreground">
+        <span className="ms-1 text-sm text-muted-foreground">
           {t("pantry.lowOnHand")}
         </span>
       </div>

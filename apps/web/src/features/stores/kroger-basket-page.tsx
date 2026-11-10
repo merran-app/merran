@@ -56,7 +56,7 @@ export function KrogerBasketPage({
         <Button
           variant="ghost"
           size="sm"
-          className="mt-2 -ml-3 self-start md:mt-4"
+          className="-ms-3 mt-2 self-start md:mt-4"
           render={
             list ? (
               <Link to="/list/send" search={{ list }} />
@@ -65,7 +65,11 @@ export function KrogerBasketPage({
             )
           }
         >
-          <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+          <HugeiconsIcon
+            icon={ArrowLeft01Icon}
+            strokeWidth={2}
+            className="rtl:-scale-x-100"
+          />
           {list ? t("list.send") : t("nav.list")}
         </Button>
       )}

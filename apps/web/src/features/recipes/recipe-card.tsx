@@ -34,7 +34,7 @@ export type CardSelect = {
 }
 
 const CARD =
-  "group flex h-full w-full flex-col overflow-hidden rounded-3xl border bg-card text-left text-card-foreground transition-colors outline-none hover:border-primary/40 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+  "group flex h-full w-full flex-col overflow-hidden rounded-3xl border bg-card text-start text-card-foreground transition-colors outline-none hover:border-primary/40 focus-visible:ring-[3px] focus-visible:ring-ring/50"
 
 /**
  * A recipe in the library: its photo, its name, a little about it, and its
@@ -119,7 +119,7 @@ function CardContent({
     <>
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
         {picked !== undefined && (
-          <SelectMark picked={picked} className="absolute top-3 left-3 z-10" />
+          <SelectMark picked={picked} className="absolute start-3 top-3 z-10" />
         )}
         {recipe.photo ? (
           <img

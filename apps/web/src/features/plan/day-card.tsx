@@ -121,7 +121,7 @@ export function DayCard({
           </Badge>
         )}
         {calories && (
-          <span className="ml-auto shrink-0 text-sm text-muted-foreground tabular-nums">
+          <span className="ms-auto shrink-0 text-sm text-muted-foreground tabular-nums">
             {t(calories.partial ? "plan.caloriesMore" : "plan.calories", {
               count: calories.total,
               value: calories.total.toLocaleString(i18n.language),
@@ -318,7 +318,7 @@ export function PastDays({
       type="button"
       aria-expanded={open}
       onClick={onToggle}
-      className="flex items-center justify-between gap-4 rounded-3xl border bg-muted/40 px-5 py-3.5 text-left transition-colors outline-none hover:bg-muted/70 focus-visible:ring-[3px] focus-visible:ring-ring/50 md:px-6"
+      className="flex items-center justify-between gap-4 rounded-3xl border bg-muted/40 px-5 py-3.5 text-start transition-colors outline-none hover:bg-muted/70 focus-visible:ring-[3px] focus-visible:ring-ring/50 md:px-6"
     >
       <span className="min-w-0 truncate text-muted-foreground">
         <span className="font-semibold text-foreground">{range}</span> ·{" "}

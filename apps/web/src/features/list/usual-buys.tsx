@@ -146,7 +146,7 @@ export function UsualBuys() {
         <Button
           variant="ghost"
           size="sm"
-          className="-ml-3"
+          className="-ms-3"
           onClick={() => setAll(!all)}
         >
           {all

@@ -136,7 +136,7 @@ function ResourceCard({
         aria-hidden
         icon={ArrowRight01Icon}
         strokeWidth={2}
-        className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+        className="mt-0.5 size-4 shrink-0 text-muted-foreground rtl:-scale-x-100"
       />
     </>
   )
