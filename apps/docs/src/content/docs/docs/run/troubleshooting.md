@@ -9,7 +9,7 @@ Start with the exact error and the version you are running. These steps follow t
 
 ## Before you begin
 
-You need access to the deployment's logs for startup problems and a server-administrator account for **Settings → This server → Jobs**. Household import controls require a household owner or admin. Read [roles and permissions](../household-roles/) if controls are missing.
+You need access to the deployment's logs for startup problems and a server-administrator account for **Settings → Server → Jobs**. Household import controls require a household owner or admin. Read [roles and permissions](../household-roles/) if controls are missing.
 
 For the supplied Compose installation, run these from the directory containing `compose.yaml`:
 
@@ -66,7 +66,7 @@ Import failures can leave partial results. Stopping or retrying does not promise
 
 ## Background jobs are waiting or failing
 
-Open **Settings → This server → Jobs**. The list shows recent work across households, its status, progress when available, and errors. It is a recent operational view, not a permanent audit history: the list is limited to the latest 100 jobs, and finished jobs older than 30 days are cleaned up.
+Open **Settings → Server → Jobs**. The list shows recent work across households, its status, progress when available, and errors. It is a recent operational view, not a permanent audit history: the list is limited to the latest 100 jobs, and finished jobs older than 30 days are cleaned up.
 
 | Status      | Meaning and action                                                                                                                     |
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------------- |
@@ -86,8 +86,8 @@ If due jobs remain waiting with no progress, look for “The job runner couldn't
 
 If **Invite by email** says to ask the server administrator to configure Email and the public address, check both prerequisites:
 
-- In **Settings → This server → Email**, turn on **Enable email**, save the SMTP host, port, security, sender and matching credential pair, and use **Send test email**. Resend uses `smtp.resend.com`, port `465`, **Use TLS from the start**, username `resend`, and an API key as the password. Use a sender on a verified domain.
-- Set `MERRAN_PUBLIC_URL` to the HTTP(S) address recipients use to open Merran, without a path, query, fragment or embedded credentials. A successful SMTP test does not replace this setting. Check **Address** in **Settings → This server** to see the running server's configured address.
+- In **Settings → Server → Email**, turn on **Enable email**, save the SMTP host, port, security, sender and matching credential pair, and use **Send test email**. Resend uses `smtp.resend.com`, port `465`, **Use TLS from the start**, username `resend`, and an API key as the password. Use a sender on a verified domain.
+- Set `MERRAN_PUBLIC_URL` to the HTTP(S) address recipients use to open Merran, without a path, query, fragment or embedded credentials. A successful SMTP test does not replace this setting. Check **Address** in **Settings → Server** to see the running server's configured address.
 
 For the repository's Compose file, put the variable in `.env` beside `compose.yaml` and recreate the container with `docker compose up -d`. For self-contained host-manager stacks, put it in Merran's `environment` block and redeploy. For `pnpm dev`, `.env` is not automatically loaded by the API: [set the process environment and restart](../configuration/#source-development-environment). Reload the browser afterward. A localhost address works only on the computer opening that link.
 
@@ -102,7 +102,7 @@ An environment override takes priority and locks the corresponding app setting. 
 :::note[Available in alpha.4]
 For a buried setup code, use `docker compose exec merran merran setup-code`, or **Where is my setup code?** on the setup page. For a forgotten password, `docker compose exec -it merran merran reset-password YOUR-USERNAME` prompts privately and revokes that account's sessions; SMTP is not required. These commands are available in alpha.4; older images may not include them. See [first-run setup](../../get-started/setup/) for version differences and interrupted-setup recovery.
 
-Password recovery provides **Forgot your password?** on sign-in when Email and the public address are ready. Follow [password recovery](../configuration/#password-recovery). A generic confirmation deliberately does not reveal whether an account exists. Check spam, provider status and **Settings → This server → Jobs** with the operator if mail does not arrive. Invalid/expired/used links require a fresh request; if you refreshed the reset form, reopen the email link because the token is cleared from the address bar. SMTP acceptance does not guarantee delivery. Account email verification is skipped; provider sending-domain verification still applies.
+Password recovery provides **Forgot your password?** on sign-in when Email and the public address are ready. Follow [password recovery](../configuration/#password-recovery). A generic confirmation deliberately does not reveal whether an account exists. Check spam, provider status and **Settings → Server → Jobs** with the operator if mail does not arrive. Invalid/expired/used links require a fresh request; if you refreshed the reset form, reopen the email link because the token is cleared from the address bar. SMTP acceptance does not guarantee delivery. Account email verification is skipped; provider sending-domain verification still applies.
 :::
 
 Use [updating, backups, and recovery](../updating-and-backups/) for a failed update, lost data, or a restore test. A household export is useful for portability but is not a complete server backup.

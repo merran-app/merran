@@ -15,18 +15,18 @@ Manual recipes, planning, lists, pantry tracking, and ordinary cook steps work w
 The Nutrition card includes **Get your USDA key** steps, **Get a free USDA key**, and **USDA API guide** buttons.
 :::
 
-1. Open **Settings → This server → Nutrition** and choose **Get a free USDA key**, or use the [USDA FoodData Central signup page](https://fdc.nal.usda.gov/api-key-signup/). Register using your name and email. If the key email has not arrived, check your spam or junk folder.
+1. Open **Settings → Recipes → Whole server → Nutrition** and choose **Get a free USDA key**, or use the [USDA FoodData Central signup page](https://fdc.nal.usda.gov/api-key-signup/). Register using your name and email. If the key email has not arrived, check your spam or junk folder.
 2. Enter **USDA key** and choose **Save key**. Merran tests it before saving; **Test** rechecks an already saved key. Environment-managed servers can use `MERRAN_USDA_KEY` instead.
-3. Open **Settings → Household → Nutrition for the library**. Fix recipes listed as needing servings, then choose **Work out …** for recipes missing nutrition.
+3. Open **Settings → Recipes → Nutrition for the library**. Fix recipes listed as needing servings, then choose **Work out …** for recipes missing nutrition.
 4. Wait for the run to finish, or choose **Stop**. Inspect several recipes' nutrition and ingredient matches.
 
-**Expected result:** Eligible recipes gain calculated or estimated nutrition. Missing food matches, unrecognized amounts, or missing servings can leave incomplete results. These values are estimates, not a guarantee of dietary or allergen safety. USDA receives food search terms; an AI calculation sends relevant recipe information to its provider. For failures, check the key test, ingredient amounts, servings, provider errors, and **Settings → This server → Jobs**.
+**Expected result:** Eligible recipes gain calculated or estimated nutrition. Missing food matches, unrecognized amounts, or missing servings can leave incomplete results. These values are estimates, not a guarantee of dietary or allergen safety. USDA receives food search terms; an AI calculation sends relevant recipe information to its provider. For failures, check the key test, ingredient amounts, servings, provider errors, and **Settings → Server → Jobs**.
 
 ## Video imports
 
 **Prerequisites:** the **Video import** module, working `yt-dlp` and `ffmpeg`, and eligible AI for extraction. The released Docker image includes the tools. The module and automatic tool updates default on; enabling the module alone does not provide AI credentials.
 
-1. Open **Settings → This server → Video import** and confirm the tool versions are shown.
+1. Open **Settings → Import and export → Whole server → Video import** and confirm the tool versions are shown.
 2. Enable **Import videos**. Decide whether to enable **Keep yt-dlp up to date**; changing video sites can require tool updates.
 3. Configure household AI, then paste or share a supported TikTok, YouTube, Instagram, or Facebook link through the normal recipe import flow.
 4. Wait for the import and review the extracted ingredients, servings, timings, and steps against the source.
@@ -41,9 +41,9 @@ If imports fail, check the module status, tools, provider capability, source ava
 
 **Prerequisites:** the server's **AI photos** switch and an eligible OpenAI or Google key. A chat-only or text-only provider is not sufficient. The module defaults off; provider billing and limits apply. No fixed per-image price is promised.
 
-1. A server admin enables **Settings → This server → AI photos → Make AI photos**.
+1. A server admin enables **Settings → Recipes → Whole server → AI photos → Make AI photos**.
 2. Decide whether **For each new recipe** should automatically fill missing photos for eligible newly added recipes. This does not automatically process an entire migrated library.
-3. In **Settings → Household → AI photos**, choose **Photo style**: **Dark plate, white marble**, **Rustic wood**, **Bright and airy**, or **Dark and moody**.
+3. In **Settings → Recipes → AI photos**, choose **Photo style**: **Dark plate, white marble**, **Rustic wood**, **Bright and airy**, or **Dark and moody**.
 4. Use **Make … photos** to fill eligible missing photos in the existing library. Review progress and use **Stop** if needed.
 
 **Expected result:** Recipes without photos receive generated images in the household style. Existing photos are not overwritten by the missing-photo run. A generated image is an illustration of the recipe, not proof of what someone cooked; inspect it for misleading ingredients or presentation.
@@ -64,7 +64,7 @@ For complete Postgres + Kokoro examples and TrueNAS/Dockge/Portainer downloads, 
    docker compose --profile voice up -d
    ```
 
-2. In **Settings → This server → Voice**, set **Who reads aloud** to **Kokoro** and **Kokoro's address** to `http://kokoro:8880` for the supplied Compose network. Alternatively set `MERRAN_VOICE=kokoro` and `MERRAN_KOKORO_URL=http://kokoro:8880` in `.env`, then recreate Merran.
+2. In **Settings → Recipes → Whole server → Voice**, set **Who reads aloud** to **Kokoro** and **Kokoro's address** to `http://kokoro:8880` for the supplied Compose network. Alternatively set `MERRAN_VOICE=kokoro` and `MERRAN_KOKORO_URL=http://kokoro:8880` in `.env`, then recreate Merran.
 3. Pick a voice and use **Hear …** to preview it. Open a recipe's cook view and try reading a step.
 
 **Expected result:** Merran sends step text to Kokoro and plays the returned audio. Audio is cached; a failed server voice can fall back to device speech. The Compose service publishes no Kokoro port. A remote Kokoro URL receives the text at that address, so “self-hosted” does not necessarily mean the same machine.

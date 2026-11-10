@@ -31,7 +31,7 @@ Requests with a malformed `Authorization` header return `401` with code `invalid
 
 ## OAuth connections
 
-OAuth-enabled servers also accept `Authorization: Bearer mro_…` on routes that support delegated access. Register an application in **Settings → This server → OAuth applications**, then use authorization code with S256 PKCE and the `https://meals.example.com/api` resource. Permissions use scopes such as `recipes:read` and `list:write`; `offline_access` requests a rotating refresh token. The person chooses one household and approves the permissions. REST write scopes permit direct changes.
+OAuth-enabled servers also accept `Authorization: Bearer mro_…` on routes that support delegated access. Register an application in **Settings → Apps and devices → Whole server → OAuth applications**, then use authorization code with S256 PKCE and the `https://meals.example.com/api` resource. Permissions use scopes such as `recipes:read` and `list:write`; `offline_access` requests a rotating refresh token. The person chooses one household and approves the permissions. REST write scopes permit direct changes.
 
 Discovery is available at `/.well-known/oauth-protected-resource/api` and `/.well-known/oauth-authorization-server/api/auth`. Authorization, token exchange, revocation and client registration live under `/api/auth/oauth2/`; the generated endpoint reference describes them. Token exchange uses form encoding and the registered client's authentication method. Client-credentials grants and identity scopes are unavailable.
 

@@ -99,7 +99,7 @@ Filled `/r/` pages also send `Referrer-Policy: no-referrer`. A link-preview fetc
 
 ### Settings
 
-**Settings → Household → Sharing**, for admins: **Let members share recipes by link**, and the list of shared recipes with who shared each, when, and when it was last opened, each with **Stop sharing**.
+**Settings → Recipes → Recipe links**, for admins: **Let members share recipes by link**, and the list of shared recipes with who shared each, when, and when it was last opened, each with **Stop sharing**.
 
 ### What the recipient sees
 

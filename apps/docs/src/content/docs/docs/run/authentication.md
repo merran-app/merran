@@ -11,11 +11,11 @@ Passwords and API keys continue to work by default. Passkeys, authenticator enro
 
 ## Passkeys and authenticators
 
-In **Settings → This server → Authentication**, enable **Passkeys** or **Two-step sign-in**. Passkeys require `MERRAN_PUBLIC_URL` to be your stable HTTPS address; localhost works for development. Changing the hostname can make existing passkeys unusable.
+In **Settings → Sign-in → Whole server → Authentication**, enable **Passkeys** or **Two-step sign-in**. Passkeys require `MERRAN_PUBLIC_URL` to be your stable HTTPS address; localhost works for development. Changing the hostname can make existing passkeys unusable.
 
-In **Settings → You → Passkeys**, name the device and choose **Add a passkey**. Complete your device's identity check. Use **Sign in with a passkey** on the sign-in page afterward. A verified passkey satisfies Merran's strong sign-in policy.
+In **Settings → Sign-in → Passkeys**, name the device and choose **Add a passkey**. Complete your device's identity check. Use **Sign in with a passkey** on the sign-in page afterward. A verified passkey satisfies Merran's strong sign-in policy.
 
-In **Settings → You → Two-step sign-in**, enter your current password if your account has one, then choose **Set up authenticator**. Add the displayed **Setup key** to an authenticator as a time-based account, save the **Recovery codes**, and enter an **Authenticator code** to finish. Enrollment is not active until verification succeeds. Each recovery code works once; **Replace recovery codes** invalidates the old set.
+In **Settings → Sign-in → Two-step sign-in**, enter your current password if your account has one, then choose **Set up authenticator**. Add the displayed **Setup key** to an authenticator as a time-based account, save the **Recovery codes**, and enter an **Authenticator code** to finish. Enrollment is not active until verification succeeds. Each recovery code works once; **Replace recovery codes** invalidates the old set.
 
 **Require strong sign-in for administrators** also applies to existing sessions and external SSO. Administrators must use a verified passkey or an authenticator code before accessing protected data. The policy does not trust an external provider's assurance claim. Turning off enrollment does not bypass an already enrolled person's authenticator.
 
@@ -34,7 +34,7 @@ MERRAN_AUTH_OIDC_CLIENT_SECRET=your-client-secret
 
 The discovery URL must be the provider's actual discovery document, including any realm or application path. Provider registration and secret requirements vary; use its settings for a confidential web client.
 
-By default, people first sign into their existing Merran account and choose **Settings → You → Single sign-on → Link single sign-on**. They then authenticate with the external provider. Matching email addresses never link accounts automatically. **Unlink single sign-on** requires another usable sign-in method.
+By default, people first sign into their existing Merran account and choose **Settings → Sign-in → Single sign-on → Link single sign-on**. They then authenticate with the external provider. Matching email addresses never link accounts automatically. **Unlink single sign-on** requires another usable sign-in method.
 
 `MERRAN_AUTH_OIDC_ALLOW_SIGNUP=true` permits the configured provider to create accounts. It does not add them to existing households or make them administrators. Leave it off if accounts should be created through Merran's invitation workflow. This release supports one operator-configured OIDC provider.
 
@@ -48,9 +48,9 @@ Set `MERRAN_PUBLIC_URL` to the stable HTTPS origin and `MERRAN_AUTH_OAUTH=true`,
 
 For MCP, enter `https://meals.example.com/mcp` in a compatible OAuth client. Merran publishes discovery metadata and supports dynamic client registration. Registration alone gives no household access. Sign into Merran, select a household, review the requested permissions, then choose **Allow access** or **Deny access**. MCP permissions allow reading data and creating reviewable proposals; MCP tokens cannot call REST routes.
 
-For ordinary REST integrations, administrators can use **Settings → This server → OAuth applications** to register an **Application name**, **Redirect URL** and **Interface**. Save the **Client ID** and **Client secret** immediately. The integration must use authorization code with S256 PKCE and request the `https://meals.example.com/api` resource. REST write scopes authorize direct changes, which the consent page explains. Client-credentials and identity grants are not supported.
+For ordinary REST integrations, administrators can use **Settings → Apps and devices → Whole server → OAuth applications** to register an **Application name**, **Redirect URL** and **Interface**. Save the **Client ID** and **Client secret** immediately. The integration must use authorization code with S256 PKCE and request the `https://meals.example.com/api` resource. REST write scopes authorize direct changes, which the consent page explains. Client-credentials and identity grants are not supported.
 
-**Settings → You → Connected apps** shows the app, household, permissions, approval date and last use. **Disconnect** invalidates access and refresh tokens immediately. Administrators can choose **Remove application and all connections** to revoke an application's access for everyone.
+**Settings → Apps and devices → Connected apps** shows the app, household, permissions, approval date and last use. **Disconnect** invalidates access and refresh tokens immediately. Administrators can choose **Remove application and all connections** to revoke an application's access for everyone.
 
 Access tokens last ten minutes; refresh tokens rotate and expire after thirty days. Access is rechecked against current account state, household membership and the grant. Switching households in the browser does not move an approved connection. Signing out the browser session used for approval ends its token access; reconnect the app if needed. Password changes, password recovery and authenticator recovery disconnect apps. Existing API keys are managed separately.
 

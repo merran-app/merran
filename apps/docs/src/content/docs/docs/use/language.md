@@ -7,7 +7,7 @@ Merran shows you the language your browser asks for when it has it, and English 
 
 ## Choose a language
 
-1. Open **Settings → You**.
+1. Open **Settings → Profile**.
 2. Under **Language**, choose your language. Each one is listed by its own name.
 
 **Expected result:** Merran switches at once, without reloading. Your choice is saved with your account, so it follows you to every device you sign in on. Anything not translated yet shows in English.

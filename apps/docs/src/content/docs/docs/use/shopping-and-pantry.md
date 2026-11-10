@@ -86,7 +86,7 @@ Creating the list sets pantry stock aside for meals; it does not mean the food h
 :::note[Available in alpha.8: checking off puts it away]
 Checking an item off now puts it in the pantry at once, and unchecking takes it back out. It goes in the same way **Put away** puts it: in the fridge, freezer or cupboard, with a use-by guess, set aside for the meals it was bought for. Household supplies and always-on-hand staples are recorded as bought but don't go in the pantry. **Put away** and **Put it all away** are hidden, because there's nothing left to put away.
 
-A household admin can turn this off under **Settings → Household → Shopping and stores → Pantry** with **Put food away when it's checked off**. It's on unless turned off. Turning it on puts away anything already checked. With it off, everything works as described above, **Put away** included.
+A household admin can turn this off under **Settings → Shopping and stores → Pantry** with **Put food away when it's checked off**. It's on unless turned off. Turning it on puts away anything already checked. With it off, everything works as described above, **Put away** included.
 
 - **Unchecking** takes back exactly what that row put in. If cooking or **Used up** has taken some since, it takes back what's left, and never goes below zero. A pantry item that had no amount before goes back to having none.
 - **Changing the amount** on a checked row changes the pantry by the difference. The item keeps its place and use-by date. Renaming the row swaps the food.
@@ -173,7 +173,7 @@ The stores module is optional. **Find** can open searches at selected stores wit
 For Kroger-family cart handoff:
 
 1. Ask the server admin to configure the stores module and Kroger application credentials.
-2. In **Settings → Household → Stores**, find a store by ZIP code and choose pickup or delivery.
+2. In **Settings → Shopping and stores → Stores**, find a store by ZIP code and choose pickup or delivery.
 3. Link the retailer account. The household sends to that linked account's cart.
 4. In **List**, use **Find** or **Send**, review product choices and quantities, and confirm the handoff.
 5. Review the retailer cart and complete checkout on the retailer's site. Sending a list does not purchase the order.
@@ -181,7 +181,7 @@ For Kroger-family cart handoff:
 **Walmart cart filling is experimental and off by default.** It requires the server admin to enable it and the Merran browser extension to operate a Walmart tab. It may stop for a retailer verification check. Other stores may offer search links only; do not assume they support cart filling or live prices.
 
 :::note[Available in alpha.6: usual products]
-**List → More → Usual products** and **Settings → Household → Your stores → Manage usual products** open a page for preparing product choices before shopping. Search foods from your recipes, lists, pantry and purchases, or search Merran's known foods. For each connected store, choose, change or forget the product you buy. A Fry's choice and a Walmart choice for the same food stay separate. Walmart product search requires the extension and a usable Walmart tab. Stores that only offer search links do not save a product.
+**List → More → Usual products** and **Settings → Shopping and stores → Your stores → Manage usual products** open a page for preparing product choices before shopping. Search foods from your recipes, lists, pantry and purchases, or search Merran's known foods. For each connected store, choose, change or forget the product you buy. A Fry's choice and a Walmart choice for the same food stay separate. Walmart product search requires the extension and a usable Walmart tab. Stores that only offer search links do not save a product.
 
 Foods are grouped into collapsible aisle sections. Each heading shows how many foods need a product at the selected store. Search opens matching sections, and **Needs a product** narrows the list.
 

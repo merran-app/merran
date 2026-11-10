@@ -25,7 +25,7 @@ Thaw reminders on Today, leftovers as portions, and a quick "still got these?" c
 
 ## 1. Checking off puts it away
 
-**The setting.** **Settings → Household** gets **Put food away when it's checked off**, on to start. With it off, everything works as it does today, **Put away** buttons included. Turning it on puts away anything already checked, so nothing gets cleared without going in. Turning it off leaves what's already in the pantry where it is, and **Put away** skips rows that have already gone in.
+**The setting.** **Settings → Shopping and stores** gets **Put food away when it's checked off**, on to start. With it off, everything works as it does today, **Put away** buttons included. Turning it on puts away anything already checked, so nothing gets cleared without going in. Turning it off leaves what's already in the pantry where it is, and **Put away** skips rows that have already gone in.
 
 **Checking off.** Checking a row puts it in the pantry in the same save. That covers one row, a selection, Undo that checks rows again, and Kroger's **Mark … sent items bought**. It goes in the same way **Put away** works today:
 

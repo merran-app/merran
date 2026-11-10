@@ -39,7 +39,7 @@ For compatible services, the dialog shows **Connect your own AI service** instea
 
 ### Add the key
 
-1. Open **Settings → Household → AI** in the intended household.
+1. Open **Settings → AI** in the intended household.
 2. Under **Your own keys**, choose **Add a key**.
 3. Choose the provider under **From**, paste the complete **Key**, and choose **Test and add**.
 4. Check the resulting key status. Only a suffix is shown afterward; the saved key cannot be read back through this screen.
@@ -52,7 +52,7 @@ Adding a key tests the provider's model list and can also send a tiny generation
 
 ## Share server keys
 
-1. As a server admin, open **Settings → This server → AI keys** and use **Add a key**.
+1. As a server admin, open **Settings → AI → Whole server → AI keys** and use **Add a key**.
 2. In **Who may use the server's AI**, choose **The server's keys cover**: households a server admin is in, chosen households, every household, or no household.
 3. Set **Monthly limit for each household, in US dollars**, **Tasks they cover**, and **Models they cover**. **Any model** allows the available models rather than a selected subset.
 4. Decide whether **Households may add keys of their own** and **Households may add addresses of their own** should be allowed, then **Save**.
@@ -77,7 +77,7 @@ Household-added addresses require explicit server policy permission and still ca
 
 ## Choose models
 
-1. In **Settings → Household → AI**, choose **Model for big tasks** and **Model for small tasks**, or leave **Suggested for your keys** selected.
+1. In **Settings → AI**, choose **Model for big tasks** and **Model for small tasks**, or leave **Suggested for your keys** selected.
 2. Expand **A model for each task** to override a specific task. A task override wins over the big/small selection; **As for big tasks** or **As for small tasks** returns it to that group.
 3. Choose **Model for photos and PDFs** to send every photo and PDF to one model, ahead of any task's own: photo and PDF imports, video frames, receipts, and assistant chats with one in them. **As for each task** leaves them with each task's model.
 4. Choose **Save** and try that task with a small, non-sensitive example.
@@ -88,7 +88,7 @@ Household-added addresses require explicit server policy permission and still ca
 | Small tasks     | Ingredient swaps, nutrition, product picking, receipts, discovery, prep reminders                                  |
 | Photos and PDFs | Once one is picked: photo and PDF imports, video frames, receipts, and assistant chats with a photo or PDF in them |
 
-A server admin has the same **Model for photos and PDFs** in **Settings → This server → AI**, for households that haven't picked models of their own. Once an assistant chat has a photo or PDF in it, the rest of that chat uses the photos and PDFs model, so pick one that can use tools too.
+A server admin has the same **Model for photos and PDFs** in **Settings → AI → Whole server**, for households that haven't picked models of their own. Once an assistant chat has a photo or PDF in it, the rest of that chat uses the photos and PDFs model, so pick one that can use tools too.
 
 These are model-selection groups, not guarantees of speed or quality. The assistant needs tool support; photo/PDF tasks need the corresponding input support; structured tasks need valid structured answers. Named-provider choices come from Merran's bundled catalog, while compatible endpoints supply their own list. A catalog entry can still be unavailable to your account. Choose a model your provider actually accepts.
 

@@ -57,9 +57,9 @@ The household must always retain an owner. Before the final owner leaves, they m
 
 ## Server administrators
 
-**Settings → This server** is restricted to server administrators. They manage server configuration, optional modules, shared AI policy, and server-wide jobs. Starting another household or importing an export as a new household also requires this role. Live Mealie migration requires both server-administrator and household-administrator access.
+The **Server** page in **Settings**, and the **Whole server** side of other pages, appear only for server administrators. They manage server configuration, optional modules, shared AI policy, and server-wide jobs. Starting another household (**Settings → Household → Whole server**) or importing an export as a new household also requires this role. Live Mealie migration requires both server-administrator and household-administrator access.
 
-A server administrator's account does not automatically bypass household membership or owner checks. Household **Admin** does not grant access to **This server**. The person operating the server and its database still controls the underlying storage; household boundaries are application permissions, not protection from the server operator.
+A server administrator's account does not automatically bypass household membership or owner checks. Household **Admin** does not grant access to **Server** or to the **Whole server** side of other pages. The person operating the server and its database still controls the underlying storage; household boundaries are application permissions, not protection from the server operator.
 
 API keys have separate, route-specific permissions and cannot replace a browser session for administrator routes. Use the [API quickstart](../../api/) when creating an integration; do not treat an API key as an administrator login.
 

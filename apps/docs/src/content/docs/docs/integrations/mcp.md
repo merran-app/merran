@@ -13,12 +13,12 @@ An operator can enable `MERRAN_AUTH_OAUTH=true` and set `MERRAN_PUBLIC_URL` to t
 
 Enter `https://meals.example.com/mcp` in a client that supports MCP OAuth discovery and dynamic client registration. Sign into Merran, choose the household, and review the permissions before choosing **Allow access**. The app receives an MCP-only token. Its write permissions create proposals; this token cannot make direct REST changes.
 
-Use **Settings → You → Connected apps → Disconnect** to revoke the connection. See [Authentication and connected apps](../../run/authentication/) for sign-in options, lifetimes and operator configuration. External clients need network access to your server; enabling OAuth does not expose a private instance.
+Use **Settings → Apps and devices → Connected apps → Disconnect** to revoke the connection. See [Authentication and connected apps](../../run/authentication/) for sign-in options, lifetimes and operator configuration. External clients need network access to your server; enabling OAuth does not expose a private instance.
 
 ## Connect with an API key
 
 1. Switch to the household the app should use.
-2. Open **Settings → You → API keys → Use with an AI app**. Give the key a recognizable name and choose its expiry and permissions. Start with read access; add write access only for areas where you want proposals.
+2. Open **Settings → Apps and devices → API keys → Use with an AI app**. Give the key a recognizable name and choose its expiry and permissions. Start with read access; add write access only for areas where you want proposals.
 3. Make the key and save it while it is shown. Copy the **MCP server URL** and **Authorization header value** into a client that supports Streamable HTTP and bearer tokens. The header name is `Authorization`; its value starts with `Bearer mrn_`.
 4. Ask the app to list Merran's tools or search your recipes. Tools it cannot use are omitted from the list.
 5. Follow the returned review link after asking for a change. Read the proposal and apply or dismiss it in Merran. New recipes include **Review the full recipe** before saving; recipe edits let you choose individual sections.

@@ -14,7 +14,7 @@ Telemetry is off unless the server admin turns it on. When it's on, Merran sends
 ## Turning it on or off
 
 - **After setup:** the first time the server admin opens Merran, it asks **Help improve Merran?** Choose **Yes, send it** or **No thanks**. It's asked once; closing it without choosing asks again next time.
-- **Any time after:** **Settings → This server → Telemetry**, with the switch **Send an anonymous summary once a day**. **See exactly what's sent** shows the next summary, exactly as it would go.
+- **Any time after:** **Settings → Server → Telemetry**, with the switch **Send an anonymous summary once a day**. **See exactly what's sent** shows the next summary, exactly as it would go.
 - **For good:** set `MERRAN_TELEMETRY=off`. Merran doesn't ask, and the switch can't be changed in the app.
 
 Once it's on, the card says when the last summary was sent, or why it wasn't. If the project's receiver can't be reached, Merran tries again the next day; that's not a failed job.

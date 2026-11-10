@@ -36,7 +36,7 @@ A link keeps working if the member who made it leaves the household. An admin ca
 
 ## For admins
 
-Open **Settings → Household → Sharing**.
+Open **Settings → Recipes → Recipe links**.
 
 - **Let members share recipes by link** turns sharing on or off for the household. Turning it off pauses every link: they answer as if they were stopped, and Share disappears for members. Turning it back on brings the same links back.
 - **Shared recipes** lists each shared recipe, who shared it, when, and when it was last opened. Each has **Stop sharing**. Recipes in Recently deleted stay on the list, so you can stop them too.

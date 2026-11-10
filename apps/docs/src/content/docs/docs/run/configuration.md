@@ -45,24 +45,30 @@ $env:MERRAN_PUBLIC_URL = 'http://localhost:5173'
 pnpm dev
 ```
 
-On a Unix shell, use `MERRAN_PUBLIC_URL=http://localhost:5173 pnpm dev`. Use the address where you open the web app, without a path such as `/settings`. For invitations opened on another device, use a hostname or LAN address that device can reach. `localhost` always refers to the device opening the link. Restart the API after changing a process environment value, then reload the browser to refresh capabilities. SMTP credentials can still be saved in **Settings → This server → Email**; they do not need to be entered in the terminal.
+On a Unix shell, use `MERRAN_PUBLIC_URL=http://localhost:5173 pnpm dev`. Use the address where you open the web app, without a path such as `/settings`. For invitations opened on another device, use a hostname or LAN address that device can reach. `localhost` always refers to the device opening the link. Restart the API after changing a process environment value, then reload the browser to refresh capabilities. SMTP credentials can still be saved in **Settings → Server → Email**; they do not need to be entered in the terminal.
 
 ## Optional modules
 
-Open **Settings → This server** to configure modules such as AI, stores, nutrition, or voice. Values supplied through the environment can lock the corresponding settings in the app.
+Modules such as AI, stores, nutrition and voice are set up on the **Whole server** side of their page in **Settings**: **AI**, **Shopping and stores** and **Recipes**. Values supplied through the environment can lock the corresponding settings in the app.
 
 Some settings belong to the household or account rather than the server. Use household settings for shared household preferences and personal settings for your own preferences.
 
-In alpha.5, each Settings page groups its controls into sections with an **On this page** list for jumping to one.
+Settings has a page for each topic. A page with both household and server settings shows one half at a time, with a switch between **This household** (or **You**) and **Whole server**; only the server admin sees the switch. On a phone, **Settings** opens as a list of pages.
 
-| Page                  | Find here                                                                                                                                    |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| **You**               | **Profile and appearance**, **Sign-in and security**, **Connected apps and API keys**, **Devices and sharing**, and **Your data**            |
-| **Household**         | **Household details**, **People and households**, **Meal planning**, **Recipes and AI**, and **Shopping and stores**                         |
-| **Import and export** | **Move a household** for Merran archives, or **Import from another app** for recipe imports. Household owners and admins only.               |
-| **This server**       | **Server overview**, **Access and email**, **Shared AI**, **Recipe services**, **Store connections**, and **Operations**. Server admin only. |
+| Page                    | This household, or You                                                                     | Whole server                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| **Profile**             | **Profile**, **Language**, **Appearance**, **Your data**                                   |                                                                         |
+| **Sign-in**             | **Password**, **Passkeys**, **Two-step sign-in**, **Single sign-on**                       | **Authentication**                                                      |
+| **Apps and devices**    | **Merran on this device**, **Share to Merran**, **Connected apps**, **API keys**           | **OAuth applications**                                                  |
+| **Household**           | **Household**, **Members**, **Invitations**                                                | **Start another household**                                             |
+| **Planning**            | **Planning**, **Tastes**, **Theme nights**, **Plan each week**, **Calendar subscriptions** |                                                                         |
+| **Recipes**             | **Nutrition for the library**, **AI photos**, **Recipe links**                             | **Nutrition**, **AI photos**, **Voice**                                 |
+| **AI**                  | **AI**                                                                                     | **AI keys**, **Who may use the server's AI**, **Spent**                 |
+| **Shopping and stores** | **Pantry**, **Your stores**, **Stores**                                                    | **Kroger**, **Walmart**                                                 |
+| **Import and export**   | **Export this household**, **Import a Merran export**, **From another app**                | **Recipe sites**, **Video import**, **FlareSolverr**                    |
+| **Server**              |                                                                                            | **This server**, **Email**, **Jobs**, **Error tracking**, **Telemetry** |
 
-Household members can view shared details, people and tastes; household admins see additional sections for recipes, AI and stores. The server admin role does not by itself grant household-admin access.
+Household members see **Profile**, **Sign-in**, **Apps and devices**, **Household** and **Planning**; household owners and admins also see **Recipes**, **AI**, **Shopping and stores**, and **Import and export**. The server admin role does not by itself grant household-admin access.
 
 See [household roles and permissions](../household-roles/) for who can change each scope. Server administration and household ownership are separate roles.
 
@@ -74,7 +80,7 @@ For AI, follow [AI setup and costs](../ai-setup/) to connect providers, select m
 
 ### Email transport
 
-In **Settings → This server → Email**, enter **SMTP host**, **SMTP port**, **SMTP username**, **SMTP password or API key**, and **Sender email address**. Save with **Save**, turn on **Enable email**, then choose **Send test email**. Tests go to your account's email address. Check your inbox and spam folder; provider acceptance does not guarantee inbox delivery. Household invitations and password recovery by email are supported. Operator password recovery remains available without SMTP.
+In **Settings → Server → Email**, enter **SMTP host**, **SMTP port**, **SMTP username**, **SMTP password or API key**, and **Sender email address**. Save with **Save**, turn on **Enable email**, then choose **Send test email**. Tests go to your account's email address. Check your inbox and spam folder; provider acceptance does not guarantee inbox delivery. Household invitations and password recovery by email are supported. Operator password recovery remains available without SMTP.
 
 For [Resend](https://resend.com/docs/send-with-smtp), verify a domain you own, use host `smtp.resend.com`, port `465`, turn on **Use TLS from the start**, set username `resend`, and use a sending API key as the password. The sender address must be allowed by your provider. Other services use the same fields with their own SMTP credentials.
 

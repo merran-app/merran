@@ -34,7 +34,7 @@ Use Docker Compose, a new installation directory, and a backup location. For an 
    ```
 
 4. Wait for the database to become healthy and Merran to finish migrations. Check `http://localhost:3000/api/health/ready`; it should report `database: "postgres"` and `status: "ready"`.
-5. Complete [account setup](../../get-started/setup/) using the setup code in the log. After signing in, **Settings → This server** should identify Postgres.
+5. Complete [account setup](../../get-started/setup/) using the setup code in the log. After signing in, **Settings → Server** should identify Postgres.
 
 **Expected result:** Merran stores relational data in Postgres and keeps app files and its secret in `./data/app`. The supplied Postgres 18 service stores its files under `./data/postgres`, mounted at `/var/lib/postgresql`. Keep this version-specific mount; older Postgres examples often use a different directory. The database has no host port published by this Compose file.
 
