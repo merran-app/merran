@@ -13,6 +13,8 @@ import { serverLimitFor, type AiPolicy, type HouseholdAi } from "./policy.ts"
 // Whose key pays for an AI call: the household's own key for the task's
 // model, if it has one; otherwise the server's, if the household may use
 // it and is under its limit; otherwise the feature says what's missing.
+// A call with photos or PDFs in it goes to the model picked for those,
+// when there is one, ahead of the task's own.
 
 export type KeySource = "server" | "household"
 
@@ -53,6 +55,8 @@ export type ResolveInput = {
   policy: AiPolicy
   /** A rough cost of the call, in US dollars, checked against the limits first. */
   estimate?: number
+  /** The call has photos or PDFs in it. */
+  visual?: boolean
 }
 
 /** A key's own model for a size: its provider's default, or an address's first. */
@@ -85,12 +89,17 @@ export function resolveAi(input: ResolveInput): Resolution {
   const { task, household, server, policy } = input
   const estimate = input.estimate ?? 0
   const size = TASK_SIZES[task]
-  const picked = household.ai.tasks[task] ?? household.ai[size]
-  // Nothing picked: the household's own keys first, then the server's.
+  const picked =
+    (input.visual ? household.ai.vision : null) ??
+    household.ai.tasks[task] ??
+    household.ai[size]
+  // Nothing picked: the household's own keys first, then the server's,
+  // with its model for photos and PDFs ahead of its size's.
   const candidates = picked
     ? [picked]
     : [
         ...household.keys.map((key) => defaultRef(key, size)),
+        ...(input.visual ? [policy.vision] : []),
         policy[size],
         ...server.keys.map((key) => defaultRef(key, size)),
       ]

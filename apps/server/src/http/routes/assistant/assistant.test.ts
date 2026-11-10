@@ -3,6 +3,7 @@ import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../app.ts"
 import { AppError } from "../../../core/errors.ts"
+import type { AiTarget } from "../../../services/ai/providers.ts"
 import type { Fetcher } from "../../../services/fetch/public-fetch.ts"
 import type { JobRunner } from "../../../services/jobs/runner.ts"
 import {
@@ -31,6 +32,8 @@ type Prompt = {
 }[]
 
 let script: MockReply[] = []
+/** Where AI calls went, for the model that answered. */
+const targets: AiTarget[] = []
 let picks: { url: string; name: string; why: string }[] = []
 let asked: Prompt = []
 const reply = (call: MockCall): MockReply => {
@@ -122,7 +125,7 @@ let chickenId: string
 beforeAll(async () => {
   const test = await createTestApp({
     fetcher,
-    ai: mockAiModels(undefined, [], undefined, reply),
+    ai: mockAiModels(undefined, targets, undefined, reply),
   })
   ;({ app, jobs, close } = test)
   kyle = await setUpServer(app, test.setupCode)
@@ -715,6 +718,43 @@ describe("the assistant", () => {
       204
     )
     expect((await kyle.get(photo.url)).status).toBe(404)
+  })
+
+  test("talks about a photo with the model for photos and PDFs, for the rest of that chat", async () => {
+    const picks = { large: null, small: null, tasks: {}, monthlyLimit: null }
+    const picked = await kyle.put("/api/households/current/ai", {
+      ...picks,
+      vision: "anthropic:claude-haiku-5-5",
+    })
+    expect(picked.status, await picked.clone().text()).toBe(200)
+    const png = await sharp({
+      create: { width: 40, height: 30, channels: 3, background: "#c84" },
+    })
+      .png()
+      .toBuffer()
+    const photo = (await (await uploadFile(png, "pan.png")).json()) as {
+      id: string
+    }
+
+    const chatId = await startChat()
+    const shown = await kyle.post(`/api/assistant/chats/${chatId}/messages`, {
+      files: [{ id: photo.id }],
+    })
+    expect(shown.status, await shown.clone().text()).toBe(200)
+    await chunks(shown)
+    expect(targets.at(-1)).toMatchObject({ model: "claude-haiku-5-5" })
+
+    // The photo's still in the chat, so the next message goes there too.
+    await chunks(await send(chatId, "And now?"))
+    expect(targets.at(-1)).toMatchObject({ model: "claude-haiku-5-5" })
+
+    const otherId = await startChat()
+    await chunks(await send(otherId, "Hello"))
+    expect(targets.at(-1)).toMatchObject({ model: "claude-sonnet-5-5" })
+
+    await kyle.delete(`/api/assistant/chats/${chatId}`)
+    await kyle.delete(`/api/assistant/chats/${otherId}`)
+    await kyle.put("/api/households/current/ai", picks)
   })
 
   test("reads a recipe from a PDF, which it offers to draft", async () => {

@@ -155,7 +155,7 @@ export const NewAiKeySchema = z
 export const AiPolicySchema = (
   aiPolicySchema as z.ZodType<z.infer<typeof aiPolicySchema>>
 ).openapi("AiPolicy", {
-  description: `Who may use the server's keys: \`serverKeysFor\` is ${SERVER_KEYS_FOR.join(", ")} (the server admins' households, the chosen \`households\`, every household, or none). \`monthlyLimit\` is each household's in US dollars on the server's keys (null for none), and \`limits\` a household's own instead. \`tasks\` and \`models\` are what the server's keys cover (no models means any). \`householdKeys\` and \`householdAddresses\` say whether households may add their own keys and addresses. \`large\` and \`small\` are the models households use when they haven't picked.`,
+  description: `Who may use the server's keys: \`serverKeysFor\` is ${SERVER_KEYS_FOR.join(", ")} (the server admins' households, the chosen \`households\`, every household, or none). \`monthlyLimit\` is each household's in US dollars on the server's keys (null for none), and \`limits\` a household's own instead. \`tasks\` and \`models\` are what the server's keys cover (no models means any). \`householdKeys\` and \`householdAddresses\` say whether households may add their own keys and addresses. \`large\` and \`small\` are the models households use when they haven't picked, and \`vision\` the model for photos and PDFs in households that haven't picked any.`,
   example: { ...DEFAULT_AI_POLICY, monthlyLimit: 5 },
 })
 
@@ -273,6 +273,10 @@ export const HouseholdAiSettingsSchema = z
     tasks: z.partialRecord(z.enum(AI_TASKS), ModelRefSchema).openapi({
       description: "A model for a task of its own.",
     }),
+    vision: ModelRefSchema.nullable().default(null).openapi({
+      description:
+        "The model for every photo and PDF: imports, receipts, and assistant chats with one in them. It's used ahead of a task's own model; null to go by each task's.",
+    }),
     monthlyLimit: z.number().min(0).max(100_000).nullable().openapi({
       description:
         "A monthly limit on its own keys, in US dollars; null for none.",
@@ -287,6 +291,7 @@ export const HouseholdAiSettingsSchema = z
       large: null,
       small: null,
       tasks: {},
+      vision: null,
       monthlyLimit: 10,
       autoTidy: false,
     },
@@ -298,6 +303,9 @@ export const HouseholdAiSchema = z
       available: z.boolean(),
       tasks: z.record(z.enum(AI_TASKS), taskStatus).openapi({
         description: "For each task, the model and whose key, or why none.",
+      }),
+      vision: taskStatus.openapi({
+        description: "The model and whose key for a photo or PDF, or why none.",
       }),
       month: z.string(),
       server: z.object({
@@ -365,6 +373,11 @@ export const HouseholdAiSchema = z
             },
           ])
         ) as never,
+        vision: {
+          ok: true,
+          ref: "anthropic:claude-opus-5-5",
+          source: "server",
+        },
         month: "2026-10",
         server: {
           covers: true,
@@ -379,7 +392,13 @@ export const HouseholdAiSchema = z
         keyAlerts: [],
       },
       keys: [],
-      settings: { large: null, small: null, tasks: {}, monthlyLimit: null },
+      settings: {
+        large: null,
+        small: null,
+        tasks: {},
+        vision: null,
+        monthlyLimit: null,
+      },
       models: [],
       usage: {
         months: [{ month: "2026-10", server: 1.24, household: 0, calls: 31 }],

@@ -2937,6 +2937,9 @@
       "keyDefault": "Suggested for each key",
       "largeDefault": "As for big tasks",
       "smallDefault": "As for small tasks",
+      "vision": "Model for photos and PDFs",
+      "visionDefault": "As for each task",
+      "visionHint": "Used for every photo and PDF: imports, receipts, and assistant chats with one in them.",
       "perTask": "A model for each task",
       "priced": "{{name}} · {{input}} in, {{output}} out a million tokens",
       "gone": "{{ref}} (no key for it now)",
@@ -2948,11 +2951,13 @@
     "status": {
       "uses": {
         "large": "Big tasks use {{model}}, on {{whose}}.",
-        "small": "Small tasks use {{model}}, on {{whose}}."
+        "small": "Small tasks use {{model}}, on {{whose}}.",
+        "vision": "Photos and PDFs use {{model}}, on {{whose}}."
       },
       "none": {
         "large": "Big tasks can't run: {{why}}",
-        "small": "Small tasks can't run: {{why}}"
+        "small": "Small tasks can't run: {{why}}",
+        "vision": "Photos and PDFs can't run: {{why}}"
       },
       "whose": {
         "server": "the server's keys",
@@ -3065,6 +3070,12 @@
       "lowUnknown": "{{whose}} is low on credit."
     },
     "needs": {
+      "vision": {
+        "noKey": "Reading photos and PDFs needs AI, and there's no key for the model that reads them.",
+        "notCovered": "Reading photos and PDFs needs AI, and the server's keys don't cover the model that reads them.",
+        "overLimit": "This month's AI on the server's keys is used up. It's back next month.",
+        "ownLimit": "This month's limit on the household's own AI keys is reached."
+      },
       "import": {
         "noKey": "Reading text and photos needs AI, and this household has no AI key yet.",
         "notCovered": "Reading text and photos needs AI, and this household has no AI key yet.",
