@@ -45,6 +45,7 @@ import { tastesQuery } from "@/features/household/queries"
 import { CookNotes } from "@/features/recipes/cook-notes"
 import { NutritionSection } from "@/features/recipes/nutrition-section"
 import { DietBadges, DietDialog } from "@/features/recipes/diet-labels"
+import { DuplicatesNote } from "@/features/recipes/duplicates/duplicates-note"
 import { formatMinutes, sourceName } from "@/features/recipes/format"
 import { GoesWith } from "@/features/recipes/goes-with"
 import {
@@ -154,7 +155,7 @@ function RecipeView({
   const setSearch = Route.useNavigate()
 
   // Shown with a recipe it goes with: both, the pairing first and scaled.
-  const { with: withSlug } = Route.useSearch()
+  const { with: withSlug, meal: fromMeal } = Route.useSearch()
   const pairedQuery = useQuery({
     ...recipeQuery(withSlug ?? ""),
     enabled: Boolean(withSlug),
@@ -340,6 +341,8 @@ function RecipeView({
           {t("shopping.adjustedHint")}
         </p>
       ) : null}
+      {/* From a planned meal, the plan's notice comes first. */}
+      {!fromMeal && <DuplicatesNote recipe={recipe} />}
       <Link
         to="/recipes"
         className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"

@@ -356,6 +356,20 @@ export function ServerAiPolicyCard() {
             />
             <FieldDescription>{t("ai.models.sizesHint")}</FieldDescription>
           </Field>
+          <Field>
+            <FieldLabel htmlFor={`${id}-vision`}>
+              {t("ai.models.vision")}
+            </FieldLabel>
+            <ModelSelect
+              id={`${id}-vision`}
+              value={policy.vision}
+              options={data.models}
+              task="import"
+              noneLabel={t("ai.models.visionDefault")}
+              onChange={(vision) => change({ vision })}
+            />
+            <FieldDescription>{t("ai.models.visionHint")}</FieldDescription>
+          </Field>
 
           <Field orientation="horizontal">
             <FieldContent>

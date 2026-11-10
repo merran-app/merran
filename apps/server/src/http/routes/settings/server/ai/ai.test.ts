@@ -200,6 +200,18 @@ describe("the server's AI", () => {
     expect((await put({ models: ["nobody:model"] })).status).toBe(400)
     expect((await put({ serverKeysFor: "friends" })).status).toBe(400)
     expect((await put({})).status).toBe(200)
+
+    // A model for photos and PDFs, for households that haven't picked.
+    const vision = await put({ vision: "anthropic:claude-haiku-5-5" })
+    expect(vision.status, await vision.clone().text()).toBe(200)
+    expect((await vision.json()).policy.vision).toBe(
+      "anthropic:claude-haiku-5-5"
+    )
+    expect((await put({ vision: "nobody:model" })).status).toBe(400)
+    const { vision: _, ...withoutVision } = DEFAULT_AI_POLICY
+    const left = await kyle.put("/api/settings/server/ai/policy", withoutVision)
+    expect(left.status, await left.clone().text()).toBe(200)
+    expect((await left.json()).policy.vision).toBeNull()
   })
 })
 

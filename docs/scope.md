@@ -24,6 +24,7 @@ Everything here is in 0.1 unless it says **Later**.
 | Units | As written or grams | Core | **As written, US or metric, both ways,** with ml and °C (planned for M17) |
 | Versions and restore | M1 | Core | |
 | Tags: rename, merge, delete | Built | Core | |
+| Possible duplicate recipes | New | Core | No AI: the same link under any address, or the same name by its words |
 | Search, filters and sorting in the address, cards or a list, endless scroll | Built | Core | Search and filters move to the server, so big libraries stay quick and the API can use them |
 | Diet labels from ingredients, with corrections | Built | Core | Ingredient words per language |
 | Goes with (pairings) | Built | Core | |
@@ -40,6 +41,8 @@ Everything here is in 0.1 unless it says **Later**.
 | Nutrition: USDA calculation, AI estimate, plan totals | M5 | Module | |
 | Recipe costs and weekly budget | M13 | Module (stores) | Any currency |
 | Recipe translations, step photos, meaning-based search | Later, maybe | **Later** | |
+
+Possible duplicates, decided November 9, 2026: two recipes may be the same one when their links are the same page under any address (scheme, `www.`, a trailing slash, print and AMP versions and tracking parameters set aside), or their names have the same words, ignoring order, case, accents, plurals and filler like "easy" and "recipe". A name inside another counts only when they share at least 3 foods, at least 70% of the smaller recipe's. It needs no AI, so it works on every server; it shows on a recipe added in the last 7 days, on Recipes → Possible duplicates, and in Tidy up's Review, and "Not the same" is kept for the household. Merging two recipes is left out: moving plans, notes, ratings and versions across is a design of its own, and Delete covers the common case. It ports the idea in bula87's fork, which only checked slug prefixes and exact links during an AI tidy-up.
 
 ### Adding recipes
 

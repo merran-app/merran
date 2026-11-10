@@ -1,6 +1,7 @@
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../app.ts"
+import type { AiTarget } from "../../../../services/ai/providers.ts"
 import {
   fakeAiFetcher,
   GOOD_KEYS,
@@ -70,11 +71,13 @@ let close: () => Promise<void>
 let kyle: TestClient
 let sam: TestClient
 let jpeg: Buffer
+/** Where AI calls went, for the model that read them. */
+const targets: AiTarget[] = []
 
 beforeAll(async () => {
   const test = await createTestApp({
     fetcher: fakeAiFetcher(),
-    ai: mockAiModels(undefined, [], undefined, reply),
+    ai: mockAiModels(undefined, targets, undefined, reply),
   })
   ;({ app, close } = test)
   kyle = await setUpServer(app, test.setupCode)
@@ -199,6 +202,25 @@ describe("scanning a receipt", () => {
       type: "file",
       mediaType: "application/pdf",
     })
+  })
+
+  test("reads a photo with the model for photos and PDFs, and text with the receipts model", async () => {
+    const picks = { large: null, small: null, tasks: {}, monthlyLimit: null }
+    const picked = await kyle.put("/api/households/current/ai", {
+      ...picks,
+      vision: "anthropic:claude-opus-5-5",
+    })
+    expect(picked.status, await picked.clone().text()).toBe(200)
+
+    const fromPhoto = await scanned()
+    expect(targets.at(-1)).toMatchObject({ model: "claude-opus-5-5" })
+    const text = await scan([["text", "Whole milk $3.48"]])
+    expect(text.status, await text.clone().text()).toBe(201)
+    expect(targets.at(-1)).toMatchObject({ model: "claude-haiku-5-5" })
+
+    await kyle.delete(`/api/pantry/receipts/${fromPhoto.id}`)
+    await kyle.delete(`/api/pantry/receipts/${(await text.json()).id}`)
+    await kyle.put("/api/households/current/ai", picks)
   })
 
   test("says when it's a recipe, or nothing it can read", async () => {

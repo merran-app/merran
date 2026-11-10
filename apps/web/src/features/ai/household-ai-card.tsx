@@ -59,11 +59,22 @@ function modelName(data: HouseholdAi, ref: string) {
   return data.models.find((model) => model.ref === ref)?.name ?? ref
 }
 
+/**
+ * Whether photos and PDFs go somewhere big tasks don't, so they're worth a
+ * line of their own: another model, or one that can't run when big tasks
+ * can, or the other way round.
+ */
+function visionDiffers(vision: TaskStatus, large: TaskStatus) {
+  if (vision.ok && large.ok) return vision.ref !== large.ref
+  return vision.ok !== large.ok
+}
+
 /** What a household's AI does now: which model, on whose key, or why none. */
 function StatusLine({ data }: { data: HouseholdAi }) {
   const { t } = useTranslation()
   const large = statusOf(data, "import")
   const small = statusOf(data, "swaps")
+  const vision = data.status.vision as TaskStatus
   if (!data.status.available) {
     const why = large.ok ? "noKey" : large.why
     return (
@@ -72,7 +83,7 @@ function StatusLine({ data }: { data: HouseholdAi }) {
       </p>
     )
   }
-  const line = (task: TaskStatus, size: "large" | "small") =>
+  const line = (task: TaskStatus, size: "large" | "small" | "vision") =>
     task.ok
       ? t(`ai.status.uses.${size}`, {
           model: modelName(data, task.ref),
@@ -83,6 +94,9 @@ function StatusLine({ data }: { data: HouseholdAi }) {
     <ul className="grid gap-1 text-sm">
       <li>{line(large, "large")}</li>
       <li className="text-muted-foreground">{line(small, "small")}</li>
+      {visionDiffers(vision, large) && (
+        <li className="text-muted-foreground">{line(vision, "vision")}</li>
+      )}
     </ul>
   )
 }
@@ -320,15 +334,36 @@ export function HouseholdAiCard() {
                 />
                 <FieldDescription>{t("ai.models.sizesHint")}</FieldDescription>
               </Field>
+              <Field>
+                <FieldLabel htmlFor={`${id}-vision`}>
+                  {t("ai.models.vision")}
+                </FieldLabel>
+                <ModelSelect
+                  id={`${id}-vision`}
+                  value={picked.vision}
+                  options={data.models}
+                  noneLabel={t("ai.models.visionDefault")}
+                  showSource
+                  task="import"
+                  onChange={(vision) => change({ vision })}
+                />
+                <FieldDescription>{t("ai.models.visionHint")}</FieldDescription>
+              </Field>
               {(picked.large ||
                 picked.small ||
+                picked.vision ||
                 Object.keys(picked.tasks).length > 0) && (
                 <div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      change({ large: null, small: null, tasks: {} })
+                      change({
+                        large: null,
+                        small: null,
+                        tasks: {},
+                        vision: null,
+                      })
                     }
                   >
                     {t("ai.models.useSuggested")}
