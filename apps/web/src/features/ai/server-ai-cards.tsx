@@ -45,12 +45,16 @@ import { CardActions } from "@/features/settings/card-actions"
 import { AiKeys } from "./ai-keys"
 import { ModelSelect } from "./model-select"
 import {
-  formatMoney,
-  formatMonth,
   householdAiQuery,
   serverAiQuery,
   type AiPolicy,
+  type ServerAi,
 } from "./queries"
+import { BarList } from "./spend/bar-list"
+import { lastSixMonths, thisMonth } from "./spend/months"
+import { MonthsChart } from "./spend/months-chart"
+import { SpendMeter } from "./spend/spend-meter"
+import { SpendTotal } from "./spend/spend-total"
 
 /** Reads a money field: blank for none. */
 const dollars = (text: string) => {
@@ -418,108 +422,85 @@ export function ServerAiPolicyCard() {
   )
 }
 
-/** Settings → AI → Whole server → Spent: on the server's keys, by household and month. */
+/** Settings → AI → Whole server → AI spend: on the server's keys, by household, month and model. */
 export function ServerAiSpendCard() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { data } = useQuery(serverAiQuery)
-  const money = (dollars: number) => formatMoney(dollars, i18n.language)
   return (
     <Card>
       <CardHeader>
         <CardTitle>{t("ai.spend.serverTitle")}</CardTitle>
         <CardDescription>{t("ai.spend.serverDescription")}</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-6">
-        {!data ? (
-          <Skeleton className="h-40" />
-        ) : (
-          <>
-            <section className="grid gap-2">
-              <h3 className="text-sm font-medium">{t("ai.spend.thisMonth")}</h3>
-              <ul className="divide-y rounded-2xl border">
-                {data.households.map((household) => (
-                  <li
-                    key={household.id}
-                    className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm"
-                  >
-                    <span className="min-w-0 flex-1 font-medium">
-                      {household.name}
-                    </span>
-                    {!household.covered && (
-                      <Badge variant="outline">
-                        {t("ai.spend.notCovered")}
-                      </Badge>
-                    )}
-                    {household.near && (
-                      <Badge variant="destructive">
-                        {t("ai.spend.nearLimit")}
-                      </Badge>
-                    )}
-                    <span className="text-muted-foreground tabular-nums">
-                      {household.limit === null
-                        ? money(household.spent)
-                        : t("ai.spend.ofLimit", {
-                            spent: money(household.spent),
-                            limit: money(household.limit),
-                          })}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-            <section className="grid gap-2">
-              <h3 className="text-sm font-medium">{t("ai.spend.byMonth")}</h3>
-              {data.usage.months.every((month) => month.calls === 0) && (
-                <p className="text-sm text-muted-foreground">
-                  {t("ai.spend.nothingYet")}
-                </p>
-              )}
-              <ul className="grid gap-1 text-sm">
-                {data.usage.months
-                  .filter((month) => month.calls > 0)
-                  .map((month) => (
-                    <li
-                      key={month.month}
-                      className="flex justify-between gap-3"
-                    >
-                      <span>{formatMonth(month.month, i18n.language)}</span>
-                      <span className="text-muted-foreground tabular-nums">
-                        {t("ai.spend.costCalls", {
-                          cost: money(month.cost),
-                          count: month.calls,
-                        })}
-                      </span>
-                    </li>
-                  ))}
-              </ul>
-            </section>
-            {data.usage.models.length > 0 && (
-              <section className="grid gap-2">
-                <h3 className="text-sm font-medium">{t("ai.spend.byModel")}</h3>
-                <ul className="grid gap-1 text-sm">
-                  {data.usage.models.map((model) => (
-                    <li
-                      key={`${model.provider} ${model.model}`}
-                      className="flex justify-between gap-3"
-                    >
-                      <span>
-                        {catalogModel(model.provider, model.model)?.name ??
-                          model.model}
-                      </span>
-                      <span className="text-muted-foreground tabular-nums">
-                        {t("ai.spend.costCalls", {
-                          cost: money(model.cost),
-                          count: model.calls,
-                        })}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </>
-        )}
+      <CardContent className="grid gap-8">
+        {!data ? <Skeleton className="h-40" /> : <ServerSpend data={data} />}
       </CardContent>
     </Card>
+  )
+}
+
+function ServerSpend({ data }: { data: ServerAi }) {
+  const { t } = useTranslation()
+  const current = thisMonth()
+  const months = lastSixMonths(
+    data.usage.months.map((month) => ({
+      month: month.month,
+      server: month.cost,
+      own: 0,
+      calls: month.calls,
+    })),
+    current
+  )
+  const nothingYet = months.every((month) => month.calls === 0)
+
+  return (
+    <>
+      <SpendTotal months={months} current={current} />
+
+      {data.households.length > 0 && (
+        <section className="grid gap-4">
+          <h3 className="font-sans text-sm font-medium">
+            {t("ai.spend.byHousehold")}
+          </h3>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {data.households.map((household) => (
+              <SpendMeter
+                key={household.id}
+                label={household.name}
+                spent={household.spent}
+                // A household the server's keys don't cover has no limit on them.
+                limit={household.covered ? household.limit : null}
+                series="server"
+                near={household.covered && household.near}
+                status={
+                  !household.covered && (
+                    <Badge variant="outline">{t("ai.spend.notCovered")}</Badge>
+                  )
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {nothingYet ? (
+        <p className="text-sm text-muted-foreground">
+          {t("ai.spend.nothingYet")}
+        </p>
+      ) : (
+        <>
+          <MonthsChart months={months} current={current} showOwn={false} />
+          <BarList
+            title={t("ai.spend.byModel")}
+            items={data.usage.models.map((model) => ({
+              key: `${model.provider} ${model.model}`,
+              label:
+                catalogModel(model.provider, model.model)?.name ?? model.model,
+              cost: model.cost,
+            }))}
+          />
+        </>
+      )}
+    </>
   )
 }

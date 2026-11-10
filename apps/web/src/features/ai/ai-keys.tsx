@@ -36,6 +36,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { SectionActions } from "@/features/settings/card-actions"
 import { ApiError } from "@/lib/api/client"
+import { cn } from "@/lib/utils"
 
 import { formatMoney, type AiKey, type NewAiKey } from "./queries"
 import { ProviderSetup } from "./provider-setup"
@@ -151,6 +152,19 @@ export function AiKeys({
                     .filter(Boolean)
                     .join(" · ")}
                 </span>
+                {key.credit && key.credit.amount > 0 && (
+                  <CreditBar
+                    left={key.credit.left}
+                    amount={key.credit.amount}
+                    tone={
+                      key.outOfCreditAt
+                        ? "danger"
+                        : key.lowOnCredit
+                          ? "warning"
+                          : "normal"
+                    }
+                  />
+                )}
               </div>
               <div className="flex gap-1">
                 {key.provider !== "openai-compatible" && (
@@ -229,6 +243,38 @@ export function AiKeys({
         onAdd={async (key) => sayChecked(await onAdd(key))}
       />
     </div>
+  )
+}
+
+/**
+ * How much of a key's entered credit is left, at a glance. Its badge beside
+ * the name says when it's low or out, so the color is never the only cue.
+ */
+function CreditBar({
+  left,
+  amount,
+  tone,
+}: {
+  left: number
+  amount: number
+  tone: "normal" | "warning" | "danger"
+}) {
+  const share = Math.max(0, Math.min(1, left / amount))
+  return (
+    <span
+      aria-hidden="true"
+      className="mt-1 block h-1.5 w-full max-w-56 overflow-hidden rounded-full bg-muted"
+    >
+      <span
+        className={cn(
+          "block h-full rounded-full",
+          tone === "normal" && "bg-muted-foreground/45",
+          tone === "warning" && "bg-amber-500",
+          tone === "danger" && "bg-destructive"
+        )}
+        style={{ width: `${share * 100}%` }}
+      />
+    </span>
   )
 }
 

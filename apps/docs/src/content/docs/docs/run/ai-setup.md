@@ -40,10 +40,10 @@ For compatible services, the dialog shows **Connect your own AI service** instea
 ### Add the key
 
 1. Open **Settings → AI** in the intended household.
-2. Under **Your own keys**, choose **Add a key**.
+2. In **Keys**, under **Your own keys**, choose **Add a key**.
 3. Choose the provider under **From**, paste the complete **Key**, and choose **Test and add**.
 4. Check the resulting key status. Only a suffix is shown afterward; the saved key cannot be read back through this screen.
-5. Set **Monthly limit on your own keys, in US dollars** if wanted, then **Save**. A blank limit means no limit.
+5. In **Models**, set **Monthly limit on your own keys, in US dollars** if wanted, then **Save**. A blank limit means no limit.
 6. Review the status describing the model and whether it uses **your own key** or **the server's keys**.
 
 **Expected result:** eligible tasks can use the household's provider key. If controls are missing, a household admin must make the change, or the server policy may prohibit adding keys.
@@ -104,7 +104,7 @@ Keys reported out of credit are temporarily passed over for an hour. Non-streami
 
 ## Understand limits and costs
 
-Review **Spent** in household AI settings for usage by month, task, and person; background jobs have their own grouping. Server admins have **AI spend** for server-key usage. Accounting months follow the household's time zone.
+**Spending**, at the top of **Settings → AI**, shows this month's total, how much of each limit is used on **The server's keys** and **Your own keys**, the last six months, and this month by task and by person; background jobs have their own grouping. Server admins have **AI spend** on the **Whole server** side, by household, month and model, and each key in **AI keys** shows a bar of its credit left once credit is entered. Accounting months follow the household's time zone.
 
 Merran records token usage and estimates cost using its bundled prices; speech and images use separate estimates. Model-menu per-use prices are illustrations, not quotes for your next request. Long conversations, large files, searches, retries, and background jobs can change the bill.
 
@@ -136,7 +136,7 @@ The global AI module can appear available because a key exists somewhere on the 
 
 ## Try a request and review the result
 
-Open **Ask the assistant**, start **New chat**, and ask a small question about a recipe you are comfortable sharing. A readable reply confirms that this model can answer; inspect **Spent** afterward. Then try a proposed change and review its card before applying it. Follow [Assistant proposals and approvals](../../use/assistant/) for the full workflow.
+Open **Ask the assistant**, start **New chat**, and ask a small question about a recipe you are comfortable sharing. A readable reply confirms that this model can answer; inspect **Spending** afterward. Then try a proposed change and review its card before applying it. Follow [Assistant proposals and approvals](../../use/assistant/) for the full workflow.
 
 **Tidy up new recipes** is an opt-in household setting. When enabled, imports can trigger background AI calls with suggestions waiting in **Review**. Turning it off prevents that automatic tidy-up; it does not disable every other AI feature or cancel all work already running.
 

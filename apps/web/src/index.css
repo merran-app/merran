@@ -19,6 +19,8 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-spend-server: var(--spend-server);
+  --color-spend-own: var(--spend-own);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -53,6 +55,21 @@
 
 :root {
   --radius: 0.75rem;
+}
+
+/*
+ * AI spend: whose keys paid, the same in every palette. Blue matches the
+ * Whole server tint. Checked as a pair for colorblind and normal-vision
+ * separation and against the card, in light and dark.
+ */
+:root {
+  --spend-server: oklch(0.5 0.13 255);
+  --spend-own: oklch(0.64 0.15 150);
+}
+
+.dark {
+  --spend-server: oklch(0.56 0.14 258);
+  --spend-own: oklch(0.66 0.16 148);
 }
 
 /*
