@@ -21,6 +21,10 @@ const ReadPageSchema = z
   .object({
     url: z.string().trim().min(1).max(2000),
     title: z.string().max(500).default(""),
+    description: z.string().max(2000).default("").openapi({
+      description:
+        "What the page says about itself: its description for search engines, or for sharing. Used when its recipe data has none.",
+    }),
     jsonld: z
       .array(z.string().max(400_000))
       .max(20)
@@ -41,6 +45,7 @@ const ReadPageSchema = z
     example: {
       url: "https://cooking.example/lemon-chicken",
       title: "Lemon Chicken | Cooking",
+      description: "Bright, sticky lemon chicken for a weeknight.",
       jsonld: ['{"@type":"Recipe","name":"Lemon Chicken"}'],
       images: ["https://cooking.example/lemon-chicken.jpg"],
       text: "Lemon Chicken. Serves 4. 4 chicken thighs, 2 lemons...",

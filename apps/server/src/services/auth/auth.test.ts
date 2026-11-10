@@ -90,6 +90,33 @@ describe("Better Auth on MikroORM's tables", () => {
     )
   })
 
+  test("Better Auth reads dates back as dates", async () => {
+    const headers = await signIn("kyle")
+    const session = await auth.api.getSession({ headers })
+
+    const context = await auth.$context
+    const found = await context.internalAdapter.findSession(
+      session!.session.token
+    )
+    expect(found?.session.expiresAt).toBeInstanceOf(Date)
+    expect(found?.user.createdAt).toBeInstanceOf(Date)
+  })
+
+  test("an expired session is refused", async () => {
+    const headers = await signIn("kyle")
+    const session = await auth.api.getSession({ headers })
+
+    await database.em
+      .fork()
+      .nativeUpdate(
+        Session,
+        { id: session!.session.id },
+        { expiresAt: new Date(Date.now() - 60_000) }
+      )
+
+    expect(await auth.api.getSession({ headers })).toBeNull()
+  })
+
   test("households MikroORM makes are Better Auth's organizations", async () => {
     const user = await database.em
       .fork()
