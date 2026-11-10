@@ -93,6 +93,65 @@ function tidyDescription(text: string) {
     .trim()
 }
 
+/**
+ * Words that don't say which dish it is, so that a site's tagline ("The
+ * best easy recipes, from my kitchen") doesn't pass for a recipe's
+ * description by sharing one of them with its name.
+ */
+const NOT_THE_DISH = new Set([
+  "best",
+  "easy",
+  "from",
+  "homemade",
+  "quick",
+  "recipe",
+  "recipes",
+  "simple",
+  "with",
+  "your",
+])
+
+/** A text's words that could name a dish: four letters or more. */
+function dishWords(text: string) {
+  const words = text.toLowerCase().match(/\p{L}{4,}/gu) ?? []
+  return words.filter((word) => !NOT_THE_DISH.has(word))
+}
+
+/** Just a text's letters and digits, to compare texts written differently. */
+const bare = (text: string) =>
+  text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "")
+
+/**
+ * Whether what a page says about itself is about the dish: it shares a
+ * word with the recipe's name ("cookie" and "cookies" count as one), and
+ * isn't just the name or the page's title again.
+ */
+function aboutTheDish(text: string, name: string, title: string) {
+  if (bare(text) === bare(name) || bare(text) === bare(title)) return false
+  const named = dishWords(name)
+  return dishWords(text).some((word) =>
+    named.some((other) => word.startsWith(other) || other.startsWith(word))
+  )
+}
+
+/**
+ * What the page says about the dish, for a recipe whose data has no
+ * description: its description for search engines, or for sharing.
+ */
+function pageDescription($: CheerioAPI, name: string) {
+  const title = cleanText($("title").first().text())
+  const selectors = [
+    'meta[name="description"]',
+    'meta[property="og:description"]',
+    'meta[name="twitter:description"]',
+  ]
+  for (const selector of selectors) {
+    const text = cleanText($(selector).attr("content"))
+    if (text && aboutTheDish(text, name, title)) return text
+  }
+  return ""
+}
+
 function asArray(value: unknown): any[] {
   if (value === undefined || value === null) return []
   return Array.isArray(value) ? value : [value]
@@ -449,7 +508,9 @@ export function readRecipeData(
   const { servings, yieldText } = parseYield(node.recipeYield)
   const nutrition = siteNutrition(node.nutrition)
   const description = tidyDescription(
-    card?.summary.length ? card.summary.join(" ") : cleanText(node.description)
+    card?.summary.length
+      ? card.summary.join(" ")
+      : cleanText(node.description) || pageDescription($, name)
   )
   const notes = card?.notes.join("\n\n") ?? ""
   const prepMinutes = parseDuration(node.prepTime)
