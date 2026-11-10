@@ -63,7 +63,7 @@ Settings has a page for each topic. A page with both household and server settin
 | **Household**           | **Household**, **Members**, **Invitations**                                                | **Start another household**                                             |
 | **Planning**            | **Planning**, **Tastes**, **Theme nights**, **Plan each week**, **Calendar subscriptions** |                                                                         |
 | **Recipes**             | **Nutrition for the library**, **AI photos**, **Recipe links**                             | **Nutrition**, **AI photos**, **Voice**                                 |
-| **AI**                  | **AI**                                                                                     | **AI keys**, **Who may use the server's AI**, **Spent**                 |
+| **AI**                  | **Spending**, **Keys**, **Models**                                                         | **AI keys**, **Who may use the server's AI**, **AI spend**              |
 | **Shopping and stores** | **Pantry**, **Your stores**, **Stores**                                                    | **Kroger**, **Walmart**                                                 |
 | **Import and export**   | **Export this household**, **Import a Merran export**, **From another app**                | **Recipe sites**, **Video import**, **FlareSolverr**                    |
 | **Server**              |                                                                                            | **This server**, **Email**, **Jobs**, **Error tracking**, **Telemetry** |

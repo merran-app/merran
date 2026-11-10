@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button"
 import {
   Card,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { CardActions } from "@/features/settings/card-actions"
 
 /** A person's own data, as a file to keep. */
 export function MyDataCard() {
@@ -22,7 +22,7 @@ export function MyDataCard() {
           {t("settings.you.myData.description")}
         </CardDescription>
       </CardHeader>
-      <CardFooter>
+      <CardActions>
         <Button
           variant="outline"
           render={<a href="/api/auth/me/export" download />}
@@ -34,7 +34,7 @@ export function MyDataCard() {
           />
           {t("settings.you.myData.download")}
         </Button>
-      </CardFooter>
+      </CardActions>
     </Card>
   )
 }

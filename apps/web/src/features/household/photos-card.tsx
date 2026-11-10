@@ -8,7 +8,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -18,6 +17,7 @@ import { useCapability } from "@/features/capabilities/queries"
 import { photoLibraryQuery } from "@/features/recipes/ai-photos"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
+import { CardActions } from "@/features/settings/card-actions"
 
 const STYLES = ["marble", "rustic", "bright", "moody"] as const
 type Style = (typeof STYLES)[number]
@@ -179,7 +179,7 @@ export function PhotosCard() {
         )}
       </CardContent>
       {data.ready && (going || data.missing > 0) && (
-        <CardFooter className="mt-4 justify-end">
+        <CardActions className="mt-4">
           <Button
             variant={going ? "outline" : "default"}
             disabled={busy !== null}
@@ -190,7 +190,7 @@ export function PhotosCard() {
               ? t("settings.household.photos.stop")
               : t("settings.household.photos.start", { count: data.missing })}
           </Button>
-        </CardFooter>
+        </CardActions>
       )}
     </Card>
   )

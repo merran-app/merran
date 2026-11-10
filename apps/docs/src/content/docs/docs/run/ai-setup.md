@@ -40,10 +40,10 @@ For compatible services, the dialog shows **Connect your own AI service** instea
 ### Add the key
 
 1. Open **Settings → AI** in the intended household.
-2. Under **Your own keys**, choose **Add a key**.
+2. In **Keys**, under **Your own keys**, choose **Add a key**.
 3. Choose the provider under **From**, paste the complete **Key**, and choose **Test and add**.
 4. Check the resulting key status. Only a suffix is shown afterward; the saved key cannot be read back through this screen.
-5. Set **Monthly limit on your own keys, in US dollars** if wanted, then **Save**. A blank limit means no limit.
+5. In **Models**, set **Monthly limit on your own keys, in US dollars** if wanted, then **Save**. A blank limit means no limit.
 6. Review the status describing the model and whether it uses **your own key** or **the server's keys**.
 
 **Expected result:** eligible tasks can use the household's provider key. If controls are missing, a household admin must make the change, or the server policy may prohibit adding keys.
@@ -53,8 +53,8 @@ Adding a key tests the provider's model list and can also send a tiny generation
 ## Share server keys
 
 1. As a server admin, open **Settings → AI → Whole server → AI keys** and use **Add a key**.
-2. In **Who may use the server's AI**, choose **The server's keys cover**: households a server admin is in, chosen households, every household, or no household.
-3. Set **Monthly limit for each household, in US dollars**, **Tasks they cover**, and **Models they cover**. **Any model** allows the available models rather than a selected subset.
+2. In **Who may use the server's AI**, under **Households covered**, choose who the server's keys cover: households a server admin is in, chosen households, every household, or no household. For **Chosen households**, pick them from the list that appears.
+3. Set **Monthly limit for each household, in US dollars**. Under **Tasks they cover**, choose **Change** to pick tasks. Under **Models they cover**, turn off **Any model** to pick models, grouped by provider. Each section's summary line shows how it's set. Under **Models households start with**, choose the models a household uses until it picks its own.
 4. Decide whether **Households may add keys of their own** and **Households may add addresses of their own** should be allowed, then **Save**.
 5. Check the target household's AI settings and status to confirm access.
 
@@ -77,8 +77,8 @@ Household-added addresses require explicit server policy permission and still ca
 
 ## Choose models
 
-1. In **Settings → AI**, choose **Model for big tasks** and **Model for small tasks**, or leave **Suggested for your keys** selected.
-2. Expand **A model for each task** to override a specific task. A task override wins over the big/small selection; **As for big tasks** or **As for small tasks** returns it to that group.
+1. In **Settings → AI**, under **Models**, choose **Model for big tasks** and **Model for small tasks**, or leave **Suggested for your keys** selected.
+2. Each task sits under the model for its size and follows it. Choose **Change one** to show a group's tasks and pick a different model for one. A changed task is marked **Changed** and wins over its group's model; **As for big tasks** or **As for small tasks** returns it to its group. **Use the suggested models** clears every choice.
 3. Choose **Model for photos and PDFs** to send every photo and PDF to one model, ahead of any task's own: photo and PDF imports, video frames, receipts, and assistant chats with one in them. **As for each task** leaves them with each task's model.
 4. Choose **Save** and try that task with a small, non-sensitive example.
 
@@ -104,7 +104,7 @@ Keys reported out of credit are temporarily passed over for an hour. Non-streami
 
 ## Understand limits and costs
 
-Review **Spent** in household AI settings for usage by month, task, and person; background jobs have their own grouping. Server admins have **AI spend** for server-key usage. Accounting months follow the household's time zone.
+**Spending**, at the top of **Settings → AI**, shows this month's total, how much of each limit is used on **The server's keys** and **Your own keys**, the last six months, and this month by task and by person; background jobs have their own grouping. Server admins have **AI spend** on the **Whole server** side, by household, month and model, and each key in **AI keys** shows a bar of its credit left once credit is entered. Accounting months follow the household's time zone.
 
 Merran records token usage and estimates cost using its bundled prices; speech and images use separate estimates. Model-menu per-use prices are illustrations, not quotes for your next request. Long conversations, large files, searches, retries, and background jobs can change the bill.
 
@@ -136,7 +136,7 @@ The global AI module can appear available because a key exists somewhere on the 
 
 ## Try a request and review the result
 
-Open **Ask the assistant**, start **New chat**, and ask a small question about a recipe you are comfortable sharing. A readable reply confirms that this model can answer; inspect **Spent** afterward. Then try a proposed change and review its card before applying it. Follow [Assistant proposals and approvals](../../use/assistant/) for the full workflow.
+Open **Ask the assistant**, start **New chat**, and ask a small question about a recipe you are comfortable sharing. A readable reply confirms that this model can answer; inspect **Spending** afterward. Then try a proposed change and review its card before applying it. Follow [Assistant proposals and approvals](../../use/assistant/) for the full workflow.
 
 **Tidy up new recipes** is an opt-in household setting. When enabled, imports can trigger background AI calls with suggestions waiting in **Review**. Turning it off prevents that automatic tidy-up; it does not disable every other AI feature or cancel all work already running.
 

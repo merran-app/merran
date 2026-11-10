@@ -189,7 +189,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 |---|---|---|---|
 | Bring your own AI key: Anthropic, OpenAI, Google, or OpenAI-compatible (Ollama) | Headline | Built | Available in alpha.4: provider-specific registration/key links and setup steps, with API billing and test-cost guidance |
 | The server admin doesn't pay for everyone: household keys, a policy, monthly limits | Headline | Built | |
-| Usage and cost by key; warnings when a key runs low | Detail | Built | |
+| Usage and cost by key; warnings when a key runs low | Detail | Built | Settings → AI opens on Spending: this month against each limit, six months split by whose keys paid, and this month by task and person; the Whole server side shows it by household, month and model, and each key a bar of its credit left |
 | A suggested model for each task | Detail | Built | |
 | A model for photos and PDFs | Detail | Built | Household and server default; used for every photo and PDF call, ahead of a task's own model |
 | The AI proposes, people apply: a Review queue | Key | Built | |

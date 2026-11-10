@@ -18,6 +18,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { Markdown } from "@/features/assistant/markdown"
 import { useMe } from "@/features/auth/use-me"
+import { SectionActions } from "@/features/settings/card-actions"
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
 import { formatRelativeDate } from "@/lib/format"
 
@@ -183,17 +184,16 @@ export function UpdatesSection() {
             description={t("updates.switchHint")}
           />
           {updates.checking && (
-            <div>
+            <SectionActions>
               <Button
                 variant="outline"
-                size="sm"
                 disabled={checking}
                 onClick={() => void checkNow()}
               >
                 {checking && <Spinner data-icon="inline-start" />}
                 {t("updates.checkNow")}
               </Button>
-            </div>
+            </SectionActions>
           )}
         </>
       )}

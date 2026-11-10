@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -17,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { CardActions } from "@/features/settings/card-actions"
 
 import { householdQuery } from "./queries"
 
@@ -89,12 +89,12 @@ export function PlanningCard() {
           </div>
         </FieldSet>
       </CardContent>
-      <CardFooter>
+      <CardActions>
         <Button disabled={meals === null || busy} onClick={() => void save()}>
           {busy && <Spinner data-icon="inline-start" />}
           {t("settings.household.planning.save")}
         </Button>
-      </CardFooter>
+      </CardActions>
     </Card>
   )
 }

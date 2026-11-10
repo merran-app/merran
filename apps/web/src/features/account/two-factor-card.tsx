@@ -15,6 +15,7 @@ import { authClient } from "@/features/auth/client"
 import { AuthenticatorSetup } from "@/features/auth/authenticator-setup"
 import { useMe } from "@/features/auth/use-me"
 import { useCapability } from "@/features/capabilities/queries"
+import { SectionActions } from "@/features/settings/card-actions"
 
 export function TwoFactorCard() {
   const { t } = useTranslation()
@@ -79,7 +80,7 @@ export function TwoFactorCard() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <div className="flex flex-wrap gap-2">
+            <SectionActions>
               <Button
                 variant="outline"
                 disabled={busy}
@@ -94,7 +95,7 @@ export function TwoFactorCard() {
               >
                 {t("auth.security.disable")}
               </Button>
-            </div>
+            </SectionActions>
             {codes && (
               <CopyField
                 label={t("auth.security.recoveryCodes")}
@@ -104,6 +105,7 @@ export function TwoFactorCard() {
           </>
         ) : (
           <AuthenticatorSetup
+            buttonAtEnd
             onDone={() => {
               void queryClient.invalidateQueries({ queryKey: ["me"] })
             }}

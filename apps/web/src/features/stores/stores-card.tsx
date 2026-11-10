@@ -34,6 +34,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useCapability } from "@/features/capabilities/queries"
+import { SectionActions } from "@/features/settings/card-actions"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { formatRelativeDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -424,7 +425,7 @@ export function StoresCard() {
               </FieldLabel>
               <form
                 noValidate
-                className="flex gap-2"
+                className="grid gap-2"
                 onSubmit={(event) => {
                   event.preventDefault()
                   void saveBudget()
@@ -441,20 +442,21 @@ export function StoresCard() {
                     onChange={(event) => setBudget(event.target.value)}
                   />
                 </InputGroup>
-                <Button
-                  type="submit"
-                  variant="outline"
-                  size="sm"
-                  className="self-center"
-                  disabled={busy !== null || !budgetChanged}
-                >
-                  {busy === "budget" && <Spinner />}
-                  {t("common.save")}
-                </Button>
+                <FieldDescription>
+                  {t("settings.household.stores.budgetHint")}
+                </FieldDescription>
+                <SectionActions>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    size="sm"
+                    disabled={busy !== null || !budgetChanged}
+                  >
+                    {busy === "budget" && <Spinner />}
+                    {t("common.save")}
+                  </Button>
+                </SectionActions>
               </form>
-              <FieldDescription>
-                {t("settings.household.stores.budgetHint")}
-              </FieldDescription>
             </Field>
           )}
 

@@ -12,12 +12,12 @@ import {
   CardAction,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import { FieldGroup } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
+import { CardActions } from "@/features/settings/card-actions"
 import { LockedNote } from "@/features/settings/setting-fields"
 import { SetupHelp } from "@/features/settings/setup-help"
 import { api, ApiError, unwrap } from "@/lib/api/client"
@@ -190,7 +190,7 @@ export function KrogerCard() {
             />
           </FieldGroup>
         </CardContent>
-        <CardFooter className="mt-6 flex-wrap justify-end gap-2">
+        <CardActions>
           {set && (
             <Button
               type="button"
@@ -227,7 +227,7 @@ export function KrogerCard() {
               {t("settings.server.kroger.save")}
             </Button>
           )}
-        </CardFooter>
+        </CardActions>
       </form>
     </Card>
   )

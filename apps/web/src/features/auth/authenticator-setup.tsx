@@ -3,10 +3,18 @@ import { useTranslation } from "react-i18next"
 import { CopyField } from "@/components/form/copy-field"
 import { TextField } from "@/components/form/text-field"
 import { Button } from "@/components/ui/button"
+import { SectionActions } from "@/features/settings/card-actions"
 import { authClient } from "./client"
 
 /** Enrollment stays on the page so the secret and recovery codes remain easy to save on a phone. */
-export function AuthenticatorSetup({ onDone }: { onDone: () => void }) {
+export function AuthenticatorSetup({
+  onDone,
+  buttonAtEnd = false,
+}: {
+  onDone: () => void
+  /** In a settings card, its button sits at the bottom right like every card's. */
+  buttonAtEnd?: boolean
+}) {
   const { t } = useTranslation()
   const [password, setPassword] = useState("")
   const [code, setCode] = useState("")
@@ -42,6 +50,12 @@ export function AuthenticatorSetup({ onDone }: { onDone: () => void }) {
       setBusy(false)
     }
   }
+
+  const button = (
+    <Button type="submit" disabled={busy}>
+      {t(setup ? "auth.security.verify" : "auth.security.setup")}
+    </Button>
+  )
 
   return (
     <form className="grid gap-4" onSubmit={submitSetup}>
@@ -83,9 +97,7 @@ export function AuthenticatorSetup({ onDone }: { onDone: () => void }) {
           description={t("auth.security.passwordHint")}
         />
       )}
-      <Button type="submit" disabled={busy}>
-        {t(setup ? "auth.security.verify" : "auth.security.setup")}
-      </Button>
+      {buttonAtEnd ? <SectionActions>{button}</SectionActions> : button}
     </form>
   )
 }

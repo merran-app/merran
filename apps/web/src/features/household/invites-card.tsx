@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -35,6 +34,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { Spinner } from "@/components/ui/spinner"
+import { CardActions } from "@/features/settings/card-actions"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { formatDate } from "@/lib/format"
 
@@ -62,12 +62,6 @@ export function InvitesCard() {
         <CardDescription>
           {t("settings.household.invites.description")}
         </CardDescription>
-        <CardAction>
-          <div className="flex flex-wrap gap-2">
-            <EmailInviteDialog />
-            <NewInviteDialog />
-          </div>
-        </CardAction>
       </CardHeader>
       <CardContent>
         {invites.length === 0 ? (
@@ -90,6 +84,10 @@ export function InvitesCard() {
           </ul>
         )}
       </CardContent>
+      <CardActions>
+        <EmailInviteDialog />
+        <NewInviteDialog />
+      </CardActions>
     </Card>
   )
 }
@@ -229,7 +227,7 @@ function NewInviteDialog() {
     >
       <DialogTrigger
         render={
-          <Button size="sm">
+          <Button>
             <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
             {t("settings.household.invites.make")}
           </Button>

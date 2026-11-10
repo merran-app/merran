@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button"
 import {
   Card,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { CardActions } from "@/features/settings/card-actions"
 
 /** The household as a zip, to keep or to move to another Merran. */
 export function ExportCard() {
@@ -22,7 +22,7 @@ export function ExportCard() {
           {t("settings.transfer.export.description")}
         </CardDescription>
       </CardHeader>
-      <CardFooter>
+      <CardActions>
         <Button
           variant="outline"
           render={<a href="/api/households/current/export" download />}
@@ -34,7 +34,7 @@ export function ExportCard() {
           />
           {t("settings.transfer.export.download")}
         </Button>
-      </CardFooter>
+      </CardActions>
     </Card>
   )
 }

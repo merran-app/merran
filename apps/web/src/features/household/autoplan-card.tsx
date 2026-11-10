@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -36,6 +35,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatWeek, formatWeekday } from "@/features/plan/format"
 import { autoplanQuery, useHouseholdClock } from "@/features/plan/queries"
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
+import { CardActions } from "@/features/settings/card-actions"
 
 import { householdQuery } from "./queries"
 
@@ -288,7 +288,7 @@ export function AutoplanCard() {
           </FieldGroup>
         )}
       </CardContent>
-      <CardFooter>
+      <CardActions>
         <Button
           variant="outline"
           disabled={!data || planning}
@@ -299,7 +299,7 @@ export function AutoplanCard() {
             week: formatWeek(ahead, i18n.language),
           })}
         </Button>
-      </CardFooter>
+      </CardActions>
     </Card>
   )
 }

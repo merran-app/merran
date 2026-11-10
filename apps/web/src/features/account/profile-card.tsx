@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -19,6 +18,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { meQuery } from "@/features/auth/queries"
 import { useMe } from "@/features/auth/use-me"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { CardActions } from "@/features/settings/card-actions"
 
 type Form = { name: string; username: string }
 
@@ -93,12 +93,12 @@ export function ProfileCard() {
             />
           </FieldGroup>
         </CardContent>
-        <CardFooter className="mt-6 justify-end">
+        <CardActions>
           <Button type="submit" disabled={!isDirty || isSubmitting}>
             {isSubmitting && <Spinner />}
             {t("common.save")}
           </Button>
-        </CardFooter>
+        </CardActions>
       </form>
     </Card>
   )

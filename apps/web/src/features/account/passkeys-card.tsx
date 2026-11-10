@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useId, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import {
 import { TextField } from "@/components/form/text-field"
 import { authClient } from "@/features/auth/client"
 import { useCapability } from "@/features/capabilities/queries"
+import { CardActions } from "@/features/settings/card-actions"
 
 export function PasskeysCard() {
   const { t } = useTranslation()
@@ -20,6 +21,7 @@ export function PasskeysCard() {
   const [name, setName] = useState("")
   const [error, setError] = useState(false)
   const [busy, setBusy] = useState(false)
+  const formId = useId()
   const { data } = useQuery({
     queryKey: ["passkeys"],
     enabled,
@@ -58,22 +60,6 @@ export function PasskeysCard() {
             {t("auth.security.failed")}
           </p>
         )}
-        <form
-          className="grid gap-3"
-          onSubmit={(e) => {
-            e.preventDefault()
-            void run(() => authClient.passkey.addPasskey({ name }))
-          }}
-        >
-          <TextField
-            label={t("auth.security.passkeyName")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Button disabled={busy} type="submit">
-            {t("auth.security.addPasskey")}
-          </Button>
-        </form>
         <ul className="divide-y">
           {data?.map((key) => (
             <li
@@ -95,7 +81,28 @@ export function PasskeysCard() {
             </li>
           ))}
         </ul>
+        {/* The list comes first, so the button that adds to it can sit at the
+            card's bottom right; it submits this form by its id. */}
+        <form
+          id={formId}
+          className="grid gap-3"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void run(() => authClient.passkey.addPasskey({ name }))
+          }}
+        >
+          <TextField
+            label={t("auth.security.passkeyName")}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </form>
       </CardContent>
+      <CardActions>
+        <Button disabled={busy} type="submit" form={formId}>
+          {t("auth.security.addPasskey")}
+        </Button>
+      </CardActions>
     </Card>
   )
 }

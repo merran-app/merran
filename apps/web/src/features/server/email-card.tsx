@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -23,6 +22,7 @@ import {
 } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
+import { CardActions } from "@/features/settings/card-actions"
 import { LockedNote, SettingInput } from "@/features/settings/setting-fields"
 import { SetupHelp } from "@/features/settings/setup-help"
 import {
@@ -189,7 +189,7 @@ export function EmailCard() {
             </p>
           </FieldGroup>
         </CardContent>
-        <CardFooter className="mt-6 flex-wrap justify-end gap-2">
+        <CardActions>
           {password.secret?.set &&
             !password.lockedBy &&
             !settings.stateOf("email.username").lockedBy && (
@@ -231,7 +231,7 @@ export function EmailCard() {
               {t("common.save")}
             </Button>
           )}
-        </CardFooter>
+        </CardActions>
       </form>
     </Card>
   )

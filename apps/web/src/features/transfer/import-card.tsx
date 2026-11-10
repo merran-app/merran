@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -22,6 +21,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useMe, useRefreshAll } from "@/features/auth/use-me"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { CardActions } from "@/features/settings/card-actions"
 
 import { ImportProgress } from "./import-progress"
 import { asFileBody } from "./upload"
@@ -137,14 +137,14 @@ export function ImportCard() {
               )}
             </FieldGroup>
           </CardContent>
-          <CardFooter>
+          <CardActions>
             <Button disabled={!file || busy} onClick={() => void start()}>
               {busy && <Spinner data-icon="inline-start" />}
               {busy
                 ? t("settings.transfer.import.uploading")
                 : t("settings.transfer.import.start")}
             </Button>
-          </CardFooter>
+          </CardActions>
         </>
       )}
     </Card>

@@ -10,12 +10,12 @@ import {
   CardAction,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import { FieldGroup } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
+import { CardActions } from "@/features/settings/card-actions"
 import { SettingInput } from "@/features/settings/setting-fields"
 import { useSettingsForm } from "@/features/settings/use-settings-form"
 
@@ -91,12 +91,12 @@ export function ErrorTrackingCard() {
           </FieldGroup>
         </CardContent>
         {!allLocked && (
-          <CardFooter className="mt-6 justify-end">
+          <CardActions>
             <Button type="submit" disabled={!isDirty || isSubmitting}>
               {isSubmitting && <Spinner />}
               {t("common.save")}
             </Button>
-          </CardFooter>
+          </CardActions>
         )}
       </form>
     </Card>

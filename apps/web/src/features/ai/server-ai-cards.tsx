@@ -1,6 +1,7 @@
 import {
   AI_TASKS,
   catalogModel,
+  PROVIDER_NAMES,
   SERVER_KEYS_FOR,
   type AiTask,
 } from "@merran/shared"
@@ -15,11 +16,9 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Field,
   FieldContent,
@@ -41,16 +40,23 @@ import { Switch } from "@/components/ui/switch"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { capabilitiesQuery } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { CardActions } from "@/features/settings/card-actions"
 
 import { AiKeys } from "./ai-keys"
+import { ModelRow } from "./model-row"
 import { ModelSelect } from "./model-select"
 import {
   formatMoney,
-  formatMonth,
   householdAiQuery,
   serverAiQuery,
   type AiPolicy,
+  type ServerAi,
 } from "./queries"
+import { BarList } from "./spend/bar-list"
+import { lastSixMonths, thisMonth } from "./spend/months"
+import { MonthsChart } from "./spend/months-chart"
+import { SpendMeter } from "./spend/spend-meter"
+import { SpendTotal } from "./spend/spend-total"
 
 /** Reads a money field: blank for none. */
 const dollars = (text: string) => {
@@ -143,13 +149,14 @@ export function ServerAiKeysCard() {
  * bring keys and addresses of their own.
  */
 export function ServerAiPolicyCard() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { data } = useQuery(serverAiQuery)
   const refresh = useRefreshAi()
   const queryClient = useQueryClient()
   const [draft, setDraft] = React.useState<AiPolicy | null>(null)
   const [limitText, setLimitText] = React.useState<string | null>(null)
   const [saving, setSaving] = React.useState(false)
+  const [tasksOpen, setTasksOpen] = React.useState(false)
   const id = React.useId()
   if (!data) {
     return (
@@ -166,6 +173,9 @@ export function ServerAiPolicyCard() {
     value,
     label: t(`ai.policy.who.${value}`),
   }))
+  const limit = limitText === null ? policy.monthlyLimit : dollars(limitText)
+  const anyModel = policy.models.length === 0
+  const groups = groupModels(data.models, t("ai.keys.address"))
 
   async function save() {
     setSaving(true)
@@ -191,18 +201,34 @@ export function ServerAiPolicyCard() {
     }
   }
 
+  /** Picks within one provider's models, keeping the others as they are. */
+  function pickInGroup(refs: string[], picked: string[]) {
+    const others = policy.models.filter((ref) => !refs.includes(ref))
+    const next = [...others, ...picked]
+    if (next.length) change({ models: next })
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>{t("ai.policy.title")}</CardTitle>
         <CardDescription>{t("ai.policy.description")}</CardDescription>
       </CardHeader>
-      <CardContent>
-        <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor={`${id}-who`}>
-              {t("ai.policy.whoLabel")}
-            </FieldLabel>
+      <CardContent className="grid">
+        <PolicySection
+          title={t("ai.policy.covered")}
+          summary={[
+            t("ai.policy.coveredCount", {
+              count: coveredCount(policy, data.households),
+              total: data.households.length,
+            }),
+            limit === null
+              ? t("ai.policy.noLimit")
+              : t("ai.policy.upToEach", {
+                  limit: formatMoney(limit, i18n.language),
+                }),
+          ].join(" · ")}
+          control={
             <Select
               items={who}
               value={policy.serverKeysFor}
@@ -211,7 +237,11 @@ export function ServerAiPolicyCard() {
                   change({ serverKeysFor: value as AiPolicy["serverKeysFor"] })
               }}
             >
-              <SelectTrigger id={`${id}-who`} className="w-full sm:w-96">
+              <SelectTrigger
+                id={`${id}-who`}
+                aria-label={t("ai.policy.whoLabel")}
+                className="w-full sm:w-64"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -222,45 +252,36 @@ export function ServerAiPolicyCard() {
                 ))}
               </SelectContent>
             </Select>
-            {policy.serverKeysFor === "chosen" && (
-              <ul className="mt-1 grid gap-2">
-                {data.households.map((household) => (
-                  <li key={household.id}>
-                    <Field orientation="horizontal">
-                      <Checkbox
-                        id={`${id}-h-${household.id}`}
-                        checked={policy.households.includes(household.id)}
-                        onCheckedChange={(checked) =>
-                          change({
-                            households: checked
-                              ? [...policy.households, household.id]
-                              : policy.households.filter(
-                                  (h) => h !== household.id
-                                ),
-                          })
-                        }
-                      />
-                      <FieldLabel
-                        htmlFor={`${id}-h-${household.id}`}
-                        className="font-normal"
-                      >
-                        {household.name}
-                      </FieldLabel>
-                    </Field>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor={`${id}-limit`}>
-              {t("ai.policy.limit")}
-            </FieldLabel>
+          }
+        >
+          {policy.serverKeysFor === "chosen" && (
+            <ToggleGroup
+              multiple
+              variant="outline"
+              size="sm"
+              aria-label={t("ai.policy.who.chosen")}
+              value={policy.households}
+              onValueChange={(households) => change({ households })}
+              className="flex-wrap justify-start"
+            >
+              {data.households.map((household) => (
+                <ToggleGroupItem key={household.id} value={household.id}>
+                  {household.name}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          )}
+          <Field orientation="horizontal">
+            <FieldContent>
+              <FieldLabel htmlFor={`${id}-limit`}>
+                {t("ai.policy.limit")}
+              </FieldLabel>
+              <FieldDescription>{t("ai.policy.limitHint")}</FieldDescription>
+            </FieldContent>
             <Input
               id={`${id}-limit`}
               inputMode="decimal"
-              className="max-w-40"
+              className="w-28 shrink-0"
               placeholder={t("ai.policy.noLimit")}
               value={
                 limitText ??
@@ -270,15 +291,36 @@ export function ServerAiPolicyCard() {
               }
               onChange={(event) => setLimitText(event.target.value)}
             />
-            <FieldDescription>{t("ai.policy.limitHint")}</FieldDescription>
           </Field>
+        </PolicySection>
 
-          <Field>
-            <FieldLabel>{t("ai.policy.tasks")}</FieldLabel>
+        <PolicySection
+          title={t("ai.policy.tasks")}
+          summary={
+            policy.tasks.length === AI_TASKS.length
+              ? t("ai.policy.allOf", { count: AI_TASKS.length })
+              : t("ai.policy.someOf", {
+                  count: policy.tasks.length,
+                  total: AI_TASKS.length,
+                })
+          }
+          control={
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-expanded={tasksOpen}
+              onClick={() => setTasksOpen(!tasksOpen)}
+            >
+              {tasksOpen ? t("ai.policy.done") : t("ai.policy.change")}
+            </Button>
+          }
+        >
+          {tasksOpen && (
             <ToggleGroup
               multiple
               variant="outline"
               size="sm"
+              aria-label={t("ai.policy.tasks")}
               value={policy.tasks}
               onValueChange={(value) => change({ tasks: value as AiTask[] })}
               className="flex-wrap justify-start"
@@ -289,123 +331,145 @@ export function ServerAiPolicyCard() {
                 </ToggleGroupItem>
               ))}
             </ToggleGroup>
-          </Field>
+          )}
+        </PolicySection>
 
-          <Field>
-            <FieldLabel>{t("ai.policy.models")}</FieldLabel>
-            <Field orientation="horizontal">
-              <Checkbox
+        <PolicySection
+          title={t("ai.policy.models")}
+          summary={
+            anyModel
+              ? t("ai.policy.anyModel")
+              : t("ai.policy.pickedOf", {
+                  count: policy.models.length,
+                  total: data.models.length,
+                })
+          }
+          control={
+            <span className="flex items-center gap-2 text-sm">
+              <Switch
                 id={`${id}-any`}
-                checked={policy.models.length === 0}
-                onCheckedChange={(checked) =>
+                checked={anyModel}
+                onCheckedChange={(any) =>
                   change({
-                    models: checked
-                      ? []
-                      : data.models.map((model) => model.ref),
+                    models: any ? [] : data.models.map((model) => model.ref),
                   })
                 }
               />
-              <FieldLabel htmlFor={`${id}-any`} className="font-normal">
-                {t("ai.policy.anyModel")}
-              </FieldLabel>
+              <label htmlFor={`${id}-any`}>{t("ai.policy.anyModel")}</label>
+            </span>
+          }
+        >
+          {!anyModel && (
+            <div className="grid gap-3 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-x-4">
+              {groups.map((group) => (
+                <React.Fragment key={group.name}>
+                  <span className="pt-1 text-sm text-muted-foreground">
+                    {group.name}
+                  </span>
+                  <ToggleGroup
+                    multiple
+                    variant="outline"
+                    size="sm"
+                    aria-label={group.name}
+                    value={policy.models.filter((ref) =>
+                      group.models.some((model) => model.ref === ref)
+                    )}
+                    onValueChange={(picked) =>
+                      pickInGroup(
+                        group.models.map((model) => model.ref),
+                        picked
+                      )
+                    }
+                    className="flex-wrap justify-start"
+                  >
+                    {group.models.map((model) => (
+                      <ToggleGroupItem key={model.ref} value={model.ref}>
+                        {model.label}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </React.Fragment>
+              ))}
+            </div>
+          )}
+        </PolicySection>
+
+        <PolicySection
+          title={t("ai.policy.startWith")}
+          summary={t("ai.policy.startWithHint")}
+        >
+          <div className="grid gap-3">
+            <ModelRow id={`${id}-large`} label={t("ai.models.large")}>
+              <ModelSelect
+                id={`${id}-large`}
+                value={policy.large}
+                options={data.models}
+                task="import"
+                noneLabel={t("ai.models.keyDefault")}
+                onChange={(large) => change({ large })}
+              />
+            </ModelRow>
+            <ModelRow id={`${id}-small`} label={t("ai.models.small")}>
+              <ModelSelect
+                id={`${id}-small`}
+                value={policy.small}
+                options={data.models}
+                task="swaps"
+                noneLabel={t("ai.models.keyDefault")}
+                onChange={(small) => change({ small })}
+              />
+            </ModelRow>
+            <ModelRow id={`${id}-vision`} label={t("ai.models.vision")}>
+              <ModelSelect
+                id={`${id}-vision`}
+                value={policy.vision}
+                options={data.models}
+                task="import"
+                noneLabel={t("ai.models.visionDefault")}
+                onChange={(vision) => change({ vision })}
+              />
+            </ModelRow>
+          </div>
+        </PolicySection>
+
+        <PolicySection title={t("ai.policy.ownKeysTitle")}>
+          <FieldGroup>
+            <Field orientation="horizontal">
+              <FieldContent>
+                <FieldLabel htmlFor={`${id}-keys`}>
+                  {t("ai.policy.householdKeys")}
+                </FieldLabel>
+                <FieldDescription>
+                  {t("ai.policy.householdKeysHint")}
+                </FieldDescription>
+              </FieldContent>
+              <Switch
+                id={`${id}-keys`}
+                checked={policy.householdKeys}
+                onCheckedChange={(householdKeys) => change({ householdKeys })}
+              />
             </Field>
-            {policy.models.length > 0 && (
-              <ToggleGroup
-                multiple
-                variant="outline"
-                size="sm"
-                value={policy.models}
-                onValueChange={(value) => {
-                  if (value.length) change({ models: value })
-                }}
-                className="flex-wrap justify-start"
-              >
-                {data.models.map((model) => (
-                  <ToggleGroupItem key={model.ref} value={model.ref}>
-                    {model.name}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            )}
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor={`${id}-large`}>
-              {t("ai.models.large")}
-            </FieldLabel>
-            <ModelSelect
-              id={`${id}-large`}
-              value={policy.large}
-              options={data.models}
-              task="import"
-              noneLabel={t("ai.models.keyDefault")}
-              onChange={(large) => change({ large })}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor={`${id}-small`}>
-              {t("ai.models.small")}
-            </FieldLabel>
-            <ModelSelect
-              id={`${id}-small`}
-              value={policy.small}
-              options={data.models}
-              task="swaps"
-              noneLabel={t("ai.models.keyDefault")}
-              onChange={(small) => change({ small })}
-            />
-            <FieldDescription>{t("ai.models.sizesHint")}</FieldDescription>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor={`${id}-vision`}>
-              {t("ai.models.vision")}
-            </FieldLabel>
-            <ModelSelect
-              id={`${id}-vision`}
-              value={policy.vision}
-              options={data.models}
-              task="import"
-              noneLabel={t("ai.models.visionDefault")}
-              onChange={(vision) => change({ vision })}
-            />
-            <FieldDescription>{t("ai.models.visionHint")}</FieldDescription>
-          </Field>
-
-          <Field orientation="horizontal">
-            <FieldContent>
-              <FieldLabel htmlFor={`${id}-keys`}>
-                {t("ai.policy.householdKeys")}
-              </FieldLabel>
-              <FieldDescription>
-                {t("ai.policy.householdKeysHint")}
-              </FieldDescription>
-            </FieldContent>
-            <Switch
-              id={`${id}-keys`}
-              checked={policy.householdKeys}
-              onCheckedChange={(householdKeys) => change({ householdKeys })}
-            />
-          </Field>
-          <Field orientation="horizontal">
-            <FieldContent>
-              <FieldLabel htmlFor={`${id}-addresses`}>
-                {t("ai.policy.householdAddresses")}
-              </FieldLabel>
-              <FieldDescription>
-                {t("ai.policy.householdAddressesHint")}
-              </FieldDescription>
-            </FieldContent>
-            <Switch
-              id={`${id}-addresses`}
-              checked={policy.householdAddresses}
-              onCheckedChange={(householdAddresses) =>
-                change({ householdAddresses })
-              }
-            />
-          </Field>
-        </FieldGroup>
+            <Field orientation="horizontal">
+              <FieldContent>
+                <FieldLabel htmlFor={`${id}-addresses`}>
+                  {t("ai.policy.householdAddresses")}
+                </FieldLabel>
+                <FieldDescription>
+                  {t("ai.policy.householdAddressesHint")}
+                </FieldDescription>
+              </FieldContent>
+              <Switch
+                id={`${id}-addresses`}
+                checked={policy.householdAddresses}
+                onCheckedChange={(householdAddresses) =>
+                  change({ householdAddresses })
+                }
+              />
+            </Field>
+          </FieldGroup>
+        </PolicySection>
       </CardContent>
-      <CardFooter className="justify-end">
+      <CardActions>
         <Button
           disabled={(draft === null && limitText === null) || saving}
           onClick={() => void save()}
@@ -413,113 +477,164 @@ export function ServerAiPolicyCard() {
           {saving && <Spinner data-icon="inline-start" />}
           {t("ai.policy.save")}
         </Button>
-      </CardFooter>
+      </CardActions>
     </Card>
   )
 }
 
-/** Settings → AI → Whole server → Spent: on the server's keys, by household and month. */
+/**
+ * One part of the policy: its title and a line saying how it's set, so the
+ * card reads without opening anything, a control beside it, and the detail
+ * under it.
+ */
+function PolicySection({
+  title,
+  summary,
+  control,
+  children,
+}: {
+  title: string
+  summary?: string
+  control?: React.ReactNode
+  children?: React.ReactNode
+}) {
+  return (
+    <section className="grid gap-4 border-t py-5 first:border-t-0 first:pt-0 last:pb-0">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="grid min-w-0 gap-0.5">
+          <h3 className="font-sans text-sm font-medium">{title}</h3>
+          {summary && (
+            <p className="text-xs text-muted-foreground">{summary}</p>
+          )}
+        </div>
+        {control}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+/** How many households the server's keys cover, as the policy stands. */
+function coveredCount(policy: AiPolicy, households: ServerAi["households"]) {
+  switch (policy.serverKeysFor) {
+    case "all":
+      return households.length
+    case "none":
+      return 0
+    case "chosen":
+      return policy.households.length
+    case "admins":
+      return households.filter((household) => household.serverAdmin).length
+  }
+}
+
+/**
+ * The models on offer by provider, in the order they come: Claude, OpenAI
+ * and Gemini by their provider's name, and a model on an address under the
+ * address's name, labelled by the model alone.
+ */
+function groupModels(models: ServerAi["models"], addressName: string) {
+  const groups: { name: string; models: { ref: string; label: string }[] }[] =
+    []
+  for (const model of models) {
+    const provider = model.ref.split(":")[0] as keyof typeof PROVIDER_NAMES
+    const known = provider !== "openai-compatible" && provider in PROVIDER_NAMES
+    const at = model.name.indexOf(": ")
+    const name = known
+      ? PROVIDER_NAMES[provider]
+      : at > 0
+        ? model.name.slice(0, at)
+        : addressName
+    const label = !known && at > 0 ? model.name.slice(at + 2) : model.name
+    let group = groups.find((each) => each.name === name)
+    if (!group) {
+      group = { name, models: [] }
+      groups.push(group)
+    }
+    group.models.push({ ref: model.ref, label })
+  }
+  return groups
+}
+
+/** Settings → AI → Whole server → AI spend: on the server's keys, by household, month and model. */
 export function ServerAiSpendCard() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { data } = useQuery(serverAiQuery)
-  const money = (dollars: number) => formatMoney(dollars, i18n.language)
   return (
     <Card>
       <CardHeader>
         <CardTitle>{t("ai.spend.serverTitle")}</CardTitle>
         <CardDescription>{t("ai.spend.serverDescription")}</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-6">
-        {!data ? (
-          <Skeleton className="h-40" />
-        ) : (
-          <>
-            <section className="grid gap-2">
-              <h3 className="text-sm font-medium">{t("ai.spend.thisMonth")}</h3>
-              <ul className="divide-y rounded-2xl border">
-                {data.households.map((household) => (
-                  <li
-                    key={household.id}
-                    className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm"
-                  >
-                    <span className="min-w-0 flex-1 font-medium">
-                      {household.name}
-                    </span>
-                    {!household.covered && (
-                      <Badge variant="outline">
-                        {t("ai.spend.notCovered")}
-                      </Badge>
-                    )}
-                    {household.near && (
-                      <Badge variant="destructive">
-                        {t("ai.spend.nearLimit")}
-                      </Badge>
-                    )}
-                    <span className="text-muted-foreground tabular-nums">
-                      {household.limit === null
-                        ? money(household.spent)
-                        : t("ai.spend.ofLimit", {
-                            spent: money(household.spent),
-                            limit: money(household.limit),
-                          })}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-            <section className="grid gap-2">
-              <h3 className="text-sm font-medium">{t("ai.spend.byMonth")}</h3>
-              {data.usage.months.every((month) => month.calls === 0) && (
-                <p className="text-sm text-muted-foreground">
-                  {t("ai.spend.nothingYet")}
-                </p>
-              )}
-              <ul className="grid gap-1 text-sm">
-                {data.usage.months
-                  .filter((month) => month.calls > 0)
-                  .map((month) => (
-                    <li
-                      key={month.month}
-                      className="flex justify-between gap-3"
-                    >
-                      <span>{formatMonth(month.month, i18n.language)}</span>
-                      <span className="text-muted-foreground tabular-nums">
-                        {t("ai.spend.costCalls", {
-                          cost: money(month.cost),
-                          count: month.calls,
-                        })}
-                      </span>
-                    </li>
-                  ))}
-              </ul>
-            </section>
-            {data.usage.models.length > 0 && (
-              <section className="grid gap-2">
-                <h3 className="text-sm font-medium">{t("ai.spend.byModel")}</h3>
-                <ul className="grid gap-1 text-sm">
-                  {data.usage.models.map((model) => (
-                    <li
-                      key={`${model.provider} ${model.model}`}
-                      className="flex justify-between gap-3"
-                    >
-                      <span>
-                        {catalogModel(model.provider, model.model)?.name ??
-                          model.model}
-                      </span>
-                      <span className="text-muted-foreground tabular-nums">
-                        {t("ai.spend.costCalls", {
-                          cost: money(model.cost),
-                          count: model.calls,
-                        })}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </>
-        )}
+      <CardContent className="grid gap-8">
+        {!data ? <Skeleton className="h-40" /> : <ServerSpend data={data} />}
       </CardContent>
     </Card>
+  )
+}
+
+function ServerSpend({ data }: { data: ServerAi }) {
+  const { t } = useTranslation()
+  const current = thisMonth()
+  const months = lastSixMonths(
+    data.usage.months.map((month) => ({
+      month: month.month,
+      server: month.cost,
+      own: 0,
+      calls: month.calls,
+    })),
+    current
+  )
+  const nothingYet = months.every((month) => month.calls === 0)
+
+  return (
+    <>
+      <SpendTotal months={months} current={current} />
+
+      {data.households.length > 0 && (
+        <section className="grid gap-4">
+          <h3 className="font-sans text-sm font-medium">
+            {t("ai.spend.byHousehold")}
+          </h3>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {data.households.map((household) => (
+              <SpendMeter
+                key={household.id}
+                label={household.name}
+                spent={household.spent}
+                // A household the server's keys don't cover has no limit on them.
+                limit={household.covered ? household.limit : null}
+                series="server"
+                near={household.covered && household.near}
+                status={
+                  !household.covered && (
+                    <Badge variant="outline">{t("ai.spend.notCovered")}</Badge>
+                  )
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {nothingYet ? (
+        <p className="text-sm text-muted-foreground">
+          {t("ai.spend.nothingYet")}
+        </p>
+      ) : (
+        <>
+          <MonthsChart months={months} current={current} showOwn={false} />
+          <BarList
+            title={t("ai.spend.byModel")}
+            items={data.usage.models.map((model) => ({
+              key: `${model.provider} ${model.model}`,
+              label:
+                catalogModel(model.provider, model.model)?.name ?? model.model,
+              cost: model.cost,
+            }))}
+          />
+        </>
+      )}
+    </>
   )
 }

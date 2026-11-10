@@ -58,7 +58,7 @@ export function EmailInviteDialog() {
         if (!busy) setOpen(next)
       }}
     >
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>
+      <DialogTrigger render={<Button variant="outline" />}>
         {t("settings.household.invites.emailInvite")}
       </DialogTrigger>
       <DialogContent>

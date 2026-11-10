@@ -21,6 +21,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { CardActions } from "@/features/settings/card-actions"
 import { api, unwrap } from "@/lib/api/client"
 import { formatDate } from "@/lib/format"
 
@@ -40,10 +41,6 @@ export function ApiKeysCard() {
         <CardDescription>
           {t("settings.you.apiKeys.description")}
         </CardDescription>
-        <div className="flex flex-wrap gap-2 pt-2">
-          <NewApiKeyDialog />
-          <NewApiKeyDialog mcp />
-        </div>
       </CardHeader>
       <CardContent>
         {keys.length === 0 ? (
@@ -66,6 +63,10 @@ export function ApiKeysCard() {
           </ul>
         )}
       </CardContent>
+      <CardActions>
+        <NewApiKeyDialog mcp />
+        <NewApiKeyDialog />
+      </CardActions>
     </Card>
   )
 }
