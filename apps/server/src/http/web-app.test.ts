@@ -30,7 +30,7 @@ describe("the web app", () => {
   const app = createApp(dir)
 
   it("serves the page for any path the app's router handles", async () => {
-    for (const path of ["/", "/recipes", "/settings/you", "/join/abc"]) {
+    for (const path of ["/", "/recipes", "/settings/profile", "/join/abc"]) {
       const res = await app.request(path)
       expect(res.status, path).toBe(200)
       expect(res.headers.get("content-type")).toContain("text/html")

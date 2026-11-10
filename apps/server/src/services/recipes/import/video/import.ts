@@ -56,7 +56,7 @@ export async function videoImportReady(
     throw new AppError(
       "unprocessable",
       "video_off",
-      "Video import is off on this server. The server admin can turn it on in Settings, This server."
+      "Video import is off on this server. The server admin can turn it on in Settings, Import and export, Whole server."
     )
   }
   const tools = await deps.video.check()

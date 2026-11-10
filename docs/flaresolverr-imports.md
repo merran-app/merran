@@ -27,7 +27,7 @@ And never for:
 ## The module
 
 - **`flaresolverr`**, off until the server admin gives FlareSolverr's address. One setting, `flaresolverr.url` (`MERRAN_FLARESOLVERR_URL`): "Where FlareSolverr answers, like http://flaresolverr:8191. It may be on the home network." The same kind of setting as Kokoro's address, fetched with `homeNetwork`, so redirects must stay where they started.
-- **Settings → This server** gets a FlareSolverr card: the address (locked when it comes from the environment) and **Test**. Test sends `{"cmd": "sessions.list"}` to `/v1`, which is cheap and documented, and says "FlareSolverr \<version\> is ready." or why not. Route: `POST /api/settings/server/flaresolverr/test`, for server admins.
+- **Settings → Import and export → Whole server** gets a FlareSolverr card: the address (locked when it comes from the environment) and **Test**. Test sends `{"cmd": "sessions.list"}` to `/v1`, which is cheap and documented, and says "FlareSolverr \<version\> is ready." or why not. Route: `POST /api/settings/server/flaresolverr/test`, for server admins.
 - **The module's status** is on with an address and off without one, like the others, so the app can say what's missing.
 - **Telemetry** reports modules as an open list of ids, so the new module needs nothing from the receiver first.
 

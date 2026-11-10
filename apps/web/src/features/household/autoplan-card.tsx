@@ -46,7 +46,7 @@ type Run = Schemas["AutoplanRun"]
 const A_SUNDAY = "2026-01-04"
 
 /**
- * Settings → Household → Plan each week: on its day and hour the week
+ * Settings → Planning → Plan each week: on its day and hour the week
  * ahead's empty meals fill themselves, the way Fill the week does, and
  * can go on the list. Household admins only; each change saves straight
  * away.

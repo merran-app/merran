@@ -319,9 +319,9 @@ export function pageText(html: string) {
 /** Why a page without recipe data can't be read, and what would let it. */
 const CANT_READ_PAGES: Record<Unavailable, string | null> = {
   noKey:
-    "With an AI key, Merran can read pages like this: a household admin can add one in Settings, Household, AI. Or paste the recipe's text, or type it in.",
+    "With an AI key, Merran can read pages like this: a household admin can add one in Settings, AI. Or paste the recipe's text, or type it in.",
   notCovered:
-    "With an AI key, Merran can read pages like this: a household admin can add one in Settings, Household, AI. Or paste the recipe's text, or type it in.",
+    "With an AI key, Merran can read pages like this: a household admin can add one in Settings, AI. Or paste the recipe's text, or type it in.",
   // Over a limit: as the limit says it.
   overLimit: null,
   ownLimit: null,

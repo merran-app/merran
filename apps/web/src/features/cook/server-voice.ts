@@ -4,7 +4,7 @@ import { useCapability } from "@/features/capabilities/queries"
 import { api, unwrap } from "@/lib/api/client"
 
 // The server voice: Kokoro or OpenAI reading cook steps, the same on every
-// device (Settings, This server, Voice). Each reading is fetched once and
+// device (Settings, Recipes, Whole server, Voice). Each reading is fetched once and
 // kept for the visit; the next step is fetched while this one is read.
 
 /** How long to wait for a reading before the device reads instead. */

@@ -102,7 +102,7 @@ export async function findJob(
   return job
 }
 
-/** The latest jobs, newest first: for Settings → This server → Jobs. */
+/** The latest jobs, newest first: for Settings → Server → Jobs. */
 export async function listJobs(
   em: EntityManager,
   { status, limit = 100 }: { status?: JobStatus; limit?: number } = {}

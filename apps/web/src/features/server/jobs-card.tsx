@@ -51,7 +51,7 @@ const BADGES = {
   cancelled: "outline",
 } as const
 
-/** Settings → This server → Jobs: what Merran's doing in the background. */
+/** Settings → Server → Jobs: what Merran's doing in the background. */
 export function JobsCard() {
   const { t } = useTranslation()
   const jobs = useQuery(serverJobsQuery)

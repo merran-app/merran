@@ -65,7 +65,7 @@ Stop Merran before restoring files. Keep a copy of the current data, restore the
 2. Select a complete backup and the matching image version. Restore the complete app directory, including its `secret` file. If you supplied `MERRAN_SECRET` externally, restore that exact value instead.
 3. For Postgres, restore the corresponding database backup while Merran remains stopped. Check that configuration points to the restored database.
 4. Check volume mounts and file permissions. Set the intended image version in your deployment configuration, then run `docker compose up -d` for the supplied Compose setup.
-5. Review `docker compose logs --tail 100 merran`. Sign in and verify the expected household, recipes, images, plan, list, and pantry. Test a saved connection if you use one, and inspect **Settings → This server → Jobs** for interrupted work that resumes.
+5. Review `docker compose logs --tail 100 merran`. Sign in and verify the expected household, recipes, images, plan, list, and pantry. Test a saved connection if you use one, and inspect **Settings → Server → Jobs** for interrupted work that resumes.
 
 **Expected result:** Merran opens the restored data, accounts can sign in, and saved credentials remain readable with the matching secret. If setup appears again or credentials are unreadable, stop and recheck the mount, database selection, and secret before making new data.
 

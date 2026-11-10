@@ -258,7 +258,7 @@ function Connected({
             type="button"
             className="ghost small"
             onClick={() => void removeConnection(connection.keyId)}
-            title="Its key stays in Merran until you take it away in Settings, You, API keys."
+            title="Its key stays in Merran until you take it away in Settings, Apps and devices, API keys."
           >
             Disconnect
           </button>

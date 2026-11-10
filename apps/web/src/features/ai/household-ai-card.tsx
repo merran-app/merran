@@ -143,7 +143,7 @@ function KeyAlerts({ data }: { data: HouseholdAi }) {
 }
 
 /**
- * Settings → Household → AI: whose key pays, the household's own keys,
+ * Settings → AI: whose key pays, the household's own keys,
  * the models it picks, a limit on its own keys, and what it's spent.
  * Household admins only.
  */
@@ -291,7 +291,7 @@ export function HouseholdAiCard() {
                   components={{
                     link: (
                       <Link
-                        to="/settings/server"
+                        to="/settings/ai/server"
                         className="underline underline-offset-3"
                       />
                     ),

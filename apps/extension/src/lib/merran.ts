@@ -14,7 +14,7 @@ export type Schemas = components["schemas"]
 export type Connection = {
   /** "https://merran.example.com" */
   origin: string
-  /** The extension's API key: what it may do is in Merran, Settings, You. */
+  /** The extension's API key: what it may do is in Merran, Settings, Apps and devices. */
   token: string
   /** The key's id. */
   keyId: string

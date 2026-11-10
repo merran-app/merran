@@ -34,7 +34,7 @@ function useMealNames(meals: readonly Meal[]) {
 
 /**
  * Why a meal stays empty when the week's filled: it's turned off in
- * Settings → Household → Planning. It can still be planned by hand, and an
+ * Settings → Planning. It can still be planned by hand, and an
  * admin can turn it back on.
  */
 function Why({ meals }: { meals: readonly Meal[] }) {
@@ -56,7 +56,7 @@ function Why({ meals }: { meals: readonly Meal[] }) {
           variant="secondary"
           size="sm"
           className="self-start"
-          render={<Link to="/settings/household" />}
+          render={<Link to="/settings/planning" />}
         >
           {t("plan.notFilled.change")}
         </Button>

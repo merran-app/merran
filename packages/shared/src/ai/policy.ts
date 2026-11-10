@@ -60,7 +60,7 @@ export const DEFAULT_AI_POLICY: AiPolicy = {
   vision: null,
 }
 
-/** What a household picks for itself, in Settings → Household → AI. */
+/** What a household picks for itself, in Settings → AI. */
 export type HouseholdAi = {
   /** Its models for big and small tasks; null to go by its keys, or the server's. */
   large: ModelRef | null

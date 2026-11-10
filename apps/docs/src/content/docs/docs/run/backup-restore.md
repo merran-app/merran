@@ -102,7 +102,7 @@ Prevent the restored copy from receiving public traffic or contacting real integ
 2. Sign in with an existing account. Confirm the expected household and recipe counts.
 3. Open recipes and photos; inspect a saved plan, shopping list, pantry amount, and cooking note.
 4. Check a scoped API key. Confirm the restored secret matches the backup before testing saved external credentials in a controlled way.
-5. Review **Settings → This server → Jobs** for resumed or failed work.
+5. Review **Settings → Server → Jobs** for resumed or failed work.
 6. Record the image/digest, database version, backup time, commands, and results. Stop the test copy when finished.
 
 If setup reappears, check mounts and database selection before creating anything. If secrets cannot be decrypted, restore the original secret rather than generating a new one. Keep the damaged installation and logs until recovery is confirmed.

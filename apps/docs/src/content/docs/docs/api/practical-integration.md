@@ -7,7 +7,7 @@ This tutorial reads recipe names and IDs into a JSON file. It makes no changes a
 
 ## Before you start
 
-Install Node.js 24 or later and make sure this computer can reach your server. Open **Settings → You → API keys** in the intended household, create a dedicated key with **recipes:read**, and copy its secret once. Keep it in a local environment variable or your integration's secret store; never put it in a public webpage, URL, repository, or screenshot.
+Install Node.js 24 or later and make sure this computer can reach your server. Open **Settings → Apps and devices → API keys** in the intended household, create a dedicated key with **recipes:read**, and copy its secret once. Keep it in a local environment variable or your integration's secret store; never put it in a public webpage, URL, repository, or screenshot.
 
 ## Choose the smallest permission set
 

@@ -68,7 +68,7 @@ export class KrogerSignInError extends AppError {
     super(
       "conflict",
       "kroger_relink",
-      "Kroger stopped taking the linked account. Link it again in Settings, Household, Stores."
+      "Kroger stopped taking the linked account. Link it again in Settings, Shopping and stores."
     )
   }
 }
@@ -77,7 +77,7 @@ const refused = () =>
   new AppError(
     "unprocessable",
     "kroger_app_refused",
-    "Kroger didn't accept the developer app's client ID and secret. Check them in Settings, This server."
+    "Kroger didn't accept the developer app's client ID and secret. Check them in Settings, Shopping and stores, Whole server."
   )
 
 const unreachable = () =>

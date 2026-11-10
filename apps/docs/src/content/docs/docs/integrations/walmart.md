@@ -11,7 +11,7 @@ sidebar:
 
 - A US Walmart account and a supported desktop browser, signed in to Walmart by you.
 - The [Merran extension](../browser-extension/) installed in that same browser and connected to the intended household.
-- A server admin has enabled **Settings → This server → Walmart → Walmart through the extension** (`MERRAN_WALMART=true`). It is off by default.
+- A server admin has enabled **Settings → Shopping and stores → Whole server → Walmart → Walmart through the extension** (`MERRAN_WALMART=true`). It is off by default.
 - A shopping list ready to review. This workflow does not require an AI key.
 
 ## Find and review products

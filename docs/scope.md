@@ -53,7 +53,7 @@ Possible duplicates, decided November 9, 2026: two recipes may be the same one w
 | Several links at once | M14 | Core | Runs on the job runner |
 | Text, photos, pages without recipe data | M1 | AI | Works with any model that can read images |
 | Video links | M1 | Module | |
-| Imports in your language | New | With translations (0.1) | **A setting** in Settings, You: AI imports are written in the person's language, translated, with the original language in the notes. Until then a recipe keeps the language it was written in |
+| Imports in your language | New | With translations (0.1) | **A setting** in Settings, Profile: AI imports are written in the person's language, translated, with the original language in the notes. Until then a recipe keeps the language it was written in |
 | Mealie import | M1 | Core | **Also from a Mealie backup file,** so the server needn't reach Mealie |
 | Paprika and schema.org imports | New | Core | |
 | Tandoor import | New | **Later** | |

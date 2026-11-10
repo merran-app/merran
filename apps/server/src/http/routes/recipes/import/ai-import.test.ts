@@ -173,7 +173,7 @@ describe("without AI", () => {
     expect(res.status).toBe(403)
     expect((await res.json()).error).toMatchObject({
       code: "ai_noKey",
-      message: expect.stringContaining("Settings, Household, AI"),
+      message: expect.stringContaining("Settings, AI"),
     })
     expect((await importPhotos(jpeg)).status).toBe(403)
   })

@@ -27,7 +27,7 @@ import { formatRelativeDate } from "@/lib/format"
 import { householdQuery } from "./queries"
 
 /**
- * Settings → Household → Sharing: whether members can share recipes by
+ * Settings → Recipes → Recipe links: whether members can share recipes by
  * link, and every link that's out there. Household admins only.
  */
 export function SharingCard() {

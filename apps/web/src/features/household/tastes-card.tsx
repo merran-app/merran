@@ -48,7 +48,7 @@ type Avoided = Tastes["avoid"][number]
 const LEVELS: AvoidLevel[] = ["leave-out", "never", "allergy"]
 
 /**
- * Settings → Household → Tastes: what the household eats and doesn't, which
+ * Settings → Planning → Tastes: what the household eats and doesn't, which
  * Fill the week keeps to. Anyone in the household can change it, and each
  * change saves straight away.
  */

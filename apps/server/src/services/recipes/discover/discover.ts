@@ -179,7 +179,7 @@ async function askForPicks(
         throw new AppError(
           "unprocessable",
           "ai_model_cant",
-          "Discover needs a model that can search the web. Pick one that can for finding recipes in Settings, Household, AI."
+          "Discover needs a model that can search the web. Pick one that can for finding recipes in Settings, AI."
         )
       }
       const result = await generateText({

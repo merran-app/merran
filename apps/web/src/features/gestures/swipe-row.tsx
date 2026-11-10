@@ -130,6 +130,26 @@ function Swiping({
   // plain row, so let go of the open row with it.
   React.useEffect(() => () => setOpen(false), [setOpen])
 
+  // Safari on iOS doesn't hold a swipe to the side it started on: once the
+  // finger strays up or down, it starts scrolling the page and cancels the
+  // swipe, whatever `touch-action` says (WebKit bug 203335). A quick swipe
+  // finishes first, but a long one, like Remove's past halfway, never did.
+  // Telling its touch moves not to scroll keeps the finger the row's. React's
+  // touch listeners can't: they're passive.
+  React.useEffect(() => {
+    const element = content.current
+    if (!element) return
+
+    function holdSideways(event: TouchEvent) {
+      if (gesture.current?.axis === "x" && event.cancelable) {
+        event.preventDefault()
+      }
+    }
+
+    element.addEventListener("touchmove", holdSideways, { passive: false })
+    return () => element.removeEventListener("touchmove", holdSideways)
+  }, [])
+
   const width = () => content.current?.offsetWidth ?? window.innerWidth
   const actionFor = (side: SwipeSide) => (side === "start" ? start : end)
 

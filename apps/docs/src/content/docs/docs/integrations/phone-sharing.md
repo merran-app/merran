@@ -9,7 +9,7 @@ Share content to your own Merran server without copying it into a recipe editor.
 
 ## Before you start
 
-Sign in to the intended household and open **Settings → You → Share to Merran**. Your phone must be able to reach the server. Android installation/share-target support needs HTTPS and a compatible browser. A home-network-only address will not work away from home without [remote access](../../run/https-and-remote-access/).
+Sign in to the intended household and open **Settings → Apps and devices → Share to Merran**. Your phone must be able to reach the server. Android installation/share-target support needs HTTPS and a compatible browser. A home-network-only address will not work away from home without [remote access](../../run/https-and-remote-access/).
 
 These steps match alpha.4's UI and share endpoint. Real Android and iOS share-sheet behavior remains a device-test gap; browser and OS labels can vary.
 
@@ -24,7 +24,7 @@ These steps match alpha.4's UI and share endpoint. Real Android and iOS share-sh
 
 ## iPhone and iPad Shortcut
 
-1. In **Settings → You → Share to Merran**, choose **Make a key for the Shortcut**. Confirm you are in the correct household.
+1. In **Settings → Apps and devices → Share to Merran**, choose **Make a key for the Shortcut**. Confirm you are in the correct household.
 2. Open Apple's **Shortcuts**, tap **+**, and name it **Send to Merran**.
 3. Open the Shortcut's details and enable **Show in Share Sheet**.
 4. Add **Get Contents of URL**. Use the **Address** shown by Merran, ending in `/api/share`.
@@ -35,7 +35,7 @@ These steps match alpha.4's UI and share endpoint. Real Android and iOS share-sh
 
 **Expected result:** The notification explains whether content was added, already present, queued, recognized as a receipt, or could not be imported. A successful HTTP request alone does not guarantee an added recipe; inspect the returned outcome/message.
 
-The Shortcut key has `imports:write`, belongs to you and that household, and is created without an expiry. Keep it private; do not share a Shortcut containing your key. Each person should create their own. Revoke it under **Settings → You → API keys** if the Shortcut or device is lost, or when replacing the connection. A receipt can be read into a draft through this intake permission, but purchase put-away is a separate review step.
+The Shortcut key has `imports:write`, belongs to you and that household, and is created without an expiry. Keep it private; do not share a Shortcut containing your key. Each person should create their own. Revoke it under **Settings → Apps and devices → API keys** if the Shortcut or device is lost, or when replacing the connection. A receipt can be read into a draft through this intake permission, but purchase put-away is a separate review step.
 
 ## What is sent
 

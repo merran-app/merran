@@ -17,11 +17,11 @@ const route = createRoute({
   tags: ["Stores"],
   summary: "Where Kroger sends the person back",
   description:
-    "Not called directly: the redirect address the Kroger developer app has. It finishes linking the account, then sends the person on to Settings, Household, saying how it went.",
+    "Not called directly: the redirect address the Kroger developer app has. It finishes linking the account, then sends the person on to Settings, Shopping and stores, saying how it went.",
   security: SESSION_SECURITY,
   request: { query: CallbackQuery },
   responses: {
-    302: { description: "On to Settings, Household." },
+    302: { description: "On to Settings, Shopping and stores." },
     ...SIGNED_IN_ERRORS,
   },
 })
@@ -32,7 +32,7 @@ export default (router: Router, deps: AppDeps) => {
     const { code, state, error } = c.req.valid("query")
     const back = (outcome: string, reason?: string) =>
       c.redirect(
-        `/settings/household?kroger=${outcome}${reason ? `&reason=${encodeURIComponent(reason)}` : ""}`,
+        `/settings/shopping?kroger=${outcome}${reason ? `&reason=${encodeURIComponent(reason)}` : ""}`,
         302
       ) as never
     if (error || !code || !state) return back("cancelled")

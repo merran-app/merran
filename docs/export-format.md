@@ -8,7 +8,7 @@ The schemas in [`apps/server/src/services/transfer/format.ts`](../apps/server/sr
 
 - **Export a household:** Settings → Import and export → Export, for the household's owners and admins. The API is `GET /api/households/current/export`.
 - **Import one:** Settings → Import and export → Import, into the household in use, or (for the server admin) as a new household. The API is `POST /api/households/current/import` or `POST /api/households/import`, with the zip as the body. The import runs as a job, with its progress at `GET /api/households/current/jobs/{jobId}`.
-- **Your own data:** Settings → You → Your data downloads your account, the households you're in, the cooking notes you wrote and your API keys' names and permissions (never the keys) as `merran-my-data-<date>.json`. The API is `GET /api/auth/me/export`.
+- **Your own data:** Settings → Profile → Your data downloads your account, the households you're in, the cooking notes you wrote and your API keys' names and permissions (never the keys) as `merran-my-data-<date>.json`. The API is `GET /api/auth/me/export`.
 
 ## What's in the zip
 
