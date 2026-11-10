@@ -222,7 +222,7 @@ export function MappingProductDialog({
                   type="button"
                   disabled={busy !== null}
                   onClick={() => void save(product)}
-                  className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-muted disabled:opacity-60"
+                  className="flex w-full items-center gap-3 rounded-xl p-2 text-start transition-colors hover:bg-muted disabled:opacity-60"
                 >
                   <ProductSummary product={product} today={today} />
                   {busy === product.id && <Spinner />}

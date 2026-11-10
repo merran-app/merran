@@ -296,7 +296,7 @@ export function StoresCard() {
                             void change({ locationId: location.locationId })
                           }
                           className={cn(
-                            "flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors hover:bg-muted",
+                            "flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-start transition-colors hover:bg-muted",
                             location.locationId ===
                               kroger.location?.locationId && "border-primary"
                           )}

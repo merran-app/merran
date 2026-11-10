@@ -141,10 +141,14 @@ export function ScanReceiptPage() {
       <Button
         variant="ghost"
         size="sm"
-        className="mt-2 -ml-3 md:mt-4"
+        className="-ms-3 mt-2 md:mt-4"
         render={<Link to="/pantry" />}
       >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+        <HugeiconsIcon
+          icon={ArrowLeft01Icon}
+          strokeWidth={2}
+          className="rtl:-scale-x-100"
+        />
         {t("nav.pantry")}
       </Button>
       <PageHeader
@@ -294,7 +298,7 @@ function Choice({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-3 rounded-3xl border bg-card p-4 text-left transition-colors outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 sm:grid sm:justify-items-start sm:gap-2"
+      className="flex items-center gap-3 rounded-3xl border bg-card p-4 text-start transition-colors outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 sm:grid sm:justify-items-start sm:gap-2"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-muted">
         <HugeiconsIcon icon={icon} strokeWidth={2} />

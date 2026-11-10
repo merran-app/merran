@@ -142,7 +142,7 @@ export function RecipePhoto({
             className="size-full object-cover"
           />
           {recipe.photoByAi && (
-            <span className="absolute bottom-3 left-3 flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
+            <span className="absolute start-3 bottom-3 flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
               <HugeiconsIcon
                 icon={AiMagicIcon}
                 strokeWidth={2}
@@ -175,7 +175,7 @@ export function RecipePhoto({
               variant="secondary"
               disabled={actions.busy}
               onClick={actions.make}
-              className="absolute bottom-3 left-1/2 -translate-x-1/2"
+              className="absolute start-1/2 bottom-3 -translate-x-1/2 rtl:translate-x-1/2"
             >
               <HugeiconsIcon
                 icon={AiMagicIcon}

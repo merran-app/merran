@@ -165,10 +165,14 @@ export function ProductMappingsPage() {
       <Button
         variant="ghost"
         size="sm"
-        className="mt-2 -ml-3 self-start md:mt-4"
+        className="-ms-3 mt-2 self-start md:mt-4"
         render={<Link to="/list" />}
       >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+        <HugeiconsIcon
+          icon={ArrowLeft01Icon}
+          strokeWidth={2}
+          className="rtl:-scale-x-100"
+        />
         {t("nav.list")}
       </Button>
       <PageHeader
@@ -204,13 +208,13 @@ export function ProductMappingsPage() {
                 <HugeiconsIcon
                   icon={Search01Icon}
                   strokeWidth={2}
-                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                  className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                 />
                 <Input
                   id="mapping-search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  className="pl-9"
+                  className="ps-9"
                   placeholder={t("stores.mappings.searchHint")}
                 />
               </div>
@@ -267,7 +271,7 @@ export function ProductMappingsPage() {
                   defaultOpen={Boolean(term)}
                   className="rounded-2xl border bg-card"
                 >
-                  <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:px-5">
+                  <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-start hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:px-5">
                     <span className="min-w-0">
                       <span className="block font-semibold">{aisle.name}</span>
                       <span className="block text-sm text-muted-foreground">

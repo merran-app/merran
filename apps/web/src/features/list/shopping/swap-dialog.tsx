@@ -220,7 +220,7 @@ export function ShoppingSwapDialog({
                         key={index}
                         type="button"
                         disabled={busy}
-                        className="grid gap-1 rounded-xl border p-3 text-left hover:bg-muted"
+                        className="grid gap-1 rounded-xl border p-3 text-start hover:bg-muted"
                         onClick={() => {
                           const next: Record<string, Draft> = {}
                           for (const replacement of swap.replacements ?? []) {

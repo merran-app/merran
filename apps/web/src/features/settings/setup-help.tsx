@@ -37,7 +37,7 @@ export function SetupHelp({
             key={href}
             variant="outline"
             size="sm"
-            className="h-auto min-h-8 text-left whitespace-normal"
+            className="h-auto min-h-8 text-start whitespace-normal"
             render={<a href={href} target="_blank" rel="noreferrer noopener" />}
           >
             {label}

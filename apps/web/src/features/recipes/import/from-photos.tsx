@@ -214,14 +214,14 @@ export function FromPhotos({
                       className="size-full object-cover"
                     />
                   )}
-                  <span className="absolute top-1 left-1 rounded-full bg-background/90 px-1.5 text-xs font-medium tabular-nums">
+                  <span className="absolute start-1 top-1 rounded-full bg-background/90 px-1.5 text-xs font-medium tabular-nums">
                     {i + 1}
                   </span>
                   <Button
                     type="button"
                     size="icon-xs"
                     variant="secondary"
-                    className="absolute top-1 right-1 rounded-full"
+                    className="absolute end-1 top-1 rounded-full"
                     aria-label={t("recipes.import.photos.remove", { n: i + 1 })}
                     disabled={busy}
                     onClick={() => remove(photo.id)}

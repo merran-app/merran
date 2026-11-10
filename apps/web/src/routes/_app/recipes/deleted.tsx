@@ -98,10 +98,14 @@ function RecentlyDeleted() {
       <Button
         variant="ghost"
         size="sm"
-        className="mt-2 -ml-3 md:mt-4"
+        className="-ms-3 mt-2 md:mt-4"
         render={<Link to="/recipes" />}
       >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+        <HugeiconsIcon
+          icon={ArrowLeft01Icon}
+          strokeWidth={2}
+          className="rtl:-scale-x-100"
+        />
         {t("nav.recipes")}
       </Button>
       <PageHeader
@@ -262,7 +266,7 @@ function DeletedRow({
               : t("select.pick", { name: recipe.name })
           }
           onClick={() => selection.toggle(recipe.id)}
-          className="flex w-full items-center gap-3 p-4 text-left outline-none hover:bg-muted/40 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className="flex w-full items-center gap-3 p-4 text-start outline-none hover:bg-muted/40 focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <SelectMark picked={on} />
           {about}
@@ -274,7 +278,7 @@ function DeletedRow({
   const row = (
     <li className="flex flex-wrap items-center gap-3 p-4">
       {about}
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ms-auto flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={restore} disabled={busy}>
           {busy && <Spinner />}
           {t("recipes.deleted.restore")}

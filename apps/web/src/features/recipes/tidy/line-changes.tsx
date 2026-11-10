@@ -51,7 +51,7 @@ export function LineChanges({
               <Badge variant="outline">{t(`recipes.review.${row.kind}`)}</Badge>
             </div>
             <div className="grid @lg:grid-cols-2">
-              <div className="min-w-0 border-b bg-muted/40 p-3 @lg:border-r @lg:border-b-0">
+              <div className="min-w-0 border-b bg-muted/40 p-3 @lg:border-e @lg:border-b-0">
                 <p className="mb-2 text-xs font-medium text-muted-foreground">
                   {t("recipes.review.previously")}
                 </p>

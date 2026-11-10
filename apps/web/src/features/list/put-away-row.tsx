@@ -144,7 +144,7 @@ export function PutAwayRow({
         <span className="min-w-0 truncate font-medium">
           {item.name}
           {item.useBy && item.storedIn !== "freezer" && (
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
+            <span className="ms-2 text-sm font-normal text-muted-foreground">
               {t("pantry.tags.useBy", { day: dayLabel(item.useBy, true) })}
             </span>
           )}

@@ -389,7 +389,7 @@ export function ListPickDialog({
               <button
                 type="button"
                 onClick={() => onPick(list)}
-                className="w-full rounded-lg px-2 py-2.5 text-left text-sm font-medium outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="w-full rounded-lg px-2 py-2.5 text-start text-sm font-medium outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 {list.name}
               </button>
@@ -429,7 +429,7 @@ export function AisleDialog({
               <button
                 type="button"
                 onClick={() => onPick(aisle)}
-                className="w-full rounded-lg px-2 py-2.5 text-left text-sm font-medium outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="w-full rounded-lg px-2 py-2.5 text-start text-sm font-medium outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 {aisle?.name ?? t("list.noAisle")}
               </button>
@@ -489,7 +489,7 @@ export function EveryWeekDialog({
             {data.items.map((item) => (
               <li
                 key={item.id}
-                className="flex items-center gap-2 py-1.5 pr-1.5 pl-4"
+                className="flex items-center gap-2 py-1.5 ps-4 pe-1.5"
               >
                 <span className="min-w-0 flex-1 truncate">
                   <span className="font-medium first-letter:uppercase">
@@ -624,7 +624,7 @@ export function OnHandDialog({
             {items.map((item) => (
               <li
                 key={item}
-                className="inline-flex items-center gap-1 rounded-full border bg-card py-1 pr-1 pl-3 text-sm"
+                className="inline-flex items-center gap-1 rounded-full border bg-card py-1 ps-3 pe-1 text-sm"
               >
                 <span className="first-letter:uppercase">{item}</span>
                 <button
@@ -723,7 +723,7 @@ export function FoodsDialog({
             {aliases.map((alias) => (
               <li
                 key={alias.id}
-                className="flex items-center justify-between gap-2 rounded-md border bg-card py-1 pr-1 pl-3 text-sm"
+                className="flex items-center justify-between gap-2 rounded-md border bg-card py-1 ps-3 pe-1 text-sm"
               >
                 <span className="first-letter:uppercase">
                   {alias.apart

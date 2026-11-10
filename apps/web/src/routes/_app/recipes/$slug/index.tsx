@@ -350,7 +350,7 @@ function RecipeView({
         <HugeiconsIcon
           icon={ArrowLeft01Icon}
           strokeWidth={2}
-          className="size-4"
+          className="size-4 rtl:-scale-x-100"
         />
         {t("nav.recipes")}
       </Link>

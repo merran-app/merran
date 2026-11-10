@@ -77,7 +77,7 @@ export function BasketLineRow({
           </div>
         )}
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-2 sm:pl-8">
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:ps-8">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <span className="truncate text-xs text-muted-foreground">
             {t("stores.basket.forItem", {

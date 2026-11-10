@@ -131,7 +131,7 @@ export function FirstMealChecklist() {
                       aria-hidden
                       icon={ArrowRight01Icon}
                       strokeWidth={2}
-                      className="size-4 shrink-0 text-muted-foreground"
+                      className="size-4 shrink-0 text-muted-foreground rtl:-scale-x-100"
                     />
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">

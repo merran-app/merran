@@ -99,7 +99,7 @@ export function FlareSolverrCard() {
           <p className="text-sm text-muted-foreground">
             {t("settings.server.flaresolverr.testHint")}
           </p>
-          <div className="ml-auto flex gap-2">
+          <div className="ms-auto flex gap-2">
             <Button
               type="button"
               variant="outline"

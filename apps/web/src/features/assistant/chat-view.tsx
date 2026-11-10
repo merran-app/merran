@@ -337,7 +337,7 @@ export function ChatView({
               </DropdownMenuContent>
             </DropdownMenu>
             {page?.recipe && aboutPage && (
-              <span className="flex min-w-0 items-center gap-0.5 rounded-full bg-muted py-0.5 pr-0.5 pl-2.5 text-xs text-muted-foreground">
+              <span className="flex min-w-0 items-center gap-0.5 rounded-full bg-muted py-0.5 ps-2.5 pe-0.5 text-xs text-muted-foreground">
                 <span className="truncate">
                   {t("assistant.about", { name: page.recipe.name })}
                 </span>
@@ -353,7 +353,7 @@ export function ChatView({
                 </Button>
               </span>
             )}
-            <div className="ml-auto shrink-0">
+            <div className="ms-auto shrink-0">
               {busy ? (
                 <Button
                   type="button"
@@ -417,7 +417,7 @@ function Message({
       <div className="grid gap-2">
         <SentFiles parts={files} onPreview={onPreview} />
         {said && (
-          <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-primary px-3.5 py-2 whitespace-pre-wrap text-primary-foreground">
+          <p className="ms-auto w-fit max-w-[85%] rounded-2xl rounded-ee-md bg-primary px-3.5 py-2 whitespace-pre-wrap text-primary-foreground">
             {said}
           </p>
         )}

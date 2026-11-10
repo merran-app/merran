@@ -1,3 +1,4 @@
+import { useDirection } from "@base-ui/react/direction-provider"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link, useRouterState } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
@@ -22,12 +23,19 @@ import { SidebarUserMenu } from "./user-menu"
 
 export function AppSidebar() {
   const { t } = useTranslation()
+  const direction = useDirection()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
 
   return (
-    <Sidebar collapsible="icon" variant="inset">
+    // The sidebar comes first in reading order: on the right in a
+    // right-to-left language.
+    <Sidebar
+      collapsible="icon"
+      variant="inset"
+      side={direction === "rtl" ? "right" : "left"}
+    >
       <SidebarHeader>
         {/* Same height as a large menu button, so the nav below stays put; the
             padding centers the mark over the nav icons. */}

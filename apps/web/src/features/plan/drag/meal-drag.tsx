@@ -1,3 +1,4 @@
+import { useDirection } from "@base-ui/react/direction-provider"
 import { ArrowMoveUpRightIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import * as React from "react"
@@ -13,6 +14,7 @@ import {
   inRows,
   insertionBar,
   insertionIndex,
+  mirrored,
   reorderFor,
   type Box,
 } from "./insertion"
@@ -91,6 +93,7 @@ export function MealDragProvider({
   children: React.ReactNode
 }) {
   const { t } = useTranslation()
+  const direction = useDirection()
   const actions = usePlanActions()
   const [id, setId] = React.useState<string | null>(null)
   const [over, setOver] = React.useState<string | null>(null)
@@ -134,15 +137,20 @@ export function MealDragProvider({
     const ids = groupOf(entries, entry).map((other) => other.id)
     if (ids.length < 2) return null
     const own = boxOf(entryId)
-    const boxes = ids
+    const tiles = ids
       .filter((other) => other !== entryId)
       .map(boxOf)
       .filter((box): box is Box => box !== null)
-    if (!own || boxes.length !== ids.length - 1) return null
+    if (!own || tiles.length !== ids.length - 1) return null
+    // The sums read rows left to right, so a right-to-left page's tiles go
+    // through a mirror, and the bar comes back through it.
+    const rtl = direction === "rtl"
+    const boxes = rtl ? tiles.map(mirrored) : tiles
     // The dragged tile stays where it was, and may be what makes a row.
     const rows = inRows([...boxes, own])
-    const index = insertionIndex(boxes, { x, y }, rows)
-    return { ids, index, bar: insertionBar(boxes, index, rows) }
+    const index = insertionIndex(boxes, { x: rtl ? -x : x, y }, rows)
+    const bar = insertionBar(boxes, index, rows)
+    return { ids, index, bar: rtl ? mirrored(bar) : bar }
   }
 
   /** What's under the pointer: a meal to drop on, or a place among the dishes. */
@@ -152,7 +160,7 @@ export function MealDragProvider({
       setOver(to ? destinationKey(to) : null)
       setInsertion(insertionAt(entryId, to, x, y))
     },
-    [entries]
+    [direction, entries]
   )
 
   // Native scrolling still works everywhere except the small drag handle.
@@ -359,6 +367,12 @@ export function MealDragProvider({
 
 /** Where a dragged dish will go among its meal's dishes, drawn over them. */
 function InsertionBar({ bar, label }: { bar: Box; label: string }) {
+  const direction = useDirection()
+  // The label hangs from the bar's start: its right edge in right-to-left.
+  const along =
+    direction === "rtl"
+      ? { right: document.documentElement.clientWidth - bar.left - bar.width }
+      : { left: bar.left }
   return (
     <>
       <div
@@ -369,7 +383,7 @@ function InsertionBar({ bar, label }: { bar: Box; label: string }) {
       <p
         aria-hidden
         className="pointer-events-none fixed z-40 rounded-lg bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
-        style={{ left: bar.left, top: bar.top + bar.height + 4 }}
+        style={{ ...along, top: bar.top + bar.height + 4 }}
       >
         {label}
       </p>
@@ -388,7 +402,7 @@ export function MealDragHandle({ entry }: { entry: PlanEntry }) {
       <Button
         variant="ghost"
         size="icon-sm"
-        className="absolute -right-1.5 -bottom-1.5 cursor-grab touch-none rounded-full border bg-card shadow-sm active:cursor-grabbing"
+        className="absolute -end-1.5 -bottom-1.5 cursor-grab touch-none rounded-full border bg-card shadow-sm active:cursor-grabbing"
         disabled={drag.busy}
         aria-label={t("plan.drag.move", { name: nameOf(entry) })}
         title={t("plan.drag.handleHint")}
@@ -449,7 +463,7 @@ export function MealDropZone({
     >
       {children}
       {over && (
-        <p className="pointer-events-none absolute top-full left-0 z-10 max-w-full rounded-lg bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">
+        <p className="pointer-events-none absolute start-0 top-full z-10 max-w-full rounded-lg bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">
           {t(to.anyDay ? "plan.drag.dropPool" : "plan.drag.dropMeal")}
         </p>
       )}

@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 
 import {
+  alongLine,
   edgeEnd,
   edgeStart,
   inEdgeZone,
@@ -169,4 +170,22 @@ test("edge back waits until a finger is clearly going right", () => {
 test("a scroll that starts at the edge stays a scroll", () => {
   assert.equal(edgeStart(0, 12), "scroll")
   assert.equal(edgeStart(-14, 3), "scroll")
+})
+
+test("along the line is from the left, or from the right in right-to-left", () => {
+  assert.equal(alongLine(15, 375, "ltr"), 15)
+  assert.equal(alongLine(365, 375, "rtl"), 10)
+  assert.equal(inEdgeZone(alongLine(365, 375, "rtl")), true)
+  assert.equal(inEdgeZone(alongLine(10, 375, "rtl")), false)
+})
+
+test("a swipe left in right-to-left goes along the line", () => {
+  const from = alongLine(360, 375, "rtl")
+  const to = alongLine(260, 375, "rtl")
+  assert.equal(to - from, 100)
+  assert.equal(edgeEnd(to - from, 0), "back")
+  assert.equal(
+    swipeEnd({ offset: to - from, width: 375, velocity: 0, has, flicks }).kind,
+    "open"
+  )
 })

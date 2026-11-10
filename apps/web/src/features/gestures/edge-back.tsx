@@ -1,3 +1,4 @@
+import { useDirection } from "@base-ui/react/direction-provider"
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useCanGoBack, useRouter } from "@tanstack/react-router"
@@ -7,13 +8,20 @@ import { onIos, standalone } from "@/features/install/install"
 import { cn } from "@/lib/utils"
 
 import { overlayOpen } from "./overlay-open"
-import { EDGE_BACK_PX, edgeEnd, edgeStart, inEdgeZone } from "./swipe-math"
+import {
+  alongLine,
+  EDGE_BACK_PX,
+  edgeEnd,
+  edgeStart,
+  inEdgeZone,
+} from "./swipe-math"
 
 /**
- * Swipe in from the left edge to go back. Only in the installed app on an
- * iPhone or iPad, which has no back button and no back gesture of its own;
- * Android has its own, and Safari in a tab swipes back by itself. Cooking
- * is outside the app's layout, so its swipes between steps never meet this.
+ * Swipe in from the left edge to go back, or the right in a right-to-left
+ * language. Only in the installed app on an iPhone or iPad, which has no
+ * back button and no back gesture of its own; Android has its own, and
+ * Safari in a tab swipes back by itself. Cooking is outside the app's
+ * layout, so its swipes between steps never meet this.
  */
 export function EdgeBack() {
   const [installed] = React.useState(() => standalone() && onIos())
@@ -24,6 +32,7 @@ export function EdgeBack() {
 function Edge() {
   const router = useRouter()
   const canGoBack = useCanGoBack()
+  const direction = useDirection()
   const [drag, setDrag] = React.useState<{ dx: number; y: number } | null>(null)
 
   React.useEffect(() => {
@@ -31,12 +40,15 @@ function Edge() {
     let from: { x: number; y: number } | null = null
     let going = false
     let last = { dx: 0, dy: 0 }
+    /** Where a touch is along the line, so a right-to-left swipe mirrors. */
+    const along = (touch: Touch) =>
+      alongLine(touch.clientX, window.innerWidth, direction)
 
     function begin(event: TouchEvent) {
       const touch = event.touches[0]
       if (event.touches.length !== 1 || !touch) return
-      if (!inEdgeZone(touch.clientX) || overlayOpen()) return
-      from = { x: touch.clientX, y: touch.clientY }
+      if (!inEdgeZone(along(touch)) || overlayOpen()) return
+      from = { x: along(touch), y: touch.clientY }
       going = false
       last = { dx: 0, dy: 0 }
     }
@@ -44,10 +56,10 @@ function Edge() {
     function track(event: TouchEvent) {
       const touch = event.touches[0]
       if (!from || !touch) return
-      last = { dx: touch.clientX - from.x, dy: touch.clientY - from.y }
+      last = { dx: along(touch) - from.x, dy: touch.clientY - from.y }
 
-      // Nothing's held back until the finger's clearly going right, so a
-      // scroll that starts at the edge stays the phone's own.
+      // Nothing's held back until the finger's clearly going along the
+      // line, so a scroll that starts at the edge stays the phone's own.
       if (!going) {
         const start = edgeStart(last.dx, last.dy)
         if (start === "wait") return
@@ -78,28 +90,29 @@ function Edge() {
       window.removeEventListener("touchend", finish)
       window.removeEventListener("touchcancel", finish)
     }
-  }, [canGoBack, router])
+  }, [canGoBack, direction, router])
 
   if (!drag) return null
   const reach = Math.min(drag.dx, EDGE_BACK_PX)
   const ready = drag.dx >= EDGE_BACK_PX
+  const shift = reach - 40
   return (
     <div
       aria-hidden
       style={{
         top: drag.y,
-        transform: `translate(${reach - 40}px, -50%)`,
+        transform: `translate(${direction === "rtl" ? -shift : shift}px, -50%)`,
         opacity: 0.4 + (0.6 * reach) / EDGE_BACK_PX,
       }}
       className={cn(
-        "pointer-events-none fixed left-0 z-50 grid size-10 place-items-center rounded-full border shadow-md",
+        "pointer-events-none fixed start-0 z-50 grid size-10 place-items-center rounded-full border shadow-md",
         ready ? "bg-primary text-primary-foreground" : "bg-card text-foreground"
       )}
     >
       <HugeiconsIcon
         icon={ArrowLeft01Icon}
         strokeWidth={2}
-        className="size-5"
+        className="size-5 rtl:-scale-x-100"
       />
     </div>
   )

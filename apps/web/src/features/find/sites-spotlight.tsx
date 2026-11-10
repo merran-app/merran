@@ -197,7 +197,11 @@ export function SitesSpotlight({ folded }: { folded: boolean }) {
                       aria-label={t("find.spotlight.previous")}
                       onClick={() => setIndex((at - 1 + count) % count)}
                     >
-                      <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+                      <HugeiconsIcon
+                        icon={ArrowLeft01Icon}
+                        strokeWidth={2}
+                        className="rtl:-scale-x-100"
+                      />
                     </Button>
                     <div className="flex gap-1" aria-hidden>
                       {recipes.map((shown, i) => (
@@ -216,7 +220,11 @@ export function SitesSpotlight({ folded }: { folded: boolean }) {
                       aria-label={t("find.spotlight.next")}
                       onClick={() => setIndex((at + 1) % count)}
                     >
-                      <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
+                      <HugeiconsIcon
+                        icon={ArrowRight01Icon}
+                        strokeWidth={2}
+                        className="rtl:-scale-x-100"
+                      />
                     </Button>
                     {!reduced && (
                       <Button
@@ -246,7 +254,7 @@ export function SitesSpotlight({ folded }: { folded: boolean }) {
                 <li key={other.id}>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 rounded-2xl border bg-card p-2 text-left text-sm hover:bg-muted"
+                    className="flex w-full items-center gap-2 rounded-2xl border bg-card p-2 text-start text-sm hover:bg-muted"
                     onClick={() => setIndex(recipes.indexOf(other))}
                   >
                     <span className="size-10 shrink-0 overflow-hidden rounded-xl bg-muted">

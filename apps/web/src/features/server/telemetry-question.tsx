@@ -81,7 +81,7 @@ function Question() {
 
   if (isError)
     return (
-      <aside className="fixed right-4 bottom-24 z-40 max-w-sm rounded-2xl border bg-card p-4 text-card-foreground">
+      <aside className="fixed end-4 bottom-24 z-40 max-w-sm rounded-2xl border bg-card p-4 text-card-foreground">
         <p className="text-sm">
           {t("settings.server.telemetry.question.statusFailed")}
         </p>

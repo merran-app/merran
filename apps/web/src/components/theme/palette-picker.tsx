@@ -25,7 +25,7 @@ export function PalettePicker({ className }: { className?: string }) {
             aria-checked={selected}
             onClick={() => setPalette(option.value)}
             className={cn(
-              "flex flex-col gap-3 rounded-2xl border bg-card p-4 text-left transition-colors outline-none hover:bg-muted/60 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+              "flex flex-col gap-3 rounded-2xl border bg-card p-4 text-start transition-colors outline-none hover:bg-muted/60 focus-visible:ring-[3px] focus-visible:ring-ring/50",
               selected && "border-primary ring-1 ring-primary"
             )}
           >

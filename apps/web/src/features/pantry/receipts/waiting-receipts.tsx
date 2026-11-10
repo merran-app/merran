@@ -19,7 +19,7 @@ export function WaitingReceipts() {
       {receipts.map((receipt) => (
         <li
           key={receipt.id}
-          className="flex items-center gap-3 rounded-3xl border bg-card p-3 pl-4"
+          className="flex items-center gap-3 rounded-3xl border bg-card p-3 ps-4"
         >
           <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-muted">
             <HugeiconsIcon icon={ReceiptDollarIcon} strokeWidth={2} />

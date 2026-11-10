@@ -6,6 +6,7 @@ import { createRouter, RouterProvider } from "@tanstack/react-router"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
+import { LanguageDirection } from "@/components/layout/language-direction"
 import { ThemeProvider } from "@/components/theme/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -45,16 +46,18 @@ void startLanguage().finally(render)
 function render() {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
-      <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <RouterProvider router={router} />
-            <HouseholdSwitchOverlay />
-            <Toaster />
-            <TimerAlarm />
-          </TooltipProvider>
-        </QueryClientProvider>
-      </ThemeProvider>
+      <LanguageDirection>
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <RouterProvider router={router} />
+              <HouseholdSwitchOverlay />
+              <Toaster />
+              <TimerAlarm />
+            </TooltipProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </LanguageDirection>
     </StrictMode>
   )
 }

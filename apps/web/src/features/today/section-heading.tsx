@@ -28,7 +28,7 @@ export function SectionHeading({
           <HugeiconsIcon
             icon={ArrowRight01Icon}
             strokeWidth={2}
-            className="size-4"
+            className="size-4 rtl:-scale-x-100"
           />
         </Link>
       )}

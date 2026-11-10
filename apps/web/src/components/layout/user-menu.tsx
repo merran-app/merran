@@ -171,11 +171,11 @@ export function SidebarUserMenu() {
             <HugeiconsIcon
               icon={UnfoldMoreIcon}
               strokeWidth={2}
-              className="ml-auto"
+              className="ms-auto"
             />
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            side={isMobile ? "bottom" : "right"}
+            side={isMobile ? "bottom" : "inline-end"}
             align="end"
             sideOffset={8}
             className="w-60"

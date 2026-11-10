@@ -37,7 +37,7 @@ export function SwapsNote({
           <Button
             variant="ghost"
             size="sm"
-            className="-my-1 -mr-2"
+            className="-my-1 -me-2"
             onClick={() => onUndo(swap.ingredientId)}
           >
             {t("recipes.swaps.undo")}

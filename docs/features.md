@@ -212,7 +212,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Works offline: recipes you've opened, this week's plan, the list | Key | Planned | |
 | Guided tours, ⓘ explanations, a glossary and a Help menu | Key | Built | Available in alpha.4: core-page Driver.js tours start on first visit with remembered skip/disable choices; assistant orientation, Help replay and contextual explanations share the public glossary. In alpha.5, replay waits for Help's mobile drawer to finish closing; real-device acceptance remains ([onboarding.md](onboarding.md#3-driverjs-and-help)) |
 | Choose your language | Key | Built | Settings → You → Language, saved per person, with Match my browser by default. Shows once a second language exists |
-| Translations, with units, aisles, stores and currency by country | Key | Planned | Groundwork built November 9, 2026: one list of languages, locales loaded on demand, the Language setting, and a completeness check in CI. No translations yet, and the layout doesn't mirror for right-to-left languages |
+| Translations, with units, aisles, stores and currency by country | Key | Planned | Groundwork built November 9, 2026: one list of languages, locales loaded on demand, the Language setting, and a completeness check in CI. No translations yet. The layout mirrors for right-to-left languages, since November 9, 2026 |
 
 ## For developers and integrations
 

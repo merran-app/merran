@@ -114,7 +114,7 @@ function TagRow({ tag }: { tag: Tag }) {
           aria-label={t("recipes.tagName", { name: tag.name })}
           className="flex-1"
         />
-        <span className="w-16 shrink-0 text-right text-xs text-muted-foreground">
+        <span className="w-16 shrink-0 text-end text-xs text-muted-foreground">
           {t("recipes.count", { count: tag.recipes })}
         </span>
         {changed && (

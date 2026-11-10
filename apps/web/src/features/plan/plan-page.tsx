@@ -225,7 +225,11 @@ export function PlanPage({ week: asked }: { week?: string }) {
               aria-label={t("plan.previous")}
               render={<Link to="/plan" search={{ week: addDays(week, -7) }} />}
             >
-              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+              <HugeiconsIcon
+                icon={ArrowLeft01Icon}
+                strokeWidth={2}
+                className="rtl:-scale-x-100"
+              />
             </Button>
             <span className="min-w-28 text-center font-semibold">{range}</span>
             <Button
@@ -235,7 +239,11 @@ export function PlanPage({ week: asked }: { week?: string }) {
               aria-label={t("plan.following")}
               render={<Link to="/plan" search={{ week: addDays(week, 7) }} />}
             >
-              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
+              <HugeiconsIcon
+                icon={ArrowRight01Icon}
+                strokeWidth={2}
+                className="rtl:-scale-x-100"
+              />
             </Button>
             {!thisWeek && (
               <Button variant="ghost" size="sm" render={<Link to="/plan" />}>

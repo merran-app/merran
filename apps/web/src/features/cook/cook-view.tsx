@@ -10,6 +10,7 @@ import {
   Timer02Icon,
   VolumeHighIcon,
 } from "@hugeicons/core-free-icons"
+import { useDirection } from "@base-ui/react/direction-provider"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   convertTemperatures,
@@ -205,6 +206,10 @@ export function CookView({
   const [finishing, setFinishing] = React.useState(false)
   const [asking, setAsking] = React.useState<AfterCooking | null>(null)
   const swipe = React.useRef<{ x: number; y: number } | null>(null)
+  // The next step is the way the line runs: right in English, left in a
+  // right-to-left language.
+  const direction = useDirection()
+  const forward = direction === "rtl" ? -1 : 1
 
   const onPrep = hasPrep && page === 0
   const stepIndex = page - (hasPrep ? 1 : 0)
@@ -314,12 +319,12 @@ export function CookView({
       ) {
         return
       }
-      if (event.key === "ArrowRight") go(page + 1)
-      if (event.key === "ArrowLeft") go(page - 1)
+      if (event.key === "ArrowRight") go(page + forward)
+      if (event.key === "ArrowLeft") go(page - forward)
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [go, page])
+  }, [forward, go, page])
 
   /** Back where cooking started from: the recipe, or wherever it was. */
   async function leave() {
@@ -646,7 +651,7 @@ export function CookView({
                 </Button>
               </div>
             )}
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="ms-auto flex items-center gap-1.5">
             {handsFreeSupported() && (
               <Button
                 variant={handsFree ? "default" : "outline"}
@@ -752,7 +757,7 @@ export function CookView({
                       step: heldPage + (hasPrep ? 0 : 1),
                     })}
                   </span>
-                  <span className="truncate text-left font-normal">
+                  <span className="truncate text-start font-normal">
                     {stepWords(t, convertTemperatures(heldStep.text, system))}
                   </span>
                 </Button>
@@ -792,7 +797,7 @@ export function CookView({
             const from = swipe.current
             swipe.current = null
             if (!from) return
-            const dx = event.clientX - from.x
+            const dx = (event.clientX - from.x) * forward
             const dy = event.clientY - from.y
             if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
               go(dx < 0 ? page + 1 : page - 1)
@@ -874,7 +879,7 @@ export function CookView({
                             aria-pressed={done}
                             onClick={() => ticks.toggle(line.id)}
                             className={cn(
-                              "rounded-2xl border px-3 py-1.5 text-left transition-colors",
+                              "rounded-2xl border px-3 py-1.5 text-start transition-colors",
                               DETAIL_TEXT[textSize],
                               done
                                 ? "border-transparent bg-muted text-muted-foreground line-through"
@@ -974,6 +979,7 @@ export function CookView({
             icon={ArrowLeft02Icon}
             strokeWidth={2}
             data-icon="inline-start"
+            className="rtl:-scale-x-100"
           />
           {t("cook.back")}
         </Button>
@@ -991,7 +997,7 @@ export function CookView({
               {t("recipes.fields.ingredients")}
             </SheetTrigger>
             <SheetContent side="bottom" className="max-h-[80svh]">
-              <SheetHeader className="grid gap-3 pr-14">
+              <SheetHeader className="grid gap-3 pe-14">
                 <SheetTitle>{t("recipes.fields.ingredients")}</SheetTitle>
                 {showUnits && (
                   <UnitToggle system={system} onChange={setSystem} />
@@ -1005,7 +1011,7 @@ export function CookView({
         )}
         <div
           className={cn(
-            "gap-2 sm:ml-auto sm:flex sm:items-center",
+            "gap-2 sm:ms-auto sm:flex sm:items-center",
             step
               ? "col-span-2 grid grid-cols-2"
               : "col-start-2 flex justify-end"
@@ -1045,6 +1051,7 @@ export function CookView({
                 icon={ArrowRight02Icon}
                 strokeWidth={2}
                 data-icon="inline-end"
+                className="rtl:-scale-x-100"
               />
             </Button>
           )}

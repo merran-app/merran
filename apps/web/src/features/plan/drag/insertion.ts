@@ -1,11 +1,21 @@
 // Where a dragged dish goes among its meal's other dishes, worked out from
-// where they are on screen, so it can be tested without a browser.
+// where they are on screen, so it can be tested without a browser. The sums
+// read rows left to right; a right-to-left page's go through `mirrored`.
 
 export type Box = { left: number; top: number; width: number; height: number }
 
 const BAR = 3
 /** Where the bar goes beyond the first or last dish: half the usual gap. */
 const OUTSIDE = 3
+
+/**
+ * A box as a mirror shows it: flipped about the screen's left edge, where a
+ * point's x becomes -x, so a right-to-left row reads left to right.
+ * Mirroring twice gives it back.
+ */
+export function mirrored(box: Box): Box {
+  return { ...box, left: -(box.left + box.width) }
+}
 
 /**
  * A grid, like the pool on wide screens: some dishes share a row. Ask with

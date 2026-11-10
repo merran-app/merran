@@ -135,7 +135,7 @@ function Note({
     >
       <span className="min-w-0">{text}</span>
       {(action || other) && (
-        <span className="-my-1 -mr-2 flex flex-wrap gap-1">
+        <span className="-my-1 -me-2 flex flex-wrap gap-1">
           {other && (
             <Button variant="ghost" size="sm" onClick={other.onClick}>
               {other.label}

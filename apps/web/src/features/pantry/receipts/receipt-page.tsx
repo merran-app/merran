@@ -56,10 +56,14 @@ export function ReceiptPage({ receiptId }: { receiptId: string }) {
       <Button
         variant="ghost"
         size="sm"
-        className="mt-2 -ml-3 md:mt-4"
+        className="-ms-3 mt-2 md:mt-4"
         render={<Link to="/pantry" />}
       >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+        <HugeiconsIcon
+          icon={ArrowLeft01Icon}
+          strokeWidth={2}
+          className="rtl:-scale-x-100"
+        />
         {t("nav.pantry")}
       </Button>
       {data ? (
@@ -216,7 +220,7 @@ function Review({ receipt }: { receipt: Receipt }) {
                 </button>
               )
             })}
-            <p className="self-center pl-1 text-sm text-muted-foreground">
+            <p className="self-center ps-1 text-sm text-muted-foreground">
               {t("pantry.receipts.compare")}
             </p>
           </div>
@@ -258,7 +262,7 @@ function Review({ receipt }: { receipt: Receipt }) {
 
         <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 flex items-center justify-end gap-2 rounded-3xl border bg-background/95 p-2 shadow-lg backdrop-blur md:bottom-4">
           {offTheList > 0 && (
-            <p className="mr-auto hidden pl-2 text-sm text-muted-foreground sm:block">
+            <p className="me-auto hidden ps-2 text-sm text-muted-foreground sm:block">
               {t("pantry.receipts.offTheList", { count: offTheList })}
             </p>
           )}

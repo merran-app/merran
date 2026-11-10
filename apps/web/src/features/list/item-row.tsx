@@ -218,7 +218,7 @@ export function ItemRow({
                 : t("list.edit", { name: item.name })
             }
             className={cn(
-              "flex min-h-7 min-w-0 flex-1 items-center gap-1.5 rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+              "flex min-h-7 min-w-0 flex-1 items-center gap-1.5 rounded-md text-start outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
               item.checked && !selecting && "text-muted-foreground line-through"
             )}
           >

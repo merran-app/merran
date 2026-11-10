@@ -1,3 +1,4 @@
+import { useDirection } from "@base-ui/react/direction-provider"
 import { StarIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { MAX_STARS, STAR_STEP } from "@merran/shared"
@@ -24,8 +25,8 @@ function withinStars(rating: number) {
 }
 
 /**
- * One star, full, half or empty. A half star is a full one cut to its left
- * half, laid over an empty one.
+ * One star, full, half or empty. A half star is a full one cut to the half
+ * the line starts from, laid over an empty one.
  */
 function Star({
   fill,
@@ -61,7 +62,7 @@ function Star({
       <HugeiconsIcon
         icon={StarIcon}
         strokeWidth={2}
-        className="absolute inset-0 size-full [clip-path:inset(0_50%_0_0)] [&_path]:fill-current"
+        className="absolute inset-0 size-full [clip-path:inset(0_50%_0_0)] rtl:[clip-path:inset(0_0_0_50%)] [&_path]:fill-current"
       />
     </span>
   )
@@ -95,8 +96,8 @@ export function RatingStars({
 }
 
 /**
- * Five stars to pick a rating with. Each star has two halves: the left one
- * gives half a star. Picking the rating already chosen clears it.
+ * Five stars to pick a rating with. Each star has two halves: the one the
+ * line starts from, the left in English, gives half a star. Picking the rating already chosen clears it.
  */
 export function RatingInput({
   value,
@@ -108,6 +109,7 @@ export function RatingInput({
   id?: string
 }) {
   const { t } = useTranslation()
+  const direction = useDirection()
   // What a mouse over the stars would pick, shown until it leaves them.
   const [preview, setPreview] = React.useState<number | null>(null)
   const choices = React.useRef(new Map<number, HTMLButtonElement>())
@@ -142,10 +144,12 @@ export function RatingInput({
 
   function handleKeyDown(event: React.KeyboardEvent) {
     const current = value ?? 0
+    // More stars are the way the line runs: left in a right-to-left language.
+    const forward = direction === "rtl" ? -STAR_STEP : STAR_STEP
     const targets: Record<string, number> = {
-      ArrowRight: current + STAR_STEP,
+      ArrowRight: current + forward,
       ArrowUp: current + STAR_STEP,
-      ArrowLeft: current - STAR_STEP,
+      ArrowLeft: current - forward,
       ArrowDown: current - STAR_STEP,
       Home: STAR_STEP,
       End: MAX_STARS,
@@ -164,7 +168,7 @@ export function RatingInput({
       aria-label={t("recipes.fields.rating")}
       onKeyDown={handleKeyDown}
       onPointerLeave={() => setPreview(null)}
-      className="-ml-1 flex items-center"
+      className="-ms-1 flex items-center"
     >
       {STARS.map((star) => (
         <span
@@ -189,7 +193,7 @@ export function RatingInput({
               onPointerEnter={(event) => previewOnHover(event, rating)}
               className={cn(
                 "absolute inset-y-0 w-1/2 outline-none",
-                rating === star ? "right-0" : "left-0"
+                rating === star ? "end-0" : "start-0"
               )}
             />
           ))}
