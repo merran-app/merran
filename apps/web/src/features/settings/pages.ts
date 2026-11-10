@@ -193,8 +193,9 @@ export function visiblePages(viewer: Viewer): VisiblePage[] {
   const pages: VisiblePage[] = []
   for (const page of SETTINGS_PAGES) {
     const halves = halvesFor(page, viewer)
-    if (halves.length === 0) continue
-    pages.push({ ...page, halves, to: halves[0].to })
+    const first = halves[0]
+    if (!first) continue
+    pages.push({ ...page, halves, to: first.to })
   }
   return pages
 }
