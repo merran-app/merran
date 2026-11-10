@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 
 import { useSettingsViewer } from "./guard"
 import {
+  missingHouseholdHalf,
   visiblePages,
   type HalfId,
   type SettingsPageId,
@@ -30,9 +31,11 @@ export function TopicPage({
 }) {
   const { t } = useTranslation()
   const isMobile = useIsMobile()
-  const page = visiblePages(useSettingsViewer()).find(
-    (each) => each.id === pageId
-  )
+  const viewer = useSettingsViewer()
+  const page = visiblePages(viewer).find((each) => each.id === pageId)
+  // With no switch to show the household's half, say why it isn't there.
+  const missing =
+    half === "server" ? missingHouseholdHalf(pageId, viewer) : null
 
   return (
     <section
@@ -50,6 +53,11 @@ export function TopicPage({
         {page && (
           <p className="text-sm text-muted-foreground">
             {t(page.descriptionKey)}
+          </p>
+        )}
+        {missing && (
+          <p className="text-sm text-muted-foreground">
+            {t(`settings.halves.onlyServer.${missing}`)}
           </p>
         )}
       </div>

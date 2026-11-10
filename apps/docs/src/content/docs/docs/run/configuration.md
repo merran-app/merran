@@ -68,7 +68,7 @@ Settings has a page for each topic. A page with both household and server settin
 | **Import and export**   | **Export this household**, **Import a Merran export**, **From another app**                | **Recipe sites**, **Video import**, **FlareSolverr**                    |
 | **Server**              |                                                                                            | **This server**, **Email**, **Jobs**, **Error tracking**, **Telemetry** |
 
-Household members see **Profile**, **Sign-in**, **Apps and devices**, **Household** and **Planning**; household owners and admins also see **Recipes**, **AI**, **Shopping and stores**, and **Import and export**. The server admin role does not by itself grant household-admin access.
+Household members see **Profile**, **Sign-in**, **Apps and devices**, **Household** and **Planning**; household owners and admins also see **Recipes**, **AI**, **Shopping and stores**, and **Import and export**. A server admin who isn't an admin of the household in use sees only the **Whole server** side of those pages, with a line saying why. The server admin role does not by itself grant household-admin access.
 
 See [household roles and permissions](../household-roles/) for who can change each scope. Server administration and household ownership are separate roles.
 

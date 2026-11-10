@@ -237,7 +237,11 @@
       "you": "You",
       "household": "This household",
       "server": "Whole server",
-      "serverNote": "Changes here reach every household on this server."
+      "serverNote": "Changes here reach every household on this server.",
+      "onlyServer": {
+        "noHousehold": "You're not in a household, so only the server's settings are here.",
+        "notAdmin": "You're not an admin of this household, so only the server's settings are here."
+      }
     },
     "topics": {
       "profile": {

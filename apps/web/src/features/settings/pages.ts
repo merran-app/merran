@@ -236,6 +236,23 @@ export function settingsRedirect(
   return halves[0]?.to ?? "/settings"
 }
 
+/**
+ * Why someone sees a page without its household half: they're in no
+ * household, or aren't an admin of the one in use. Null when the page has
+ * no household half to miss, or shows it.
+ */
+export function missingHouseholdHalf(
+  pageId: SettingsPageId,
+  viewer: Viewer
+): "noHousehold" | "notAdmin" | null {
+  const page = SETTINGS_PAGES.find((each) => each.id === pageId)
+  if (!page) return null
+  const halves: readonly SettingsHalf[] = page.halves
+  const household = halves.find((half) => half.id === "household")
+  if (!household || canSeeHalf(household, viewer)) return null
+  return viewer.householdRole === null ? "noHousehold" : "notAdmin"
+}
+
 /** Who's looking, from the signed-in person: their role in the household in use. */
 export function viewerFrom(
   me: {

@@ -67,7 +67,7 @@ The rules for each card don't change. A page appears when at least one of its ha
 
 So a member sees 5 pages, a household admin 9, and the server admin all 10. Two cases to keep working:
 
-- A server admin who is only a member of the household they're in sees Recipes, AI, Shopping and stores, and Import and export with only their Whole server half, opened directly and with no switch.
+- A server admin who is only a member of the household they're in sees Recipes, AI, Shopping and stores, and Import and export with only their Whole server half, opened directly and with no switch. A line under the page's heading says why the household's half is missing: not an admin of this household, or not in one (added after a first look).
 - Someone with no household sees Profile, Sign-in and Apps and devices. A server admin with no household also sees Household with only its Whole server half (Start another household), which replaces today's empty Household tab, along with the other server halves and Server.
 
 ## How it's built

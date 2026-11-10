@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 
 import {
+  missingHouseholdHalf,
   pageAt,
   settingsRedirect,
   viewerFrom,
@@ -114,6 +115,25 @@ test("a server half whose cards are all switched off isn't offered", () => {
     "/settings/apps"
   )
   assert.deepEqual(halves(withoutOauth, "signIn"), ["you", "server"])
+})
+
+test("a page showing only its server half says why the household's is missing", () => {
+  assert.equal(missingHouseholdHalf("ai", serverAdminAsMember), "notAdmin")
+  assert.equal(
+    missingHouseholdHalf("recipes", serverAdminNoHousehold),
+    "noHousehold"
+  )
+  assert.equal(
+    missingHouseholdHalf("household", serverAdminNoHousehold),
+    "noHousehold"
+  )
+})
+
+test("a page with its household half, or with none to miss, says nothing", () => {
+  assert.equal(missingHouseholdHalf("ai", runsServer), null)
+  assert.equal(missingHouseholdHalf("household", serverAdminAsMember), null)
+  assert.equal(missingHouseholdHalf("server", serverAdminAsMember), null)
+  assert.equal(missingHouseholdHalf("apps", serverAdminNoHousehold), null)
 })
 
 test("with no household, only your own pages", () => {
