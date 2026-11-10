@@ -37,7 +37,7 @@ import { api, ApiError, unwrap } from "@/lib/api/client"
 const BROWSER = "browser"
 
 /**
- * Settings → You: the language Merran shows, saved for the person on every
+ * Settings → Profile: the language Merran shows, saved for the person on every
  * device, or the browser's. Hidden while English is the only language, as
  * settings that can't be used yet are (Household AI's model pickers, say).
  */

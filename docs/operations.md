@@ -33,12 +33,12 @@ Two different needs, handled separately.
 - Set `MERRAN_SENTRY_DSN` and both the server and the web app report errors there. It works with Sentry, and with the self-hosted, Sentry-compatible **GlitchTip** and **Bugsink**, so errors can stay on the operator's own hardware.
 - The browser gets its DSN from the server at start, so the image doesn't need rebuilding.
 - **Scrubbed before sending:** cookies, headers, keys, request and response bodies, and anything that looks like a key. People are identified only by a random id, never a name or email.
-- Settings: the environment name (`MERRAN_SENTRY_ENVIRONMENT`) and the share of errors sent (`MERRAN_SENTRY_SAMPLE_RATE`), in Settings → This server too. Performance traces come later.
+- Settings: the environment name (`MERRAN_SENTRY_ENVIRONMENT`) and the share of errors sent (`MERRAN_SENTRY_SAMPLE_RATE`), in Settings → Server too. Performance traces come later.
 - The SDK is loaded only when there's a DSN, on the server and in the browser, and sends errors only: no breadcrumbs, no tracing.
 
 **2. A built-in Problems page** (always on, nothing sent anywhere)
 - The server keeps the last few hundred errors in the database (message, where, when, request id, how often), with no personal data.
-- Settings → This server → **Problems** lists them, grouped, so a server admin without Sentry can still see what's going wrong.
+- Settings → Server → **Problems** lists them, grouped, so a server admin without Sentry can still see what's going wrong.
 - **Copy diagnostics** puts together what a bug report needs: version, install method, modules on, the database (SQLite, or Postgres and its version), the recent problems. Personal data is left out, and it's shown before copying.
 - **Report a problem** opens a new GitHub issue with the diagnostics filled in. Nothing is sent unless the person submits that issue themselves.
 
@@ -56,7 +56,7 @@ Two different needs, handled separately.
 
 ### 1. Usage on your own server (for the server admin)
 
-Built in, worked out from the database, never sent anywhere. Settings → This server → **Usage**:
+Built in, worked out from the database, never sent anywhere. Settings → Server → **Usage**:
 - households, people, and who's been active in the past week and month
 - recipes, imports, meals planned and cooked
 - AI spend by household, task, model and whose key paid
@@ -66,7 +66,7 @@ Built in, worked out from the database, never sent anywhere. Settings → This s
 
 Knowing roughly how many servers run Merran, on which versions, and which modules people use helps decide what to build and when an old version can stop being supported. It must be something a self-hoster can trust.
 
-- **Off unless the server admin says yes.** The first time the server admin opens Merran after setup, a dialog asks once ("Help improve Merran?"), with Yes and No and where to see exactly what's sent; decided October 17, 2026, instead of a box on the setup screen. Settings → This server → Telemetry can change it any time. If the receiver ever isn't answering, `RECEIVER_LIVE` hides both and nothing is sent ([telemetry.md](telemetry.md#until-its-live)).
+- **Off unless the server admin says yes.** The first time the server admin opens Merran after setup, a dialog asks once ("Help improve Merran?"), with Yes and No and where to see exactly what's sent; decided October 17, 2026, instead of a box on the setup screen. Settings → Server → Telemetry can change it any time. If the receiver ever isn't answering, `RECEIVER_LIVE` hides both and nothing is sent ([telemetry.md](telemetry.md#until-its-live)).
 - `MERRAN_TELEMETRY=off` turns it off for good and skips the question, for people deploying many copies.
 - **See what's sent.** Settings shows the exact JSON of the next report.
 - **What's sent, once a day:**
@@ -159,7 +159,7 @@ Docs for each common way in: a Cloudflare Tunnel (in the compose file), Tailscal
 - **CI** (`.github/workflows/ci.yml`, with the checks in `check.yml`): every push to main and pull request selects checks from its changed files. Application checks run by package; server changes still test SQLite and Postgres. Relevant image changes build amd64 alongside PR checks; main publishes amd64 and arm64 as `edge`, versioned `0.0.0-edge.<commit>`, only after checks pass. Documentation-only changes do not publish another image. See the October 19 decision below.
 - **Database changes run at startup.** Before applying any, Merran backs the database up into `data/backups` (`pre-1.5.0-<date>`), so a bad update can always be undone.
 - **Downgrades aren't supported,** and the release notes say when an update can't be undone without that dump.
-- **The update check** (the Update check module) asks GitHub for Merran's releases (not commits, as the REFERENCE app did) every 6 hours, and a minute after Merran starts. A server on a pre-release hears about newer pre-releases too; one on a release only about releases; a build that isn't a release (from source, or `edge`) isn't checked. The server admin sees an Update badge in the sidebar and the account menu, and Settings → This server shows the release notes and the commands for their install method, with **Look now**. `MERRAN_UPDATE_CHECK=false` turns it off; only the request for the releases is sent.
+- **The update check** (the Update check module) asks GitHub for Merran's releases (not commits, as the REFERENCE app did) every 6 hours, and a minute after Merran starts. A server on a pre-release hears about newer pre-releases too; one on a release only about releases; a build that isn't a release (from source, or `edge`) isn't checked. The server admin sees an Update badge in the sidebar and the account menu, and Settings → Server shows the release notes and the commands for their install method, with **Look now**. `MERRAN_UPDATE_CHECK=false` turns it off; only the request for the releases is sent.
 - **Support:** the latest minor version gets fixes. Security fixes go to the latest minor of the current major.
 
 ### Selective CI — October 19, 2026
@@ -189,7 +189,7 @@ Local validation: `node --test .github/scripts/*.test.mjs` covers routing, real 
 
 - **Nightly backups by Merran itself,** on either database, so there's no separate backup container: SQLite's online backup (a consistent copy while Merran keeps running) or `pg_dump` for Postgres, into `data/backups`, kept for `MERRAN_BACKUP_KEEP_DAYS` (14 by default). The time is a setting.
 - **Files** (photos, the secret key) are in `data/`, next to the compose file. The docs say plainly: back up the whole `data` folder, and keep `data/app/secret` (or `MERRAN_SECRET`) with it, or saved keys must be entered again.
-- **Download a backup** (server admin, Settings → This server): the database and files in one archive.
+- **Download a backup** (server admin, Settings → Server): the database and files in one archive.
 - **Restoring** is documented step by step, and CI restores a dump into a fresh install on every release to prove the steps work.
 - **A household export** (see [platform.md](platform.md#export-and-import)) is the way to move one household, not a backup of the server.
 

@@ -91,7 +91,7 @@ afterAll(async () => {
 async function begin(browser: TestClient, link = false) {
   const response = await browser.post(
     "/api/auth/" + (link ? "link-social" : "sign-in/social"),
-    { provider: "oidc", callbackURL: TEST_ORIGIN + "/settings/you" }
+    { provider: "oidc", callbackURL: TEST_ORIGIN + "/settings/sign-in" }
   )
   const data = await response.json()
   expect(response.status, JSON.stringify(data)).toBe(200)

@@ -19,7 +19,7 @@ Choose a stable HTTPS address for Merran and set `MERRAN_PUBLIC_URL` before link
 The Kroger card includes **Create your Kroger app** steps, **Open Kroger developer portal**, and **Kroger setup guide** buttons beside the credentials.
 :::
 
-1. Open **Settings → This server → Kroger** in Merran and copy **Redirect address**.
+1. Open **Settings → Shopping and stores → Whole server → Kroger** in Merran and copy **Redirect address**.
 2. Sign in to the [Kroger developer portal](https://developer.kroger.com/) and create an application. Enable access to the Product, Cart, and Profile APIs required by Merran; follow the portal's current requirements for your application.
 3. Register the exact redirect URI shown by Merran, including HTTPS and the path. With `MERRAN_PUBLIC_URL=https://food.example.com`, it is `https://food.example.com/api/stores/kroger/callback`.
 4. Copy the application's **Client ID** and **Client secret** into the server's Kroger card. Choose **Save app**; Merran tests the credentials before saving. **Test** rechecks saved credentials.
@@ -30,7 +30,7 @@ The implementation requests `product.compact` for application product access and
 
 ## Pick a store and link an account
 
-1. As a household owner/admin, open **Settings → Household → Stores**.
+1. As a household owner/admin, open **Settings → Shopping and stores → Stores**.
 2. Enter a five-digit **ZIP code**, choose **Find**, and select the correct location.
 3. Under **Your orders**, choose **Pickup** or **Delivery**. Prices and availability can differ.
 4. Choose **Link Kroger**, or the equivalent button named for your selected chain. Sign in and approve on Kroger's site.

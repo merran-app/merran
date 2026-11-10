@@ -65,7 +65,7 @@ Invite household members from **Settings → Household**. They use the invite li
 
 ## Invite people by email
 
-Copyable invite links work without any email service. For email invitations, the server administrator first configures **Settings → This server → Email**, sends a test message, and sets `MERRAN_PUBLIC_URL` to the address recipients use to reach this server. A successful test email alone does not enable invitations without that address.
+Copyable invite links work without any email service. For email invitations, the server administrator first configures **Settings → Server → Email**, sends a test message, and sets `MERRAN_PUBLIC_URL` to the address recipients use to reach this server. A successful test email alone does not enable invitations without that address.
 
 Household owners and admins then choose **Settings → Household → Invitations → Invite by email**. The recipient opens **Join the household** in the email and signs in or registers with the invited address. Invitations last seven days and work once. See [email setup](../../run/configuration/#email-transport) for Resend and other SMTP services, and [household invitations](../../run/household-roles/#email-an-invitation) for delivery status, resend and cancellation. [Password recovery](../../run/configuration/#password-recovery) uses the same SMTP settings.
 
@@ -73,9 +73,9 @@ For a source checkout using `pnpm dev`, the server does not automatically load `
 
 ## Find the right settings
 
-- **This server** controls server-wide configuration and optional modules.
-- **Household** controls the household's preferences and shared setup.
-- Personal settings apply to your account.
+- **Settings** has a page for each topic: your own **Profile**, **Sign-in**, and **Apps and devices**, and the household's **Household**, **Planning**, **Recipes**, **AI**, **Shopping and stores**, and **Import and export**.
+- As the server admin, you also see **Server**, and a switch to **Whole server** on pages with settings that reach every household.
+- Most household settings are for household owners and admins; a few, like **Tastes**, anyone in the household can change.
 
 Start with the core meal workflow. You can configure AI providers, stores, nutrition, and voice later as needed. Some features require an enabled module, external credentials, or another service.
 

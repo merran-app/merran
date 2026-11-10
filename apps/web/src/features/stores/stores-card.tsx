@@ -45,7 +45,7 @@ import {
   type StoresStatus,
 } from "./queries"
 
-const householdRoute = getRouteApi("/_app/settings/household")
+const shoppingRoute = getRouteApi("/_app/settings/shopping/")
 
 type Modality = StoresStatus["kroger"]["modality"]
 type Lean = StoresStatus["kroger"]["leanOnSales"]
@@ -519,8 +519,8 @@ export function StoresCard() {
 /** Says how linking went, when Kroger sends the person back here. */
 function useLinkedToast() {
   const { t } = useTranslation()
-  const { kroger, reason } = householdRoute.useSearch()
-  const navigate = householdRoute.useNavigate()
+  const { kroger, reason } = shoppingRoute.useSearch()
+  const navigate = shoppingRoute.useNavigate()
   React.useEffect(() => {
     if (!kroger) return
     if (kroger === "linked")

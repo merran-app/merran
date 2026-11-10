@@ -111,7 +111,7 @@ The repo's `docs/` keeps the decision records (like this plan). The docs site is
 
 For anyone building on Merran: scripts, Home Assistant, n8n, the iPhone Shortcut and AI apps. The API itself is in [platform.md](platform.md#the-public-api).
 
-1. **Start here:** one page from nothing to a working call. Make a key (Settings → You → API keys), send it as `Authorization: Bearer mrn_…`, and check it with `GET /api/auth/api-keys/current`. Then what holds everywhere:
+1. **Start here:** one page from nothing to a working call. Make a key (Settings → Apps and devices → API keys), send it as `Authorization: Bearer mrn_…`, and check it with `GET /api/auth/api-keys/current`. Then what holds everywhere:
    - permissions by area, read or read and write
    - a key works in one household
    - 300 requests a minute per key

@@ -36,7 +36,7 @@ export async function needKrogerApp(deps: StoreDeps): Promise<KrogerApp> {
     throw new AppError(
       "unprocessable",
       "kroger_off",
-      "Kroger isn't set up on this server. The server admin adds a Kroger developer app in Settings, This server."
+      "Kroger isn't set up on this server. The server admin adds a Kroger developer app in Settings, Shopping and stores, Whole server."
     )
   }
   return app
@@ -181,7 +181,7 @@ export async function finishKrogerLink(
     throw new AppError(
       "invalid",
       "kroger_link_expired",
-      "That link to Kroger has run out. Start again from Settings, Household, Stores."
+      "That link to Kroger has run out. Start again from Settings, Shopping and stores."
     )
   }
   const pending = JSON.parse(connection.pendingVerifier) as {

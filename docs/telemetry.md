@@ -6,7 +6,7 @@ Status: live since October 18, 2026. The receiver is `apps/telemetry`, deployed 
 
 ## Original motivation — October 17, 2026
 
-0.1.0-alpha.1 shipped on October 17, 2026 with the sender (`apps/server/src/modules/telemetry/`), which posts to `https://telemetry.merran.app/v1/reports` at 04:41 server time each day. At that time nothing answered there: the name did not resolve. The receiver has since gone live, as recorded above. A server whose admin turned telemetry on gets one failed job a day ("Sending the daily summary", in Settings → This server → Jobs). Scheduled jobs are tried once, so it stays at one, and nothing else breaks. [Until it's live](#until-its-live) records the pre-launch fallback.
+0.1.0-alpha.1 shipped on October 17, 2026 with the sender (`apps/server/src/modules/telemetry/`), which posts to `https://telemetry.merran.app/v1/reports` at 04:41 server time each day. At that time nothing answered there: the name did not resolve. The receiver has since gone live, as recorded above. A server whose admin turned telemetry on gets one failed job a day ("Sending the daily summary", in Settings → Server → Jobs). Scheduled jobs are tried once, so it stays at one, and nothing else breaks. [Until it's live](#until-its-live) records the pre-launch fallback.
 
 ## What it isn't
 
@@ -16,7 +16,7 @@ Status: live since October 18, 2026. The receiver is `apps/telemetry`, deployed 
 
 ## What a report holds
 
-Exactly what Settings → This server → Telemetry shows (`buildReport` in `report.ts`):
+Exactly what Settings → Server → Telemetry shows (`buildReport` in `report.ts`):
 
 ```json
 {

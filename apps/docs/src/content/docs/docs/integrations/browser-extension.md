@@ -93,7 +93,7 @@ An import sends the page URL, title, structured recipe data, candidate image URL
 
 For an update, extract the new matching archive into your retained extension folder, reload the extension from the browser's extension manager, then reload Merran's tabs. Check the connection afterward. In Firefox, load the new manifest as a temporary add-on. Removing and reinstalling can require reconnecting.
 
-To revoke access, open **Settings → You → API keys** in Merran and remove the extension's key. Removing the browser extension alone does not revoke a server-side key. Remove any abandoned keys after a failed connection.
+To revoke access, open **Settings → Apps and devices → API keys** in Merran and remove the extension's key. Removing the browser extension alone does not revoke a server-side key. Remove any abandoned keys after a failed connection.
 
 | Problem                                     | What to check                                                                                                                                                             |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

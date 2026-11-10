@@ -51,7 +51,7 @@ export async function ready(deps: BasketDeps, em: EntityManager) {
     throw new AppError(
       "unprocessable",
       "kroger_no_store",
-      "Pick the household's Kroger store first, in Settings, Household, Stores."
+      "Pick the household's Kroger store first, in Settings, Shopping and stores."
     )
   }
   return { app, connection, location: connection.location }

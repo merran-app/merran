@@ -36,7 +36,7 @@ body:
     id: version
     attributes:
       label: Merran's version
-      description: A server admin can see it in Settings → This server → Server overview. Or give the image tag you run.
+      description: A server admin can see it in Settings → Server → This server. Or give the image tag you run.
       placeholder: 0.1.0-alpha.6
     validations:
       required: true

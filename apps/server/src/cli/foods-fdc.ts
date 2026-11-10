@@ -65,7 +65,7 @@ export async function foodsFdc(
   const key = await usdaKey(env)
   if (!key) {
     console.error(
-      "There's no USDA key: set MERRAN_USDA_KEY, or add one in Settings, This server, Nutrition."
+      "There's no USDA key: set MERRAN_USDA_KEY, or add one in Settings, Recipes, Whole server."
     )
     return 1
   }

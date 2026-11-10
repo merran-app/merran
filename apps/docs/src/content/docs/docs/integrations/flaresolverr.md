@@ -40,7 +40,7 @@ Merran checks every link before sending it to FlareSolverr, and refuses a page t
 Media setups with Prowlarr or Jackett often have FlareSolverr running already.
 
 1. Work out an address Merran's container can reach. On the same Docker network, that's the container's name, like `http://flaresolverr:8191`. On another machine, use that machine's address, like `http://192.168.1.20:8191`. `localhost` inside Merran's container is Merran itself.
-2. Open **Settings → This server → FlareSolverr**, enter the address under **Address**, and choose **Save**.
+2. Open **Settings → Import and export → Whole server → FlareSolverr**, enter the address under **Address**, and choose **Save**.
 3. Choose **Test**. A message like **FlareSolverr 3.3.21 is ready.** means Merran reached it.
 
 When FlareSolverr is in another Compose project, put Merran on its network too. `docker network ls` lists the networks; then, in Merran's `compose.yaml`:
@@ -78,7 +78,7 @@ The project's `compose.yaml` has FlareSolverr behind the `flaresolverr` profile.
    docker compose logs --tail 50 flaresolverr
    ```
 
-3. In **Settings → This server → FlareSolverr**, choose **Test**. The address comes from `.env`, so it's locked in Settings.
+3. In **Settings → Import and export → Whole server → FlareSolverr**, choose **Test**. The address comes from `.env`, so it's locked in Settings.
 
 ## In your own Compose file
 

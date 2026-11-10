@@ -36,7 +36,7 @@ export function SsoCard() {
         ? await authClient.unlinkAccount({ accountId: linked.id })
         : await authClient.linkSocial({
             provider: "oidc",
-            callbackURL: "/settings/you",
+            callbackURL: "/settings/sign-in",
           })
       if (result.error) setFailed(true)
       else

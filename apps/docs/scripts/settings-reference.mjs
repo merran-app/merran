@@ -159,7 +159,7 @@ This reference is generated from the checked-out server's boot settings and regi
 ## How to read this reference
 
 - Environment values take priority over saved values, then defaults. A value supplied by the environment locks the corresponding setting in the app. An empty environment variable counts as unset; removing an override can reveal an older saved value.
-- **Environment only** settings require recreating the container after configuration changes. Other server settings belong to **Settings → This server**; household settings require a household owner or admin.
+- **Environment only** settings require recreating the container after configuration changes. Other server settings are on **Settings → Server** and on the **Whole server** side of other pages in Settings; household settings require a household owner or admin.
 - **Unset** means no declared value. The description may explain a runtime fallback. Docker and Compose can override these defaults: for example, the image sets its data directory, version, and installation method.
 - Switch environment values accept true, 1, yes, on or false, 0, no, off, ignoring case. Lists use commas between entries. Choices use the listed values. Invalid values are rejected; boot errors name the environment variable.
 - Secret values are never included here. Back up the server secret with the data, and keep credentials out of logs and issues.

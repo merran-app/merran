@@ -167,8 +167,8 @@ export async function startPhotoRun(
       "unprocessable",
       ready.why === "off" ? "photos_off" : "photos_no_key",
       ready.why === "off"
-        ? "AI photos are off on this server. The server admin can turn them on in Settings, This server."
-        : "AI photos need an OpenAI or Google key. A household admin can add one in Settings, Household, AI."
+        ? "AI photos are off on this server. The server admin can turn them on in Settings, Recipes, Whole server."
+        : "AI photos need an OpenAI or Google key. A household admin can add one in Settings, AI."
     )
   }
   const total = await em.count(Recipe, { image: null })

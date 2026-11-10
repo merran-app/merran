@@ -35,8 +35,8 @@ import { Route as AppRecipesDuplicatesRouteImport } from './routes/_app/recipes/
 import { Route as AppRecipesNewRouteImport } from './routes/_app/recipes/new'
 import { Route as AppRecipesReviewRouteImport } from './routes/_app/recipes/review'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
-import { Route as AppSettingsHouseholdRouteImport } from './routes/_app/settings/household'
-import { Route as AppSettingsImportExportRouteImport } from './routes/_app/settings/import-export'
+import { Route as AppSettingsPlanningRouteImport } from './routes/_app/settings/planning'
+import { Route as AppSettingsProfileRouteImport } from './routes/_app/settings/profile'
 import { Route as AppSettingsServerRouteImport } from './routes/_app/settings/server'
 import { Route as AppSettingsYouRouteImport } from './routes/_app/settings/you'
 import { Route as FocusExtensionConnectRouteImport } from './routes/_focus/extension/connect'
@@ -49,6 +49,20 @@ import { Route as AppRecipesSlugEditRouteImport } from './routes/_app/recipes/$s
 import { Route as AppRecipesFindIndexRouteImport } from './routes/_app/recipes/find/index'
 import { Route as AppRecipesFindCollectionRouteImport } from './routes/_app/recipes/find/$collection'
 import { Route as AppRecipesImportImportIdRouteImport } from './routes/_app/recipes/import/$importId'
+import { Route as AppSettingsAiIndexRouteImport } from './routes/_app/settings/ai/index'
+import { Route as AppSettingsAiServerRouteImport } from './routes/_app/settings/ai/server'
+import { Route as AppSettingsAppsIndexRouteImport } from './routes/_app/settings/apps/index'
+import { Route as AppSettingsAppsServerRouteImport } from './routes/_app/settings/apps/server'
+import { Route as AppSettingsHouseholdIndexRouteImport } from './routes/_app/settings/household/index'
+import { Route as AppSettingsHouseholdServerRouteImport } from './routes/_app/settings/household/server'
+import { Route as AppSettingsImportExportIndexRouteImport } from './routes/_app/settings/import-export/index'
+import { Route as AppSettingsImportExportServerRouteImport } from './routes/_app/settings/import-export/server'
+import { Route as AppSettingsRecipesIndexRouteImport } from './routes/_app/settings/recipes/index'
+import { Route as AppSettingsRecipesServerRouteImport } from './routes/_app/settings/recipes/server'
+import { Route as AppSettingsShoppingIndexRouteImport } from './routes/_app/settings/shopping/index'
+import { Route as AppSettingsShoppingServerRouteImport } from './routes/_app/settings/shopping/server'
+import { Route as AppSettingsSignInIndexRouteImport } from './routes/_app/settings/sign-in/index'
+import { Route as AppSettingsSignInServerRouteImport } from './routes/_app/settings/sign-in/server'
 import { Route as FocusRecipesSlugCookRouteImport } from './routes/_focus/recipes/$slug/cook'
 
 const AppRoute = AppRouteImport.update({
@@ -179,14 +193,14 @@ const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppSettingsRoute,
 } as any)
-const AppSettingsHouseholdRoute = AppSettingsHouseholdRouteImport.update({
-  id: '/household',
-  path: '/household',
+const AppSettingsPlanningRoute = AppSettingsPlanningRouteImport.update({
+  id: '/planning',
+  path: '/planning',
   getParentRoute: () => AppSettingsRoute,
 } as any)
-const AppSettingsImportExportRoute = AppSettingsImportExportRouteImport.update({
-  id: '/import-export',
-  path: '/import-export',
+const AppSettingsProfileRoute = AppSettingsProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AppSettingsRoute,
 } as any)
 const AppSettingsServerRoute = AppSettingsServerRouteImport.update({
@@ -252,6 +266,83 @@ const AppRecipesImportImportIdRoute =
     path: '/recipes/import/$importId',
     getParentRoute: () => AppRoute,
   } as any)
+const AppSettingsAiIndexRoute = AppSettingsAiIndexRouteImport.update({
+  id: '/ai/',
+  path: '/ai/',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsAiServerRoute = AppSettingsAiServerRouteImport.update({
+  id: '/ai/server',
+  path: '/ai/server',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsAppsIndexRoute = AppSettingsAppsIndexRouteImport.update({
+  id: '/apps/',
+  path: '/apps/',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsAppsServerRoute = AppSettingsAppsServerRouteImport.update({
+  id: '/apps/server',
+  path: '/apps/server',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsHouseholdIndexRoute =
+  AppSettingsHouseholdIndexRouteImport.update({
+    id: '/household/',
+    path: '/household/',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
+const AppSettingsHouseholdServerRoute =
+  AppSettingsHouseholdServerRouteImport.update({
+    id: '/household/server',
+    path: '/household/server',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
+const AppSettingsImportExportIndexRoute =
+  AppSettingsImportExportIndexRouteImport.update({
+    id: '/import-export/',
+    path: '/import-export/',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
+const AppSettingsImportExportServerRoute =
+  AppSettingsImportExportServerRouteImport.update({
+    id: '/import-export/server',
+    path: '/import-export/server',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
+const AppSettingsRecipesIndexRoute = AppSettingsRecipesIndexRouteImport.update({
+  id: '/recipes/',
+  path: '/recipes/',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsRecipesServerRoute =
+  AppSettingsRecipesServerRouteImport.update({
+    id: '/recipes/server',
+    path: '/recipes/server',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
+const AppSettingsShoppingIndexRoute =
+  AppSettingsShoppingIndexRouteImport.update({
+    id: '/shopping/',
+    path: '/shopping/',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
+const AppSettingsShoppingServerRoute =
+  AppSettingsShoppingServerRouteImport.update({
+    id: '/shopping/server',
+    path: '/shopping/server',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
+const AppSettingsSignInIndexRoute = AppSettingsSignInIndexRouteImport.update({
+  id: '/sign-in/',
+  path: '/sign-in/',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsSignInServerRoute = AppSettingsSignInServerRouteImport.update({
+  id: '/sign-in/server',
+  path: '/sign-in/server',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
 const FocusRecipesSlugCookRoute = FocusRecipesSlugCookRouteImport.update({
   id: '/recipes/$slug/cook',
   path: '/recipes/$slug/cook',
@@ -279,8 +370,8 @@ export interface FileRoutesByFullPath {
   '/recipes/duplicates': typeof AppRecipesDuplicatesRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/recipes/review': typeof AppRecipesReviewRoute
-  '/settings/household': typeof AppSettingsHouseholdRoute
-  '/settings/import-export': typeof AppSettingsImportExportRoute
+  '/settings/planning': typeof AppSettingsPlanningRoute
+  '/settings/profile': typeof AppSettingsProfileRoute
   '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
   '/extension/connect': typeof FocusExtensionConnectRoute
@@ -294,10 +385,24 @@ export interface FileRoutesByFullPath {
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
   '/recipes/find/$collection': typeof AppRecipesFindCollectionRoute
   '/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
+  '/settings/ai/server': typeof AppSettingsAiServerRoute
+  '/settings/apps/server': typeof AppSettingsAppsServerRoute
+  '/settings/household/server': typeof AppSettingsHouseholdServerRoute
+  '/settings/import-export/server': typeof AppSettingsImportExportServerRoute
+  '/settings/recipes/server': typeof AppSettingsRecipesServerRoute
+  '/settings/shopping/server': typeof AppSettingsShoppingServerRoute
+  '/settings/sign-in/server': typeof AppSettingsSignInServerRoute
   '/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/pantry/receipts/': typeof AppPantryReceiptsIndexRoute
   '/recipes/$slug/': typeof AppRecipesSlugIndexRoute
   '/recipes/find/': typeof AppRecipesFindIndexRoute
+  '/settings/ai/': typeof AppSettingsAiIndexRoute
+  '/settings/apps/': typeof AppSettingsAppsIndexRoute
+  '/settings/household/': typeof AppSettingsHouseholdIndexRoute
+  '/settings/import-export/': typeof AppSettingsImportExportIndexRoute
+  '/settings/recipes/': typeof AppSettingsRecipesIndexRoute
+  '/settings/shopping/': typeof AppSettingsShoppingIndexRoute
+  '/settings/sign-in/': typeof AppSettingsSignInIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -319,8 +424,8 @@ export interface FileRoutesByTo {
   '/recipes/duplicates': typeof AppRecipesDuplicatesRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/recipes/review': typeof AppRecipesReviewRoute
-  '/settings/household': typeof AppSettingsHouseholdRoute
-  '/settings/import-export': typeof AppSettingsImportExportRoute
+  '/settings/planning': typeof AppSettingsPlanningRoute
+  '/settings/profile': typeof AppSettingsProfileRoute
   '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
   '/extension/connect': typeof FocusExtensionConnectRoute
@@ -334,10 +439,24 @@ export interface FileRoutesByTo {
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
   '/recipes/find/$collection': typeof AppRecipesFindCollectionRoute
   '/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
+  '/settings/ai/server': typeof AppSettingsAiServerRoute
+  '/settings/apps/server': typeof AppSettingsAppsServerRoute
+  '/settings/household/server': typeof AppSettingsHouseholdServerRoute
+  '/settings/import-export/server': typeof AppSettingsImportExportServerRoute
+  '/settings/recipes/server': typeof AppSettingsRecipesServerRoute
+  '/settings/shopping/server': typeof AppSettingsShoppingServerRoute
+  '/settings/sign-in/server': typeof AppSettingsSignInServerRoute
   '/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/pantry/receipts': typeof AppPantryReceiptsIndexRoute
   '/recipes/$slug': typeof AppRecipesSlugIndexRoute
   '/recipes/find': typeof AppRecipesFindIndexRoute
+  '/settings/ai': typeof AppSettingsAiIndexRoute
+  '/settings/apps': typeof AppSettingsAppsIndexRoute
+  '/settings/household': typeof AppSettingsHouseholdIndexRoute
+  '/settings/import-export': typeof AppSettingsImportExportIndexRoute
+  '/settings/recipes': typeof AppSettingsRecipesIndexRoute
+  '/settings/shopping': typeof AppSettingsShoppingIndexRoute
+  '/settings/sign-in': typeof AppSettingsSignInIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -363,8 +482,8 @@ export interface FileRoutesById {
   '/_app/recipes/duplicates': typeof AppRecipesDuplicatesRoute
   '/_app/recipes/new': typeof AppRecipesNewRoute
   '/_app/recipes/review': typeof AppRecipesReviewRoute
-  '/_app/settings/household': typeof AppSettingsHouseholdRoute
-  '/_app/settings/import-export': typeof AppSettingsImportExportRoute
+  '/_app/settings/planning': typeof AppSettingsPlanningRoute
+  '/_app/settings/profile': typeof AppSettingsProfileRoute
   '/_app/settings/server': typeof AppSettingsServerRoute
   '/_app/settings/you': typeof AppSettingsYouRoute
   '/_focus/extension/connect': typeof FocusExtensionConnectRoute
@@ -378,10 +497,24 @@ export interface FileRoutesById {
   '/_app/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
   '/_app/recipes/find/$collection': typeof AppRecipesFindCollectionRoute
   '/_app/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
+  '/_app/settings/ai/server': typeof AppSettingsAiServerRoute
+  '/_app/settings/apps/server': typeof AppSettingsAppsServerRoute
+  '/_app/settings/household/server': typeof AppSettingsHouseholdServerRoute
+  '/_app/settings/import-export/server': typeof AppSettingsImportExportServerRoute
+  '/_app/settings/recipes/server': typeof AppSettingsRecipesServerRoute
+  '/_app/settings/shopping/server': typeof AppSettingsShoppingServerRoute
+  '/_app/settings/sign-in/server': typeof AppSettingsSignInServerRoute
   '/_focus/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/_app/pantry/receipts/': typeof AppPantryReceiptsIndexRoute
   '/_app/recipes/$slug/': typeof AppRecipesSlugIndexRoute
   '/_app/recipes/find/': typeof AppRecipesFindIndexRoute
+  '/_app/settings/ai/': typeof AppSettingsAiIndexRoute
+  '/_app/settings/apps/': typeof AppSettingsAppsIndexRoute
+  '/_app/settings/household/': typeof AppSettingsHouseholdIndexRoute
+  '/_app/settings/import-export/': typeof AppSettingsImportExportIndexRoute
+  '/_app/settings/recipes/': typeof AppSettingsRecipesIndexRoute
+  '/_app/settings/shopping/': typeof AppSettingsShoppingIndexRoute
+  '/_app/settings/sign-in/': typeof AppSettingsSignInIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -406,8 +539,8 @@ export interface FileRouteTypes {
     | '/recipes/duplicates'
     | '/recipes/new'
     | '/recipes/review'
-    | '/settings/household'
-    | '/settings/import-export'
+    | '/settings/planning'
+    | '/settings/profile'
     | '/settings/server'
     | '/settings/you'
     | '/extension/connect'
@@ -421,10 +554,24 @@ export interface FileRouteTypes {
     | '/recipes/$slug/edit'
     | '/recipes/find/$collection'
     | '/recipes/import/$importId'
+    | '/settings/ai/server'
+    | '/settings/apps/server'
+    | '/settings/household/server'
+    | '/settings/import-export/server'
+    | '/settings/recipes/server'
+    | '/settings/shopping/server'
+    | '/settings/sign-in/server'
     | '/recipes/$slug/cook'
     | '/pantry/receipts/'
     | '/recipes/$slug/'
     | '/recipes/find/'
+    | '/settings/ai/'
+    | '/settings/apps/'
+    | '/settings/household/'
+    | '/settings/import-export/'
+    | '/settings/recipes/'
+    | '/settings/shopping/'
+    | '/settings/sign-in/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -446,8 +593,8 @@ export interface FileRouteTypes {
     | '/recipes/duplicates'
     | '/recipes/new'
     | '/recipes/review'
-    | '/settings/household'
-    | '/settings/import-export'
+    | '/settings/planning'
+    | '/settings/profile'
     | '/settings/server'
     | '/settings/you'
     | '/extension/connect'
@@ -461,10 +608,24 @@ export interface FileRouteTypes {
     | '/recipes/$slug/edit'
     | '/recipes/find/$collection'
     | '/recipes/import/$importId'
+    | '/settings/ai/server'
+    | '/settings/apps/server'
+    | '/settings/household/server'
+    | '/settings/import-export/server'
+    | '/settings/recipes/server'
+    | '/settings/shopping/server'
+    | '/settings/sign-in/server'
     | '/recipes/$slug/cook'
     | '/pantry/receipts'
     | '/recipes/$slug'
     | '/recipes/find'
+    | '/settings/ai'
+    | '/settings/apps'
+    | '/settings/household'
+    | '/settings/import-export'
+    | '/settings/recipes'
+    | '/settings/shopping'
+    | '/settings/sign-in'
   id:
     | '__root__'
     | '/_app'
@@ -489,8 +650,8 @@ export interface FileRouteTypes {
     | '/_app/recipes/duplicates'
     | '/_app/recipes/new'
     | '/_app/recipes/review'
-    | '/_app/settings/household'
-    | '/_app/settings/import-export'
+    | '/_app/settings/planning'
+    | '/_app/settings/profile'
     | '/_app/settings/server'
     | '/_app/settings/you'
     | '/_focus/extension/connect'
@@ -504,10 +665,24 @@ export interface FileRouteTypes {
     | '/_app/recipes/$slug/edit'
     | '/_app/recipes/find/$collection'
     | '/_app/recipes/import/$importId'
+    | '/_app/settings/ai/server'
+    | '/_app/settings/apps/server'
+    | '/_app/settings/household/server'
+    | '/_app/settings/import-export/server'
+    | '/_app/settings/recipes/server'
+    | '/_app/settings/shopping/server'
+    | '/_app/settings/sign-in/server'
     | '/_focus/recipes/$slug/cook'
     | '/_app/pantry/receipts/'
     | '/_app/recipes/$slug/'
     | '/_app/recipes/find/'
+    | '/_app/settings/ai/'
+    | '/_app/settings/apps/'
+    | '/_app/settings/household/'
+    | '/_app/settings/import-export/'
+    | '/_app/settings/recipes/'
+    | '/_app/settings/shopping/'
+    | '/_app/settings/sign-in/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -709,18 +884,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsIndexRouteImport
       parentRoute: typeof AppSettingsRoute
     }
-    '/_app/settings/household': {
-      id: '/_app/settings/household'
-      path: '/household'
-      fullPath: '/settings/household'
-      preLoaderRoute: typeof AppSettingsHouseholdRouteImport
+    '/_app/settings/planning': {
+      id: '/_app/settings/planning'
+      path: '/planning'
+      fullPath: '/settings/planning'
+      preLoaderRoute: typeof AppSettingsPlanningRouteImport
       parentRoute: typeof AppSettingsRoute
     }
-    '/_app/settings/import-export': {
-      id: '/_app/settings/import-export'
-      path: '/import-export'
-      fullPath: '/settings/import-export'
-      preLoaderRoute: typeof AppSettingsImportExportRouteImport
+    '/_app/settings/profile': {
+      id: '/_app/settings/profile'
+      path: '/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof AppSettingsProfileRouteImport
       parentRoute: typeof AppSettingsRoute
     }
     '/_app/settings/server': {
@@ -807,6 +982,104 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecipesImportImportIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/ai/': {
+      id: '/_app/settings/ai/'
+      path: '/ai'
+      fullPath: '/settings/ai/'
+      preLoaderRoute: typeof AppSettingsAiIndexRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/ai/server': {
+      id: '/_app/settings/ai/server'
+      path: '/ai/server'
+      fullPath: '/settings/ai/server'
+      preLoaderRoute: typeof AppSettingsAiServerRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/apps/': {
+      id: '/_app/settings/apps/'
+      path: '/apps'
+      fullPath: '/settings/apps/'
+      preLoaderRoute: typeof AppSettingsAppsIndexRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/apps/server': {
+      id: '/_app/settings/apps/server'
+      path: '/apps/server'
+      fullPath: '/settings/apps/server'
+      preLoaderRoute: typeof AppSettingsAppsServerRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/household/': {
+      id: '/_app/settings/household/'
+      path: '/household'
+      fullPath: '/settings/household/'
+      preLoaderRoute: typeof AppSettingsHouseholdIndexRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/household/server': {
+      id: '/_app/settings/household/server'
+      path: '/household/server'
+      fullPath: '/settings/household/server'
+      preLoaderRoute: typeof AppSettingsHouseholdServerRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/import-export/': {
+      id: '/_app/settings/import-export/'
+      path: '/import-export'
+      fullPath: '/settings/import-export/'
+      preLoaderRoute: typeof AppSettingsImportExportIndexRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/import-export/server': {
+      id: '/_app/settings/import-export/server'
+      path: '/import-export/server'
+      fullPath: '/settings/import-export/server'
+      preLoaderRoute: typeof AppSettingsImportExportServerRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/recipes/': {
+      id: '/_app/settings/recipes/'
+      path: '/recipes'
+      fullPath: '/settings/recipes/'
+      preLoaderRoute: typeof AppSettingsRecipesIndexRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/recipes/server': {
+      id: '/_app/settings/recipes/server'
+      path: '/recipes/server'
+      fullPath: '/settings/recipes/server'
+      preLoaderRoute: typeof AppSettingsRecipesServerRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/shopping/': {
+      id: '/_app/settings/shopping/'
+      path: '/shopping'
+      fullPath: '/settings/shopping/'
+      preLoaderRoute: typeof AppSettingsShoppingIndexRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/shopping/server': {
+      id: '/_app/settings/shopping/server'
+      path: '/shopping/server'
+      fullPath: '/settings/shopping/server'
+      preLoaderRoute: typeof AppSettingsShoppingServerRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/sign-in/': {
+      id: '/_app/settings/sign-in/'
+      path: '/sign-in'
+      fullPath: '/settings/sign-in/'
+      preLoaderRoute: typeof AppSettingsSignInIndexRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/sign-in/server': {
+      id: '/_app/settings/sign-in/server'
+      path: '/sign-in/server'
+      fullPath: '/settings/sign-in/server'
+      preLoaderRoute: typeof AppSettingsSignInServerRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
     '/_focus/recipes/$slug/cook': {
       id: '/_focus/recipes/$slug/cook'
       path: '/recipes/$slug/cook'
@@ -818,19 +1091,47 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppSettingsRouteChildren {
-  AppSettingsHouseholdRoute: typeof AppSettingsHouseholdRoute
-  AppSettingsImportExportRoute: typeof AppSettingsImportExportRoute
+  AppSettingsPlanningRoute: typeof AppSettingsPlanningRoute
+  AppSettingsProfileRoute: typeof AppSettingsProfileRoute
   AppSettingsServerRoute: typeof AppSettingsServerRoute
   AppSettingsYouRoute: typeof AppSettingsYouRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
+  AppSettingsAiServerRoute: typeof AppSettingsAiServerRoute
+  AppSettingsAppsServerRoute: typeof AppSettingsAppsServerRoute
+  AppSettingsHouseholdServerRoute: typeof AppSettingsHouseholdServerRoute
+  AppSettingsImportExportServerRoute: typeof AppSettingsImportExportServerRoute
+  AppSettingsRecipesServerRoute: typeof AppSettingsRecipesServerRoute
+  AppSettingsShoppingServerRoute: typeof AppSettingsShoppingServerRoute
+  AppSettingsSignInServerRoute: typeof AppSettingsSignInServerRoute
+  AppSettingsAiIndexRoute: typeof AppSettingsAiIndexRoute
+  AppSettingsAppsIndexRoute: typeof AppSettingsAppsIndexRoute
+  AppSettingsHouseholdIndexRoute: typeof AppSettingsHouseholdIndexRoute
+  AppSettingsImportExportIndexRoute: typeof AppSettingsImportExportIndexRoute
+  AppSettingsRecipesIndexRoute: typeof AppSettingsRecipesIndexRoute
+  AppSettingsShoppingIndexRoute: typeof AppSettingsShoppingIndexRoute
+  AppSettingsSignInIndexRoute: typeof AppSettingsSignInIndexRoute
 }
 
 const AppSettingsRouteChildren: AppSettingsRouteChildren = {
-  AppSettingsHouseholdRoute: AppSettingsHouseholdRoute,
-  AppSettingsImportExportRoute: AppSettingsImportExportRoute,
+  AppSettingsPlanningRoute: AppSettingsPlanningRoute,
+  AppSettingsProfileRoute: AppSettingsProfileRoute,
   AppSettingsServerRoute: AppSettingsServerRoute,
   AppSettingsYouRoute: AppSettingsYouRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
+  AppSettingsAiServerRoute: AppSettingsAiServerRoute,
+  AppSettingsAppsServerRoute: AppSettingsAppsServerRoute,
+  AppSettingsHouseholdServerRoute: AppSettingsHouseholdServerRoute,
+  AppSettingsImportExportServerRoute: AppSettingsImportExportServerRoute,
+  AppSettingsRecipesServerRoute: AppSettingsRecipesServerRoute,
+  AppSettingsShoppingServerRoute: AppSettingsShoppingServerRoute,
+  AppSettingsSignInServerRoute: AppSettingsSignInServerRoute,
+  AppSettingsAiIndexRoute: AppSettingsAiIndexRoute,
+  AppSettingsAppsIndexRoute: AppSettingsAppsIndexRoute,
+  AppSettingsHouseholdIndexRoute: AppSettingsHouseholdIndexRoute,
+  AppSettingsImportExportIndexRoute: AppSettingsImportExportIndexRoute,
+  AppSettingsRecipesIndexRoute: AppSettingsRecipesIndexRoute,
+  AppSettingsShoppingIndexRoute: AppSettingsShoppingIndexRoute,
+  AppSettingsSignInIndexRoute: AppSettingsSignInIndexRoute,
 }
 
 const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(

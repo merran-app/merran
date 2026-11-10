@@ -7,7 +7,7 @@ import { TELEMETRY, type LastResult } from "./settings.ts"
 
 /**
  * The daily summary, sent only if the server admin said yes: exactly what
- * Settings → This server → Telemetry shows. A receiver that can't be reached
+ * Settings → Server → Telemetry shows. A receiver that can't be reached
  * isn't a failed job, just a day without a summary; one that refuses the
  * summary is, since the project needs to hear about it.
  */

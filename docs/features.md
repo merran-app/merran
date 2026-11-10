@@ -33,7 +33,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | The telemetry receiver and public totals page | Detail | Built | Live at `telemetry.merran.app` since October 18, 2026; the page shows totals from the first night's count ([telemetry.md](telemetry.md)) |
 | Background jobs that survive restarts, with a jobs page | Detail | Built | |
 | Problems page for the server admin | Detail | Planned | |
-| Update badge when a new release is out | Detail | Built | GitHub's releases every 6 hours (pre-releases for a server on one), a badge for the server admin in the sidebar and account menu, the notes and update commands in Settings, This server |
+| Update badge when a new release is out | Detail | Built | GitHub's releases every 6 hours (pre-releases for a server on one), a badge for the server admin in the sidebar and account menu, the notes and update commands in Settings, Server |
 | Prebuilt, signed images; releases with notes | Detail | Built | A Release workflow run with a version: images for amd64 and arm64, signed with cosign, with an SBOM and provenance; the extension's zips; notes drafted by Release Drafter from each pull request's title (`feat:`, `fix:`...), under a heading for each kind, with highlights written by hand; selective CI in alpha.5 publishes `edge` for image-affecting changes on main and skips application builds for site-only documentation changes; see [operations](operations.md#selective-ci--october-19-2026) |
 | Automatic backups before migrations | Detail | Planned | Manual backups and restores are available; startup migration currently calls the migrator directly |
 | Docker shared runtime dependency verification | Key | Built | Final-image imports verify shared code and telemetry dependencies before CI or release images can be published; workspace dependency links are copied into the runtime image |
@@ -47,7 +47,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
 | Several households on one server, kept fully apart | Headline | Built | Proved by tests generated from the schema |
-| Settings grouped by owner and task, with section links | Detail | Built | Available in alpha.5: You, Household, Import and export, and This server use the same section navigation; cards are grouped by what people are trying to change |
+| Settings grouped by topic | Detail | Built | Ten pages by topic. A page with both household and server settings has a switch between This household and Whole server, seen only by the server admin; on a phone, Settings is a list of pages. Replaced the four tabs of alpha.5 ([spec](superpowers/specs/2026-11-09-settings-by-topic-design.md)) |
 | Belonging to more than one household, with a switcher | Key | Built | |
 | First-run setup with a code from the log | Detail | Built | Grouped readiness banner, retrieval and recovery guidance; new improvements released in alpha.4 ([onboarding.md](onboarding.md)) |
 | Clear setup-code retrieval and recovery from interrupted setup | Detail | Built | Available in alpha.4: operator setup-code command; atomic claiming, concurrent-submission guard and retry/sign-in guidance |
@@ -157,7 +157,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Every-week items and always-on-hand staples | Key | Built | |
 | Sorted by aisle, and it remembers where things go | Key | Built | |
 | A list for each place you shop | Key | Built | Lists are names and aisles, however the household sorts what it buys; the store is chosen for each thing (the two rows below) |
-| Find any thing at any of your stores | Key | Built | Find on every thing on every list opens a menu of the household's stores (picked once in Settings, Household, Your stores): Fry's or Walmart's product picker, kept for that food there, or any other store's search; the extension's side panel has a Find at picker of them |
+| Find any thing at any of your stores | Key | Built | Find on every thing on every list opens a menu of the household's stores (picked once in Settings, Shopping and stores, Your stores): Fry's or Walmart's product picker, kept for that food there, or any other store's search; the extension's side panel has a Find at picker of them |
 | Prepare and manage usual products at multiple stores | Key | Built | Available in alpha.6: [store-product-mappings.md](store-product-mappings.md). A household page with collapsible aisle sections for choosing, changing and forgetting the product bought for each food at each connected store, without adding it to a list; select the ordering store on shopping day to use that store's saved products |
 | One Send that splits the list across your stores | Key | Built | Module (stores): each thing goes to the store it's mapped to, asks when it's mapped to more than one, and the rest go to one store; then Fry's and Walmart each review and send their part. Available in alpha.6: choose one ordering store for unsent items to use that store's saved products, or keep a mixed order |
 | Shopping progress and store review on the list | Key | Built | Available in alpha.4: compact store/status menus on list rows, with product and sent-pack details inside; per-store counts and cart links on List. Review and product finding open in phone drawers; on desktop the finder replaces review in the same dialog with Back to review preserving the basket; review has fixed close/back controls, and the finder keeps search above scrolling results. Filter items needing attention or sent to a cart, mark sent purchases bought with Undo, then put away. Send snapshots flag changed quantities/products and unverified older sends; sending alone never marks food bought. |
@@ -207,11 +207,11 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Made for phone, tablet and desktop | Key | Built | Available in alpha.5: forms, confirmations and other overlays that use dialogs open as bottom drawers on phones; larger screens keep dialogs. |
 | Install to the home screen | Detail | Built | |
 | Three palettes, light and dark, per person | Detail | Built | |
-| Settings for the server, the household and you, kept apart | Detail | Built | |
+| Settings for the server, the household and you, kept apart | Detail | Built | Through the Whole server switch on each topic page, and the Server page |
 | Notifications and prep reminders: thaw the chicken, start the marinade | Key | Planned | Module |
 | Works offline: recipes you've opened, this week's plan, the list | Key | Planned | |
 | Guided tours, ⓘ explanations, a glossary and a Help menu | Key | Built | Available in alpha.4: core-page Driver.js tours start on first visit with remembered skip/disable choices; assistant orientation, Help replay and contextual explanations share the public glossary. In alpha.5, replay waits for Help's mobile drawer to finish closing; real-device acceptance remains ([onboarding.md](onboarding.md#3-driverjs-and-help)) |
-| Choose your language | Key | Built | Settings → You → Language, saved per person, with Match my browser by default. Shows once a second language exists |
+| Choose your language | Key | Built | Settings → Profile → Language, saved per person, with Match my browser by default. Shows once a second language exists |
 | Translations, with units, aisles, stores and currency by country | Key | Planned | Groundwork built November 9, 2026: one list of languages, locales loaded on demand, the Language setting, and a completeness check in CI. No translations yet. The layout mirrors for right-to-left languages, since November 9, 2026 |
 
 ## For developers and integrations

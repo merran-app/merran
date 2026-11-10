@@ -38,7 +38,7 @@ export async function needWalmart(deps: StoreDeps) {
     throw new AppError(
       "unprocessable",
       "walmart_off",
-      "Walmart isn't turned on on this server. The server admin turns it on in Settings, This server, Stores."
+      "Walmart isn't turned on on this server. The server admin turns it on in Settings, Shopping and stores, Whole server."
     )
   }
 }

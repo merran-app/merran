@@ -31,7 +31,7 @@ export const AUTH_METHOD_ENDPOINTS = [
     summary: "Link an external sign-in",
     description:
       "Requires your current Merran session and proof of control at the external provider. Accounts are never automatically linked by matching email.",
-    requestExample: { provider: "oidc", callbackURL: "/settings/you" },
+    requestExample: { provider: "oidc", callbackURL: "/settings/sign-in" },
     responseExample: {
       url: "https://identity.example.com/authorize",
       redirect: true,

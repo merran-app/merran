@@ -13,7 +13,7 @@ These steps follow the current repository implementation, pending fresh-install 
 
 - Add a few [recipes](../recipes/), with accurate ingredients and servings.
 - Select the right household. Its time zone and week-start setting determine which day and week the plan uses.
-- Household owners/admins manage **Settings → Household → Planning**. This selects which meal types automatic planning fills; you can still add other meals manually.
+- Household owners/admins manage **Settings → Planning**. This selects which meal types automatic planning fills; you can still add other meals manually.
 
 ## Add a meal and set servings
 
@@ -32,7 +32,7 @@ For flexibility, use **Add a meal** under **This week, any day**. Choose **Tonig
 
 ## Set theme nights
 
-1. Open **Settings → Household → Theme nights**.
+1. Open **Settings → Planning → Theme nights**.
 2. Choose a theme for each dinner, or **A tag of your own…** and enter a recipe tag.
 3. Return to **Plan** and try **Fill the week**.
 
@@ -53,7 +53,7 @@ Ideas come from your library, not an AI search. Recipes recently planned or made
 
 ## Optional: plan automatically each week
 
-1. In **Settings → Household → Plan each week**, enable **Plan the week ahead for us**.
+1. In **Settings → Planning → Plan each week**, enable **Plan the week ahead for us**.
 2. Choose the day, time, and meals. The schedule uses the household's time zone.
 3. Enable **Put what those meals need on the list** only if you want list creation too.
 4. Check the next run shown in settings and review the resulting plan after it runs.
@@ -62,7 +62,7 @@ Ideas come from your library, not an AI search. Recipes recently planned or made
 
 ## Subscribe to the meal calendar
 
-Available from alpha.6. A household admin can open **Settings → Household → Meal planning → Calendar subscriptions**, turn on **Let members subscribe to this household's meal calendar**, set each meal's **Start time** and **Duration (minutes)** under **Usual meal times**, then choose **Save calendar settings**. The server administrator must set `MERRAN_PUBLIC_URL` to an address the calendar app can reach.
+Available from alpha.6. A household admin can open **Settings → Planning → Calendar subscriptions**, turn on **Let members subscribe to this household's meal calendar**, set each meal's **Start time** and **Duration (minutes)** under **Usual meal times**, then choose **Save calendar settings**. The server administrator must set `MERRAN_PUBLIC_URL` to an address the calendar app can reach.
 
 Each member can choose **Create subscription link**, copy **Your calendar link**, and add it as a subscribed calendar in their calendar app. The link is shown only when created; **Revoke** stops future reads, and a replacement link can be created. Anyone holding the link can see meal names and notes. Recipe links still require a Merran sign-in.
 

@@ -65,14 +65,14 @@ const off = () =>
   new AppError(
     "unprocessable",
     "photos_off",
-    "AI photos are off on this server. The server admin can turn them on in Settings, This server."
+    "AI photos are off on this server. The server admin can turn them on in Settings, Recipes, Whole server."
   )
 
 const noKey = () =>
   new AppError(
     "unprocessable",
     "photos_no_key",
-    "AI photos need an OpenAI or Google key. A household admin can add one in Settings, Household, AI."
+    "AI photos need an OpenAI or Google key. A household admin can add one in Settings, AI."
   )
 
 /**

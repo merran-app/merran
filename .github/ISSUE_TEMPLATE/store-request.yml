@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Merran can find the things on your list at any store with a search page on its site. Tell us about one it's missing, and we'll add it to Settings → Household → Your stores.
+        Merran can find the things on your list at any store with a search page on its site. Tell us about one it's missing, and we'll add it to Settings → Shopping and stores → Your stores.
   - type: input
     id: store
     attributes:

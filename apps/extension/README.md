@@ -13,7 +13,7 @@ For released ZIP downloads, browser-specific installation, connecting, permissio
 
 ## Connecting
 
-The toolbar button asks for your Merran's address. The browser asks to let the extension reach it, then Merran opens `/extension/connect`, asks you, and makes a key with just what the extension needs (add recipes, see the plan, keep the list), which it hands to the extension: nothing to copy. The key shows in Merran under Settings, You, API keys, where it can be taken away.
+The toolbar button asks for your Merran's address. The browser asks to let the extension reach it, then Merran opens `/extension/connect`, asks you, and makes a key with just what the extension needs (add recipes, see the plan, keep the list), which it hands to the extension: nothing to copy. The key shows in Merran under Settings, Apps and devices, API keys, where it can be taken away.
 
 Once connected, the extension listens on that Merran's pages (and only those): its **bridge** (`src/entrypoints/merran.content.ts`) tells Merran's pages it's there and does what they ask, such as filling the Walmart cart (`src/lib/walmart.ts`). The pages never see its key.
 

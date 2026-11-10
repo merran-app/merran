@@ -214,10 +214,10 @@ For **Docker Compose**, save this as `.env` beside `compose.yaml`, then run `doc
 For **TrueNAS, Dockge and Portainer**, edit the inline `environment` block in your tab's YAML instead. The published host port is the **left** side of `"3000:3000"`; the image version is the `image` line. Keep the right-hand container port `3000`.
 
 :::note[Email invitations]
-The SMTP update also requires `MERRAN_PUBLIC_URL` for **Invite by email**, even when Merran is only reachable on your LAN. Use the HTTP(S) origin recipients open, without a path, query or credentials. Configure the email provider separately in **Settings → This server → Email**; [email setup](../../run/configuration/#email-transport) covers Resend and other SMTP services. Copyable invite links still work without email.
+The SMTP update also requires `MERRAN_PUBLIC_URL` for **Invite by email**, even when Merran is only reachable on your LAN. Use the HTTP(S) origin recipients open, without a path, query or credentials. Configure the email provider separately in **Settings → Server → Email**; [email setup](../../run/configuration/#email-transport) covers Resend and other SMTP services. Copyable invite links still work without email.
 :::
 
-AI, nutrition and most optional modules can be configured later in **Settings → This server** or **Settings → Household**. Environment-supplied module values override and lock those controls, so leave them unset if you want to manage them in the app. Keep `.env` private if you add keys, passwords or tokens.
+AI, nutrition and most optional modules can be configured later in **Settings**: on the **Whole server** side of pages such as **AI** and **Recipes** for everyone, or on the household's side for one household. Environment-supplied module values override and lock those controls, so leave them unset if you want to manage them in the app. Keep `.env` private if you add keys, passwords or tokens.
 
 ## Finish setup
 
@@ -346,7 +346,7 @@ Use the **Docker Compose** tab for a complete multi-service deployment. A single
 2. **Edit the file.** Replace both password placeholders with the same random hex password, choose permitted Merran `PUID`/`PGID`, and adjust host port/time zone. The database does not use Merran's `PUID`/`PGID` variables. No `5432` or `8880` host mapping is needed.
 3. **Deploy the whole stack** using [your manager's steps](#choose-your-installation). The database health check gates Merran startup. Kokoro's container may be started before its model is ready; wait for its logs to show it is serving before testing speech.
 4. **Verify Postgres.** Open `http://YOUR-SERVER:3000/api/health/ready` (with your chosen port). Expect `status: "ready"` and `database: "postgres"`, then use Merran's setup code from its logs.
-5. **Verify Kokoro.** In **Settings → This server → Voice**, check the provider/address and use **Hear …** to preview a voice. Environment-set values are managed by Compose; change them there and recreate Merran. Kokoro produces speech audio; microphone commands still depend on HTTPS and browser support.
+5. **Verify Kokoro.** In **Settings → Recipes → Whole server → Voice**, check the provider/address and use **Hear …** to preview a voice. Environment-set values are managed by Compose; change them there and recreate Merran. Kokoro produces speech audio; microphone commands still depend on HTTPS and browser support.
 
 To use **Postgres without Kokoro**, remove the `kokoro` service, its `depends_on` entry, and the two voice environment values. To use **Kokoro with SQLite**, remove the `db` service, its dependency, and `DATABASE_URL`; preserve Merran's existing `/data` mount. There is no automatic cross-database migration in either edit.
 

@@ -144,7 +144,7 @@ function ConnectExtension() {
       ) : step === "failed" ? (
         <div className="grid gap-3" role="status">
           <p>{t("extension.failed")}</p>
-          <Button variant="outline" render={<Link to="/settings/you" />}>
+          <Button variant="outline" render={<Link to="/settings/apps" />}>
             {t("extension.toKeys")}
           </Button>
         </div>
