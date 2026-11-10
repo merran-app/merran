@@ -10594,6 +10594,7 @@ export interface components {
          * @example {
          *       "url": "https://cooking.example/lemon-chicken",
          *       "title": "Lemon Chicken | Cooking",
+         *       "description": "Bright, sticky lemon chicken for a weeknight.",
          *       "jsonld": [
          *         "{\"@type\":\"Recipe\",\"name\":\"Lemon Chicken\"}"
          *       ],
@@ -10607,6 +10608,11 @@ export interface components {
             url: string;
             /** @default  */
             title: string;
+            /**
+             * @description What the page says about itself: its description for search engines, or for sharing. Used when its recipe data has none.
+             * @default
+             */
+            description: string;
             /**
              * @description The page's JSON-LD blocks, as found.
              * @default []

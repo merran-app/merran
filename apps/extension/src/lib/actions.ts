@@ -60,6 +60,7 @@ export async function importRead(page: PageRead) {
       body: {
         url: page.url,
         title: page.title,
+        description: page.description,
         jsonld: page.jsonld,
         images: page.images,
         text: page.text,

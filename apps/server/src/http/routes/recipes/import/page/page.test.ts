@@ -108,6 +108,19 @@ describe("a page the extension read", () => {
     expect((await res.json()).duplicate).toBe(true)
   })
 
+  test("takes its description from the page when its recipe data has none", async () => {
+    const res = await sendPage({
+      url: "https://paywalled.example/garlic-bread",
+      title: "Garlic Bread",
+      description: "Crisp garlic bread with plenty of butter.",
+      jsonld: [JSON.stringify({ ...RECIPE, name: "Garlic Bread" })],
+    })
+    expect(res.status, await res.clone().text()).toBe(201)
+    expect((await res.json()).recipe.description).toBe(
+      "Crisp garlic bread with plenty of butter."
+    )
+  })
+
   test("without recipe data, needs AI to read it", async () => {
     const res = await sendPage({
       url: "https://paywalled.example/notes",
