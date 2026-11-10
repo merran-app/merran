@@ -661,6 +661,17 @@
               "string",
               "null"
             ]
+          },
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              null
+            ],
+            "description": "The language the person chose; null to follow their browser."
           }
         },
         "required": [
@@ -672,7 +683,8 @@
           "twoFactorEnabled",
           "requiresTwoFactor",
           "households",
-          "activeHouseholdId"
+          "activeHouseholdId",
+          "language"
         ],
         "example": {
           "twoFactorEnabled": false,
@@ -689,7 +701,8 @@
               "role": "owner"
             }
           ],
-          "activeHouseholdId": "0199e8b0-5a10-7a01-8b00-000000000003"
+          "activeHouseholdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+          "language": null
         }
       },
       "JoinRequest": {
@@ -743,6 +756,28 @@
           "email": "jamie@example.com",
           "username": "jamie",
           "password": "correct horse battery staple"
+        }
+      },
+      "LanguageChoice": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              null
+            ],
+            "description": "A code from Merran's languages, or null to follow the browser."
+          }
+        },
+        "required": [
+          "language"
+        ],
+        "example": {
+          "language": "en"
         }
       },
       "Onboarding": {
@@ -17823,6 +17858,73 @@
           },
           "401": {
             "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me/language": {
+      "patch": {
+        "operationId": "setLanguage",
+        "tags": [
+          "Sign-in"
+        ],
+        "summary": "Choose the language Merran shows",
+        "description": "The language the person sees Merran in, on every device. Null follows their browser.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LanguageChoice"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chosen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "That isn't one of Merran's languages.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
             "content": {
               "application/json": {
                 "schema": {

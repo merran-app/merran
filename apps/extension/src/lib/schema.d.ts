@@ -224,6 +224,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/me/language": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Choose the language Merran shows
+         * @description The language the person sees Merran in, on every device. Null follows their browser.
+         */
+        patch: operations["setLanguage"];
+        trace?: never;
+    };
     "/api/auth/me/onboarding": {
         parameters: {
             query?: never;
@@ -5407,7 +5427,8 @@ export interface components {
          *           "role": "owner"
          *         }
          *       ],
-         *       "activeHouseholdId": "0199e8b0-5a10-7a01-8b00-000000000003"
+         *       "activeHouseholdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *       "language": null
          *     }
          */
         Me: {
@@ -5425,6 +5446,11 @@ export interface components {
                 role: "owner" | "admin" | "member";
             }[];
             activeHouseholdId: string | null;
+            /**
+             * @description The language the person chose; null to follow their browser.
+             * @enum {string|null}
+             */
+            language: "en" | null;
         };
         /**
          * @example {
@@ -5453,6 +5479,18 @@ export interface components {
             email: string;
             username: string;
             password: string;
+        };
+        /**
+         * @example {
+         *       "language": "en"
+         *     }
+         */
+        LanguageChoice: {
+            /**
+             * @description A code from Merran's languages, or null to follow the browser.
+             * @enum {string|null}
+             */
+            language: "en" | null;
         };
         /**
          * @example {
@@ -14044,6 +14082,57 @@ export interface operations {
             };
             /** @description Not signed in. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    setLanguage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LanguageChoice"];
+            };
+        };
+        responses: {
+            /** @description Chosen. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            /** @description That isn't one of Merran's languages. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
