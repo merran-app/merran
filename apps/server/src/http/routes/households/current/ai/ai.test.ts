@@ -1,9 +1,12 @@
-import { DEFAULT_AI_POLICY } from "@merran/shared"
+import { DEFAULT_AI_POLICY, type HouseholdAi } from "@merran/shared"
 import { generateText } from "ai"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../../app.ts"
 import { AppError } from "../../../../../core/errors.ts"
-import { HouseholdMember } from "../../../../../database/entities/index.ts"
+import {
+  Household,
+  HouseholdMember,
+} from "../../../../../database/entities/index.ts"
 import type { Database } from "../../../../../database/orm.ts"
 import {
   forHousehold,
@@ -200,6 +203,7 @@ describe("a household's AI", () => {
       large: "openai:gpt-6-astra",
       small: null,
       tasks: { swaps: "openai:gpt-6-sol" },
+      vision: "openai:gpt-6-luna",
       monthlyLimit: 2,
     })
     expect(res.status, await res.clone().text()).toBe(200)
@@ -208,12 +212,14 @@ describe("a household's AI", () => {
       large: "openai:gpt-6-astra",
       small: null,
       tasks: { swaps: "openai:gpt-6-sol" },
+      vision: "openai:gpt-6-luna",
       monthlyLimit: 2,
       autoTidy: false,
     })
     expect(status.tasks.import).toMatchObject({ ref: "openai:gpt-6-astra" })
     expect(status.tasks.swaps).toMatchObject({ ref: "openai:gpt-6-sol" })
     expect(status.tasks.nutrition).toMatchObject({ ref: "openai:gpt-6-luna" })
+    expect(status.vision).toMatchObject({ ref: "openai:gpt-6-luna" })
     expect(status.own).toEqual({ limit: 2, spent: 0, near: false })
 
     const bad = await jamie.put("/api/households/current/ai", {
@@ -221,6 +227,64 @@ describe("a household's AI", () => {
       large: "nobody:model",
     })
     expect(bad.status).toBe(400)
+  })
+
+  test("keeps no Photos and PDFs model when a body leaves it out", async () => {
+    const res = await jamie.put("/api/households/current/ai", {
+      large: null,
+      small: null,
+      tasks: {},
+      monthlyLimit: null,
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    const { status, settings: picked } = await res.json()
+    expect(picked.vision).toBeNull()
+    expect(status.vision).toEqual(status.tasks.import)
+  })
+
+  test("says why a Photos and PDFs model with no key can't run", async () => {
+    const res = await jamie.put("/api/households/current/ai", {
+      large: null,
+      small: null,
+      tasks: {},
+      vision: "google:gemini-3.8-flash",
+      monthlyLimit: null,
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    const { status } = await res.json()
+    expect(status.vision).toEqual({ ok: false, why: "noKey" })
+    // Everything else still runs.
+    expect(status.tasks.import.ok).toBe(true)
+    await jamie.put("/api/households/current/ai", {
+      large: null,
+      small: null,
+      tasks: {},
+      monthlyLimit: null,
+    })
+  })
+
+  test("reads settings saved before there was one as having none", async () => {
+    const em = database.em.fork()
+    const home = await em.findOneOrFail(
+      Household,
+      { id: homeId },
+      { filters: { [HOUSEHOLD_FILTER]: false } }
+    )
+    // As saved before photos and PDFs had a model of their own.
+    home.settings = {
+      ...home.settings,
+      ai: {
+        large: null,
+        small: null,
+        tasks: {},
+        monthlyLimit: null,
+        autoTidy: false,
+      } as unknown as HouseholdAi,
+    }
+    await em.flush()
+    const { status, settings: picked } = await householdAi(kyle)
+    expect(picked.vision).toBeNull()
+    expect(status.vision).toEqual(status.tasks.import)
   })
 
   test("is changed by the household's admins, signed in", async () => {
@@ -299,6 +363,46 @@ describe("AI calls", () => {
     await setPolicy({ monthlyLimit: 0.025, limits: { [homeId]: 1 } })
     expect((await call()).text).toBe("ok")
     await setPolicy({})
+  })
+
+  test("with a photo or PDF, go to the Photos and PDFs model and count under the task", async () => {
+    await setPolicy({})
+    const picks = { large: null, small: null, tasks: {}, monthlyLimit: null }
+    const picked = await kyle.put("/api/households/current/ai", {
+      ...picks,
+      vision: "anthropic:claude-haiku-5-5",
+    })
+    expect(picked.status, await picked.clone().text()).toBe(200)
+    const withPhoto = () =>
+      useAi(
+        { settings, fetcher, ai },
+        forHousehold(database.em.fork(), homeId),
+        {
+          householdId: homeId,
+          userId: kyleId,
+          task: "import",
+          needs: ["structured", "images"],
+        },
+        (model) => generateText({ model, prompt: "This photo's recipe." })
+      )
+
+    await withPhoto()
+    expect(targets.at(-1)).toMatchObject({ model: "claude-haiku-5-5" })
+    await call()
+    expect(targets.at(-1)).toMatchObject({ model: "claude-sonnet-5-5" })
+
+    const home = await householdAi(kyle)
+    expect(home.usage.tasks.map((task: { task: string }) => task.task)).toEqual(
+      ["import"]
+    )
+    const server = await (await kyle.get("/api/settings/server/ai")).json()
+    expect(server.usage.models).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ model: "claude-haiku-5-5" }),
+        expect.objectContaining({ model: "claude-sonnet-5-5" }),
+      ])
+    )
+    await kyle.put("/api/households/current/ai", picks)
   })
 })
 

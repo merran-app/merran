@@ -4,6 +4,7 @@ import get from "./get.ts"
 import post from "./post.ts"
 import bulkRoutes from "./bulk/index.ts"
 import deletedRoutes from "./deleted/index.ts"
+import duplicatesRoutes from "./duplicates/index.ts"
 import importRoutes from "./import/index.ts"
 import nutritionRoutes from "./nutrition/index.ts"
 import photosRoutes from "./photos/index.ts"
@@ -17,6 +18,7 @@ export default (router: Router, deps: AppDeps) => {
   // Fixed paths first, so they aren't taken for {recipe}.
   bulkRoutes(router, deps)
   deletedRoutes(router, deps)
+  duplicatesRoutes(router, deps)
   importRoutes(router, deps)
   nutritionRoutes(router, deps)
   photosRoutes(router, deps)

@@ -8,7 +8,7 @@ import { findLinks } from "../../share/links.ts"
 import { inHouseholdTransaction } from "../../../database/transactions.ts"
 import { addTagsTo } from "../tags.ts"
 import { importLink } from "./import-link.ts"
-import { findBySourceUrl, isVideoLink, normalizeLink } from "./links.ts"
+import { findBySourceUrls, isVideoLink, normalizeLink } from "./links.ts"
 
 // Several links at once, pasted from a note or shared together: checked
 // against the library, then imported one at a time as a job, which says how
@@ -86,11 +86,16 @@ export async function checkLinks(em: EntityManager, text: string) {
     video: boolean
     existing: { slug: string; name: string } | null
   }[] = []
+  const urls: string[] = []
   for (const raw of found) {
-    if (links.length === MAX_LINKS) break
+    if (urls.length === MAX_LINKS) break
     const url = tidy(raw)
-    if (!url || links.some((link) => link.url === url)) continue
-    const existing = await findBySourceUrl(em, [url])
+    if (url && !urls.includes(url)) urls.push(url)
+  }
+  // The library is read once for them all, not once a link.
+  const known = await findBySourceUrls(em, urls)
+  for (const url of urls) {
+    const existing = known.get(url)
     links.push({
       url,
       video: isVideoLink(url),

@@ -3,6 +3,7 @@ import type { Router } from "../../../router.ts"
 import cookNotesRoutes from "./cook-notes/index.ts"
 import remove from "./delete.ts"
 import dietsRoutes from "./diets/index.ts"
+import duplicatesRoutes from "./duplicates/index.ts"
 import get from "./get.ts"
 import nutritionRoutes from "./nutrition/index.ts"
 import madeRoutes from "./made/index.ts"
@@ -24,6 +25,7 @@ export default (router: Router, deps: AppDeps) => {
   remove(router, deps)
   cookNotesRoutes(router, deps)
   dietsRoutes(router, deps)
+  duplicatesRoutes(router, deps)
   madeRoutes(router, deps)
   needsRoutes(router, deps)
   pairingsRoutes(router, deps)
