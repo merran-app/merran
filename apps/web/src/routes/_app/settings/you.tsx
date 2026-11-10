@@ -9,6 +9,7 @@ import { PasskeysCard } from "@/features/account/passkeys-card"
 import { TwoFactorCard } from "@/features/account/two-factor-card"
 import { SsoCard } from "@/features/account/sso-card"
 import { ConnectedAppsCard } from "@/features/account/connected-apps-card"
+import { LanguageCard } from "@/features/account/language-card"
 import { ProfileCard } from "@/features/account/profile-card"
 import { apiKeysQuery } from "@/features/account/queries"
 import { InstallCard } from "@/features/install/install-ui"
@@ -34,6 +35,7 @@ function YouSettings() {
             <>
               <ProfileCard />
               <AppearanceCard />
+              <LanguageCard />
             </>
           ),
         },
