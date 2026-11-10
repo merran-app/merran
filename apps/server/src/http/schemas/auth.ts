@@ -1,5 +1,5 @@
 import { z } from "@hono/zod-openapi"
-import { isLocale, LOCALE_CODES } from "@merran/shared"
+import { isLocale } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import {
   HOUSEHOLD_ROLES,
@@ -47,9 +47,11 @@ export const MeSchema = z
     ),
     /** The household in use on this device. */
     activeHouseholdId: z.string().nullable(),
-    language: z.enum(LOCALE_CODES).nullable().openapi({
+    // A string rather than the list of codes, so adding a language changes
+    // nothing generated from this API.
+    language: z.string().nullable().openapi({
       description:
-        "The language the person chose; null to follow their browser.",
+        'The language the person chose, as a code such as "en"; null to follow their browser.',
     }),
   })
   .openapi("Me", { example: ME })

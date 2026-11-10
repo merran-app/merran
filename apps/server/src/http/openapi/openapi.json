@@ -667,11 +667,7 @@
               "string",
               "null"
             ],
-            "enum": [
-              "en",
-              null
-            ],
-            "description": "The language the person chose; null to follow their browser."
+            "description": "The language the person chose, as a code such as \"en\"; null to follow their browser."
           }
         },
         "required": [
@@ -766,11 +762,7 @@
               "string",
               "null"
             ],
-            "enum": [
-              "en",
-              null
-            ],
-            "description": "A code from Merran's languages, or null to follow the browser."
+            "description": "A code from Merran's languages, such as \"en\", or null to follow the browser."
           }
         },
         "required": [

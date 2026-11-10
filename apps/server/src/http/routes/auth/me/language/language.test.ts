@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../../app.ts"
 import { User } from "../../../../../database/entities/index.ts"
 import type { Database } from "../../../../../database/orm.ts"
+import { createOpenApiFile } from "../../../../openapi/file.ts"
 import {
   account,
   createTestApp,
@@ -66,6 +67,20 @@ describe("a person's language", () => {
     expect(res.status, await res.clone().text()).toBe(200)
     expect((await res.json()).language).toBeNull()
     expect(await preferences()).toEqual({ units: "metric" })
+  })
+
+  test("is described as a string, so adding a language changes no generated file", async () => {
+    const document = JSON.parse(await createOpenApiFile()) as {
+      components: {
+        schemas: Record<
+          string,
+          { properties: Record<string, { enum?: unknown }> }
+        >
+      }
+    }
+    const { Me, LanguageChoice } = document.components.schemas
+    expect(Me!.properties.language!.enum).toBeUndefined()
+    expect(LanguageChoice!.properties.language!.enum).toBeUndefined()
   })
 
   test("takes only Merran's languages", async () => {

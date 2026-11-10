@@ -5446,11 +5446,8 @@ export interface components {
                 role: "owner" | "admin" | "member";
             }[];
             activeHouseholdId: string | null;
-            /**
-             * @description The language the person chose; null to follow their browser.
-             * @enum {string|null}
-             */
-            language: "en" | null;
+            /** @description The language the person chose, as a code such as "en"; null to follow their browser. */
+            language: string | null;
         };
         /**
          * @example {
@@ -5486,11 +5483,8 @@ export interface components {
          *     }
          */
         LanguageChoice: {
-            /**
-             * @description A code from Merran's languages, or null to follow the browser.
-             * @enum {string|null}
-             */
-            language: "en" | null;
+            /** @description A code from Merran's languages, such as "en", or null to follow the browser. */
+            language: string | null;
         };
         /**
          * @example {

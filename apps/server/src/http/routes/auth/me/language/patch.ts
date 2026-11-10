@@ -1,5 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi"
-import { LOCALE_CODES } from "@merran/shared"
+import { isLocale } from "@merran/shared"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { User } from "../../../../../database/entities/index.ts"
 import { signedIn } from "../../../../middleware/auth.ts"
@@ -14,10 +14,18 @@ import {
 
 const LanguageChoiceSchema = z
   .object({
-    language: z.enum(LOCALE_CODES).nullable().openapi({
-      description:
-        "A code from Merran's languages, or null to follow the browser.",
-    }),
+    // Checked against the list here rather than listed, so adding a
+    // language changes nothing generated from this API.
+    language: z
+      .string()
+      .nullable()
+      .refine((language) => language === null || isLocale(language), {
+        error: "That isn't one of Merran's languages.",
+      })
+      .openapi({
+        description:
+          'A code from Merran\'s languages, such as "en", or null to follow the browser.',
+      }),
   })
   .openapi("LanguageChoice", { example: { language: "en" } })
 

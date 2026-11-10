@@ -1,5 +1,6 @@
 import {
   DEFAULT_LOCALE,
+  isLocale,
   localeDirection,
   matchLocale,
   type Locale,
@@ -7,7 +8,9 @@ import {
 import i18n from "i18next"
 import { initReactI18next } from "react-i18next"
 
+import { I18N_OPTIONS } from "@/lib/i18n-options"
 import { loadLocale } from "@/lib/locale-files"
+import { switchLanguage } from "@/lib/switch-language"
 
 import en from "./locales/en.json"
 
@@ -19,8 +22,7 @@ void i18n.use(initReactI18next).init({
   resources: { en: { translation: en } },
   lng: DEFAULT_LOCALE,
   fallbackLng: DEFAULT_LOCALE,
-  // React already escapes what it renders.
-  interpolation: { escapeValue: false },
+  ...I18N_OPTIONS,
 })
 
 const otherLocales = import.meta.glob([
@@ -35,11 +37,14 @@ function browserLanguages() {
     : [navigator.language]
 }
 
-/** Shows the app in a language, and tells the page which, for screen readers and text direction. */
-async function switchTo(code: Locale) {
-  await i18n.changeLanguage(code)
-  document.documentElement.lang = code
-  document.documentElement.dir = localeDirection(code)
+/** Shows the app in a language, unless it's already showing. */
+function switchTo(code: Locale) {
+  return switchLanguage(
+    i18n,
+    document.documentElement,
+    code,
+    localeDirection(code)
+  )
 }
 
 /**
@@ -47,8 +52,10 @@ async function switchTo(code: Locale) {
  * haven't chosen, loading it first if it isn't loaded. A language that
  * won't load leaves the app in English.
  */
-export async function applyLanguage(preference: Locale | null) {
-  const code = preference ?? matchLocale(browserLanguages())
+export async function applyLanguage(preference: string | null) {
+  const code = isLocale(preference)
+    ? preference
+    : matchLocale(browserLanguages())
   if (code !== DEFAULT_LOCALE && !i18n.hasResourceBundle(code, "translation")) {
     const strings = await loadLocale(code, otherLocales)
     if (!strings) return switchTo(DEFAULT_LOCALE)
