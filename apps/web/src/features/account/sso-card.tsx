@@ -3,6 +3,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { authClient } from "@/features/auth/client"
 import { useCapability } from "@/features/capabilities/queries"
+import { CardActions } from "@/features/settings/card-actions"
 import {
   Card,
   CardHeader,
@@ -60,10 +61,12 @@ export function SsoCard() {
             {t("auth.security.failed")}
           </p>
         )}
+      </CardContent>
+      <CardActions>
         <Button variant="outline" onClick={toggleSsoLink}>
           {t(linked ? "auth.security.unlinkSso" : "auth.security.linkSso")}
         </Button>
-      </CardContent>
+      </CardActions>
     </Card>
   )
 }

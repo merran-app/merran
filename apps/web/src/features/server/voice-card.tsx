@@ -28,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { SectionActions } from "@/features/settings/card-actions"
 import { LockedNote } from "@/features/settings/setting-fields"
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
@@ -147,18 +148,24 @@ export function VoiceCard() {
                   <label htmlFor="kokoro-url" className="font-medium">
                     {t("settings.server.voice.kokoroUrl")}
                   </label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="kokoro-url"
-                      value={url}
-                      inputMode="url"
-                      placeholder="http://kokoro:8880"
-                      disabled={Boolean(urlState?.lockedBy)}
-                      onChange={(event) => setUrl(event.target.value)}
-                    />
+                  <Input
+                    id="kokoro-url"
+                    value={url}
+                    inputMode="url"
+                    placeholder="http://kokoro:8880"
+                    disabled={Boolean(urlState?.lockedBy)}
+                    onChange={(event) => setUrl(event.target.value)}
+                  />
+                  <p className="text-muted-foreground">
+                    {urlState?.lockedBy ? (
+                      <LockedNote state={urlState} />
+                    ) : (
+                      t("settings.server.voice.kokoroUrlHint")
+                    )}
+                  </p>
+                  <SectionActions>
                     <Button
                       type="submit"
-                      variant="outline"
                       disabled={
                         saving !== null ||
                         Boolean(urlState?.lockedBy) ||
@@ -168,14 +175,7 @@ export function VoiceCard() {
                       {saving === "url" && <Spinner data-icon="inline-start" />}
                       {t("common.save")}
                     </Button>
-                  </div>
-                  <p className="text-muted-foreground">
-                    {urlState?.lockedBy ? (
-                      <LockedNote state={urlState} />
-                    ) : (
-                      t("settings.server.voice.kokoroUrlHint")
-                    )}
-                  </p>
+                  </SectionActions>
                 </form>
                 {voice.kokoro.error ? (
                   <p className="text-destructive" role="status">

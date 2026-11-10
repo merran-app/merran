@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
+import { SectionActions } from "@/features/settings/card-actions"
 import { ApiError } from "@/lib/api/client"
 
 import { formatMoney, type AiKey, type NewAiKey } from "./queries"
@@ -200,7 +201,7 @@ export function AiKeys({
         </ul>
       )}
       {(canAddKeys || canAddAddresses) && (
-        <div>
+        <SectionActions>
           <Button variant="outline" onClick={() => setAdding(true)}>
             <HugeiconsIcon
               icon={Add01Icon}
@@ -209,7 +210,7 @@ export function AiKeys({
             />
             {t("ai.keys.add")}
           </Button>
-        </div>
+        </SectionActions>
       )}
       <CreditDialog
         aiKey={crediting}

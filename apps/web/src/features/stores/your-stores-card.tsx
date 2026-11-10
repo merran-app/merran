@@ -19,6 +19,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { householdQuery } from "@/features/household/queries"
+import { CardActions } from "@/features/settings/card-actions"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { yourStoresQuery } from "./queries"
@@ -92,14 +93,6 @@ export function YourStoresCard() {
                 </Badge>
               ))}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="justify-self-start"
-              render={<Link to="/list/products" />}
-            >
-              {t("stores.mappings.manage")}
-            </Button>
           </div>
         )}
         <div className="grid gap-2">
@@ -123,6 +116,13 @@ export function YourStoresCard() {
           </ToggleGroup>
         </div>
       </CardContent>
+      {connected.length > 0 && (
+        <CardActions>
+          <Button variant="outline" render={<Link to="/list/products" />}>
+            {t("stores.mappings.manage")}
+          </Button>
+        </CardActions>
+      )}
     </Card>
   )
 }

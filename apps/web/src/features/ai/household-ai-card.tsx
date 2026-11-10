@@ -12,7 +12,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -35,6 +34,7 @@ import { Switch } from "@/components/ui/switch"
 import { useMe } from "@/features/auth/use-me"
 import { capabilitiesQuery } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { CardActions, SectionActions } from "@/features/settings/card-actions"
 
 import { AiKeys } from "./ai-keys"
 import { ModelSelect } from "./model-select"
@@ -353,7 +353,7 @@ export function HouseholdAiCard() {
                 picked.small ||
                 picked.vision ||
                 Object.keys(picked.tasks).length > 0) && (
-                <div>
+                <SectionActions>
                   <Button
                     variant="outline"
                     size="sm"
@@ -368,7 +368,7 @@ export function HouseholdAiCard() {
                   >
                     {t("ai.models.useSuggested")}
                   </Button>
-                </div>
+                </SectionActions>
               )}
               <Collapsible>
                 <CollapsibleTrigger
@@ -515,7 +515,7 @@ export function HouseholdAiCard() {
       </CardContent>
       {/* Something to save: models to pick, or a limit on its own keys. */}
       {(data.models.length > 0 || data.keys.length > 0) && (
-        <CardFooter>
+        <CardActions>
           <Button
             disabled={(draft === null && limitText === null) || saving}
             onClick={() => void save()}
@@ -523,7 +523,7 @@ export function HouseholdAiCard() {
             {saving && <Spinner data-icon="inline-start" />}
             {t("ai.household.save")}
           </Button>
-        </CardFooter>
+        </CardActions>
       )}
     </Card>
   )

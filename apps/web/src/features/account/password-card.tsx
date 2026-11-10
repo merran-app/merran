@@ -9,13 +9,13 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import { FieldGroup } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { CardActions } from "@/features/settings/card-actions"
 
 type Form = {
   currentPassword: string
@@ -119,12 +119,12 @@ export function PasswordCard() {
             />
           </FieldGroup>
         </CardContent>
-        <CardFooter className="mt-6 justify-end">
+        <CardActions>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && <Spinner />}
             {t("settings.you.password.submit")}
           </Button>
-        </CardFooter>
+        </CardActions>
       </form>
     </Card>
   )

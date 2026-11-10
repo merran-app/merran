@@ -12,7 +12,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -22,6 +21,7 @@ import { meQuery } from "@/features/auth/queries"
 import { api, unwrap } from "@/lib/api/client"
 import { weekdayNames } from "@/lib/format"
 import { showFormError } from "@/lib/form-errors"
+import { CardActions } from "@/features/settings/card-actions"
 
 import { householdQuery, isAdminRole } from "./queries"
 
@@ -135,12 +135,12 @@ export function DetailsCard() {
           </FieldGroup>
         </CardContent>
         {canEdit && (
-          <CardFooter className="mt-6 justify-end">
+          <CardActions>
             <Button type="submit" disabled={!isDirty || isSubmitting}>
               {isSubmitting && <Spinner />}
               {t("common.save")}
             </Button>
-          </CardFooter>
+          </CardActions>
         )}
       </form>
     </Card>

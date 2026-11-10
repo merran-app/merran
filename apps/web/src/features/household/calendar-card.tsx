@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -20,6 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { calendarSettingsQuery } from "@/features/plan/calendar-queries"
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
+import { CardActions } from "@/features/settings/card-actions"
 
 type Times = Schemas["CalendarMealTimes"]
 
@@ -196,7 +196,7 @@ export function CalendarCard({ canManage }: { canManage: boolean }) {
               </FieldDescription>
             )}
           </CardContent>
-          <CardFooter className="mt-6">
+          <CardActions>
             <Button
               type="submit"
               disabled={busy || (times === null && enabled === null)}
@@ -204,7 +204,7 @@ export function CalendarCard({ canManage }: { canManage: boolean }) {
               {busy && <Spinner data-icon="inline-start" />}
               {t("settings.household.calendar.save")}
             </Button>
-          </CardFooter>
+          </CardActions>
         </form>
       )}
       {settings.enabled && (
@@ -217,13 +217,6 @@ export function CalendarCard({ canManage }: { canManage: boolean }) {
               {t("settings.household.calendar.publicUrlNeeded")}
             </p>
           )}
-          <Button
-            variant="outline"
-            disabled={busy || !settings.publicUrlReady}
-            onClick={() => void createLink()}
-          >
-            {t("settings.household.calendar.createLink")}
-          </Button>
           {newUrl && (
             <CopyField
               label={t("settings.household.calendar.newLink")}
@@ -261,6 +254,17 @@ export function CalendarCard({ canManage }: { canManage: boolean }) {
             {t("settings.household.calendar.refreshHint")}
           </p>
         </CardContent>
+      )}
+      {settings.enabled && (
+        <CardActions>
+          <Button
+            variant="outline"
+            disabled={busy || !settings.publicUrlReady}
+            onClick={() => void createLink()}
+          >
+            {t("settings.household.calendar.createLink")}
+          </Button>
+        </CardActions>
       )}
     </Card>
   )

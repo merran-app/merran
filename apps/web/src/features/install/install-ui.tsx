@@ -14,7 +14,6 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -28,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { CardActions } from "@/features/settings/card-actions"
 
 import {
   onTouchDevice,
@@ -152,7 +152,7 @@ export function InstallCard() {
         </CardDescription>
       </CardHeader>
       {way !== "installed" && (
-        <CardContent>
+        <CardActions>
           <Button onClick={() => void start()}>
             <HugeiconsIcon
               icon={Download04Icon}
@@ -161,7 +161,7 @@ export function InstallCard() {
             />
             {t("install.button")}
           </Button>
-        </CardContent>
+        </CardActions>
       )}
     </Card>
   )

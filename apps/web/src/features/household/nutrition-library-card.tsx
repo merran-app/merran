@@ -8,7 +8,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -16,6 +15,7 @@ import { Progress } from "@/components/ui/progress"
 import { Spinner } from "@/components/ui/spinner"
 import { useCapability } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { CardActions } from "@/features/settings/card-actions"
 
 // Under ["recipes"], so a run's progress comes in with live updates.
 const libraryQuery = queryOptions({
@@ -113,7 +113,7 @@ export function NutritionLibraryCard() {
         )}
       </CardContent>
       {(going || data.missing > 0) && (
-        <CardFooter className="mt-4 justify-end">
+        <CardActions className="mt-4">
           <Button
             variant={going ? "outline" : "default"}
             disabled={busy}
@@ -126,7 +126,7 @@ export function NutritionLibraryCard() {
                   count: data.missing,
                 })}
           </Button>
-        </CardFooter>
+        </CardActions>
       )}
     </Card>
   )

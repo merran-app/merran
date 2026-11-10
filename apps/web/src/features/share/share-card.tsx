@@ -15,6 +15,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { apiKeysQuery } from "@/features/account/queries"
 import { useActiveHousehold } from "@/features/auth/use-me"
+import { CardActions } from "@/features/settings/card-actions"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 /** Bold, for the names of buttons and actions in the steps. */
@@ -85,7 +86,7 @@ export function ShareCard() {
               {t("settings.you.share.iphoneIntro")}
             </p>
           </div>
-          {key ? (
+          {key && (
             <>
               <ol className="grid list-decimal gap-3 ps-5 text-sm marker:text-muted-foreground">
                 <li>
@@ -156,19 +157,21 @@ export function ShareCard() {
                 })}
               </p>
             </>
-          ) : (
-            <Button
-              variant="outline"
-              className="justify-self-start"
-              disabled={busy}
-              onClick={() => void makeKey()}
-            >
-              {busy && <Spinner data-icon="inline-start" />}
-              {t("settings.you.share.makeKey")}
-            </Button>
           )}
         </section>
       </CardContent>
+      {!key && (
+        <CardActions>
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() => void makeKey()}
+          >
+            {busy && <Spinner data-icon="inline-start" />}
+            {t("settings.you.share.makeKey")}
+          </Button>
+        </CardActions>
+      )}
     </Card>
   )
 }

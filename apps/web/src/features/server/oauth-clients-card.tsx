@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useId, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { api, unwrap } from "@/lib/api/client"
 import { useCapability } from "@/features/capabilities/queries"
 import { oauthRequest } from "@/features/auth/authorization"
+import { CardActions, SectionActions } from "@/features/settings/card-actions"
 import {
   Card,
   CardHeader,
@@ -34,6 +35,7 @@ export function OAuthClientsCard() {
   } | null>(null)
   const [failed, setFailed] = useState(false)
   const [busy, setBusy] = useState(false)
+  const formId = useId()
   if (!enabled) return null
 
   async function registerClient(event: React.FormEvent<HTMLFormElement>) {
@@ -91,7 +93,29 @@ export function OAuthClientsCard() {
             {t("auth.oauth.failed")}
           </p>
         )}
-        <form className="grid gap-4" onSubmit={registerClient}>
+        {data?.map((client) => (
+          <div
+            key={client.clientId}
+            className="grid gap-2 rounded-lg border p-4"
+          >
+            <p className="break-all">{client.name ?? client.clientId}</p>
+            <p className="text-sm break-all text-muted-foreground">
+              {client.redirectUris.join(", ")}
+            </p>
+            <SectionActions>
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => removeClient(client.clientId)}
+              >
+                {t("auth.oauth.removeClient")}
+              </Button>
+            </SectionActions>
+          </div>
+        ))}
+        {/* The applications come first, so registering another sits at the
+            card's bottom right; its button submits this form by its id. */}
+        <form id={formId} className="grid gap-4" onSubmit={registerClient}>
           <TextField
             label={t("auth.oauth.clientName")}
             value={name}
@@ -114,9 +138,6 @@ export function OAuthClientsCard() {
               { value: "api", label: t("auth.oauth.apiInterface") },
             ]}
           />
-          <Button type="submit" disabled={busy}>
-            {t("auth.oauth.register")}
-          </Button>
         </form>
         {credentials && (
           <div className="grid gap-3 rounded-lg border p-4">
@@ -133,25 +154,12 @@ export function OAuthClientsCard() {
             )}
           </div>
         )}
-        {data?.map((client) => (
-          <div
-            key={client.clientId}
-            className="grid gap-2 rounded-lg border p-4"
-          >
-            <p className="break-all">{client.name ?? client.clientId}</p>
-            <p className="text-sm break-all text-muted-foreground">
-              {client.redirectUris.join(", ")}
-            </p>
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => removeClient(client.clientId)}
-            >
-              {t("auth.oauth.removeClient")}
-            </Button>
-          </div>
-        ))}
       </CardContent>
+      <CardActions>
+        <Button type="submit" form={formId} disabled={busy}>
+          {t("auth.oauth.register")}
+        </Button>
+      </CardActions>
     </Card>
   )
 }

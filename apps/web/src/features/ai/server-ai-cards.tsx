@@ -15,7 +15,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -41,6 +40,7 @@ import { Switch } from "@/components/ui/switch"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { capabilitiesQuery } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { CardActions } from "@/features/settings/card-actions"
 
 import { AiKeys } from "./ai-keys"
 import { ModelSelect } from "./model-select"
@@ -405,7 +405,7 @@ export function ServerAiPolicyCard() {
           </Field>
         </FieldGroup>
       </CardContent>
-      <CardFooter className="justify-end">
+      <CardActions>
         <Button
           disabled={(draft === null && limitText === null) || saving}
           onClick={() => void save()}
@@ -413,7 +413,7 @@ export function ServerAiPolicyCard() {
           {saving && <Spinner data-icon="inline-start" />}
           {t("ai.policy.save")}
         </Button>
-      </CardFooter>
+      </CardActions>
     </Card>
   )
 }

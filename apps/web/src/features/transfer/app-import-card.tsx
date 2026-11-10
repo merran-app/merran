@@ -8,7 +8,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -30,6 +29,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useMe } from "@/features/auth/use-me"
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
+import { CardActions } from "@/features/settings/card-actions"
 
 import { ImportProgress } from "./import-progress"
 import { asFileBody } from "./upload"
@@ -246,7 +246,7 @@ function FileImport({ chooser, onStarted }: FormProps) {
           )}
         </FieldGroup>
       </CardContent>
-      <CardFooter className="gap-2">
+      <CardActions>
         {checked ? (
           <>
             <Button disabled={busy || nothingNew} onClick={() => void start()}>
@@ -265,7 +265,7 @@ function FileImport({ chooser, onStarted }: FormProps) {
               : t("settings.transfer.apps.check")}
           </Button>
         )}
-      </CardFooter>
+      </CardActions>
     </>
   )
 }
@@ -361,7 +361,7 @@ function MealieImport({ chooser, onStarted }: FormProps) {
           )}
         </FieldGroup>
       </CardContent>
-      <CardFooter className="gap-2">
+      <CardActions>
         <Button type="submit" disabled={busy}>
           {busy && <Spinner data-icon="inline-start" />}
           {found
@@ -380,7 +380,7 @@ function MealieImport({ chooser, onStarted }: FormProps) {
             {t("settings.transfer.apps.change")}
           </Button>
         )}
-      </CardFooter>
+      </CardActions>
     </form>
   )
 }

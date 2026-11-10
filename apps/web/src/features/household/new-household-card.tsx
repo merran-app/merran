@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -17,6 +16,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { useRefreshAll } from "@/features/auth/use-me"
 import { api, unwrap } from "@/lib/api/client"
 import { showFormError } from "@/lib/form-errors"
+import { CardActions } from "@/features/settings/card-actions"
 
 /** Server admins can start more households, and switch to the new one. */
 export function NewHouseholdCard() {
@@ -62,12 +62,12 @@ export function NewHouseholdCard() {
             })}
           />
         </CardContent>
-        <CardFooter className="mt-6 justify-end">
+        <CardActions>
           <Button type="submit" variant="outline" disabled={isSubmitting}>
             {isSubmitting && <Spinner />}
             {t("settings.household.new.submit")}
           </Button>
-        </CardFooter>
+        </CardActions>
       </form>
     </Card>
   )

@@ -11,12 +11,12 @@ import {
   CardAction,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import { FieldGroup } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
+import { CardActions } from "@/features/settings/card-actions"
 import { SettingInput } from "@/features/settings/setting-fields"
 import { useSettingsForm } from "@/features/settings/use-settings-form"
 import { api, ApiError, unwrap } from "@/lib/api/client"
@@ -94,7 +94,7 @@ export function FlareSolverrCard() {
             />
           </FieldGroup>
         </CardContent>
-        <CardFooter className="mt-6 flex-wrap justify-between gap-x-4 gap-y-3">
+        <CardActions className="gap-x-4 gap-y-3">
           {/* Beside Test, which it explains, rather than on a line of its own. */}
           <p className="text-sm text-muted-foreground">
             {t("settings.server.flaresolverr.testHint")}
@@ -119,7 +119,7 @@ export function FlareSolverrCard() {
               </Button>
             )}
           </div>
-        </CardFooter>
+        </CardActions>
       </form>
     </Card>
   )
