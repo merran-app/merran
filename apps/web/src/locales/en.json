@@ -3356,12 +3356,12 @@
     "https": "Use Merran on your phone",
     "resources": {
       "household": "For your household",
-      "householdHint": "Preferences, people, stores and AI keys.",
+      "householdHint": "Its name, how its weeks work, and its people.",
       "importHint": "Bring your recipe collection with you.",
       "aiHint": "Choose a provider and understand whose key pays.",
       "httpsHint": "Set up HTTPS, remote access and installation.",
       "server": "For your server",
-      "serverHint": "Modules, AI policy, jobs and updates.",
+      "serverHint": "Updates, email and background jobs. Each page's Whole server side has the rest.",
       "backupsHint": "Keep your data safe and know how to restore it."
     },
     "steps": {

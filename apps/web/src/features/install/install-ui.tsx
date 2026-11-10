@@ -138,7 +138,7 @@ export function InstallMenuItem() {
   )
 }
 
-/** Settings → You: Merran on this device, installed or how to. */
+/** Settings → Apps and devices: Merran on this device, installed or how to. */
 export function InstallCard() {
   const { t } = useTranslation()
   const { way } = useInstall()

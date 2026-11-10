@@ -55,8 +55,8 @@ services:
 
   # Kokoro, an open voice model, reads cook steps aloud: free, the same on
   # every device, and nothing leaves the server. It needs 1 to 2 GB of RAM.
-  # Then set its address, http://kokoro:8880, in Settings → This server →
-  # Voice (or MERRAN_KOKORO_URL in .env).
+  # Then set its address, http://kokoro:8880, in Settings → Recipes →
+  # Whole server → Voice (or MERRAN_KOKORO_URL in .env).
   kokoro:
     image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
     profiles: [voice]
@@ -67,8 +67,8 @@ services:
   # Merran away, so links people import from it can still come in. Merran's
   # background reads of recipe sites never use it. It starts a browser for
   # each import, which takes memory while it runs. Then set its address,
-  # http://flaresolverr:8191, in Settings → This server → FlareSolverr (or
-  # MERRAN_FLARESOLVERR_URL in .env).
+  # http://flaresolverr:8191, in Settings → Import and export → Whole server
+  # → FlareSolverr (or MERRAN_FLARESOLVERR_URL in .env).
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     profiles: [flaresolverr]

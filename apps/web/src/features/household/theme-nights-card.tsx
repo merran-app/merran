@@ -48,7 +48,7 @@ function valueOf(theme: NightTheme | null) {
 }
 
 /**
- * Settings → Household → Theme nights: a theme for each night's dinner,
+ * Settings → Planning → Theme nights: a theme for each night's dinner,
  * which Fill the week keeps to. Household admins only; each change saves
  * straight away.
  */

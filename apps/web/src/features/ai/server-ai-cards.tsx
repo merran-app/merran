@@ -68,7 +68,7 @@ function useRefreshAi() {
     ])
 }
 
-/** Settings → This server → AI keys: the server's keys and addresses. */
+/** Settings → AI → Whole server → AI keys: the server's keys and addresses. */
 export function ServerAiKeysCard() {
   const { t } = useTranslation()
   const { data } = useQuery(serverAiQuery)
@@ -138,7 +138,7 @@ export function ServerAiKeysCard() {
 }
 
 /**
- * Settings → This server → Who may use the server's AI: which households,
+ * Settings → AI → Whole server → Who may use the server's AI: which households,
  * how much a month, which tasks and models, and whether households may
  * bring keys and addresses of their own.
  */
@@ -418,7 +418,7 @@ export function ServerAiPolicyCard() {
   )
 }
 
-/** Settings → This server → AI spend: on the server's keys, by household and month. */
+/** Settings → AI → Whole server → Spent: on the server's keys, by household and month. */
 export function ServerAiSpendCard() {
   const { t, i18n } = useTranslation()
   const { data } = useQuery(serverAiQuery)

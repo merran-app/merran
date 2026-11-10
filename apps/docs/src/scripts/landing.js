@@ -641,7 +641,7 @@ const CONVOS = {
     card: {
       kind: "Remember",
       title: "Jamie doesn't eat mushrooms",
-      sum: "Adds a household taste preference. Review its avoidance level in Settings → Household → Tastes.",
+      sum: "Adds a household taste preference. Review its avoidance level in Settings → Planning → Tastes.",
       ok: "Remember",
       no: "No thanks",
       done: "Remembered: Jamie doesn't eat mushrooms",

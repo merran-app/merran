@@ -21,7 +21,7 @@ import { api, ApiError, unwrap } from "@/lib/api/client"
 import { householdQuery } from "./queries"
 
 /**
- * Settings → Household → Pantry: whether checking a row off the list puts
+ * Settings → Shopping and stores → Pantry: whether checking a row off the list puts
  * it in the pantry. Household admins only; the change saves straight away.
  */
 export function PantryCard() {
