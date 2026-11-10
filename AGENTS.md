@@ -54,6 +54,7 @@ A change isn't done until everything that describes it says the same, in the sam
 | The telemetry summary (`packages/shared/src/telemetry/`) | The receiver takes it first: `apps/telemetry` deploys from main, before the release that sends a new field. Its README, the site's `run/telemetry.md`, and the totals page (`apps/docs/src/pages/telemetry.astro`) if the totals change |
 | Something the homepage says (`apps/docs/src/components/landing/`) | Check it's still true when the feature it's about changes |
 | A decision | The doc in `docs/` it belongs to, with the date it was decided |
+| A language: a new file in `apps/web/src/locales` | An entry in `LOCALES` (`packages/shared/src/i18n/locales.ts`); `pnpm --filter @merran/web check:locales` must pass. When an English string's meaning changes, give it a new key, so its translations show as missing rather than wrong |
 
 Guides describe what's on main, as if it's released: the site is published with each release, so whatever the guides say goes out with the features they describe. Don't mark anything as not released yet.
 

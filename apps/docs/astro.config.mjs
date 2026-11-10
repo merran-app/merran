@@ -52,6 +52,7 @@ export default defineConfig({
             },
             { label: "Cooking", slug: "docs/use/cooking" },
             { label: "Sharing recipes", slug: "docs/use/sharing-recipes" },
+            { label: "Language", slug: "docs/use/language" },
             { label: "Assistant and approvals", slug: "docs/use/assistant" },
           ],
         },
