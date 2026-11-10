@@ -14,6 +14,7 @@ import { Session } from "../../database/entities/sessions.ts"
 import { passkeyOrigin } from "../../modules/auth/index.ts"
 import { oidcConfiguration } from "../../modules/auth/oidc.ts"
 import { authorizationProvider } from "./oauth/provider.ts"
+import { readPostgresDates } from "./postgres-dates.ts"
 import { v7 as uuidv7 } from "uuid"
 import type { Config } from "../../core/config.ts"
 import type { Database } from "../../database/orm.ts"
@@ -57,6 +58,7 @@ export type AuthOptions = {
 export function createAuth({ config, database, secret, logger }: AuthOptions) {
   const log = logger?.child({ source: "better-auth" })
   const oidc = oidcConfiguration(config)
+  const kysely = database.em.getKysely()
   return betterAuth({
     appName: "Merran",
     basePath: AUTH_BASE,
@@ -103,7 +105,10 @@ export function createAuth({ config, database, secret, logger }: AuthOptions) {
         }
       : {}),
     database: {
-      db: database.em.getKysely(),
+      db:
+        config.database.kind === "postgres"
+          ? kysely.withPlugin(readPostgresDates(database))
+          : kysely,
       type: config.database.kind,
       transaction: true,
     },
