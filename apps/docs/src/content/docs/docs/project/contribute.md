@@ -58,6 +58,27 @@ pnpm --filter @merran/docs typecheck
 
 Commit the regenerated page with the definition change. Development startup and builds regenerate it; typecheck rejects a stale page. The generator reads TypeScript syntax without starting the server or loading deployment secrets. Internal settings are excluded. A small editorial description map in the generator qualifies provider costs and external data flow without changing generated keys, scopes, or defaults. Unsupported metadata expressions fail generation rather than silently omitting an entry.
 
+## Adding a language
+
+A language is one file and one line, in one pull request:
+
+1. Copy `apps/web/src/locales/en.json` to `apps/web/src/locales/<code>.json`, where `<code>` is the language's BCP 47 code, such as `pl` or `pt-BR`, and translate its strings.
+2. Add the language to `LOCALES` in `packages/shared/src/i18n/locales.ts`: its code, its name in itself (`Polski`, not `Polish`), and its direction, `ltr` or `rtl`.
+3. Run `pnpm --filter @merran/web check:locales`. It says how much is translated, and fails on anything that would break.
+4. Open a pull request with a `feat:` title, such as `feat: add Polish`.
+
+Partial translations are welcome: any string not translated yet shows in English.
+
+Keep the `{{placeholders}}` exactly as English has them, since Merran fills them in, and the tags around text, like `<0>` and `</0>`, which become links and bold. A plural form may leave out `{{count}}` when the words say the number, as French `count_one` "Une recette" does.
+
+Strings that change with a number have a form for each plural category, such as `count_one` and `count_other` in English. Languages need different forms: Polish has `_one`, `_few`, `_many` and `_other`, and Japanese only `_other`. The check reads the forms each language needs from `Intl.PluralRules`, warns about any that are missing, and fails on forms the language doesn't use.
+
+Reviewers check the structure: the check passes and nothing else changes. The wording is trusted to people who speak the language.
+
+Merran's layout doesn't mirror for right-to-left languages yet: text and some controls flip, but the sidebar and spacing don't. A right-to-left language can still be added; mirroring the layout is planned.
+
+When Merran reaches 1.0, translations move to Weblate, and these files are kept up to date from there.
+
 ## Send a change
 
 Keep changes focused, describe their behavior and validation, and update guides affected by the change. The project plan calls for DCO sign-off and disclosure of AI-written contributions; include those details in your contribution.

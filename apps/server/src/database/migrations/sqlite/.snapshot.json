@@ -9600,6 +9600,229 @@
       "comment": null
     },
     {
+      "name": "recipe_not_duplicates",
+      "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "first_id": {
+          "name": "first_id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "second_id": {
+          "name": "second_id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "primary",
+          "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "created_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "recipe_not_duplicates_created_by_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "first_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "recipe_not_duplicates_first_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "first_id",
+            "second_id"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "recipe_not_duplicates_first_id_second_id_unique",
+          "primary": false,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "household_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "recipe_not_duplicates_household_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "second_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "recipe_not_duplicates_second_id_index",
+          "primary": false,
+          "unique": false
+        }
+      ],
+      "checks": [],
+      "triggers": [],
+      "foreignKeys": {
+        "recipe_not_duplicates_created_by_id_foreign": {
+          "columnNames": [
+            "created_by_id"
+          ],
+          "constraintName": "recipe_not_duplicates_created_by_id_foreign",
+          "localTableName": "recipe_not_duplicates",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "users",
+          "deleteRule": "set null"
+        },
+        "recipe_not_duplicates_first_id_foreign": {
+          "columnNames": [
+            "first_id"
+          ],
+          "constraintName": "recipe_not_duplicates_first_id_foreign",
+          "localTableName": "recipe_not_duplicates",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "recipes",
+          "deleteRule": "cascade"
+        },
+        "recipe_not_duplicates_household_id_foreign": {
+          "columnNames": [
+            "household_id"
+          ],
+          "constraintName": "recipe_not_duplicates_household_id_foreign",
+          "localTableName": "recipe_not_duplicates",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "households",
+          "deleteRule": "cascade"
+        },
+        "recipe_not_duplicates_second_id_foreign": {
+          "columnNames": [
+            "second_id"
+          ],
+          "constraintName": "recipe_not_duplicates_second_id_foreign",
+          "localTableName": "recipe_not_duplicates",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "recipes",
+          "deleteRule": "cascade"
+        }
+      },
+      "comment": null
+    },
+    {
       "name": "recipe_pairings",
       "columns": {
         "created_at": {

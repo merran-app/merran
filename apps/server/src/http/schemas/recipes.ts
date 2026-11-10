@@ -417,6 +417,96 @@ export const RecipePairingsSchema = z
     },
   })
 
+const DuplicateReasonSchema = z.enum(["link", "name"]).openapi({
+  description:
+    "Why it may be the same recipe: `link`, the same page under any address, or `name`, the same words in its name.",
+})
+
+const LEMON_CHICKEN_DUPLICATE = {
+  id: IDS.lemonChicken,
+  slug: "lemon-chicken",
+  name: "Lemon Chicken",
+  photo: null,
+  sourceUrl: "https://cooking.example/lemon-chicken",
+  createdAt: "2026-10-15T18:30:00.000Z",
+  reasons: ["link" as const],
+}
+
+const ROAST_CHICKEN_DUPLICATE = {
+  ...LEMON_CHICKEN_DUPLICATE,
+  id: IDS.garlicRice,
+  slug: "roast-lemon-chicken",
+  name: "Roast Lemon Chicken",
+  sourceUrl: "http://www.cooking.example/lemon-chicken/",
+  createdAt: "2026-11-09T12:00:00.000Z",
+}
+
+export const RecipeDuplicateSchema = z
+  .object({
+    id: z.string(),
+    slug: z.string(),
+    name: z.string(),
+    photo: z
+      .string()
+      .nullable()
+      .openapi({ description: "Its card-sized photo, or null." }),
+    sourceUrl: z.string().nullable(),
+    createdAt: z.iso.datetime(),
+    reasons: z.array(DuplicateReasonSchema),
+  })
+  .openapi("RecipeDuplicate", { example: LEMON_CHICKEN_DUPLICATE })
+
+export const RecipeDuplicatesSchema = z
+  .object({
+    duplicates: z.array(RecipeDuplicateSchema).openapi({
+      description:
+        "The household's other recipes that may be the same one: the same link first, then the oldest first. Pairs someone said aren't the same, and recipes in Recently deleted, are left out.",
+    }),
+  })
+  .openapi("RecipeDuplicates", {
+    example: { duplicates: [LEMON_CHICKEN_DUPLICATE] },
+  })
+
+export const DuplicatePairSchema = z
+  .object({
+    recipes: z
+      .tuple([RecipeDuplicateSchema, RecipeDuplicateSchema])
+      .openapi({ description: "The two recipes, the older first." }),
+    reasons: z.array(DuplicateReasonSchema),
+  })
+  .openapi("DuplicatePair", {
+    example: {
+      recipes: [LEMON_CHICKEN_DUPLICATE, ROAST_CHICKEN_DUPLICATE],
+      reasons: ["link"],
+    },
+  })
+
+export const DuplicatePairsSchema = z
+  .object({
+    pairs: z.array(DuplicatePairSchema).openapi({
+      description:
+        "Every pair of the household's recipes that may be the same one, each once, the pairs with the newest recipe first.",
+    }),
+  })
+  .openapi("DuplicatePairs", {
+    example: {
+      pairs: [
+        {
+          recipes: [LEMON_CHICKEN_DUPLICATE, ROAST_CHICKEN_DUPLICATE],
+          reasons: ["link"],
+        },
+      ],
+    },
+  })
+
+export const DuplicateParam = RecipeParam.extend({
+  other: z.string().openapi({
+    param: { name: "other", in: "path" },
+    description: "The other recipe's id, or its slug.",
+    example: "roast-lemon-chicken",
+  }),
+})
+
 export const PairingsInputSchema = z
   .object({
     recipes: z

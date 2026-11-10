@@ -357,6 +357,50 @@ describe("with AI", () => {
   })
 })
 
+describe("with a model for photos and PDFs", () => {
+  const picks = { large: null, small: null, tasks: {}, monthlyLimit: null }
+  const lastModel = () => targets.at(-1)!.model
+
+  beforeAll(async () => {
+    const res = await kyle.put("/api/households/current/ai", {
+      ...picks,
+      vision: "anthropic:claude-haiku-5-5",
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    web.set("https://cooking.example/grandmas-other-chicken", {
+      contentType: "text/html; charset=utf-8",
+      body: Buffer.from(BLOG),
+    })
+  })
+
+  afterAll(() => kyle.put("/api/households/current/ai", picks))
+
+  test("reads photos with it", async () => {
+    const res = await importPhotos(jpeg)
+    expect(res.status, await res.clone().text()).toBe(201)
+    expect(lastModel()).toBe("claude-haiku-5-5")
+  })
+
+  test("reads a PDF with it", async () => {
+    const res = await importPhotos(Buffer.from("%PDF-1.7 recipe"))
+    expect(res.status, await res.clone().text()).toBe(201)
+    expect(lastModel()).toBe("claude-haiku-5-5")
+  })
+
+  test("reads text and pages with the import model", async () => {
+    const text = await importText("Lemon chicken: 4 thighs, 2 lemons.")
+    expect(text.status, await text.clone().text()).toBe(201)
+    expect(lastModel()).toBe("claude-sonnet-5-5")
+
+    await importPhotos(jpeg)
+    const page = await kyle.post("/api/recipes/import", {
+      url: "https://cooking.example/grandmas-other-chicken",
+    })
+    expect(page.status, await page.clone().text()).toBe(201)
+    expect(lastModel()).toBe("claude-sonnet-5-5")
+  })
+})
+
 describe("shared to Merran", () => {
   const share = async (fields: [string, string | Blob][]) => {
     const res = await kyle.send("POST", "/api/share", await form(fields))

@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
 
+import { PossibleDuplicates } from "../duplicates/possible-duplicates"
 import { useRefreshRecipes } from "../queries"
 import {
   useRefreshReview,
@@ -85,6 +86,7 @@ export function ProposalReview({
         </blockquote>
       )}
       <p className="text-sm text-muted-foreground">{proposal.summary}</p>
+      {proposal.recipe && <PossibleDuplicates recipe={proposal.recipe.id} />}
       <ul className="grid gap-3">
         {proposal.sections.map((section) => {
           const id = `${proposal.id}-${section}`

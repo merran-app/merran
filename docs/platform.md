@@ -209,6 +209,7 @@ Settings guidance, decided October 18, 2026 (released in alpha.4): put short num
 | Receipts | Small | Needs images for photos |
 | Discover | Small | Needs web search |
 | Prep reminders | Small | Reading steps for "marinate overnight" |
+| Photos and PDFs | As for each task | A model for every call with a photo or PDF in it: imports, video frames, receipts, the assistant |
 | Photos | Image model | GPT Image 1 Mini or Gemini 2.5 Flash Image, on an OpenAI or Google key from whoever pays for importing |
 | Transcription | Speech-to-text model | Video import without captions, on an OpenAI key from whoever pays for importing |
 | Voice | Text-to-speech model | gpt-4o-mini-tts on an OpenAI key from whoever pays for the assistant, or Kokoro |
@@ -216,6 +217,8 @@ Settings guidance, decided October 18, 2026 (released in alpha.4): put short num
 Photos, transcription and the voice aren't tasks with a model to pick: they use a fixed model from the first key of a provider that can, among the keys paying for the task named, and count towards its spend.
 
 Every task can have its own model; otherwise it uses the default large or small model for whoever's paying.
+
+A model for photos and PDFs, decided November 9, 2026: a household, and the server admin as a default, can pick one model for every AI call with a photo or PDF in it, for a household on a text-only local model or a cheaper or better reader. Such a call goes to the household's model for photos and PDFs, then its model for that task, then its big or small model. When it has picked none of those, the household's own keys' suggested models come first, then the server's model for photos and PDFs, then the server's big or small default. A call is one with photos or PDFs in it when the feature needs a model that reads images or PDFs, which every feature already says; an assistant chat stays on the model once a photo is in it, since the photo goes with each message. The model is used from the start, and a call that can't run on it says why rather than trying another (unlike the image model retried after a failure in bula87's fork). Spend counts under the task the call was for.
 
 ### Whose key pays
 
@@ -390,6 +393,8 @@ Carried over from the REFERENCE app, plus what a public project needs:
 - **Imported recipes** keep the language they were written in, for now. With translations, a setting in Settings, You has AI imports written in the person's language instead, translated, saying in the notes what language it was. Diet labels skip ingredient lines in a script they can't read rather than guessing.
 - **Starter collections and suggested sites** are data files per language, open to contributions.
 - **Nutrition:** USDA at first. Open Food Facts and national food databases can be added as nutrition sources later.
+
+Translation groundwork, decided November 9, 2026: the languages are one list, `LOCALES` in `packages/shared/src/i18n/locales.ts`, each with its code, its name in itself and its direction. The web app bundles English, which any missing string falls back to, and loads other locales from `apps/web/src/locales/` when they're chosen, so a language is one file and one line. The language is the person's saved choice (Settings → You → Language, kept in their preferences through `PATCH /api/auth/me/language`), then the browser's languages (the same code, then the same base language, for each in order), then English; before sign-in it's the browser's. `<html lang>` and `dir` follow it, and dates and money format in it. The setting stays hidden while English is the only language. `pnpm --filter @merran/web check:locales` runs in CI: missing keys are warnings, while keys English doesn't have, changed `{{placeholders}}`, invalid JSON and plural forms a language doesn't use (from `Intl.PluralRules`) are errors, with a percentage done for each language, and a language must be in both `LOCALES` and the locales folder. The layout doesn't mirror for right-to-left languages yet. The extension, the server's errors and emails, AI prompts and the parser's food names aren't translated yet.
 
 ## Mobile overlays
 

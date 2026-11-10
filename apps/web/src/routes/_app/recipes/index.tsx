@@ -2,6 +2,7 @@ import {
   AiMagicIcon,
   Compass01Icon,
   CookBookIcon,
+  Copy01Icon,
   Delete02Icon,
   MoreHorizontalIcon,
   Tag01Icon,
@@ -207,6 +208,10 @@ function RecipesPage() {
                       {t("recipes.tidy.reviewTitle")}
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuItem render={<Link to="/recipes/duplicates" />}>
+                    <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} />
+                    {t("recipes.duplicates.title")}
+                  </DropdownMenuItem>
                   <DropdownMenuItem render={<Link to="/recipes/deleted" />}>
                     <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
                     {t("recipes.deleted.title")}

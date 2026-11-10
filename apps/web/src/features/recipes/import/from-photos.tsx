@@ -46,7 +46,7 @@ export function FromPhotos({
   onNavigate: () => void
 }) {
   const { t } = useTranslation()
-  const ai = useAiFor("import")
+  const ai = useAiFor("import", { visual: true })
   const input = React.useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = React.useState<Photo[]>([])
   const [busy, setBusy] = React.useState(false)
@@ -147,7 +147,7 @@ export function FromPhotos({
           {t("recipes.import.photos.description")}
         </DialogDescription>
       </DialogHeader>
-      {ai.why && <NeedsAi task="import" why={ai.why} onNavigate={onNavigate} />}
+      {ai.why && <NeedsAi task="vision" why={ai.why} onNavigate={onNavigate} />}
       <form
         className="grid min-w-0 gap-4"
         noValidate

@@ -35,6 +35,11 @@ export type AiPolicy = {
   /** The models households use when they haven't picked, on the server's keys. */
   large: ModelRef | null
   small: ModelRef | null
+  /**
+   * The model for photos and PDFs in households that haven't picked, on
+   * the server's keys; null to go by each task's.
+   */
+  vision: ModelRef | null
 }
 
 /**
@@ -52,6 +57,7 @@ export const DEFAULT_AI_POLICY: AiPolicy = {
   householdAddresses: false,
   large: null,
   small: null,
+  vision: null,
 }
 
 /** What a household picks for itself, in Settings → Household → AI. */
@@ -61,6 +67,11 @@ export type HouseholdAi = {
   small: ModelRef | null
   /** A model for a task of its own. */
   tasks: Partial<Record<AiTask, ModelRef>>
+  /**
+   * The model for every photo and PDF, ahead of the task's own: one that
+   * reads them well, or cheaply. Null to go by each task's.
+   */
+  vision: ModelRef | null
   /** A monthly limit on its own keys, in US dollars; null for none. */
   monthlyLimit: number | null
   /** Tidy up each recipe it imports, with the suggestions left in Review. */
@@ -71,6 +82,7 @@ export const NO_HOUSEHOLD_AI: HouseholdAi = {
   large: null,
   small: null,
   tasks: {},
+  vision: null,
   monthlyLimit: null,
   autoTidy: false,
 }

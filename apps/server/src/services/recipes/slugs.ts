@@ -6,6 +6,7 @@ import { NOT_DELETED_FILTER } from "../../database/scope.ts"
 const RESERVED = new Set([
   "new",
   "deleted",
+  "duplicates",
   "tags",
   "import",
   "bulk",

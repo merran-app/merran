@@ -259,3 +259,79 @@ describe("whose key pays", () => {
     ).toEqual({ ok: false, why: "ownLimit" })
   })
 })
+
+describe("photos and PDFs", () => {
+  const HAIKU = "anthropic:claude-haiku-5-5"
+  const SONNET = "anthropic:claude-sonnet-5-5"
+  const OPUS = "anthropic:claude-opus-5-5"
+  const FABLE = "anthropic:claude-fable-5-1"
+
+  test("go to the household's Photos and PDFs model, over the task's own pick", () => {
+    const ai = {
+      ...NO_HOUSEHOLD_AI,
+      large: SONNET,
+      tasks: { import: FABLE },
+      vision: HAIKU,
+    }
+    const household = { keys: [], ai, spent: 0 }
+    expect(resolveAi(input({ household, visual: true }))).toMatchObject({
+      ok: true,
+      ref: HAIKU,
+    })
+    // A call with no photo or PDF goes by the task's own pick.
+    expect(resolveAi(input({ household }))).toMatchObject({ ref: FABLE })
+  })
+
+  test("otherwise go by the task's pick, then the size's", () => {
+    const ai = { ...NO_HOUSEHOLD_AI, large: SONNET, tasks: { import: FABLE } }
+    const household = { keys: [], ai, spent: 0 }
+    expect(resolveAi(input({ household, visual: true }))).toMatchObject({
+      ref: FABLE,
+    })
+    expect(
+      resolveAi(input({ household, task: "tidy", visual: true }))
+    ).toMatchObject({ ref: SONNET })
+  })
+
+  test("get the server's default only when the household's picked nothing for the call", () => {
+    const policy: AiPolicy = {
+      ...DEFAULT_AI_POLICY,
+      large: OPUS,
+      vision: HAIKU,
+    }
+    expect(resolveAi(input({ policy, visual: true }))).toMatchObject({
+      ref: HAIKU,
+    })
+    expect(resolveAi(input({ policy }))).toMatchObject({ ref: OPUS })
+    // A household that picked its own big model keeps it for photos too.
+    const household = {
+      keys: [],
+      ai: { ...NO_HOUSEHOLD_AI, large: SONNET },
+      spent: 0,
+    }
+    expect(resolveAi(input({ policy, household, visual: true }))).toMatchObject(
+      { ref: SONNET }
+    )
+  })
+
+  test("come after the household's own keys", () => {
+    const own = key("home-openai", "household", "openai")
+    const policy: AiPolicy = { ...DEFAULT_AI_POLICY, vision: HAIKU }
+    expect(
+      resolveAi(
+        input({
+          policy,
+          household: { keys: [own], ai: NO_HOUSEHOLD_AI, spent: 0 },
+          visual: true,
+        })
+      )
+    ).toMatchObject({ key: { id: "home-openai" }, ref: "openai:gpt-6-sol" })
+  })
+
+  test("say why when the Photos and PDFs model can't run, rather than use another", () => {
+    const ai = { ...NO_HOUSEHOLD_AI, large: SONNET, vision: "openai:gpt-6-sol" }
+    expect(
+      resolveAi(input({ household: { keys: [], ai, spent: 0 }, visual: true }))
+    ).toEqual({ ok: false, why: "noKey" })
+  })
+})

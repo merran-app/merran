@@ -62,6 +62,45 @@ async function contextFor(deps: Deps, em: EntityManager, householdId: string) {
   return { policy, ai, spent, own, server, covers }
 }
 
+type Context = Awaited<ReturnType<typeof contextFor>>
+
+/** Whose key pays for one of a household's tasks, from its context. */
+function resolveIn(
+  context: Context,
+  householdId: string,
+  task: AiTask,
+  options: { estimate?: number; visual?: boolean } = {}
+): Resolution {
+  return resolveAi({
+    task,
+    householdId,
+    household: {
+      keys: context.own,
+      ai: context.ai,
+      spent: context.spent.household,
+    },
+    server: {
+      keys: context.server,
+      covers: context.covers,
+      spent: context.spent.server,
+    },
+    policy: context.policy,
+    estimate: options.estimate,
+    visual: options.visual,
+  })
+}
+
+/** A resolution as Settings shows it: which model and whose key, or why none. */
+function statusOf(resolution: Resolution) {
+  return resolution.ok
+    ? {
+        ok: true as const,
+        ref: resolution.ref,
+        source: resolution.key.source,
+      }
+    : { ok: false as const, why: resolution.why }
+}
+
 /**
  * A key from one of these providers, from whoever pays for one of a
  * household's AI tasks, or null: for what only some providers can do,
@@ -112,37 +151,27 @@ export async function canTranscribe(
   })
 }
 
-/** Whose key pays for one of a household's AI tasks, or why nobody's can. */
+/**
+ * Whose key pays for one of a household's AI tasks, or why nobody's can.
+ * A call with photos or PDFs in it is `visual`, for the model picked for
+ * those.
+ */
 export async function resolveTask(
   deps: Deps,
   em: EntityManager,
   householdId: string,
   task: AiTask,
-  estimate = 0
+  estimate = 0,
+  visual = false
 ): Promise<Resolution> {
   const context = await contextFor(deps, em, householdId)
-  return resolveAi({
-    task,
-    householdId,
-    household: {
-      keys: context.own,
-      ai: context.ai,
-      spent: context.spent.household,
-    },
-    server: {
-      keys: context.server,
-      covers: context.covers,
-      spent: context.spent.server,
-    },
-    policy: context.policy,
-    estimate,
-  })
+  return resolveIn(context, householdId, task, { estimate, visual })
 }
 
 /**
  * A household's AI as Settings and Today show it: for each task, which
- * model and whose key, or why none; and this month's spend against the
- * limits, warning near them.
+ * model and whose key, or why none, and the same for photos and PDFs;
+ * and this month's spend against the limits, warning near them.
  */
 export async function householdAiStatus(
   deps: Deps,
@@ -151,38 +180,19 @@ export async function householdAiStatus(
 ) {
   const context = await contextFor(deps, em, householdId)
   const tasks = Object.fromEntries(
-    AI_TASKS.map((task) => {
-      const resolution = resolveAi({
-        task,
-        householdId,
-        household: {
-          keys: context.own,
-          ai: context.ai,
-          spent: context.spent.household,
-        },
-        server: {
-          keys: context.server,
-          covers: context.covers,
-          spent: context.spent.server,
-        },
-        policy: context.policy,
-      })
-      return [
-        task,
-        resolution.ok
-          ? {
-              ok: true as const,
-              ref: resolution.ref,
-              source: resolution.key.source,
-            }
-          : { ok: false as const, why: resolution.why },
-      ]
-    })
+    AI_TASKS.map((task) => [
+      task,
+      statusOf(resolveIn(context, householdId, task)),
+    ])
   ) as Record<
     AiTask,
     | { ok: true; ref: string; source: "server" | "household" }
     | { ok: false; why: Exclude<Resolution, { ok: true }>["why"] }
   >
+  // Photos and PDFs as an import reads them.
+  const vision = statusOf(
+    resolveIn(context, householdId, "import", { visual: true })
+  )
   const serverLimit = serverLimitFor(context.policy, householdId)
   const ownLimit = context.ai.monthlyLimit
   // The keys it relies on that are out of credit, or running low.
@@ -206,6 +216,7 @@ export async function householdAiStatus(
   return {
     available: Object.values(tasks).some((task) => task.ok),
     tasks,
+    vision,
     month: context.spent.month,
     server: {
       covers: context.covers,
