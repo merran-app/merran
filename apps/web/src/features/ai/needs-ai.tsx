@@ -50,7 +50,7 @@ export function NeedsAi({
               components={{
                 link: (
                   <Link
-                    to="/settings/household"
+                    to="/settings/ai"
                     className="underline underline-offset-3"
                     onClick={onNavigate}
                   />

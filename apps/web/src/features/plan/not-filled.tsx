@@ -56,7 +56,7 @@ function Why({ meals }: { meals: readonly Meal[] }) {
           variant="secondary"
           size="sm"
           className="self-start"
-          render={<Link to="/settings/household" />}
+          render={<Link to="/settings/planning" />}
         >
           {t("plan.notFilled.change")}
         </Button>

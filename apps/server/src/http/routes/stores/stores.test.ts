@@ -460,13 +460,13 @@ describe("Kroger", () => {
     const cancelled = await callback(kyle, { error: "access_denied", state })
     expect(cancelled.status).toBe(302)
     expect(cancelled.headers.get("location")).toBe(
-      "/settings/household?kroger=cancelled"
+      "/settings/shopping?kroger=cancelled"
     )
 
     // Someone else can't finish Kyle's link.
     const other = await callback(jamie, { code: "good-code", state })
     expect(other.headers.get("location")).toMatch(
-      /^\/settings\/household\?kroger=failed&reason=/
+      /^\/settings\/shopping\?kroger=failed&reason=/
     )
 
     // A made-up state goes nowhere.
@@ -476,7 +476,7 @@ describe("Kroger", () => {
     const linked = await callback(kyle, { code: "good-code", state })
     expect(linked.status).toBe(302)
     expect(linked.headers.get("location")).toBe(
-      "/settings/household?kroger=linked"
+      "/settings/shopping?kroger=linked"
     )
     // Kroger was asked with the address it was sent to.
     expect(kroger.codes.get("good-code")).toBe(
@@ -905,7 +905,7 @@ describe("Kroger", () => {
       state: url.searchParams.get("state")!,
     })
     expect(back.headers.get("location")).toBe(
-      "/settings/household?kroger=linked"
+      "/settings/shopping?kroger=linked"
     )
     expect(await status()).toMatchObject({ needsRelink: false })
   })

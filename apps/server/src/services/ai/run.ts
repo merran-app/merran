@@ -47,12 +47,12 @@ const UNAVAILABLE: Record<
   noKey: {
     kind: "forbidden",
     message:
-      "There's no AI key for this. A household admin can add one in Settings, Household, AI.",
+      "There's no AI key for this. A household admin can add one in Settings, AI.",
   },
   notCovered: {
     kind: "forbidden",
     message:
-      "The server's AI keys don't cover this. A household admin can add a key of the household's own in Settings, Household, AI.",
+      "The server's AI keys don't cover this. A household admin can add a key of the household's own in Settings, AI.",
   },
   overLimit: {
     kind: "rate_limited",
@@ -62,7 +62,7 @@ const UNAVAILABLE: Record<
   ownLimit: {
     kind: "rate_limited",
     message:
-      "This month's limit on the household's own AI keys is reached. A household admin can raise it in Settings, Household, AI.",
+      "This month's limit on the household's own AI keys is reached. A household admin can raise it in Settings, AI.",
   },
 }
 
@@ -101,7 +101,7 @@ function callFailed(error: unknown, provider: AiProvider) {
     return new AppError(
       "upstream",
       "ai_answer_unreadable",
-      `${who}'s answer couldn't be read. Try again, or pick another model in Settings, Household, AI.`
+      `${who}'s answer couldn't be read. Try again, or pick another model in Settings, AI.`
     )
   }
   if (APICallError.isInstance(cause)) {
@@ -187,7 +187,7 @@ export async function prepareAi(
     throw new AppError(
       "unprocessable",
       "ai_model_cant",
-      `${known.name} can't ${ABILITY_WORDS[cant]}. Pick a model that can in Settings, Household, AI.`
+      `${known.name} can't ${ABILITY_WORDS[cant]}. Pick a model that can in Settings, AI.`
     )
   }
   const target = await targetOf(deps, em, key.id, model)
@@ -269,7 +269,7 @@ export async function useAi<T extends { usage: LanguageModelUsage }>(
       throw new AppError(
         "unprocessable",
         "ai_model_cant",
-        `${known.name} can't ${ABILITY_WORDS[cant]}. Pick a model that can in Settings, Household, AI.`
+        `${known.name} can't ${ABILITY_WORDS[cant]}. Pick a model that can in Settings, AI.`
       )
     }
     const target = await targetOf(deps, em, key.id, model)

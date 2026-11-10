@@ -36,7 +36,7 @@ export async function sitesReady(deps: Pick<AppDeps, "settings">) {
     throw new AppError(
       "unprocessable",
       "sites_off",
-      "Recipe sites are off on this server. The server admin can turn them on in Settings, This server."
+      "Recipe sites are off on this server. The server admin can turn them on in Settings, Import and export, Whole server."
     )
   }
 }
@@ -296,7 +296,7 @@ export async function findShelfRecipe(em: EntityManager, id: string) {
   return row
 }
 
-/** What's on the shelf, for Settings, This server. */
+/** What's on the shelf, for Settings, Import and export, Whole server. */
 export async function shelfSummary(em: EntityManager) {
   const [sites, recipes, classics, working, latest] = await Promise.all([
     em.count(RecipeSite, {}),

@@ -266,7 +266,7 @@ function Review({
                   variant="outline"
                   size="sm"
                   className="mt-2"
-                  render={<Link to="/settings/household" />}
+                  render={<Link to="/settings/shopping" />}
                 >
                   {t("stores.basket.linkNow")}
                 </Button>

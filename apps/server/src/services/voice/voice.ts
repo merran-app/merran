@@ -275,7 +275,7 @@ export async function kokoroVoices(deps: VoiceDeps, url: string) {
   }
 }
 
-/** The server voice as Settings, This server shows it. */
+/** The server voice as Settings, Recipes, Whole server shows it. */
 export async function voiceSettings(deps: VoiceDeps) {
   const chosen = await chosenVoice(deps.settings)
   const kokoro = chosen.kokoroUrl

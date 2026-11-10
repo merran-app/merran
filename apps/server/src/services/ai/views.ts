@@ -66,7 +66,7 @@ function optionsFor(keys: readonly AiKeyView[], source: KeySource) {
   )
 }
 
-/** Settings → This server → AI. */
+/** Settings → AI → Whole server. */
 export async function serverAi(deps: Deps, em: EntityManager) {
   const [keys, policy, usage, admins] = await Promise.all([
     listKeys(deps, em, null),
@@ -107,7 +107,7 @@ export async function serverAi(deps: Deps, em: EntityManager) {
   }
 }
 
-/** Settings → Household → AI. */
+/** Settings → AI. */
 export async function householdAiView(
   deps: Deps,
   em: EntityManager,

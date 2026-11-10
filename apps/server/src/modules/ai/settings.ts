@@ -52,7 +52,7 @@ const envKeyStateSchema = z.object({
 
 /**
  * The server's AI keys can come from the environment, where they can't be
- * changed in the app; others are added in Settings → This server → AI.
+ * changed in the app; others are added in Settings → AI → Whole server.
  * Who may use them is the policy.
  */
 export const AI = {

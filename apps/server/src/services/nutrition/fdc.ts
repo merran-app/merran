@@ -123,7 +123,7 @@ export function createFdcClient(fetcher: Fetcher, apiKey: string): FdcClient {
       throw new AppError(
         "unprocessable",
         "usda_key_refused",
-        "USDA refused the key. Check it in Settings, This server, Nutrition."
+        "USDA refused the key. Check it in Settings, Recipes, Whole server."
       )
     }
     if (res.status === 429) throw fdcRateLimited()

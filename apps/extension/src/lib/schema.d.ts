@@ -4129,7 +4129,7 @@ export interface paths {
         };
         /**
          * Where Kroger sends the person back
-         * @description Not called directly: the redirect address the Kroger developer app has. It finishes linking the account, then sends the person on to Settings, Household, saying how it went.
+         * @description Not called directly: the redirect address the Kroger developer app has. It finishes linking the account, then sends the person on to Settings, Shopping and stores, saying how it went.
          */
         get: operations["krogerCallback"];
         put?: never;
@@ -25824,7 +25824,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description On to Settings, Household. */
+            /** @description On to Settings, Shopping and stores. */
             302: {
                 headers: {
                     [name: string]: unknown;
@@ -26894,7 +26894,7 @@ export interface operations {
                 /**
                  * @example {
                  *       "provider": "oidc",
-                 *       "callbackURL": "/settings/you"
+                 *       "callbackURL": "/settings/sign-in"
                  *     }
                  */
                 "application/json": {

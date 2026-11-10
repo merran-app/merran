@@ -291,7 +291,7 @@ export function HouseholdAiCard() {
                   components={{
                     link: (
                       <Link
-                        to="/settings/server"
+                        to="/settings/ai/server"
                         className="underline underline-offset-3"
                       />
                     ),
