@@ -59,7 +59,7 @@ Settings has a page for each topic. A page with both household and server settin
 | ----------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
 | **Profile**             | **Profile**, **Language**, **Appearance**, **Your data**                                   |                                                                         |
 | **Sign-in**             | **Password**, **Passkeys**, **Two-step sign-in**, **Single sign-on**                       | **Authentication**                                                      |
-| **Apps and devices**    | **Merran on this device**, **Share to Merran**, **Connected apps**, **API keys**           | **OAuth applications**                                                  |
+| **Apps and devices**    | **Merran on this device**, **Share to Merran**, **Connected apps**, **API keys**           | **OAuth applications**, when OAuth is on                                |
 | **Household**           | **Household**, **Members**, **Invitations**                                                | **Start another household**                                             |
 | **Planning**            | **Planning**, **Tastes**, **Theme nights**, **Plan each week**, **Calendar subscriptions** |                                                                         |
 | **Recipes**             | **Nutrition for the library**, **AI photos**, **Recipe links**                             | **Nutrition**, **AI photos**, **Voice**                                 |

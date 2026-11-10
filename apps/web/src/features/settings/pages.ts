@@ -31,12 +31,19 @@ export type Access =
 export type Viewer = {
   serverAdmin: boolean
   householdRole: HouseholdRole | null
+  /** The optional parts that are on, from GET /api/capabilities. */
+  capabilities: readonly string[]
 }
 
 type HalfDefinition = {
   id: HalfId
   to: string
   access: Access
+  /**
+   * An optional part every card on the half needs. With it off the half
+   * would be empty, so it isn't offered at all.
+   */
+  requires?: string
 }
 
 type PageDefinition = {
@@ -72,7 +79,13 @@ export const SETTINGS_PAGES = [
     descriptionKey: "settings.topics.apps.description",
     halves: [
       { id: "you", to: "/settings/apps", access: "everyone" },
-      { id: "server", to: "/settings/apps/server", access: "serverAdmin" },
+      {
+        id: "server",
+        to: "/settings/apps/server",
+        access: "serverAdmin",
+        // OAuth applications is its only card, and it shows only with OAuth on.
+        requires: "auth.oauth",
+      },
     ],
   },
   {
@@ -183,9 +196,16 @@ function canSee(access: Access, viewer: Viewer) {
   }
 }
 
+function canSeeHalf(half: HalfDefinition, viewer: Viewer) {
+  if (half.requires && !viewer.capabilities.includes(half.requires)) {
+    return false
+  }
+  return canSee(half.access, viewer)
+}
+
 function halvesFor(page: SettingsPage, viewer: Viewer): SettingsHalf[] {
   const halves: readonly SettingsHalf[] = page.halves
-  return halves.filter((half) => canSee(half.access, viewer))
+  return halves.filter((half) => canSeeHalf(half, viewer))
 }
 
 /** The pages someone sees, in order, each opening on its first half they can see. */
@@ -217,11 +237,14 @@ export function settingsRedirect(
 }
 
 /** Who's looking, from the signed-in person: their role in the household in use. */
-export function viewerFrom(me: {
-  serverAdmin: boolean
-  activeHouseholdId: string | null
-  households: readonly { id: string; role: HouseholdRole }[]
-}): Viewer {
+export function viewerFrom(
+  me: {
+    serverAdmin: boolean
+    activeHouseholdId: string | null
+    households: readonly { id: string; role: HouseholdRole }[]
+  },
+  capabilities: readonly string[] = []
+): Viewer {
   // The same household useActiveHousehold picks: the active one, or the first.
   const household =
     me.households.find((each) => each.id === me.activeHouseholdId) ??
@@ -229,6 +252,7 @@ export function viewerFrom(me: {
   return {
     serverAdmin: me.serverAdmin,
     householdRole: household?.role ?? null,
+    capabilities,
   }
 }
 

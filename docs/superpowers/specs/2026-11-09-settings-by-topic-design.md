@@ -40,6 +40,7 @@ Three placements were choices rather than obvious:
 On a page with two halves, a switch at the top reads **This household** | **Whole server**, or **You** | **Whole server** on Sign-in and Apps and devices.
 
 - The switch appears only when both halves are visible. That's only ever for the server admin.
+- A half whose cards all need an optional part that's off isn't offered, rather than shown empty. Apps and devices' Whole server half holds only OAuth applications, so it appears only with OAuth on (added during the end-to-end check).
 - The Whole server half is tinted in its own color, and starts with the line "Changes here reach every household on this server."
 - Each half has its own address: `/settings/ai` and `/settings/ai/server`, and so on. The switch is a pair of links.
 - A page opens on its first visible half. Moving to another page opens that page's first half. A link that points at a server setting, such as the update notice or the household AI card's pointer to server keys, goes straight to the server half's address.

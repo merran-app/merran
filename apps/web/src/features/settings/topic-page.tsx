@@ -104,7 +104,9 @@ function HalfSwitch({ page, current }: { page: VisiblePage; current: HalfId }) {
           <Link
             key={half.id}
             to={half.to}
-            aria-current={isCurrent ? "page" : undefined}
+            // A household half's address starts the server half's, so only an
+            // exact match marks a half as the one open.
+            activeOptions={{ exact: true }}
             className={cn(
               "rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50",
               isCurrent && "text-foreground shadow-sm",

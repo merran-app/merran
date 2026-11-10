@@ -10,17 +10,38 @@ import {
   type Viewer,
 } from "./pages.ts"
 
-const member = { serverAdmin: false, householdRole: "member" } as const
-const householdAdmin = { serverAdmin: false, householdRole: "admin" } as const
-const runsServer = { serverAdmin: true, householdRole: "owner" } as const
+// A server with OAuth on, so every half has something to show.
+const capabilities = ["auth.oauth"]
+
+const member = {
+  serverAdmin: false,
+  householdRole: "member",
+  capabilities,
+} as const
+const householdAdmin = {
+  serverAdmin: false,
+  householdRole: "admin",
+  capabilities,
+} as const
+const runsServer = {
+  serverAdmin: true,
+  householdRole: "owner",
+  capabilities,
+} as const
 const serverAdminAsMember = {
   serverAdmin: true,
   householdRole: "member",
+  capabilities,
 } as const
-const noHousehold = { serverAdmin: false, householdRole: null } as const
+const noHousehold = {
+  serverAdmin: false,
+  householdRole: null,
+  capabilities,
+} as const
 const serverAdminNoHousehold = {
   serverAdmin: true,
   householdRole: null,
+  capabilities,
 } as const
 
 function ids(viewer: Viewer) {
@@ -83,6 +104,16 @@ test("a server admin who is a member opens admin pages on their server half", ()
     "household",
     "server",
   ])
+})
+
+test("a server half whose cards are all switched off isn't offered", () => {
+  const withoutOauth = { ...runsServer, capabilities: [] }
+  assert.deepEqual(halves(withoutOauth, "apps"), ["you"])
+  assert.equal(
+    settingsRedirect("apps", "server", withoutOauth),
+    "/settings/apps"
+  )
+  assert.deepEqual(halves(withoutOauth, "signIn"), ["you", "server"])
 })
 
 test("with no household, only your own pages", () => {
