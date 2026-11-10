@@ -30,6 +30,8 @@ Merran first reads structured recipe data on the page. If none is available, it 
 
 From alpha.7, on the many food blogs that use the WordPress Recipe Maker card, Merran also brings in the card's ingredient groups (such as "Orange sauce"), its numbered notes, and its summary. A short version of the recipe that a site puts before the full steps, such as **Abbreviated recipe**, is left out, so the steps aren't there twice.
 
+When a page's recipe data has no description, Merran uses the short description the page gives search engines and link previews, as long as it's about the dish rather than the site. Pages imported with the browser extension get the same.
+
 When a site turns Merran away, you'll see **That site turned Merran away. Type the recipe in instead.** The [browser extension](../../integrations/browser-extension/) can import the page from your own browser. From alpha.7, a server admin can also connect [FlareSolverr](../../integrations/flaresolverr/), so those links come in from here and from your phone.
 
 If **You have this one** appears, choose **Open it** to use the existing recipe. **Add it again** creates a separate recipe; it does not update the earlier copy. It also knows the same page under another address: `http` or `https`, with or without `www.`, or its print version.

@@ -109,7 +109,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
-| Import from a link | Headline | Built | Honest user agent. Available in alpha.7: a WordPress Recipe Maker card's ingredient groups, notes and summary, which its recipe data leaves out; a summary section before the steps ("Abbreviated recipe") is left out. You have this one knows the same page under another address: http or https, with or without www., its print or AMP version |
+| Import from a link | Headline | Built | Honest user agent. Available in alpha.7: a WordPress Recipe Maker card's ingredient groups, notes and summary, which its recipe data leaves out; a summary section before the steps ("Abbreviated recipe") is left out. When the recipe data has no description, the page's own (for search engines or sharing) when it shares a word with the dish's name and isn't just its title; the extension sends it too, and AI imports keep the source's own description and never write one. You have this one knows the same page under another address: http or https, with or without www., its print or AMP version |
 | Type one in | Detail | Built | |
 | Paste many links at once | Key | Built | Runs in the background |
 | Import from text, photos, PDFs, or pages with no recipe data | Headline | Built | AI; any model that reads images and PDFs |

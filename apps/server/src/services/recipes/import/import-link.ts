@@ -190,6 +190,8 @@ async function importHtml(
 export type ReadPage = {
   url: string
   title: string
+  /** What it says about itself, for search engines or for sharing. */
+  description: string
   /** Its recipe data (JSON-LD), as found in the page. */
   jsonld: string[]
   /** Its share images: og:image and the like. */
@@ -234,6 +236,7 @@ export async function importReadPage(
   const html = [
     "<!doctype html><html><head>",
     `<title>${escapeHtml(options.page.title)}</title>`,
+    `<meta name="description" content="${escapeHtml(options.page.description)}">`,
     ...options.page.images.map(
       (image) => `<meta property="og:image" content="${escapeHtml(image)}">`
     ),

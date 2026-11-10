@@ -11521,6 +11521,12 @@
             "maxLength": 500,
             "default": ""
           },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": "",
+            "description": "What the page says about itself: its description for search engines, or for sharing. Used when its recipe data has none."
+          },
           "jsonld": {
             "type": "array",
             "items": {
@@ -11554,6 +11560,7 @@
         "example": {
           "url": "https://cooking.example/lemon-chicken",
           "title": "Lemon Chicken | Cooking",
+          "description": "Bright, sticky lemon chicken for a weeknight.",
           "jsonld": [
             "{\"@type\":\"Recipe\",\"name\":\"Lemon Chicken\"}"
           ],
