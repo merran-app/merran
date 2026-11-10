@@ -11113,6 +11113,177 @@
           ]
         }
       },
+      "DuplicatePairs": {
+        "type": "object",
+        "properties": {
+          "pairs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DuplicatePair"
+            },
+            "description": "Every pair of the household's recipes that may be the same one, each once, the pairs with the newest recipe first."
+          }
+        },
+        "required": [
+          "pairs"
+        ],
+        "example": {
+          "pairs": [
+            {
+              "recipes": [
+                {
+                  "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                  "slug": "lemon-chicken",
+                  "name": "Lemon Chicken",
+                  "photo": null,
+                  "sourceUrl": "https://cooking.example/lemon-chicken",
+                  "createdAt": "2026-10-15T18:30:00.000Z",
+                  "reasons": [
+                    "link"
+                  ]
+                },
+                {
+                  "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                  "slug": "roast-lemon-chicken",
+                  "name": "Roast Lemon Chicken",
+                  "photo": null,
+                  "sourceUrl": "http://www.cooking.example/lemon-chicken/",
+                  "createdAt": "2026-11-09T12:00:00.000Z",
+                  "reasons": [
+                    "link"
+                  ]
+                }
+              ],
+              "reasons": [
+                "link"
+              ]
+            }
+          ]
+        }
+      },
+      "DuplicatePair": {
+        "type": "object",
+        "properties": {
+          "recipes": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "$ref": "#/components/schemas/RecipeDuplicate"
+              },
+              {
+                "$ref": "#/components/schemas/RecipeDuplicate"
+              }
+            ],
+            "description": "The two recipes, the older first."
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "link",
+                "name"
+              ],
+              "description": "Why it may be the same recipe: `link`, the same page under any address, or `name`, the same words in its name."
+            }
+          }
+        },
+        "required": [
+          "recipes",
+          "reasons"
+        ],
+        "example": {
+          "recipes": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "slug": "lemon-chicken",
+              "name": "Lemon Chicken",
+              "photo": null,
+              "sourceUrl": "https://cooking.example/lemon-chicken",
+              "createdAt": "2026-10-15T18:30:00.000Z",
+              "reasons": [
+                "link"
+              ]
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+              "slug": "roast-lemon-chicken",
+              "name": "Roast Lemon Chicken",
+              "photo": null,
+              "sourceUrl": "http://www.cooking.example/lemon-chicken/",
+              "createdAt": "2026-11-09T12:00:00.000Z",
+              "reasons": [
+                "link"
+              ]
+            }
+          ],
+          "reasons": [
+            "link"
+          ]
+        }
+      },
+      "RecipeDuplicate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "photo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Its card-sized photo, or null."
+          },
+          "sourceUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "link",
+                "name"
+              ],
+              "description": "Why it may be the same recipe: `link`, the same page under any address, or `name`, the same words in its name."
+            }
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "photo",
+          "sourceUrl",
+          "createdAt",
+          "reasons"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+          "slug": "lemon-chicken",
+          "name": "Lemon Chicken",
+          "photo": null,
+          "sourceUrl": "https://cooking.example/lemon-chicken",
+          "createdAt": "2026-10-15T18:30:00.000Z",
+          "reasons": [
+            "link"
+          ]
+        }
+      },
       "ImportResult": {
         "type": "object",
         "properties": {
@@ -12070,6 +12241,36 @@
           "overrides": {
             "gluten-free": false
           }
+        }
+      },
+      "RecipeDuplicates": {
+        "type": "object",
+        "properties": {
+          "duplicates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeDuplicate"
+            },
+            "description": "The household's other recipes that may be the same one: the same link first, then the oldest first. Pairs someone said aren't the same, and recipes in Recently deleted, are left out."
+          }
+        },
+        "required": [
+          "duplicates"
+        ],
+        "example": {
+          "duplicates": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "slug": "lemon-chicken",
+              "name": "Lemon Chicken",
+              "photo": null,
+              "sourceUrl": "https://cooking.example/lemon-chicken",
+              "createdAt": "2026-10-15T18:30:00.000Z",
+              "reasons": [
+                "link"
+              ]
+            }
+          ]
         }
       },
       "MadeRecipe": {
@@ -27511,6 +27712,60 @@
         }
       }
     },
+    "/api/recipes/duplicates": {
+      "get": {
+        "operationId": "listDuplicatePairs",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Possible duplicate recipes",
+        "description": "Every pair of the household's recipes that may be the same one: the same page under any address, or the same words in their names. A name inside another counts when most of their ingredients agree. Pairs someone said aren't the same, and recipes in Recently deleted, are left out. No AI is used. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "responses": {
+          "200": {
+            "description": "The pairs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicatePairs"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/recipes/import": {
       "post": {
         "operationId": "importRecipe",
@@ -29822,6 +30077,174 @@
           },
           "400": {
             "description": "A label Merran doesn't know.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/duplicates": {
+      "get": {
+        "operationId": "listRecipeDuplicates",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "A recipe's possible duplicates",
+        "description": "The household's other recipes that may be the same one: the same page under any address first, then the same words in their names. Pairs someone said aren't the same, and recipes in Recently deleted, are left out. No AI is used. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Its possible duplicates.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeDuplicates"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/duplicates/{other}/dismiss": {
+      "post": {
+        "operationId": "dismissDuplicate",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Say two recipes aren't the same",
+        "description": "Keeps the two as not the same, for everyone in the household, so they aren't shown as possible duplicates again. Saying so twice is fine. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The other recipe's id, or its slug.",
+              "example": "roast-lemon-chicken"
+            },
+            "required": true,
+            "description": "The other recipe's id, or its slug.",
+            "name": "other",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Kept as not the same."
+          },
+          "400": {
+            "description": "They're the same recipe.",
             "content": {
               "application/json": {
                 "schema": {

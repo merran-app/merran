@@ -31,6 +31,7 @@ import { Route as AppListWalmartRouteImport } from './routes/_app/list/walmart'
 import { Route as AppPantryIndexRouteImport } from './routes/_app/pantry/index'
 import { Route as AppRecipesIndexRouteImport } from './routes/_app/recipes/index'
 import { Route as AppRecipesDeletedRouteImport } from './routes/_app/recipes/deleted'
+import { Route as AppRecipesDuplicatesRouteImport } from './routes/_app/recipes/duplicates'
 import { Route as AppRecipesNewRouteImport } from './routes/_app/recipes/new'
 import { Route as AppRecipesReviewRouteImport } from './routes/_app/recipes/review'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
@@ -158,6 +159,11 @@ const AppRecipesDeletedRoute = AppRecipesDeletedRouteImport.update({
   path: '/recipes/deleted',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRecipesDuplicatesRoute = AppRecipesDuplicatesRouteImport.update({
+  id: '/recipes/duplicates',
+  path: '/recipes/duplicates',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRecipesNewRoute = AppRecipesNewRouteImport.update({
   id: '/recipes/new',
   path: '/recipes/new',
@@ -270,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/list/send': typeof AppListSendRoute
   '/list/walmart': typeof AppListWalmartRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
+  '/recipes/duplicates': typeof AppRecipesDuplicatesRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/recipes/review': typeof AppRecipesReviewRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
@@ -309,6 +316,7 @@ export interface FileRoutesByTo {
   '/list/send': typeof AppListSendRoute
   '/list/walmart': typeof AppListWalmartRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
+  '/recipes/duplicates': typeof AppRecipesDuplicatesRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/recipes/review': typeof AppRecipesReviewRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
@@ -352,6 +360,7 @@ export interface FileRoutesById {
   '/_app/list/send': typeof AppListSendRoute
   '/_app/list/walmart': typeof AppListWalmartRoute
   '/_app/recipes/deleted': typeof AppRecipesDeletedRoute
+  '/_app/recipes/duplicates': typeof AppRecipesDuplicatesRoute
   '/_app/recipes/new': typeof AppRecipesNewRoute
   '/_app/recipes/review': typeof AppRecipesReviewRoute
   '/_app/settings/household': typeof AppSettingsHouseholdRoute
@@ -394,6 +403,7 @@ export interface FileRouteTypes {
     | '/list/send'
     | '/list/walmart'
     | '/recipes/deleted'
+    | '/recipes/duplicates'
     | '/recipes/new'
     | '/recipes/review'
     | '/settings/household'
@@ -433,6 +443,7 @@ export interface FileRouteTypes {
     | '/list/send'
     | '/list/walmart'
     | '/recipes/deleted'
+    | '/recipes/duplicates'
     | '/recipes/new'
     | '/recipes/review'
     | '/settings/household'
@@ -475,6 +486,7 @@ export interface FileRouteTypes {
     | '/_app/list/send'
     | '/_app/list/walmart'
     | '/_app/recipes/deleted'
+    | '/_app/recipes/duplicates'
     | '/_app/recipes/new'
     | '/_app/recipes/review'
     | '/_app/settings/household'
@@ -669,6 +681,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecipesDeletedRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/recipes/duplicates': {
+      id: '/_app/recipes/duplicates'
+      path: '/recipes/duplicates'
+      fullPath: '/recipes/duplicates'
+      preLoaderRoute: typeof AppRecipesDuplicatesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/recipes/new': {
       id: '/_app/recipes/new'
       path: '/recipes/new'
@@ -828,6 +847,7 @@ interface AppRouteChildren {
   AppListSendRoute: typeof AppListSendRoute
   AppListWalmartRoute: typeof AppListWalmartRoute
   AppRecipesDeletedRoute: typeof AppRecipesDeletedRoute
+  AppRecipesDuplicatesRoute: typeof AppRecipesDuplicatesRoute
   AppRecipesNewRoute: typeof AppRecipesNewRoute
   AppRecipesReviewRoute: typeof AppRecipesReviewRoute
   AppListIndexRoute: typeof AppListIndexRoute
@@ -852,6 +872,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppListSendRoute: AppListSendRoute,
   AppListWalmartRoute: AppListWalmartRoute,
   AppRecipesDeletedRoute: AppRecipesDeletedRoute,
+  AppRecipesDuplicatesRoute: AppRecipesDuplicatesRoute,
   AppRecipesNewRoute: AppRecipesNewRoute,
   AppRecipesReviewRoute: AppRecipesReviewRoute,
   AppListIndexRoute: AppListIndexRoute,

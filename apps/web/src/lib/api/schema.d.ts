@@ -2544,6 +2544,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recipes/duplicates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Possible duplicate recipes
+         * @description Every pair of the household's recipes that may be the same one: the same page under any address, or the same words in their names. A name inside another counts when most of their ingredients agree. Pairs someone said aren't the same, and recipes in Recently deleted, are left out. No AI is used. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["listDuplicatePairs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recipes/import": {
         parameters: {
             query?: never;
@@ -2990,6 +3010,46 @@ export interface paths {
          */
         put: operations["setRecipeDiets"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/duplicates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A recipe's possible duplicates
+         * @description The household's other recipes that may be the same one: the same page under any address first, then the same words in their names. Pairs someone said aren't the same, and recipes in Recently deleted, are left out. No AI is used. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["listRecipeDuplicates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/duplicates/{other}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Say two recipes aren't the same
+         * @description Keeps the two as not the same, for everyone in the household, so they aren't shown as possible duplicates again. Saying so twice is fine. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["dismissDuplicate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10374,6 +10434,108 @@ export interface components {
         };
         /**
          * @example {
+         *       "pairs": [
+         *         {
+         *           "recipes": [
+         *             {
+         *               "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *               "slug": "lemon-chicken",
+         *               "name": "Lemon Chicken",
+         *               "photo": null,
+         *               "sourceUrl": "https://cooking.example/lemon-chicken",
+         *               "createdAt": "2026-10-15T18:30:00.000Z",
+         *               "reasons": [
+         *                 "link"
+         *               ]
+         *             },
+         *             {
+         *               "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *               "slug": "roast-lemon-chicken",
+         *               "name": "Roast Lemon Chicken",
+         *               "photo": null,
+         *               "sourceUrl": "http://www.cooking.example/lemon-chicken/",
+         *               "createdAt": "2026-11-09T12:00:00.000Z",
+         *               "reasons": [
+         *                 "link"
+         *               ]
+         *             }
+         *           ],
+         *           "reasons": [
+         *             "link"
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        DuplicatePairs: {
+            /** @description Every pair of the household's recipes that may be the same one, each once, the pairs with the newest recipe first. */
+            pairs: components["schemas"]["DuplicatePair"][];
+        };
+        /**
+         * @example {
+         *       "recipes": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *           "slug": "lemon-chicken",
+         *           "name": "Lemon Chicken",
+         *           "photo": null,
+         *           "sourceUrl": "https://cooking.example/lemon-chicken",
+         *           "createdAt": "2026-10-15T18:30:00.000Z",
+         *           "reasons": [
+         *             "link"
+         *           ]
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *           "slug": "roast-lemon-chicken",
+         *           "name": "Roast Lemon Chicken",
+         *           "photo": null,
+         *           "sourceUrl": "http://www.cooking.example/lemon-chicken/",
+         *           "createdAt": "2026-11-09T12:00:00.000Z",
+         *           "reasons": [
+         *             "link"
+         *           ]
+         *         }
+         *       ],
+         *       "reasons": [
+         *         "link"
+         *       ]
+         *     }
+         */
+        DuplicatePair: {
+            /** @description The two recipes, the older first. */
+            recipes: [
+                components["schemas"]["RecipeDuplicate"],
+                components["schemas"]["RecipeDuplicate"]
+            ];
+            reasons: ("link" | "name")[];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *       "slug": "lemon-chicken",
+         *       "name": "Lemon Chicken",
+         *       "photo": null,
+         *       "sourceUrl": "https://cooking.example/lemon-chicken",
+         *       "createdAt": "2026-10-15T18:30:00.000Z",
+         *       "reasons": [
+         *         "link"
+         *       ]
+         *     }
+         */
+        RecipeDuplicate: {
+            id: string;
+            slug: string;
+            name: string;
+            /** @description Its card-sized photo, or null. */
+            photo: string | null;
+            sourceUrl: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            reasons: ("link" | "name")[];
+        };
+        /**
+         * @example {
          *       "recipe": {
          *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
          *         "slug": "lemon-chicken",
@@ -10908,6 +11070,27 @@ export interface components {
          */
         DietsInput: {
             overrides: components["schemas"]["DietOverrides"] & unknown;
+        };
+        /**
+         * @example {
+         *       "duplicates": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *           "slug": "lemon-chicken",
+         *           "name": "Lemon Chicken",
+         *           "photo": null,
+         *           "sourceUrl": "https://cooking.example/lemon-chicken",
+         *           "createdAt": "2026-10-15T18:30:00.000Z",
+         *           "reasons": [
+         *             "link"
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        RecipeDuplicates: {
+            /** @description The household's other recipes that may be the same one: the same link first, then the oldest first. Pairs someone said aren't the same, and recipes in Recently deleted, are left out. */
+            duplicates: components["schemas"]["RecipeDuplicate"][];
         };
         /**
          * @example {
@@ -20613,6 +20796,44 @@ export interface operations {
             };
         };
     };
+    listDuplicatePairs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The pairs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DuplicatePairs"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     importRecipe: {
         parameters: {
             query?: never;
@@ -22203,6 +22424,115 @@ export interface operations {
                 };
             };
             /** @description A label Merran doesn't know. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listRecipeDuplicates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its possible duplicates. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipeDuplicates"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    dismissDuplicate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+                /** @description The other recipe's id, or its slug. */
+                other: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kept as not the same. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description They're the same recipe. */
             400: {
                 headers: {
                     [name: string]: unknown;

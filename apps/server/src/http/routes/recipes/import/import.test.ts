@@ -130,6 +130,16 @@ describe("importing a link", () => {
     expect((await moved.json()).duplicate).toBe(true)
   })
 
+  test("knows the same page under another address", async () => {
+    const plain = await importLink("http://www.cooking.example/soup/")
+    expect(plain.status, await plain.clone().text()).toBe(200)
+    expect((await plain.json()).duplicate).toBe(true)
+
+    const print = await importLink("https://cooking.example/soup/print")
+    expect(print.status, await print.clone().text()).toBe(200)
+    expect((await print.json()).duplicate).toBe(true)
+  })
+
   test("imports again when asked to", async () => {
     const res = await importLink("https://cooking.example/soup", true)
     expect(res.status).toBe(201)
