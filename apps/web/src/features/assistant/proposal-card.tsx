@@ -47,13 +47,17 @@ type Meal = {
 type Avoided = { food: string; level: string; who: string | null }
 type SwapPayload = Omit<SwapThisTime, "atHome">
 
-const DAY = new Intl.DateTimeFormat(undefined, {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-  timeZone: "UTC",
-})
-const dayName = (date: string) => DAY.format(new Date(`${date}T12:00:00Z`))
+/** A planned meal's day, like "Tue, Oct 14", in the app's language. */
+function useDayName() {
+  const { i18n } = useTranslation()
+  const format = new Intl.DateTimeFormat(i18n.language, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  })
+  return (date: string) => format.format(new Date(`${date}T12:00:00Z`))
+}
 
 /**
  * A suggestion the assistant made, in the chat: what it would add, and
@@ -282,6 +286,7 @@ function CardBody({
   payload: Record<string, unknown>
 }) {
   const { t } = useTranslation()
+  const dayName = useDayName()
   switch (proposal.kind) {
     case "meals":
       return (
