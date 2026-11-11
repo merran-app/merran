@@ -1,0 +1,276 @@
+import type { EntityManager } from "@mikro-orm/sql"
+import {
+  WebhookDelivery,
+  type Webhook,
+  type WebhookEvent,
+} from "../../database/entities/index.ts"
+import type { JobDeps, JobHandler } from "../jobs/runner.ts"
+import { homeNetworkAllowed } from "./addresses.ts"
+import { envelopeBody, messageId } from "./envelope.ts"
+import { pauseWebhook } from "./pausing.ts"
+import { WEBHOOK_DELIVERY_JOB } from "./record.ts"
+import { signatureHeader } from "./signing.ts"
+import { webhooksEnabled } from "./state.ts"
+
+// Sending one delivery: signed as Standard Webhooks describes, through the
+// public fetcher, so the rules on home-network addresses are the ones imports
+// follow (docs/webhooks.md, "Delivery").
+
+/**
+ * How long to wait after each failed try: 5 seconds, 5 minutes, 30
+ * minutes, 2 hours, 5 hours, 10 hours and 10 hours, as Standard Webhooks
+ * recommends. With the first try, eight tries over about 27 hours.
+ */
+export const WEBHOOK_RETRY_DELAYS = [
+  5_000, 300_000, 1_800_000, 7_200_000, 18_000_000, 36_000_000, 36_000_000,
+] as const
+
+/** How long a receiver has to answer. */
+export const WEBHOOK_TIMEOUT_MS = 10_000
+
+/** How much of an answer is kept for the deliveries log. */
+export const ANSWER_KEPT = 1024
+
+/**
+ * What came of a try: it arrived; it'll be tried again; it ran out of tries
+ * (or was a test that failed); the receiver is gone; or there was nothing
+ * to send, because it's gone, settled already or its webhook is paused.
+ */
+export type DeliveryOutcome =
+  "delivered" | "retry" | "gave_up" | "gone" | "skipped"
+
+type DeliveryDeps = Pick<JobDeps, "settings" | "fetcher" | "logger" | "config">
+
+/** What one try got back: an answer, or the error that kept it from one. */
+type TryResult = {
+  statusCode: number | null
+  answer: string | null
+  error: string | null
+  durationMs: number
+  triedAt: Date
+}
+
+/**
+ * Tries a waiting delivery once, and saves what came of it. A failure waits
+ * for another try unless this is the `final` one, which pauses the webhook.
+ * A `test` is sent even to a paused webhook, and whatever comes of it is
+ * the delivery's alone: it never pauses the webhook or changes how it's
+ * doing.
+ */
+export async function attemptDelivery(
+  em: EntityManager,
+  deps: DeliveryDeps,
+  deliveryId: string,
+  options: { final: boolean; test?: boolean }
+): Promise<DeliveryOutcome> {
+  const delivery = await em.findOne(
+    WebhookDelivery,
+    { id: deliveryId },
+    {
+      populate: [
+        "event",
+        "webhook.address",
+        "webhook.secret",
+        "webhook.previousSecret",
+        "webhook.headers",
+      ],
+    }
+  )
+  // Deleted with its webhook, or settled already by a resend or a test.
+  if (!delivery || delivery.state !== "waiting") return "skipped"
+
+  const webhook = delivery.webhook.getEntity()
+  const sending = webhooksEnabled() && webhook.state === "active"
+  if (!sending && !options.test) {
+    delivery.state = "stopped"
+    await em.flush()
+    return "skipped"
+  }
+
+  // Read before sending, and saved after, so no transaction waits on the
+  // receiver.
+  const request = await prepareRequest(
+    deps,
+    webhook,
+    delivery.event.getEntity()
+  )
+  if (!request) return "skipped"
+  const result = await send(deps, request)
+  noteTry(delivery, result)
+
+  if (isSuccess(result.statusCode)) {
+    delivery.state = "delivered"
+    delivery.deliveredAt = result.triedAt
+    if (!options.test) {
+      webhook.lastDeliveredAt = result.triedAt
+      webhook.failingSince = null
+      webhook.lastError = null
+    }
+    await em.flush()
+    return "delivered"
+  }
+
+  if (options.test) {
+    delivery.state = "failed"
+    await em.flush()
+    return "gave_up"
+  }
+
+  webhook.failingSince ??= result.triedAt
+  webhook.lastError = result.error
+  const gone = result.statusCode === 410
+  if (!gone && !options.final) {
+    await em.flush()
+    return "retry"
+  }
+
+  delivery.state = "failed"
+  await em.flush()
+  await pauseWebhook(em, deps, webhook, gone ? "gone" : "gave_up")
+  return gone ? "gone" : "gave_up"
+}
+
+type PreparedRequest = {
+  address: string
+  body: string
+  headers: Record<string, string>
+  homeNetwork: boolean
+}
+
+/**
+ * Opens the webhook's address, secrets and headers, and signs the event's
+ * body. For the day after a rotation, the secret before signs too, so a
+ * receiver that hasn't switched yet still verifies it.
+ */
+async function prepareRequest(
+  deps: DeliveryDeps,
+  webhook: Webhook,
+  event: WebhookEvent
+): Promise<PreparedRequest | null> {
+  // Its sealed address and secret only go when it's being deleted.
+  if (!webhook.address || !webhook.secret) return null
+
+  const secrets = [deps.settings.open(webhook.secret.getEntity())]
+  const previousSecret = webhook.previousSecret?.getEntity()
+  if (
+    previousSecret &&
+    webhook.previousSecretUntil &&
+    webhook.previousSecretUntil > new Date()
+  ) {
+    secrets.push(deps.settings.open(previousSecret))
+  }
+
+  const id = messageId(event)
+  const timestamp = Math.floor(Date.now() / 1000)
+  const body = envelopeBody(event)
+  return {
+    address: deps.settings.open(webhook.address.getEntity()),
+    body,
+    headers: {
+      ...extraHeaders(deps, webhook),
+      "content-type": "application/json",
+      "webhook-id": id,
+      "webhook-timestamp": String(timestamp),
+      "webhook-signature": signatureHeader({ id, timestamp, body, secrets }),
+    },
+    homeNetwork: await homeNetworkAllowed(deps.settings, webhook.household.id),
+  }
+}
+
+/** The headers the household added, sealed as JSON: `[{ name, value }]`. */
+function extraHeaders(deps: DeliveryDeps, webhook: Webhook) {
+  const sealed = webhook.headers?.getEntity()
+  if (!sealed) return {}
+
+  const headers = JSON.parse(deps.settings.open(sealed)) as {
+    name: string
+    value: string
+  }[]
+  return Object.fromEntries(
+    headers.map((header) => [header.name, header.value])
+  )
+}
+
+/**
+ * POSTs the body as it was signed. An error answer is kept rather than
+ * thrown, and anything thrown, like an address that can't be reached or is
+ * on the home network when that isn't allowed, is the try's error.
+ */
+async function send(
+  deps: DeliveryDeps,
+  request: PreparedRequest
+): Promise<TryResult> {
+  const triedAt = new Date()
+  const started = performance.now()
+  const durationMs = () => Math.round(performance.now() - started)
+
+  try {
+    const answer = await deps.fetcher(request.address, {
+      body: request.body,
+      headers: request.headers,
+      homeNetwork: request.homeNetwork,
+      keepErrors: true,
+      timeoutMs: WEBHOOK_TIMEOUT_MS,
+      maxBytes: 1_000_000,
+    })
+    return {
+      statusCode: answer.status,
+      answer: answer.body.toString("utf8").slice(0, ANSWER_KEPT),
+      error: isSuccess(answer.status)
+        ? null
+        : `That address answered with an error (${answer.status}).`,
+      durationMs: durationMs(),
+      triedAt,
+    }
+  } catch (error) {
+    return {
+      statusCode: null,
+      answer: null,
+      error: error instanceof Error ? error.message : String(error),
+      durationMs: durationMs(),
+      triedAt,
+    }
+  }
+}
+
+/** Any 2xx is delivered; a redirect isn't followed, so it's a failure. */
+function isSuccess(statusCode: number | null) {
+  return statusCode !== null && statusCode >= 200 && statusCode < 300
+}
+
+/** What the deliveries log shows of the last try. */
+function noteTry(delivery: WebhookDelivery, result: TryResult) {
+  delivery.tries += 1
+  delivery.statusCode = result.statusCode
+  delivery.answer = result.answer
+  delivery.durationMs = result.durationMs
+  delivery.error = result.error
+  delivery.lastTriedAt = result.triedAt
+}
+
+/**
+ * Sends one delivery, four at a time across the server, on Standard
+ * Webhooks' schedule. A try that fails is thrown, so the runner waits for
+ * the next; the last one pauses the webhook instead.
+ */
+export const webhookDeliveryJob: JobHandler = {
+  kind: WEBHOOK_DELIVERY_JOB,
+  concurrency: 4,
+  retryDelays: WEBHOOK_RETRY_DELAYS,
+  async run({ em, payload, attempt, maxAttempts, deps }) {
+    const deliveryId = payload.deliveryId
+    if (typeof deliveryId !== "string") return
+
+    const outcome = await attemptDelivery(em, deps, deliveryId, {
+      final: attempt >= maxAttempts,
+    })
+    if (outcome === "retry") {
+      // Already in hand: attemptDelivery loaded it into this entity manager.
+      const delivery = await em.findOneOrFail(WebhookDelivery, {
+        id: deliveryId,
+      })
+      throw new Error(delivery.error ?? "The delivery failed.")
+    }
+    return { outcome }
+  },
+}
