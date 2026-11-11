@@ -77,7 +77,7 @@ You can also right-click a page or link to import it, or select shopping text su
 3. Use an item's **Find** button to search at that store in the browser tab.
 4. Check items off as you add them to the retailer's cart. Use **Add to the list** for missing items.
 
-Chrome and Edge use a side panel; Firefox uses its sidebar. Changes affect the real Merran list. **Find** is a search shortcut, not an automatic cart transfer. [Kroger](../kroger/) uses a separate API connection; [experimental Walmart](../walmart/) uses the extension's additional workflow. Checkout always happens at the retailer.
+Chrome and Edge use a side panel; Firefox uses its sidebar. Changes affect the real Merran list. **Find** is a search shortcut, not an automatic cart transfer. [Kroger](../kroger/) uses a separate API connection; [experimental Walmart](../walmart/) uses the extension's additional workflow. Checkout always happens at the retailer. When a Walmart fill ends, the extension tells Merran how many products went in and how many it left out, so your [webhooks](../webhooks/) can hear that the list was sent.
 
 :::note[Available in alpha.8: checking off puts it in the pantry]
 When your household has **Put food away when it's checked off** on, checking an item off in the side panel or sidebar puts it in the pantry straight away, the same as checking it on **List**. Adding an item to an online cart doesn't mean it has arrived, so check items off when they arrive, or uncheck anything that didn't come. Unchecking takes it back out of the pantry. See [checking off puts it away](../../use/shopping-and-pantry/#shop-and-put-purchases-away).

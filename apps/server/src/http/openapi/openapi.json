@@ -48781,7 +48781,7 @@
                       "changed": {
                         "type": "integer",
                         "minimum": 0,
-                        "description": "How many had their amount, name or use-by date changed."
+                        "description": "How many had their amount, aisle, name or use-by date changed."
                       },
                       "removed": {
                         "type": "integer",

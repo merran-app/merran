@@ -7400,7 +7400,7 @@ export interface webhooks {
                             usedUp: number;
                             /** @description How many were moved to another place. */
                             moved: number;
-                            /** @description How many had their amount, name or use-by date changed. */
+                            /** @description How many had their amount, aisle, name or use-by date changed. */
                             changed: number;
                             /** @description How many were removed. */
                             removed: number;

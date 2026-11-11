@@ -413,7 +413,9 @@ export const WEBHOOK_PAYLOADS = {
       added: count("How many things were put away."),
       usedUp: count("How many were used up."),
       moved: count("How many were moved to another place."),
-      changed: count("How many had their amount, name or use-by date changed."),
+      changed: count(
+        "How many had their amount, aisle, name or use-by date changed."
+      ),
       removed: count("How many were removed."),
     })
     .openapi({ example: EXAMPLES["pantry.changed"] }),

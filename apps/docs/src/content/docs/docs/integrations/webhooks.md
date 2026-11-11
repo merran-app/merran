@@ -9,15 +9,26 @@ A webhook is an address Merran sends a message to when something happens. Add on
 
 Merran sends these events:
 
-| Event                                | When                                      |
-| ------------------------------------ | ----------------------------------------- |
-| [`recipe.created`](#recipecreated)   | A recipe is added                         |
-| [`recipe.updated`](#recipeupdated)   | A recipe is changed                       |
-| [`recipe.deleted`](#recipedeleted)   | A recipe goes to Recently deleted         |
-| [`recipe.restored`](#reciperestored) | A recipe comes back from Recently deleted |
-| [`webhook.test`](#webhooktest)       | Someone chooses **Send a test**           |
+| Event                                  | When                                                                       |
+| -------------------------------------- | -------------------------------------------------------------------------- |
+| [`recipe.created`](#recipecreated)     | A recipe is added                                                          |
+| [`recipe.updated`](#recipeupdated)     | A recipe is changed                                                        |
+| [`recipe.deleted`](#recipedeleted)     | A recipe goes to Recently deleted                                          |
+| [`recipe.restored`](#reciperestored)   | A recipe comes back from Recently deleted                                  |
+| [`import.finished`](#importfinished)   | An import runs to its end                                                  |
+| [`tidy.ready`](#tidyready)             | Tidy up finishes with suggestions waiting                                  |
+| [`review.waiting`](#reviewwaiting)     | Something new waits in Review                                              |
+| [`plan.changed`](#planchanged)         | Meals are added, moved, changed or removed (gathered)                      |
+| [`plan.autoplanned`](#planautoplanned) | The autoplan plans a week                                                  |
+| [`meal.cooked`](#mealcooked)           | A meal is marked made                                                      |
+| [`meal.skipped`](#mealskipped)         | A planned meal is marked Didn't                                            |
+| [`list.changed`](#listchanged)         | Things on a list are added, checked off, changed or removed (gathered)     |
+| [`list.completed`](#listcompleted)     | The last thing on a list is checked off, or it's put away with things left |
+| [`list.sent`](#listsent)               | A list goes to a store's cart                                              |
+| [`pantry.changed`](#pantrychanged)     | Things are put away, used up, moved, changed or removed (gathered)         |
+| [`webhook.test`](#webhooktest)         | Someone chooses **Send a test**                                            |
 
-More events, for cooking, the plan, the list and the pantry, are planned. A webhook set to **Everything, including events added later** hears them when they arrive.
+Cooking and timers, and a daily summary, are still to come. A webhook set to **Everything, including events added later** hears them when they arrive.
 
 ## Before you start
 
@@ -89,6 +100,28 @@ actions:
 
 The template condition lets one webhook serve several events: only the ones whose `type` it names run the actions. `local_only: true` makes Home Assistant refuse requests from outside your home network, which is where Merran is.
 
+To say something when a shopping trip is over, tick **A list is finished** (`list.completed`) and use:
+
+```yaml
+alias: Shopping list is done
+triggers:
+  - trigger: webhook
+    webhook_id: merran-list-done-4d8e2b6a1c07
+    allowed_methods:
+      - POST
+    local_only: true
+conditions:
+  - condition: template
+    value_template: "{{ trigger.json.type == 'list.completed' }}"
+actions:
+  - action: tts.speak
+    target:
+      entity_id: tts.home_assistant_cloud
+    data:
+      media_player_entity_id: media_player.kitchen
+      message: "The shopping list is done"
+```
+
 Home Assistant's webhook trigger checks no signature. The webhook id in the address is the secret: whoever has the address can start the automation, so choose a long random id and don't share it. Merran seals the address when it's saved.
 
 ## n8n
@@ -138,6 +171,10 @@ The body always has the same three parts: `type`, `timestamp` (when it happened,
 - `key`: for `api` and `mcp`, the key or connection used, with its `id` and `name`, and `null` otherwise. A flow that changes things through the API can use `by` and `key` to ignore the event it caused.
 
 Messages carry ids, names, titles and links, never whole recipes. Fetch more through the [API](../../api/) with your own key.
+
+### Gathered events
+
+Plan, list and pantry changes are gathered: `plan.changed`, `list.changed` and `pantry.changed` wait 30 seconds and are sent as one event for each person, so someone checking off 30 things at the store sends one `list.changed`, not 30. The counts in it are exact. Each person gets their own event, so `by`, `via` and `key` stay true, and a flow can still ignore the change it caused. A change made while the 30 seconds are running starts them again, so an event is sent 30 seconds after the last change.
 
 ### recipe.created
 
@@ -237,6 +274,376 @@ Sent when a recipe goes to Recently deleted. Deleting it for good from there sen
 ### recipe.restored
 
 Sent when a recipe comes back from Recently deleted. Its body is the same as `recipe.deleted`'s, with `"type": "recipe.restored"`.
+
+### import.finished
+
+Sent when an import runs to its end: a batch of links, a collection, an import from Mealie or Paprika, or a Merran archive. `kind` is `links`, `collection`, `app` or `archive`, and `app` says `mealie` or `paprika` for an `app` import, or is `null`. `added`, `skipped` and `failed` count recipes. `import` is the job, which you can also see in **Jobs**, and `url` is its page in Merran.
+
+An import that fails as a whole, or that you stop, sends nothing: it shows on its page and in **Jobs**. An archive import always says `failed: 0`, because one recipe that fails fails the whole import. It's sent as Merran's own work (`by` is `null`, `via` is `merran`), because the import finishes in the background.
+
+```json
+{
+  "type": "import.finished",
+  "timestamp": "2026-11-10T19:12:30.402Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "import": {
+      "id": "0199e8b0-5a10-7a01-8b00-00000000000b"
+    },
+    "kind": "links",
+    "app": null,
+    "added": 11,
+    "skipped": 1,
+    "failed": 0,
+    "url": "https://merran.example.com/recipes/import/0199e8b0-5a10-7a01-8b00-00000000000b"
+  }
+}
+```
+
+### tidy.ready
+
+Sent when Tidy up finishes with suggestions waiting in Review, whether it was started by hand, for one recipe or many, or ran on its own. `count` is how many recipes have suggestions, and `recipes` names up to 10 of them. A run that's stopped sends nothing. Tidy runs are Merran's own work, so `by` is `null` and `via` is `merran`.
+
+```json
+{
+  "type": "tidy.ready",
+  "timestamp": "2026-11-10T19:20:08.117Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "count": 12,
+    "recipes": [
+      {
+        "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+        "slug": "lemon-chicken",
+        "title": "Lemon Chicken",
+        "url": "https://merran.example.com/recipes/lemon-chicken"
+      },
+      {
+        "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+        "slug": "garlic-rice",
+        "title": "Garlic Rice",
+        "url": "https://merran.example.com/recipes/garlic-rice"
+      }
+    ],
+    "url": "https://merran.example.com/recipes/review"
+  }
+}
+```
+
+### review.waiting
+
+Sent when something new waits in Review that didn't come from your own chat: a proposal from an AI app connected with [MCP](../mcp/), or a cooking note that became an edit. `source` is `mcp` or `cook_note`, and `recipe` is the recipe it's about, or `null`. A cooking note turned into an edit is sent as Merran's own work.
+
+```json
+{
+  "type": "review.waiting",
+  "timestamp": "2026-11-10T19:31:46.870Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "source": "cook_note",
+    "count": 1,
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "url": "https://merran.example.com/recipes/review"
+  }
+}
+```
+
+### plan.changed
+
+Sent when meals are added, moved, changed or removed, whatever did it: someone in the app, the autoplan, a proposal, **Repeat last week**, **Clear**, **Undo**, or **Made it** when it adds a meal or moves one out of the pool. It's [gathered](#gathered-events), so someone filling a whole week sends one.
+
+`days` are the days touched, earliest first, and `pools` are the weeks whose pool was touched, each by its first day. `added`, `moved`, `changed` and `removed` count meals: `moved` is a meal on another day or at another meal, or with its dishes in another order, and `changed` is a meal whose recipe, side, note or servings changed.
+
+Marking a meal made or **Didn't** isn't a plan change: it sends [`meal.cooked`](#mealcooked) or [`meal.skipped`](#mealskipped). **Undo** puts meals back and sends this event, but never `meal.cooked` or `meal.skipped` again.
+
+```json
+{
+  "type": "plan.changed",
+  "timestamp": "2026-11-10T19:45:02.331Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "days": ["2026-10-15", "2026-10-16"],
+    "pools": ["2026-10-11"],
+    "added": 2,
+    "moved": 1,
+    "changed": 0,
+    "removed": 0
+  }
+}
+```
+
+### plan.autoplanned
+
+Sent when the autoplan plans a week, on its schedule or when someone runs it. `week` is the week's first day, `meals` is how many meals it planned, and `url` is that week in the plan. It also sends `plan.changed` for the meals it added.
+
+```json
+{
+  "type": "plan.autoplanned",
+  "timestamp": "2026-11-10T19:50:00.000Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "week": "2026-10-18",
+    "meals": 5,
+    "url": "https://merran.example.com/plan?week=2026-10-18"
+  }
+}
+```
+
+### meal.cooked
+
+Sent when a meal is marked made, wherever that happens: cook view, the plan, Today's **Did you make these?**, or a recipe made off the plan. `planned` says whether the meal was on the plan before, and `servings` how many were made, or `null`. `date` is the meal's day, or the first day of the week for a meal in the pool, and `recipe` is `null` for a meal that's only a note. Setting a meal back to planned sends nothing, and **Undo** never sends this again.
+
+```json
+{
+  "type": "meal.cooked",
+  "timestamp": "2026-11-10T22:41:19.275Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+    "date": "2026-10-15",
+    "meal": "dinner",
+    "pool": false,
+    "title": "Lemon Chicken",
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "side": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+      "slug": "garlic-rice",
+      "title": "Garlic Rice",
+      "url": "https://merran.example.com/recipes/garlic-rice"
+    },
+    "servings": 4,
+    "planned": true
+  }
+}
+```
+
+### meal.skipped
+
+Sent when a planned meal is marked **Didn't**. Its body is the same as `meal.cooked`'s, without `servings` and `planned`. Setting a meal back to planned sends nothing, and **Undo** never sends this again.
+
+```json
+{
+  "type": "meal.skipped",
+  "timestamp": "2026-11-10T22:44:51.902Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+    "date": "2026-10-15",
+    "meal": "dinner",
+    "pool": false,
+    "title": "Lemon Chicken",
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "side": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+      "slug": "garlic-rice",
+      "title": "Garlic Rice",
+      "url": "https://merran.example.com/recipes/garlic-rice"
+    }
+  }
+}
+```
+
+### list.changed
+
+Sent when things on a list are added, checked off, unchecked, changed or removed. It's [gathered](#gathered-events), so someone checking off 30 things sends one. `lists` has each list touched with how many things are `left` and `checked` now. `changed` counts things whose name, amount, aisle or list changed.
+
+Merging duplicate lines and moving things when a list is removed send nothing, and **Undo** sends this event but never [`list.completed`](#listcompleted).
+
+```json
+{
+  "type": "list.changed",
+  "timestamp": "2026-11-10T17:52:33.640Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "lists": [
+      {
+        "id": "0199e8b0-5a10-7a01-8b00-00000000001c",
+        "name": "Groceries",
+        "left": 8,
+        "checked": 14
+      }
+    ],
+    "added": 0,
+    "checked": 14,
+    "unchecked": 0,
+    "changed": 0,
+    "removed": 0
+  }
+}
+```
+
+### list.completed
+
+Sent when the last unchecked thing on a list is checked off, however that's done, or when **Put away** clears a list that still has unchecked things. `bought` is how many things on it were checked off, and `left` how many were still unchecked when it was put away. A list that was finished already sends nothing more when it's put away, so one trip sends one. **Clear checked** and **Undo** don't send it.
+
+```json
+{
+  "type": "list.completed",
+  "timestamp": "2026-11-10T17:58:10.114Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "list": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000025",
+      "name": "Costco"
+    },
+    "bought": 9,
+    "left": 0
+  }
+}
+```
+
+### list.sent
+
+Sent when a list goes to a store's cart: Kroger's, or Walmart's through the [browser extension](../browser-extension/). `store` is `kroger` or `walmart`, `sent` is how many things went to the cart, and `notFound` how many the store had no product for. For Walmart, the extension tells Merran when its fill is done, so this arrives when the run ends. An extension too old to report that sends no `list.sent` for Walmart.
+
+```json
+{
+  "type": "list.sent",
+  "timestamp": "2026-11-10T18:05:27.356Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "store": {
+      "id": "kroger",
+      "name": "Kroger"
+    },
+    "sent": 23,
+    "notFound": 2
+  }
+}
+```
+
+### pantry.changed
+
+Sent when things are put away, used up, moved to another place, changed or removed. It's [gathered](#gathered-events). `added` is things put away, `usedUp` is things marked **Used up**, and `changed` counts things whose amount, aisle, name or use-by date changed.
+
+```json
+{
+  "type": "pantry.changed",
+  "timestamp": "2026-11-10T18:40:12.009Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "added": 6,
+    "usedUp": 2,
+    "moved": 0,
+    "changed": 1,
+    "removed": 0
+  }
+}
+```
 
 ### webhook.test
 
