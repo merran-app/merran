@@ -47,6 +47,10 @@ export type JobContext = {
   jobId: string
   payload: Record<string, unknown>
   householdId: string | null
+  /** Which try this is, counting from 1. */
+  attempt: number
+  /** How many tries it has in all, so a job can tell when this is the last. */
+  maxAttempts: number
   /** Its own entity manager: scoped to the job's household when it has one. */
   em: EntityManager
   /**
@@ -68,6 +72,12 @@ export type JobHandler = {
   kind: string
   /** How many of this kind run at once. */
   concurrency?: number
+  /**
+   * How long to wait after each failed try, in milliseconds: the first after
+   * try 1, and so on. Past its end, or without it, the wait doubles from 30
+   * seconds up to 30 minutes.
+   */
+  retryDelays?: readonly number[]
   run(ctx: JobContext): Promise<Record<string, unknown> | void>
 }
 
@@ -303,6 +313,8 @@ export class JobRunner {
       jobId: job.id,
       payload: job.payload,
       householdId,
+      attempt,
+      maxAttempts: job.maxAttempts,
       em: householdId
         ? forHousehold(this.#deps.database.em, householdId)
         : this.#em(),
@@ -343,10 +355,9 @@ export class JobRunner {
           const message = err instanceof Error ? err.message : String(err)
           if (attempt < job.maxAttempts) {
             logger.warn({ err }, `Job failed; trying again (${attempt})`)
-            const wait = Math.min(
-              RETRY_MAX_MS,
-              RETRY_BASE_MS * 2 ** (attempt - 1)
-            )
+            const wait =
+              handler.retryDelays?.[attempt - 1] ??
+              Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** (attempt - 1))
             await this.#em().nativeUpdate(
               Job,
               { id: job.id },

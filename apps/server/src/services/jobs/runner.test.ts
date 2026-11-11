@@ -96,6 +96,64 @@ describe("the job runner", () => {
     expect(await load(job.id)).toMatchObject({ status: "queued", attempts: 0 })
   })
 
+  test("a kind's own retry schedule sets each wait", async () => {
+    const tries: number[] = []
+    const jobs = runner([
+      {
+        kind: "scheduled-flaky",
+        retryDelays: [5_000, 300_000],
+        run: async (ctx) => {
+          tries.push(ctx.attempt)
+          throw new Error(`Broke on try ${ctx.attempt}`)
+        },
+      },
+    ])
+    const job = await enqueue(em(), {
+      kind: "scheduled-flaky",
+      maxAttempts: 3,
+    })
+
+    await jobs.drain()
+    const afterFirst = (await load(job.id)).runAt.getTime() - Date.now()
+    expect(afterFirst).toBeGreaterThan(4_000)
+    expect(afterFirst).toBeLessThan(6_000)
+
+    await em().nativeUpdate(Job, { id: job.id }, { runAt: new Date() })
+    await jobs.drain()
+    const afterSecond = (await load(job.id)).runAt.getTime() - Date.now()
+    expect(afterSecond).toBeGreaterThan(295_000)
+    expect(afterSecond).toBeLessThan(305_000)
+
+    await em().nativeUpdate(Job, { id: job.id }, { runAt: new Date() })
+    await jobs.drain()
+    expect((await load(job.id)).status).toBe("failed")
+    expect(tries).toEqual([1, 2, 3])
+  })
+
+  test("a job knows which try it's on and how many it has", async () => {
+    const seen: number[][] = []
+    const jobs = runner([
+      {
+        kind: "counting",
+        run: async (ctx) => {
+          seen.push([ctx.attempt, ctx.maxAttempts])
+          if (ctx.attempt === 1) throw new Error("Broke on try 1")
+        },
+      },
+    ])
+    const job = await enqueue(em(), { kind: "counting", maxAttempts: 2 })
+
+    await jobs.drain()
+    await em().nativeUpdate(Job, { id: job.id }, { runAt: new Date() })
+    await jobs.drain()
+
+    expect(seen).toEqual([
+      [1, 2],
+      [2, 2],
+    ])
+    expect((await load(job.id)).status).toBe("done")
+  })
+
   test("runs one of a kind at a time, unless it says more", async () => {
     let now = 0
     let most = 0
