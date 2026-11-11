@@ -218,7 +218,7 @@ function WebhookForm({
         <DialogTitle>
           {t(
             editing
-              ? "settings.household.webhooks.edit"
+              ? "settings.household.webhooks.editTitle"
               : "settings.household.webhooks.add"
           )}
         </DialogTitle>

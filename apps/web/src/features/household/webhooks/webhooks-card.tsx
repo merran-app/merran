@@ -25,6 +25,7 @@ import { CardActions } from "@/features/settings/card-actions"
 import { formatRelativeDate } from "@/lib/format"
 
 import { webhooksQuery, type Webhook } from "./queries"
+import { WebhookDetailsDialog } from "./webhook-details-dialog"
 import { WebhookFormDialog } from "./webhook-form-dialog"
 
 const STATE_BADGES = {
@@ -37,15 +38,19 @@ const STATE_BADGES = {
  * Where the household's kitchen news goes: its webhooks, with how each is
  * doing. Admins only, and only when the server has webhooks on.
  */
-export function WebhooksCard({
-  onOpen,
-}: {
-  /** Opens one webhook's own view. Without it the rows are plain. */
-  onOpen?: (webhook: Webhook) => void
-}) {
+export function WebhooksCard() {
   const { t } = useTranslation()
   const on = useCapability("webhooks")
   const [adding, setAdding] = React.useState(false)
+  // The id stays after the view closes, so it can finish closing.
+  const [opened, setOpened] = React.useState<string | null>(null)
+  const [viewing, setViewing] = React.useState(false)
+
+  function open(webhook: Webhook) {
+    setOpened(webhook.id)
+    setViewing(true)
+  }
+
   if (!on) return null
 
   return (
@@ -57,7 +62,7 @@ export function WebhooksCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <WebhookList onOpen={onOpen} />
+        <WebhookList onOpen={open} />
       </CardContent>
       <CardActions>
         <Button onClick={() => setAdding(true)}>
@@ -66,11 +71,18 @@ export function WebhooksCard({
         </Button>
       </CardActions>
       <WebhookFormDialog open={adding} onOpenChange={setAdding} />
+      {opened && (
+        <WebhookDetailsDialog
+          webhookId={opened}
+          open={viewing}
+          onOpenChange={setViewing}
+        />
+      )}
     </Card>
   )
 }
 
-function WebhookList({ onOpen }: { onOpen?: (webhook: Webhook) => void }) {
+function WebhookList({ onOpen }: { onOpen: (webhook: Webhook) => void }) {
   const { t } = useTranslation()
   const { data: webhooks } = useSuspenseQuery(webhooksQuery)
 
@@ -104,7 +116,7 @@ function WebhookRow({
   onOpen,
 }: {
   webhook: Webhook
-  onOpen?: (webhook: Webhook) => void
+  onOpen: (webhook: Webhook) => void
 }) {
   const { t, i18n } = useTranslation()
 
@@ -135,10 +147,6 @@ function WebhookRow({
       </Badge>
     </>
   )
-
-  if (!onOpen) {
-    return <li className="flex flex-wrap items-center gap-3 p-4">{details}</li>
-  }
 
   return (
     <li>

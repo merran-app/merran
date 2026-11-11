@@ -7,7 +7,7 @@ export type WebhookDetail = Schemas["WebhookDetail"]
 export type WebhookDelivery = Schemas["WebhookDelivery"]
 
 /** How many deliveries the log shows at a time. */
-export const DELIVERIES_PAGE_SIZE = 25
+export const DELIVERIES_PAGE_SIZE = 20
 
 export const webhooksQuery = queryOptions({
   queryKey: ["household", "webhooks"],
