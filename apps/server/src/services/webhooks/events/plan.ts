@@ -4,7 +4,7 @@ import { toNumber } from "../../../database/numbers.ts"
 import { snapshotOf, type EntrySnapshot } from "../../plan/snapshots.ts"
 import type { GatheredPart } from "../gathering/gathering.ts"
 import { recipeRef, type MealRef } from "../payloads.ts"
-import { record } from "../record.ts"
+import { record, wantsEvent } from "../record.ts"
 
 // What the plan tells webhooks: plan.changed, gathered from every add, move
 // and removal, whatever did it, and meal.cooked and meal.skipped, sent at
@@ -101,11 +101,16 @@ export async function mealRef(
   em: EntityManager,
   entry: PlanEntry
 ): Promise<MealRef> {
+  return (await loadedMeal(em, entry)).ref
+}
+
+/** A meal as events carry it, with the recipe it was made from. */
+async function loadedMeal(em: EntityManager, entry: PlanEntry) {
   await em.populate(entry, ["recipe", "withRecipe"])
   const main = entry.recipe?.getEntity()
   const side = entry.withRecipe?.getEntity()
   const variant = entry.variants?.find((value) => value.recipeId === main?.id)
-  return {
+  const ref: MealRef = {
     entryId: entry.id,
     date: entry.date,
     meal: entry.meal,
@@ -114,16 +119,18 @@ export async function mealRef(
     recipe: main ? recipeRef(main) : null,
     side: side ? recipeRef(side) : null,
   }
+  return { ref, main, variant }
 }
 
 /** How many servings a meal made: its own, else its version's or recipe's. */
-function servingsMade(entry: PlanEntry): number | null {
+function servingsMade(
+  entry: PlanEntry,
+  loaded: Awaited<ReturnType<typeof loadedMeal>>
+): number | null {
   const own = toNumber(entry.servings)
   if (own !== null) return own
 
-  const main = entry.recipe?.getEntity()
-  const variant = entry.variants?.find((value) => value.recipeId === main?.id)
-  return variant?.servings ?? toNumber(main?.servings) ?? null
+  return loaded.variant?.servings ?? toNumber(loaded.main?.servings) ?? null
 }
 
 /**
@@ -138,17 +145,27 @@ async function recordMealEvents(
   after: readonly PlanEntry[]
 ): Promise<void> {
   const was = new Map(before.map((entry) => [entry.id, entry]))
+  // Asked once for each, before any meal's recipe is loaded for them.
+  const wantsCooked = await wantsEvent(em, householdId, "meal.cooked")
+  const wantsSkipped = await wantsEvent(em, householdId, "meal.skipped")
 
   for (const entry of after) {
     const old = was.get(entry.id)
-    if (entry.status === "cooked" && old?.status !== "cooked") {
-      // The meal first, which loads the recipe its servings may come from.
-      const meal = await mealRef(em, entry)
+    if (wantsCooked && entry.status === "cooked" && old?.status !== "cooked") {
+      const loaded = await loadedMeal(em, entry)
       await record(em, householdId, {
         type: "meal.cooked",
-        data: { ...meal, servings: servingsMade(entry), planned: !!old },
+        data: {
+          ...loaded.ref,
+          servings: servingsMade(entry, loaded),
+          planned: !!old,
+        },
       })
-    } else if (entry.status === "skipped" && old?.status !== "skipped") {
+    } else if (
+      wantsSkipped &&
+      entry.status === "skipped" &&
+      old?.status !== "skipped"
+    ) {
       await record(em, householdId, {
         type: "meal.skipped",
         data: await mealRef(em, entry),

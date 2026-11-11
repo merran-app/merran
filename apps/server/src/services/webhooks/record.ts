@@ -161,6 +161,16 @@ async function gatherChange(
   return saved
 }
 
+/** Whether any webhook wants an event, for ones whose payload costs queries to build, so a household without webhooks pays nothing. */
+export async function wantsEvent(
+  em: EntityManager,
+  householdId: string,
+  type: WebhookEventType
+): Promise<boolean> {
+  if (!webhooksEnabled()) return false
+  return (await webhooksWanting(em, householdId, type)).length > 0
+}
+
 /** The webhooks an event goes to: none while webhooks are off. */
 async function webhooksFor(
   em: EntityManager,

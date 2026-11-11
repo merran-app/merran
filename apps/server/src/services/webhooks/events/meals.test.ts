@@ -335,3 +335,36 @@ describe("Undo", () => {
     expect(sent.map((event) => event.type)).toEqual(["plan.changed"])
   })
 })
+
+// Last, because it takes the household's webhooks away.
+describe("a household without webhooks", () => {
+  test("marking a meal made or Didn't records nothing", async () => {
+    await clearAll()
+    const soup = await add({
+      date: today,
+      meal: "dinner",
+      recipe: "tomato-soup",
+    })
+    const bread = await add({
+      date: today,
+      meal: "lunch",
+      recipe: "soda-bread",
+    })
+    const listed = await (
+      await kyle.get("/api/households/current/webhooks")
+    ).json()
+    for (const webhook of listed.webhooks ?? listed) {
+      const res = await kyle.delete(
+        `/api/households/current/webhooks/${webhook.id}`
+      )
+      expect(res.status, await res.clone().text()).toBeLessThan(300)
+    }
+
+    const sent = await sentBy(async () => {
+      await setStatus(soup.id, { status: "cooked" })
+      await setStatus(bread.id, { status: "skipped" })
+    })
+
+    expect(sent).toEqual([])
+  })
+})
