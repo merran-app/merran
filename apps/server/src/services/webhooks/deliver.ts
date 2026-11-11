@@ -75,9 +75,9 @@ type TryResult = {
 /**
  * Tries a waiting delivery once, and saves what came of it. A failure waits
  * for another try unless this is the `final` one, which pauses the webhook.
- * A `test` is sent even to a paused webhook, and whatever comes of it is
- * the delivery's alone: it never pauses the webhook or changes how it's
- * doing.
+ * A `test` is sent even to a paused webhook. Whatever comes of a test,
+ * sent now or resent later through its job, is the delivery's alone: it's
+ * tried once, and never pauses the webhook or changes how it's doing.
  */
 export async function attemptDelivery(
   em: EntityManager,
@@ -109,15 +109,18 @@ export async function attemptDelivery(
     return "skipped"
   }
 
+  const event = delivery.event.getEntity()
+  const test = options.test === true || event.type === "webhook.test"
+
   // Read before sending, and saved after, so no transaction waits on the
   // receiver.
-  const result = await tryOnce(deps, webhook, delivery.event.getEntity())
+  const result = await tryOnce(deps, webhook, event)
   noteTry(delivery, result)
 
   if (isSuccess(result.statusCode)) {
     delivery.state = "delivered"
     delivery.deliveredAt = result.triedAt
-    if (!options.test) {
+    if (!test) {
       webhook.lastDeliveredAt = result.triedAt
       webhook.failingSince = null
       webhook.lastError = null
@@ -126,7 +129,7 @@ export async function attemptDelivery(
     return "delivered"
   }
 
-  if (options.test) {
+  if (test) {
     delivery.state = "failed"
     await em.flush()
     return "gave_up"

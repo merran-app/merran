@@ -79,6 +79,11 @@ const TAGS = [
       "What changes in the household, as it happens: the live updates the app uses, and who has the list open.",
   },
   {
+    name: "Webhooks",
+    description:
+      "Telling tools like Home Assistant and n8n when things happen in the household, signed in the Standard Webhooks format: each webhook's address, events, secret and deliveries log. Managed by the household's admins in the app, never with API keys.",
+  },
+  {
     name: "Stores",
     description:
       "Stores with an API: Kroger (Fry's, Ralphs...), its products and prices, and sending the list to a linked account's cart.",
