@@ -1,12 +1,15 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import type { PlanEntry } from "../../../database/entities/index.ts"
+import { toNumber } from "../../../database/numbers.ts"
 import { snapshotOf, type EntrySnapshot } from "../../plan/snapshots.ts"
 import type { GatheredPart } from "../gathering/gathering.ts"
+import { recipeRef, type MealRef } from "../payloads.ts"
 import { record } from "../record.ts"
 
 // What the plan tells webhooks: plan.changed, gathered from every add, move
-// and removal, whatever did it. Each plan function takes snapshots of the
-// meals it touches, changes them, and says what it did with the two.
+// and removal, whatever did it, and meal.cooked and meal.skipped, sent at
+// once. Each plan function takes snapshots of the meals it touches, changes
+// them, and says what it did with the two.
 
 type PlanChange = GatheredPart<"plan.changed">
 
@@ -90,6 +93,71 @@ export function planChange(
 }
 
 /**
+ * A meal as events carry it. Its recipe and side are loaded when they
+ * aren't. Its title is the recipe's name, or the version's when the meal has
+ * one, as the plan shows it; for a meal that's only a note, the note.
+ */
+export async function mealRef(
+  em: EntityManager,
+  entry: PlanEntry
+): Promise<MealRef> {
+  await em.populate(entry, ["recipe", "withRecipe"])
+  const main = entry.recipe?.getEntity()
+  const side = entry.withRecipe?.getEntity()
+  const variant = entry.variants?.find((value) => value.recipeId === main?.id)
+  return {
+    entryId: entry.id,
+    date: entry.date,
+    meal: entry.meal,
+    pool: entry.anyDay,
+    title: variant?.name ?? main?.name ?? entry.note ?? "",
+    recipe: main ? recipeRef(main) : null,
+    side: side ? recipeRef(side) : null,
+  }
+}
+
+/** How many servings a meal made: its own, else its version's or recipe's. */
+function servingsMade(entry: PlanEntry): number | null {
+  const own = toNumber(entry.servings)
+  if (own !== null) return own
+
+  const main = entry.recipe?.getEntity()
+  const variant = entry.variants?.find((value) => value.recipeId === main?.id)
+  return variant?.servings ?? toNumber(main?.servings) ?? null
+}
+
+/**
+ * Tells webhooks that meals were marked made or Didn't: those that are now,
+ * and weren't before. A meal that wasn't in `before` was added by being
+ * made.
+ */
+async function recordMealEvents(
+  em: EntityManager,
+  householdId: string,
+  before: readonly EntrySnapshot[],
+  after: readonly PlanEntry[]
+): Promise<void> {
+  const was = new Map(before.map((entry) => [entry.id, entry]))
+
+  for (const entry of after) {
+    const old = was.get(entry.id)
+    if (entry.status === "cooked" && old?.status !== "cooked") {
+      // The meal first, which loads the recipe its servings may come from.
+      const meal = await mealRef(em, entry)
+      await record(em, householdId, {
+        type: "meal.cooked",
+        data: { ...meal, servings: servingsMade(entry), planned: !!old },
+      })
+    } else if (entry.status === "skipped" && old?.status !== "skipped") {
+      await record(em, householdId, {
+        type: "meal.skipped",
+        data: await mealRef(em, entry),
+      })
+    }
+  }
+}
+
+/**
  * Tells webhooks what a plan change did: the meals it touched as they were,
  * and as they are now (none, for ones it removed). Called after the change
  * is made, with the entity manager or transaction it was made in.
@@ -104,6 +172,9 @@ export async function recordPlanEvents(
     undo?: boolean
   }
 ): Promise<void> {
+  if (!change.undo) {
+    await recordMealEvents(em, householdId, change.before, change.after)
+  }
   await record(em, householdId, {
     type: "plan.changed",
     data: planChange(change.before, change.after.map(snapshotOf)),
