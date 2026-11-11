@@ -87,7 +87,10 @@ export function WebhookDetailsDialog({
         if (!next) setSecret(null)
       }}
     >
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+      {/* One column no wider than the dialog: a delivery's body is one long
+          line, and without the cap the column grows to fit it and takes the
+          secret and everything else past the edge. The body scrolls instead. */}
+      <DialogContent className="max-h-[calc(100dvh-2rem)] grid-cols-[minmax(0,1fr)] overflow-y-auto sm:max-w-2xl">
         {webhook ? (
           <>
             <DialogHeader>
