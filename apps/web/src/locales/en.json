@@ -936,6 +936,17 @@
         "auto": "For each new recipe",
         "autoHint": "One made by itself for a recipe added without a photo: typed in, read from text, or from the assistant. Never for a library moved in at once."
       },
+      "webhooks": {
+        "title": "Webhooks",
+        "description": "Households can tell other tools, like Home Assistant and n8n, when things happen.",
+        "enabled": "Let households send webhooks",
+        "enabledHint": "Off stops every household's webhooks, and keeps them for later.",
+        "homeNetwork": "Webhooks to the home network",
+        "homeNetworkHint": "Home Assistant usually lives on the home network. On a server shared with others, allow only the households you trust to reach it.",
+        "homeNetworkOff": "Off",
+        "homeNetworkAll": "Every household",
+        "homeNetworkChosen": "Chosen households"
+      },
       "voice": {
         "title": "Voice",
         "description": "Who reads cook steps aloud when cooking hands-free. Each step is read once and kept, and if the server's voice fails, the device's reads instead.",

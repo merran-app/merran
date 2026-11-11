@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
+import { serverAiQuery } from "@/features/ai/queries"
 import { AboutCard } from "@/features/server/about-card"
 import { EmailCard } from "@/features/server/email-card"
 import { ErrorTrackingCard } from "@/features/server/error-tracking-card"
@@ -10,6 +11,7 @@ import {
   telemetryStatusQuery,
 } from "@/features/server/queries"
 import { TelemetryCard } from "@/features/server/telemetry-card"
+import { WebhooksCard } from "@/features/server/webhooks-card"
 import { ensureSettingsAccess } from "@/features/settings/guard"
 import { TopicPage } from "@/features/settings/topic-page"
 
@@ -23,6 +25,7 @@ export const Route = createFileRoute("/_app/settings/server")({
       queryClient.ensureQueryData(telemetryReportQuery),
       queryClient.ensureQueryData(telemetryStatusQuery),
       queryClient.ensureQueryData(serverJobsQuery),
+      queryClient.ensureQueryData(serverAiQuery),
     ]),
   component: ServerSettings,
 })
@@ -33,6 +36,7 @@ function ServerSettings() {
       <AboutCard />
       <EmailCard />
       <JobsCard />
+      <WebhooksCard />
       <ErrorTrackingCard />
       <TelemetryCard />
     </TopicPage>
