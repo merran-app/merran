@@ -146,7 +146,7 @@ async function tellAdmins(
     webhook: webhook.name.replace(/[\r\n]/g, " "),
     reason,
     link: deps.config.publicUrl
-      ? `${deps.config.publicUrl}/settings/household#webhooks`
+      ? `${deps.config.publicUrl}/settings/webhooks`
       : null,
   })
   for (const to of await householdAdminEmails(em, household.id)) {

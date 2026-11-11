@@ -239,6 +239,7 @@
       "server": "Whole server",
       "serverNote": "Changes here reach every household on this server.",
       "onlyServer": {
+        "switchedOff": "This is turned off for every household, so only the server's settings are here.",
         "noHousehold": "You're not in a household, so only the server's settings are here.",
         "notAdmin": "You're not an admin of this household, so only the server's settings are here."
       }
@@ -255,6 +256,10 @@
       "apps": {
         "title": "Apps and devices",
         "description": "Merran on your devices, and other apps that connect to it."
+      },
+      "webhooks": {
+        "title": "Webhooks",
+        "description": "Tell Home Assistant, n8n and other tools when things happen."
       },
       "household": {
         "title": "Household",

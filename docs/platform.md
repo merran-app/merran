@@ -145,7 +145,7 @@ People make their own keys for scripts, Home Assistant, the browser extension an
 
 Planned in full on November 10, 2026: [webhooks.md](webhooks.md) has the events, payloads, delivery, the page, cooking sessions and the build order. In short:
 
-- **Household owners and admins add them** in a Webhooks section of the Household settings page, for Home Assistant, n8n and the like. Server-level webhooks come later on the same engine.
+- **Household owners and admins add them** on their own Webhooks page in Settings (moved from the Household page on November 10, 2026), for Home Assistant, n8n and the like. Server-level webhooks come later on the same engine.
 - **Events** are recorded by the change itself, in its transaction, through one `record()`: recipes, imports, tidy-up and Review, the plan and meals, the list, the pantry, then cooking and timers (cook view now tells the server), then a daily summary, time to start a meal, and what to use soon.
 - **Each webhook** has an address, the events it wants, and a secret. Deliveries are signed in the Standard Webhooks format (an HMAC of the body, a timestamp and an id), so the receiver can check they came from Merran and aren't replayed.
 - **Delivery** runs on the job runner: retries on Standard Webhooks' schedule for about 27 hours, then the webhook is paused and its household admins are told. Each webhook shows its recent deliveries with their responses, and **Send a test**.

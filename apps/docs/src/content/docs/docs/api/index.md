@@ -17,7 +17,7 @@ Recipe share links are read through public `GET /api/shared/{token}`, which retu
 
 ## Webhooks
 
-Merran can also call your tool when something happens. Household owners and admins add [webhooks](../integrations/webhooks/) in **Settings → Household → Webhooks**, which is session-only: API keys can't manage them. Each event, such as `recipe.created`, and its body is described in the API reference under Webhooks, signed as [Standard Webhooks](https://www.standardwebhooks.com/) describes, and the integration guide shows how to check signatures.
+Merran can also call your tool when something happens. Household owners and admins add [webhooks](../integrations/webhooks/) in **Settings → Webhooks**, which is session-only: API keys can't manage them. Each event, such as `recipe.created`, and its body is described in the API reference under Webhooks, signed as [Standard Webhooks](https://www.standardwebhooks.com/) describes, and the integration guide shows how to check signatures.
 
 ## Create a key
 

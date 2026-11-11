@@ -152,7 +152,7 @@ export function webhookPausedEmail(options: {
           html: `<strong style="color:#263b2b;">${webhook}</strong> answered that it&rsquo;s gone, so Merran has stopped sending to it.`,
         }
   const next =
-    "Check the tool it sends to, then resume it in Settings → Household → Webhooks."
+    "Check the tool it sends to, then resume it in Settings → Webhooks."
   const whyYou = `You're getting this because you're an owner or admin of ${options.household} on Merran.`
   const link = options.link ? escapeHtml(options.link) : null
 

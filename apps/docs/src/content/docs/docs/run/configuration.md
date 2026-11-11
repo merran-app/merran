@@ -55,26 +55,27 @@ Some settings belong to the household or account rather than the server. Use hou
 
 Settings has a page for each topic. A page with both household and server settings shows one half at a time, with a switch between **This household** (or **You**) and **Whole server**; only the server admin sees the switch. On a phone, **Settings** opens as a list of pages.
 
-| Page                    | This household, or You                                                                     | Whole server                                                                          |
-| ----------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| **Profile**             | **Profile**, **Language**, **Appearance**, **Your data**                                   |                                                                                       |
-| **Sign-in**             | **Password**, **Passkeys**, **Two-step sign-in**, **Single sign-on**                       | **Authentication**                                                                    |
-| **Apps and devices**    | **Merran on this device**, **Share to Merran**, **Connected apps**, **API keys**           | **OAuth applications**, when OAuth is on                                              |
-| **Household**           | **Household**, **Members**, **Invitations**, **Webhooks**                                  | **Start another household**                                                           |
-| **Planning**            | **Planning**, **Tastes**, **Theme nights**, **Plan each week**, **Calendar subscriptions** |                                                                                       |
-| **Recipes**             | **Nutrition for the library**, **AI photos**, **Recipe links**                             | **Nutrition**, **AI photos**, **Voice**                                               |
-| **AI**                  | **Spending**, **Keys**, **Models**                                                         | **AI keys**, **Who may use the server's AI**, **AI spend**                            |
-| **Shopping and stores** | **Pantry**, **Your stores**, **Stores**                                                    | **Kroger**, **Walmart**                                                               |
-| **Import and export**   | **Export this household**, **Import a Merran export**, **From another app**                | **Recipe sites**, **Video import**, **FlareSolverr**                                  |
-| **Server**              |                                                                                            | **This server**, **Email**, **Jobs**, **Webhooks**, **Error tracking**, **Telemetry** |
+| Page                    | This household, or You                                                                     | Whole server                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| **Profile**             | **Profile**, **Language**, **Appearance**, **Your data**                                   |                                                                         |
+| **Sign-in**             | **Password**, **Passkeys**, **Two-step sign-in**, **Single sign-on**                       | **Authentication**                                                      |
+| **Apps and devices**    | **Merran on this device**, **Share to Merran**, **Connected apps**, **API keys**           | **OAuth applications**, when OAuth is on                                |
+| **Webhooks**            | **Webhooks**, when webhooks are on                                                         | **Webhooks**                                                            |
+| **Household**           | **Household**, **Members**, **Invitations**                                                | **Start another household**                                             |
+| **Planning**            | **Planning**, **Tastes**, **Theme nights**, **Plan each week**, **Calendar subscriptions** |                                                                         |
+| **Recipes**             | **Nutrition for the library**, **AI photos**, **Recipe links**                             | **Nutrition**, **AI photos**, **Voice**                                 |
+| **AI**                  | **Spending**, **Keys**, **Models**                                                         | **AI keys**, **Who may use the server's AI**, **AI spend**              |
+| **Shopping and stores** | **Pantry**, **Your stores**, **Stores**                                                    | **Kroger**, **Walmart**                                                 |
+| **Import and export**   | **Export this household**, **Import a Merran export**, **From another app**                | **Recipe sites**, **Video import**, **FlareSolverr**                    |
+| **Server**              |                                                                                            | **This server**, **Email**, **Jobs**, **Error tracking**, **Telemetry** |
 
-Household members see **Profile**, **Sign-in**, **Apps and devices**, **Household** and **Planning**; household owners and admins also see **Recipes**, **AI**, **Shopping and stores**, and **Import and export**. A server admin who isn't an admin of the household in use sees only the **Whole server** side of those pages, with a line saying why. The server admin role does not by itself grant household-admin access.
+Household members see **Profile**, **Sign-in**, **Apps and devices**, **Household** and **Planning**; household owners and admins also see **Webhooks** (while the server has them on), **Recipes**, **AI**, **Shopping and stores**, and **Import and export**. A server admin who isn't an admin of the household in use sees only the **Whole server** side of those pages, with a line saying why. The server admin role does not by itself grant household-admin access.
 
 See [household roles and permissions](../household-roles/) for who can change each scope. Server administration and household ownership are separate roles.
 
 For importing from sites that turn servers away, a server admin can connect their own FlareSolverr with `MERRAN_FLARESOLVERR_URL` or **Recipe services → FlareSolverr**. See [FlareSolverr](../../integrations/flaresolverr/).
 
-Webhooks are on by default and sent only by households that add one. A server admin can turn them off with `MERRAN_WEBHOOKS=false` or **Let households send webhooks** in **Settings → Server → Webhooks**, and decide which households may send them to the home network, where Home Assistant usually lives, with `MERRAN_WEBHOOKS_HOME_NETWORK` (`off`, `all` or `chosen`) or **Webhooks to the home network**. See [Webhooks](../../integrations/webhooks/).
+Webhooks are on by default and sent only by households that add one. A server admin can turn them off with `MERRAN_WEBHOOKS=false` or **Let households send webhooks** in **Settings → Webhooks → Whole server**, and decide which households may send them to the home network, where Home Assistant usually lives, with `MERRAN_WEBHOOKS_HOME_NETWORK` (`off`, `all` or `chosen`) or **Webhooks to the home network**. See [Webhooks](../../integrations/webhooks/).
 
 For AI, follow [AI setup and costs](../ai-setup/) to connect providers, select models, manage shared and household keys, and troubleshoot requests. Read [AI privacy and data flow](../../project/ai-privacy/) before enabling external processing.
 

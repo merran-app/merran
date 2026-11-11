@@ -221,15 +221,18 @@ Each webhook shows its last 30 days of deliveries: the event, when it happened, 
 
 ## The home network
 
-- A server setting in Settings → Server → Webhooks, **Webhooks to the home network**: Off (the default), Every household, or Chosen households, picked from the server's households. `MERRAN_WEBHOOKS_HOME_NETWORK=off|all|chosen` sets it from the environment and locks it.
-- **When a webhook is saved,** a household that isn't allowed must give an address that leads only to public addresses, looked up then (`checkPublicLink`). Otherwise it's refused with: "This address is on your home network. The server admin can allow that in Settings → Server → Webhooks." When the person saving it is the server admin, which is usual on a server with one household, a button allows it right there.
+- A server setting in Settings → Webhooks → Whole server, **Webhooks to the home network**: Off (the default), Every household, or Chosen households, picked from the server's households. `MERRAN_WEBHOOKS_HOME_NETWORK=off|all|chosen` sets it from the environment and locks it.
+- **When a webhook is saved,** a household that isn't allowed must give an address that leads only to public addresses, looked up then (`checkPublicLink`). Otherwise it's refused with: "This address is on your home network. The server admin can allow that in Settings → Webhooks → Whole server." When the person saving it is the server admin, which is usual on a server with one household, a button allows it right there.
 - **On every send,** a household that isn't allowed goes through the public agent, which refuses private addresses whenever the name is looked up, so a name that starts pointing home later is refused too. An allowed household's deliveries use the home agent.
 - Addresses must be `http` or `https`, with no user name or password in them (use a header), and at most 2,000 characters. Plain `http` is allowed, since Home Assistant on a home network usually has no certificate.
 - The guide says to use Home Assistant's IP address or a real host name: `homeassistant.local` often doesn't resolve inside Docker.
 
 ## The page
 
-A **Webhooks** section on the Household settings page, for owners and admins, shown when the module is on. Members don't see it.
+A **Webhooks** page in Settings, after Apps and devices. Moved there from the Household page on November 10, 2026: webhooks connect the household to other tools rather than describe the household, they'll grow with the later slices, and each settings page holds either your settings or the household's, so Apps and devices (yours) wasn't the place.
+
+- **This household**, for owners and admins, shown when the module is on. Members don't see it.
+- **Whole server**, for the server admin: the switch that turns webhooks on and off, and the home-network choice. It shows even while webhooks are off, so they can be turned back on; a household admin's half then says webhooks are turned off for every household.
 
 - **The list:** each webhook's name, the host it sends to, how many events it wants, its state (**Working**, **Failing** or **Paused**) and its last delivery.
 - **Add webhook** and editing open in a dialog on larger screens and a drawer on mobile: a name, the address, the events as checkboxes grouped by area with a line on each, or **Everything, including events added later**, and the extra headers. After saving, the secret is shown with a copy button.
@@ -264,7 +267,7 @@ A `webhooks` module in `apps/server/src/modules/webhooks/`: its settings (`setti
 
 - `webhooks.enabled` (`MERRAN_WEBHOOKS`), a switch, on by default: off hides the page, refuses the routes, records nothing and leaves saved webhooks as they are.
 - `webhooks.homeNetwork` (`MERRAN_WEBHOOKS_HOME_NETWORK`): `off`, `all` or `chosen`.
-- `webhooks.homeNetworkHouseholds`: the chosen households, picked in Settings → Server; not from the environment.
+- `webhooks.homeNetworkHouseholds`: the chosen households, picked in Settings → Webhooks → Whole server; not from the environment.
 
 ## Cooking sessions and timers
 

@@ -809,7 +809,7 @@ describe("addresses", () => {
 
   test("go to the home network only when the server admin allows it", async () => {
     const homeNetwork =
-      "This address is on your home network. The server admin can allow that in Settings → Server → Webhooks."
+      "This address is on your home network. The server admin can allow that in Settings → Webhooks → Whole server."
     for (const address of [
       "http://192.168.1.20:8123/api/webhook/kitchen",
       "http://localhost:8123/api/webhook/kitchen",
@@ -903,18 +903,16 @@ describe("the paused email", () => {
 
     expect(email.subject).toBe("Home Assistant is paused")
     expect(email.text).toContain("for about a day")
-    expect(email.text).toContain("Settings → Household → Webhooks")
+    expect(email.text).toContain("Settings → Webhooks")
 
     const gone = webhookPausedEmail({
       household: "Home",
       webhook: "<n8n>",
       reason: "gone",
-      link: "https://merran.example.com/settings/household#webhooks",
+      link: "https://merran.example.com/settings/webhooks",
     })
     expect(gone.text).toContain("answered that it's gone")
-    expect(gone.text).toContain(
-      "https://merran.example.com/settings/household#webhooks"
-    )
+    expect(gone.text).toContain("https://merran.example.com/settings/webhooks")
     expect(gone.html).toContain("&lt;n8n&gt;")
     expect(gone.html).not.toContain("<n8n>")
   })

@@ -22,14 +22,14 @@ More events, for cooking, the plan, the list and the pantry, are planned. A webh
 ## Before you start
 
 - You need to be an **Owner** or **Admin** of the household. Members don't see webhooks.
-- A server admin can turn webhooks off for the whole server, with the **Let households send webhooks** switch in **Settings → Server → Webhooks** or `MERRAN_WEBHOOKS=false`. Then the **Webhooks** card is hidden, and saved webhooks are kept for later.
+- A server admin can turn webhooks off for the whole server, with the **Let households send webhooks** switch in **Settings → Webhooks → Whole server** or `MERRAN_WEBHOOKS=false`. Then households don't see the **Webhooks** page, and saved webhooks are kept for later.
 - Set the server's public address (`MERRAN_PUBLIC_URL`) if you want each recipe's `url` in the messages. Without it, `url` is `null`.
 - Webhooks are managed in the app only. API keys can't add, change or read them.
 - A household can have up to 10 webhooks, and each can have up to 5 extra headers.
 
 ## Add a webhook
 
-1. Open **Settings → Household** and find the **Webhooks** card, after **Invitations**.
+1. Open **Settings → Webhooks**. A server admin sees the household's webhooks under **This household**.
 2. Choose **Add webhook**.
 3. Enter a **Name**, like `Home Assistant`, so you can tell it apart in the list.
 4. Enter the **Address** the other tool gave you. It must start with `http://` or `https://`, can't have a user name or password in it (use a header instead), and is sealed like the server's other secrets once saved.
@@ -50,10 +50,10 @@ Open a webhook to see its **Deliveries**, and to **Edit**, **Pause** or **Resume
 
 Home Assistant usually lives on your home network, which Merran refuses by default: on a server shared with others, any household could otherwise make Merran call machines on your network. A server admin allows it in one of two ways:
 
-- In **Settings → Server → Webhooks**, set **Webhooks to the home network** to **Off** (the default), **Every household** or **Chosen households**, and pick the households. Or set `MERRAN_WEBHOOKS_HOME_NETWORK` to `off`, `all` or `chosen`, which locks the setting in the app.
+- In **Settings → Webhooks → Whole server**, set **Webhooks to the home network** to **Off** (the default), **Every household** or **Chosen households**, and pick the households. Or set `MERRAN_WEBHOOKS_HOME_NETWORK` to `off`, `all` or `chosen`, which locks the setting in the app.
 - When the server admin adds a webhook for a household that isn't allowed yet, the form shows **Allow the home network for this household**, so on a server with one household it takes one tick.
 
-Without permission, saving an address on the home network fails with "This address is on your home network. The server admin can allow that in Settings → Server → Webhooks." Merran checks again on every send, so a name that starts pointing at your home network later is refused too.
+Without permission, saving an address on the home network fails with "This address is on your home network. The server admin can allow that in Settings → Webhooks → Whole server." Merran checks again on every send, so a name that starts pointing at your home network later is refused too.
 
 Use Home Assistant's IP address, like `http://192.168.1.20:8123/api/webhook/…`, rather than `homeassistant.local`. That name often doesn't resolve from inside Docker.
 
@@ -319,7 +319,7 @@ The webhook becomes **Paused** when:
 - a delivery runs out of tries, or
 - the receiver answers `410 Gone`, which pauses it at once.
 
-While paused, nothing new is sent to it, and its waiting deliveries stop. The household's admins see it on the **Webhooks** card, and get an email if email is set up on the server. **Resume** starts sending new events again, and **Resume and resend** also resends what failed in the last day. You can **Pause** a webhook by hand too.
+While paused, nothing new is sent to it, and its waiting deliveries stop. The household's admins see it in **Settings → Webhooks**, and get an email if email is set up on the server. **Resume** starts sending new events again, and **Resume and resend** also resends what failed in the last day. You can **Pause** a webhook by hand too.
 
 Open a webhook's **Deliveries** to see the last 30 days: the event, when it happened, how many tries it took, its status, the answer's status code, how long it took, the first part of the answer and the exact body sent. When a try failed, Merran's error shows above the answer, where a tool like n8n usually says what was wrong. While the webhook is open, its state and deliveries keep up on their own.
 
@@ -342,8 +342,8 @@ Open a webhook's **Deliveries** to see the last 30 days: the event, when it happ
 
 | What you see                                        | What to try                                                                                                                                                  |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| "This address is on your home network…" when saving | A server admin allows it in **Settings → Server → Webhooks**. See [The home network](#the-home-network).                                                     |
+| "This address is on your home network…" when saving | A server admin allows it in **Settings → Webhooks → Whole server**. See [The home network](#the-home-network).                                               |
 | The test fails for a Home Assistant name            | Use its IP address instead of `homeassistant.local`.                                                                                                         |
 | The test works, but a real event never arrives      | Check the webhook wants that event under **Edit**, and that it isn't **Paused**.                                                                             |
 | Signatures never match                              | Check the whole body as received, the secret from **Show secret**, and that the receiver's clock is within 5 minutes. After a rotation, both work for a day. |
-| The **Webhooks** card isn't there                   | You need to be an **Owner** or **Admin**, and a server admin may have turned webhooks off.                                                                   |
+| **Webhooks** isn't in Settings                      | You need to be an **Owner** or **Admin**, and a server admin may have turned webhooks off.                                                                   |

@@ -13,6 +13,7 @@ export type SettingsPageId =
   | "profile"
   | "signIn"
   | "apps"
+  | "webhooks"
   | "household"
   | "planning"
   | "recipes"
@@ -86,6 +87,23 @@ export const SETTINGS_PAGES = [
         // OAuth applications is its only card, and it shows only with OAuth on.
         requires: "auth.oauth",
       },
+    ],
+  },
+  {
+    id: "webhooks",
+    path: "/settings/webhooks",
+    titleKey: "settings.topics.webhooks.title",
+    descriptionKey: "settings.topics.webhooks.description",
+    halves: [
+      {
+        id: "household",
+        to: "/settings/webhooks",
+        access: "householdAdmin",
+        // The household's webhooks wait while the server has webhooks off.
+        requires: "webhooks",
+      },
+      // Not tied to webhooks being on: it's where the server admin turns them on.
+      { id: "server", to: "/settings/webhooks/server", access: "serverAdmin" },
     ],
   },
   {
@@ -237,19 +255,23 @@ export function settingsRedirect(
 }
 
 /**
- * Why someone sees a page without its household half: they're in no
- * household, or aren't an admin of the one in use. Null when the page has
- * no household half to miss, or shows it.
+ * Why someone sees a page without its household half: what it needs is
+ * switched off on the server, they're in no household, or they aren't an
+ * admin of the one in use. Null when the page has no household half to
+ * miss, or shows it.
  */
 export function missingHouseholdHalf(
   pageId: SettingsPageId,
   viewer: Viewer
-): "noHousehold" | "notAdmin" | null {
+): "switchedOff" | "noHousehold" | "notAdmin" | null {
   const page = SETTINGS_PAGES.find((each) => each.id === pageId)
   if (!page) return null
-  const halves: readonly SettingsHalf[] = page.halves
+  const halves: readonly HalfDefinition[] = page.halves
   const household = halves.find((half) => half.id === "household")
   if (!household || canSeeHalf(household, viewer)) return null
+  if (household.requires && !viewer.capabilities.includes(household.requires)) {
+    return "switchedOff"
+  }
   return viewer.householdRole === null ? "noHousehold" : "notAdmin"
 }
 
