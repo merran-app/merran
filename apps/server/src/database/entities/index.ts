@@ -69,6 +69,9 @@ import { Tag } from "./tags.ts"
 import { User } from "./users.ts"
 import { Verification } from "./verifications.ts"
 import { WeeklyItem } from "./weekly_items.ts"
+import { WebhookDelivery } from "./webhook_deliveries.ts"
+import { WebhookEvent } from "./webhook_events.ts"
+import { Webhook } from "./webhooks.ts"
 
 export * from "./accounts.ts"
 export * from "./calendar_subscriptions.ts"
@@ -121,6 +124,9 @@ export * from "./tags.ts"
 export * from "./users.ts"
 export * from "./verifications.ts"
 export * from "./weekly_items.ts"
+export * from "./webhook_deliveries.ts"
+export * from "./webhook_events.ts"
+export * from "./webhooks.ts"
 
 /** Every entity. A new one goes here, or the database won't know about it. */
 export const entities = [
@@ -184,6 +190,9 @@ export const entities = [
   User,
   Verification,
   WeeklyItem,
+  Webhook,
+  WebhookDelivery,
+  WebhookEvent,
 ]
 
 /**
