@@ -19,6 +19,7 @@ import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import {
   DELIVERIES_PAGE_SIZE,
+  DETAILS_REFRESH_MS,
   webhookDeliveriesQuery,
   type WebhookDelivery,
 } from "./queries"
@@ -84,7 +85,12 @@ function DeliveriesPage({
 }) {
   const { t } = useTranslation()
   const offset = page * DELIVERIES_PAGE_SIZE
-  const { data } = useQuery(webhookDeliveriesQuery(webhookId, offset))
+  // The log is only shown while its webhook is open, and deliveries being
+  // tried move on in the background.
+  const { data } = useQuery({
+    ...webhookDeliveriesQuery(webhookId, offset),
+    refetchInterval: DETAILS_REFRESH_MS,
+  })
 
   if (!data) {
     return (
@@ -200,9 +206,20 @@ function DeliveryRow({
               <p className="text-sm font-medium">
                 {t("settings.household.webhooks.answer")}
               </p>
-              <p className="text-sm break-words text-muted-foreground">
-                {delivery.error ?? delivery.answer}
-              </p>
+              {delivery.error && (
+                <p className="text-sm break-words text-muted-foreground">
+                  {delivery.error}
+                </p>
+              )}
+              {/* What the receiver said, which for a failure is often why. */}
+              {delivery.answer && (
+                <pre
+                  dir="ltr"
+                  className="max-h-40 overflow-auto rounded-xl bg-muted p-3 text-xs break-words whitespace-pre-wrap"
+                >
+                  {delivery.answer}
+                </pre>
+              )}
             </div>
           )}
           <div className="space-y-1">
@@ -216,17 +233,12 @@ function DeliveryRow({
               {delivery.body}
             </pre>
           </div>
-          {delivery.state !== "waiting" && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={busy}
-              onClick={resend}
-            >
-              {busy && <Spinner />}
-              {t("settings.household.webhooks.resend")}
-            </Button>
-          )}
+          {/* One still being tried is refused, unless nothing is left
+              trying it, as after a crash: the server knows which. */}
+          <Button variant="outline" size="sm" disabled={busy} onClick={resend}>
+            {busy && <Spinner />}
+            {t("settings.household.webhooks.resend")}
+          </Button>
         </CollapsibleContent>
       </Collapsible>
     </li>

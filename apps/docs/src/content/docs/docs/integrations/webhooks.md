@@ -34,7 +34,7 @@ More events, for cooking, the plan, the list and the pantry, are planned. A webh
 3. Enter a **Name**, like `Home Assistant`, so you can tell it apart in the list.
 4. Enter the **Address** the other tool gave you. It must start with `http://` or `https://`, can't have a user name or password in it (use a header instead), and is sealed like the server's other secrets once saved.
 5. Under **Events**, tick the ones you want, or choose **Everything, including events added later**.
-6. If the tool wants a token or password in a header, choose **Add a header** under **Extra headers** and fill in its name and value. Header values stay sealed: to change them later, fill in every value again.
+6. If the tool wants a token or password in a header, choose **Add a header** under **Extra headers** and fill in its name and value. Each value goes on one line, and headers that only apply to one connection, like `Connection` or `Transfer-Encoding`, can't be added. Header values stay sealed: to change the headers later, fill in every value again, and Merran asks for any you leave empty.
 7. Save it. Merran shows **Here's the secret**: copy it into the tool that checks signatures. You can show it again later with **Show secret**.
 8. Open the webhook and choose **Send a test**. Merran sends a `webhook.test` event once and shows the answer.
 
@@ -321,7 +321,9 @@ The webhook becomes **Paused** when:
 
 While paused, nothing new is sent to it, and its waiting deliveries stop. The household's admins see it on the **Webhooks** card, and get an email if email is set up on the server. **Resume** starts sending new events again, and **Resume and resend** also resends what failed in the last day. You can **Pause** a webhook by hand too.
 
-Open a webhook's **Deliveries** to see the last 30 days: the event, when it happened, how many tries it took, its status, the answer's status code, how long it took, the first part of the answer and the exact body sent. **Resend** sends one again.
+Open a webhook's **Deliveries** to see the last 30 days: the event, when it happened, how many tries it took, its status, the answer's status code, how long it took, the first part of the answer and the exact body sent. When a try failed, Merran's error shows above the answer, where a tool like n8n usually says what was wrong. While the webhook is open, its state and deliveries keep up on their own.
+
+**Resend** sends a delivery again from its first try. One still **Trying** can't be resent while Merran is trying it, but one left **Trying** with nothing trying it, as can happen after a crash, can.
 
 **Send a test** is the exception to all of this: it's sent once, even to a paused webhook, never retried, and never pauses the webhook. The answer shows right away.
 

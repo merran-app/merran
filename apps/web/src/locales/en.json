@@ -531,6 +531,8 @@
         "headersSealed": "Header values stay sealed. To change the headers, fill in every value again.",
         "headerName": "Header name",
         "headerValue": "Value",
+        "headerValueNeeded": "Give it a value.",
+        "headerValueCharacters": "A header can't hold line breaks or characters like emoji.",
         "addHeader": "Add a header",
         "removeHeader": "Remove header",
         "state": {

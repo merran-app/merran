@@ -9,6 +9,12 @@ export type WebhookDelivery = Schemas["WebhookDelivery"]
 /** How many deliveries the log shows at a time. */
 export const DELIVERIES_PAGE_SIZE = 20
 
+/**
+ * How often an open webhook's state and deliveries log are asked for
+ * again, so tries made in the background show without a reload.
+ */
+export const DETAILS_REFRESH_MS = 5_000
+
 export const webhooksQuery = queryOptions({
   queryKey: ["household", "webhooks"],
   queryFn: () => unwrap(api.GET("/api/households/current/webhooks")),

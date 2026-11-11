@@ -29,7 +29,13 @@ import { Spinner } from "@/components/ui/spinner"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { DeliveriesLog } from "./deliveries-log"
-import { webhookQuery, webhooksQuery, type WebhookDetail } from "./queries"
+import {
+  DETAILS_REFRESH_MS,
+  webhookQuery,
+  webhooksQuery,
+  type WebhookDelivery,
+  type WebhookDetail,
+} from "./queries"
 import { WebhookFormDialog } from "./webhook-form-dialog"
 
 const STATE_BADGES = {
@@ -37,6 +43,17 @@ const STATE_BADGES = {
   failing: "destructive",
   paused: "outline",
 } as const
+
+/** How much of a receiver's answer a toast shows; the log has the rest. */
+const ANSWER_IN_TOAST = 200
+
+/** The start of a failed test's answer, for under the toast, if it said anything. */
+function answerPreview(delivery: WebhookDelivery) {
+  const answer = delivery.answer?.trim()
+  if (!answer) return undefined
+  if (answer.length <= ANSWER_IN_TOAST) return answer
+  return `${answer.slice(0, ANSWER_IN_TOAST)}…`
+}
 
 /**
  * One webhook's own view: how it's doing, what it was sent, and what an admin
@@ -53,10 +70,12 @@ export function WebhookDetailsDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const { t } = useTranslation()
-  // Off while closed, so a webhook just deleted isn't asked for again.
+  // Off while closed, so a webhook just deleted isn't asked for again, and
+  // asked for again while open, as tries in the background change its state.
   const { data: webhook } = useQuery({
     ...webhookQuery(webhookId),
     enabled: open,
+    refetchInterval: open ? DETAILS_REFRESH_MS : false,
   })
   const [secret, setSecret] = React.useState<string | null>(null)
 
@@ -184,11 +203,13 @@ function Actions({
           })
         )
       } else {
+        // The error says what Merran saw; the answer, under it, what the
+        // receiver said, which is often why.
         toast.error(
           t("settings.household.webhooks.testFailed", {
-            error:
-              delivery.error ?? delivery.answer ?? String(delivery.statusCode),
-          })
+            error: delivery.error ?? String(delivery.statusCode),
+          }),
+          { description: answerPreview(delivery) }
         )
       }
       await refresh()

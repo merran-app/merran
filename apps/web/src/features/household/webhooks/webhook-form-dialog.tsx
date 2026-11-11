@@ -45,6 +45,12 @@ import { webhooksQuery, type WebhookDetail } from "./queries"
 /** What a webhook can have beside its name and address, as the API caps it. */
 const MAX_HEADERS = 5
 
+/**
+ * What a header's value can hold, as the API checks it: tabs, visible
+ * ASCII and the rest of Latin-1, which fetch can send. Never a line break.
+ */
+const HEADER_VALUE = /^[\t\x20-\x7e\x80-\xff]*$/
+
 type Form = {
   name: string
   address: string
@@ -127,12 +133,34 @@ function WebhookForm({
   const everything = form.watch("everything")
   const editing = webhook !== undefined
 
-  /** Headers are sent only when they were changed, as a change replaces them all. */
-  function headersChanged(values: Form["headers"]) {
+  /**
+   * Whether saving sends the headers: always for a new webhook, and for one
+   * being changed only when they were, as a change replaces them all.
+   */
+  function sendsHeaders(values: Form) {
+    if (!editing) return true
+
     const sameNames =
-      values.map((header) => header.name).join("\n") ===
+      values.headers.map((header) => header.name).join("\n") ===
       defaults.headers.map((header) => header.name).join("\n")
-    return !sameNames || values.some((header) => header.value !== "")
+    return !sameNames || values.headers.some((header) => header.value !== "")
+  }
+
+  /**
+   * A header's value is needed whenever the headers are sent: the saved
+   * ones are sealed, so a value left empty would replace one with nothing.
+   */
+  function checkHeaderValue(value: string, values: Form) {
+    if (value === "") {
+      return (
+        !sendsHeaders(values) ||
+        t("settings.household.webhooks.headerValueNeeded")
+      )
+    }
+    return (
+      HEADER_VALUE.test(value) ||
+      t("settings.household.webhooks.headerValueCharacters")
+    )
   }
 
   async function save(values: Form) {
@@ -157,7 +185,7 @@ function WebhookForm({
     await unwrap(
       api.PATCH("/api/households/current/webhooks/{webhookId}", {
         params: { path: { webhookId: webhook.id } },
-        body: headersChanged(values.headers)
+        body: sendsHeaders(values)
           ? { ...body, headers: values.headers }
           : body,
       })
@@ -316,12 +344,16 @@ function WebhookForm({
                 <TextField
                   label={t("settings.household.webhooks.headerName")}
                   autoComplete="off"
+                  error={errors.headers?.[index]?.name?.message}
                   {...form.register(`headers.${index}.name`)}
                 />
                 <TextField
                   label={t("settings.household.webhooks.headerValue")}
                   autoComplete="off"
-                  {...form.register(`headers.${index}.value`)}
+                  error={errors.headers?.[index]?.value?.message}
+                  {...form.register(`headers.${index}.value`, {
+                    validate: checkHeaderValue,
+                  })}
                 />
               </div>
               <Button
