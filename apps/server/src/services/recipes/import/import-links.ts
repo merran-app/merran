@@ -6,6 +6,8 @@ import { ACTIVE, enqueue, findJob } from "../../jobs/jobs.ts"
 import { JobStopped, type JobHandler } from "../../jobs/runner.ts"
 import { findLinks } from "../../share/links.ts"
 import { inHouseholdTransaction } from "../../../database/transactions.ts"
+import { appLink } from "../../webhooks/payloads.ts"
+import { record } from "../../webhooks/record.ts"
 import { addTagsTo } from "../tags.ts"
 import { importLink } from "./import-link.ts"
 import { findBySourceUrls, isVideoLink, normalizeLink } from "./links.ts"
@@ -41,6 +43,8 @@ const Payload = z.object({
   urls: z.array(z.string()).max(MAX_LINKS),
   tag: z.string().nullable(),
   userId: z.string().nullable(),
+  // What webhooks are told it was; imports started before this have no kind.
+  kind: z.enum(["links", "collection"]).default("links"),
 })
 
 const SoFar = z.object({
@@ -114,6 +118,8 @@ export async function startLinkImport(
     urls: readonly string[]
     /** Added to every recipe it makes, like "to try". */
     tag?: string | null
+    /** A collection's import is a batch of links that says what it is. */
+    kind?: "links" | "collection"
   }
 ) {
   const urls = [
@@ -130,7 +136,12 @@ export async function startLinkImport(
   return enqueue(em, {
     kind: KIND,
     householdId: options.householdId,
-    payload: { urls, tag, userId: options.userId },
+    payload: {
+      urls,
+      tag,
+      userId: options.userId,
+      kind: options.kind ?? "links",
+    },
     createdBy: options.userId,
     // Never tried again by itself: Try again starts another with the ones left.
     maxAttempts: 1,
@@ -217,6 +228,30 @@ function tagRecipe(
   })
 }
 
+/** Says the batch ran to its end, and how many links went each way. */
+function tellWebhooks(
+  em: EntityManager,
+  householdId: string,
+  jobId: string,
+  kind: "links" | "collection",
+  items: readonly LinkItem[]
+) {
+  const count = (state: LinkState) =>
+    items.filter((item) => item.state === state).length
+  return record(em, householdId, {
+    type: "import.finished",
+    data: {
+      import: { id: jobId },
+      kind,
+      app: null,
+      added: count("added"),
+      skipped: count("already"),
+      failed: count("failed"),
+      url: appLink(`/recipes/import/${jobId}`),
+    },
+  })
+}
+
 /**
  * The import job: each link in turn, so what's in stays in if it's
  * stopped. A link the library has already is noted, not added again.
@@ -235,7 +270,7 @@ export const linkImportJob: JobHandler = {
     deps,
   }) {
     if (!householdId) throw new Error("An import needs a household.")
-    const { urls, tag, userId } = Payload.parse(payload)
+    const { urls, tag, userId, kind } = Payload.parse(payload)
     const items = urls.map(waiting)
     const soFar = () => ({ tag, items })
     let done = 0
@@ -274,6 +309,7 @@ export const linkImportJob: JobHandler = {
         done++
         await progress(done, items.length, soFar())
       }
+      await tellWebhooks(em, householdId, jobId, kind, items)
       return soFar()
     } catch (err) {
       // Stopped: what it got through is kept, and the rest stay waiting.

@@ -12,6 +12,8 @@ import {
   type JobDeps,
   type JobHandler,
 } from "../../../jobs/runner.ts"
+import { appLink } from "../../../webhooks/payloads.ts"
+import { record } from "../../../webhooks/record.ts"
 import { removePhoto, storePhoto } from "../../photos/photos.ts"
 import { importRecipe } from "../../recipes.ts"
 import type { Sealed } from "../../../secrets/secret-box.ts"
@@ -258,6 +260,18 @@ export const appImportJob: JobHandler = {
           source.close()
           await rm(job.file, { force: true })
         }
+        await record(em, householdId, {
+          type: "import.finished",
+          data: {
+            import: { id: jobId },
+            kind: "app",
+            app: source.app,
+            added: result.recipes,
+            skipped: result.skipped,
+            failed: result.failed,
+            url: appLink("/settings/import-export"),
+          },
+        })
         return result
       } finally {
         source.close()
