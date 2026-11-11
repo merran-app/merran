@@ -1,6 +1,8 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { Recipe } from "../../database/entities/index.ts"
 import type { RecipeBulkInput } from "../../http/schemas/recipes.ts"
+import { recipeRef } from "../webhooks/payloads.ts"
+import { record } from "../webhooks/record.ts"
 import { addTagsTo, removeTagsFrom } from "./tags.ts"
 
 /**
@@ -17,7 +19,13 @@ export async function bulkRecipes(
   switch (input.action) {
     case "delete": {
       const now = new Date()
-      for (const recipe of recipes) recipe.deletedAt = now
+      for (const recipe of recipes) {
+        recipe.deletedAt = now
+        await record(em, householdId, {
+          type: "recipe.deleted",
+          data: { recipe: recipeRef(recipe) },
+        })
+      }
       await em.flush()
       return { changed: recipes.length }
     }

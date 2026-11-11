@@ -9,6 +9,8 @@ import {
 } from "../../database/scope.ts"
 import type { JobHandler } from "../jobs/runner.ts"
 import type { FileStore } from "../storage/files.ts"
+import { recipeRef } from "../webhooks/payloads.ts"
+import { record } from "../webhooks/record.ts"
 import { removePhoto } from "./photos/photos.ts"
 import { summarize } from "./recipes.ts"
 import { pruneTags, tagsOf } from "./tags.ts"
@@ -107,10 +109,18 @@ async function findDeleted(em: EntityManager, recipeId: string) {
   return recipe
 }
 
+/** Tells webhooks a recipe came back. */
+const recordRestored = (em: EntityManager, recipe: Recipe) =>
+  record(em, recipe.household.id, {
+    type: "recipe.restored",
+    data: { recipe: recipeRef(recipe) },
+  })
+
 /** Puts a recipe back where it was. */
 export async function restoreDeleted(em: EntityManager, recipeId: string) {
   const recipe = await findDeleted(em, recipeId)
   recipe.deletedAt = null
+  await recordRestored(em, recipe)
   await em.flush()
   return recipe.slug
 }
@@ -146,7 +156,10 @@ export async function bulkDeleted(
     SEE_DELETED
   )
   if (input.action === "restore") {
-    for (const recipe of recipes) recipe.deletedAt = null
+    for (const recipe of recipes) {
+      recipe.deletedAt = null
+      await recordRestored(em, recipe)
+    }
     await em.flush()
   } else {
     await deleteRecipes(em, files, recipes)
