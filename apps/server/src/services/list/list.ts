@@ -615,7 +615,9 @@ export async function restoreItems(
         forMeals: snapshot.forMeals as MealShare[] | null,
       })
       if (item.checked !== snapshot.checked) {
-        await setChecked(tx, householdId, [item], snapshot.checked)
+        await setChecked(tx, householdId, [item], snapshot.checked, {
+          undo: true,
+        })
       }
       restored.push(item)
       if (!was) {

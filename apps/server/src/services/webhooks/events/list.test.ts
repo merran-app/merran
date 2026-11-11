@@ -14,6 +14,7 @@ import {
   eventsFrom,
   gatherNow,
   listenToEverything,
+  type SentEvent,
 } from "../../../test/webhooks.ts"
 import type { JobRunner } from "../../jobs/runner.ts"
 
@@ -445,4 +446,186 @@ describe("list.changed", () => {
       key: null,
     })
   })
+})
+
+describe("checking off", () => {
+  async function check(id: string, checked = true) {
+    const res = await kyle.patch(`/api/list/items/${id}`, { checked })
+    expect(res.status, await res.clone().text()).toBe(200)
+  }
+
+  async function bulk(ids: string[], action: "check" | "uncheck") {
+    const res = await kyle.post("/api/list/items/bulk", { ids, action })
+    expect(res.status, await res.clone().text()).toBe(200)
+  }
+
+  async function putAway() {
+    const res = await kyle.post("/api/list/put-away", {})
+    expect(res.status, await res.clone().text()).toBe(200)
+  }
+
+  /** Everything sent by doing something, gathered changes merged. */
+  async function sentBy(action: () => Promise<unknown>) {
+    return eventsFrom(database, home, async () => {
+      await action()
+      await gatherNow(database, jobs)
+    })
+  }
+
+  const ofType = (events: SentEvent[], type: string) =>
+    events.filter((event) => event.type === type)
+
+  test("checking things off is gathered", async () => {
+    await clearAll()
+    const items = [
+      await type("milk"),
+      await type("rye"),
+      await type("butter"),
+      await type("eggs"),
+      await type("jam"),
+      await type("tea"),
+    ]
+    await gatherNow(database, jobs)
+
+    const sent = await sentBy(async () => {
+      for (const item of items.slice(0, 3)) await check(item.id)
+      await bulk([items[3]!.id, items[4]!.id], "check")
+    })
+
+    const changes = ofType(sent, "list.changed")
+    expect(changes).toHaveLength(1)
+    expect(changes[0]).toMatchObject({
+      lists: [{ id: main, left: 1, checked: 5 }],
+      checked: 5,
+      unchecked: 0,
+    })
+
+    const unchecked = await sentBy(() => check(items[0]!.id, false))
+    expect(ofType(unchecked, "list.changed")).toEqual([
+      expect.objectContaining({ checked: 0, unchecked: 1 }),
+    ])
+  })
+
+  test("checking off the last thing finishes the list", async () => {
+    await clearAll()
+    const milk = await type("milk")
+    const bread = await type("rye")
+    await check(milk.id)
+    await gatherNow(database, jobs)
+
+    // Before any merge: it's sent at once, not gathered.
+    const sent = await eventsFrom(database, home, () => check(bread.id))
+
+    expect(ofType(sent, "list.completed")).toEqual([
+      expect.objectContaining({
+        list: { id: main, name: "Shopping list" },
+        bought: 2,
+        left: 0,
+        by: { id: expect.any(String), name: "Kyle" },
+        via: "app",
+      }),
+    ])
+  })
+
+  test("checking off a thing with others left doesn't finish it", async () => {
+    await clearAll()
+    const milk = await type("milk")
+    await type("rye")
+    await gatherNow(database, jobs)
+
+    const sent = await sentBy(() => check(milk.id))
+
+    expect(ofType(sent, "list.completed")).toEqual([])
+  })
+
+  test("a bulk check that finishes two lists finishes both", async () => {
+    await clearAll()
+    const milk = await type("milk")
+    const rice = await type("rice")
+    const flour = await type("flour")
+    await kyle.patch(`/api/list/items/${rice.id}`, { list: costco })
+    await kyle.patch(`/api/list/items/${flour.id}`, { list: costco })
+    await gatherNow(database, jobs)
+
+    const sent = await sentBy(() => bulk([milk.id, rice.id, flour.id], "check"))
+
+    const done = ofType(sent, "list.completed")
+    expect(done).toHaveLength(2)
+    expect(done).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          list: { id: main, name: "Shopping list" },
+          bought: 1,
+          left: 0,
+        }),
+        expect.objectContaining({
+          list: { id: costco, name: "Costco" },
+          bought: 2,
+          left: 0,
+        }),
+      ])
+    )
+    expect(ofType(sent, "list.changed")).toHaveLength(1)
+  })
+
+  test("one trip sends one list.completed", async () => {
+    // Finished by the last check, so putting it away adds nothing.
+    await clearAll()
+    const milk = await type("milk")
+    const bread = await type("rye")
+    await check(milk.id)
+    await gatherNow(database, jobs)
+    const finished = await sentBy(async () => {
+      await check(bread.id)
+      await putAway()
+    })
+    expect(ofType(finished, "list.completed")).toHaveLength(1)
+
+    // Put away with two things left unchecked: that ends the trip.
+    await clearAll()
+    const eggs = await type("eggs")
+    const jam = await type("jam")
+    await type("tea")
+    await type("honey")
+    await check(eggs.id)
+    await check(jam.id)
+    await gatherNow(database, jobs)
+    const left = await sentBy(putAway)
+    expect(ofType(left, "list.completed")).toEqual([
+      expect.objectContaining({
+        list: { id: main, name: "Shopping list" },
+        bought: 2,
+        left: 2,
+      }),
+    ])
+  })
+
+  test("Undo never finishes a list", async () => {
+    await clearAll()
+    const milk = await type("milk")
+    await check(milk.id)
+    // What Undo of taking it off would send back: checked.
+    const removed = await kyle.delete(`/api/list/items/${milk.id}`)
+    const snapshot = await removed.json()
+    expect(snapshot.checked).toBe(true)
+    await kyle.post("/api/list/restore", { items: [snapshot] })
+    await check(milk.id, false)
+    await gatherNow(database, jobs)
+
+    // Undo checks it again, and that was the last thing on the list.
+    const sent = await sentBy(async () => {
+      const res = await kyle.post("/api/list/restore", {
+        items: [snapshot],
+      })
+      expect(res.status, await res.clone().text()).toBe(200)
+    })
+
+    expect(ofType(sent, "list.completed")).toEqual([])
+    expect(ofType(sent, "list.changed")).toEqual([
+      expect.objectContaining({ checked: 1 }),
+    ])
+  })
+
+  // Needs pantry.changed, which arrives with the pantry's events.
+  test.todo("checking off puts things away")
 })

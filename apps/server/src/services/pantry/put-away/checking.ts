@@ -10,6 +10,7 @@ import {
 } from "../../../database/entities/index.ts"
 import { householdKeys } from "../../foods/aliases.ts"
 import { putsAwayWhenChecked } from "../../households/households.ts"
+import { recordChecking } from "../../webhooks/events/list.ts"
 import { amountOf, measured } from "../pantry.ts"
 import {
   amountBought,
@@ -30,24 +31,34 @@ const NOTHING = 0.001
  * Checks rows off, or not. Each row's change is claimed in the database
  * first, so two phones checking the same row at once put it away once.
  * Checking puts a row away when the household says to; unchecking takes
- * back what it put away, whatever the household says now.
+ * back what it put away, whatever the household says now. Says which rows
+ * it changed. `undo` is for Undo, which restores rows rather than finishes
+ * a list.
  */
 export async function setChecked(
   tx: EntityManager,
   householdId: string,
   items: readonly ShoppingItem[],
-  checked: boolean
-): Promise<void> {
+  checked: boolean,
+  options: { undo?: boolean } = {}
+): Promise<ShoppingItem[]> {
   const putAway = puttingAway(tx, householdId)
+  const changed: ShoppingItem[] = []
   for (const item of items) {
     const claimed = await claim(tx, item, checked)
     if (!claimed) continue
+    changed.push(item)
     if (checked) {
       await putAway(item)
     } else {
       await takeBack(tx, item)
     }
   }
+  // Once, with the totals, after the rows' other writes.
+  await recordChecking(tx, householdId, changed, checked, {
+    undo: options.undo ?? false,
+  })
+  return changed
 }
 
 /**
