@@ -152,7 +152,8 @@ export async function cancelJob(
 
 /**
  * Starts a job that's still to finish over: from its first try, now. One
- * that's running finishes this try first, and counts its next from the start.
+ * that's running finishes its try first, and then runs again from the
+ * start, whatever that try came to (the runner sees its attempts were reset).
  */
 export async function restartJob(em: EntityManager, job: Job) {
   job.attempts = 0

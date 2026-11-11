@@ -9,7 +9,7 @@ import {
   withActor,
   type Actor,
 } from "../webhooks/actor.ts"
-import { cancelJob, enqueue, retryJob } from "./jobs.ts"
+import { cancelJob, enqueue, restartJob, retryJob } from "./jobs.ts"
 import {
   JobRunner,
   JobStopped,
@@ -349,6 +349,67 @@ describe("the job runner", () => {
     const job = await enqueue(em(), { kind: "long" })
     await jobs.start()
     await expect.poll(async () => (await load(job.id)).status).toBe("running")
+    await jobs.stop()
+
+    expect(await load(job.id)).toMatchObject({ status: "queued", attempts: 0 })
+  })
+
+  test("a job started over while it runs runs again from its first try", async () => {
+    // However the try under way ends: done, failing with tries left, or
+    // failing its last.
+    for (const ending of ["done", "retry", "last"] as const) {
+      let letItEnd!: () => void
+      const held = new Promise<void>((resolve) => (letItEnd = resolve))
+      const tries: number[] = []
+      const jobs = runner([
+        {
+          kind: "held",
+          run: async ({ attempt }) => {
+            tries.push(attempt)
+            // Only the try under way is held; the one after just runs.
+            if (tries.length > 1) return
+            await held
+            if (ending !== "done") throw new Error(`Broke on try ${attempt}`)
+          },
+        },
+      ])
+      const job = await enqueue(em(), { kind: "held", maxAttempts: 3 })
+      if (ending === "last") {
+        await em().nativeUpdate(Job, { id: job.id }, { attempts: 2 })
+      }
+      const draining = jobs.drain()
+      await expect.poll(async () => (await load(job.id)).status).toBe("running")
+
+      const tx = em()
+      await restartJob(tx, await tx.findOneOrFail(Job, { id: job.id }))
+      letItEnd()
+      await draining
+
+      expect(tries, ending).toEqual([ending === "last" ? 3 : 1, 1])
+      expect(await load(job.id), ending).toMatchObject({
+        status: "done",
+        attempts: 1,
+      })
+    }
+  })
+
+  test("a job started over while it runs keeps its fresh start through a shutdown", async () => {
+    const jobs = runner([
+      {
+        kind: "long",
+        run: ({ signal }) =>
+          new Promise((_, reject) =>
+            signal.addEventListener("abort", () => reject(new JobStopped()))
+          ),
+      },
+    ])
+    const job = await enqueue(em(), { kind: "long", maxAttempts: 3 })
+    await em().nativeUpdate(Job, { id: job.id }, { attempts: 2 })
+    await jobs.start()
+    await expect.poll(async () => (await load(job.id)).status).toBe("running")
+
+    const tx = em()
+    await restartJob(tx, await tx.findOneOrFail(Job, { id: job.id }))
     await jobs.stop()
 
     expect(await load(job.id)).toMatchObject({ status: "queued", attempts: 0 })

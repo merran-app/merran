@@ -19,7 +19,7 @@ import {
   type ReceivedRequest,
   type Receiver,
 } from "../../test/webhook-receiver.ts"
-import { createPublicFetcher } from "../fetch/public-fetch.ts"
+import { createPublicFetcher, type Fetcher } from "../fetch/public-fetch.ts"
 import { enqueue } from "../jobs/jobs.ts"
 import type { JobRunner } from "../jobs/runner.ts"
 import type { Settings } from "../settings/settings.ts"
@@ -43,10 +43,36 @@ let receiver: Receiver
 const HOUR = 60 * 60_000
 const DAY = 24 * HOUR
 
+/** The next send, once a test asks to hold it under way. */
+let heldSend: { reached: () => void; released: Promise<void> } | null = null
+
+/**
+ * Holds the next send before it leaves, until the test lets it go, so the
+ * test can act while a try is under way.
+ */
+function holdNextSend() {
+  let reached!: () => void
+  let release!: () => void
+  const isReached = new Promise<void>((resolve) => (reached = resolve))
+  const released = new Promise<void>((resolve) => (release = resolve))
+  heldSend = { reached, released }
+  return { reached: isReached, release }
+}
+
+const publicFetcher = createPublicFetcher({ version: "test" })
+
+const holdingFetcher: Fetcher = async (url, options) => {
+  const held = heldSend
+  heldSend = null
+  if (held) {
+    held.reached()
+    await held.released
+  }
+  return publicFetcher(url, options)
+}
+
 beforeAll(async () => {
-  const test = await createTestApp({
-    fetcher: createPublicFetcher({ version: "test" }),
-  })
+  const test = await createTestApp({ fetcher: holdingFetcher })
   ;({ database, settings, jobs, close } = test)
   await setUpServer(test.app, test.setupCode)
   home = (await database.em.fork().findOneOrFail(Household, { name: "Home" }))
@@ -74,6 +100,7 @@ beforeEach(async () => {
   forgetWebhooks(home)
   receiver.requests.length = 0
   receiver.answer(200, "ok")
+  heldSend = null
 })
 
 /** An entity manager that sees only Home's rows, as a route's does. */
@@ -172,6 +199,10 @@ async function jobOf(delivery: WebhookDelivery) {
   if (!job) throw new Error("The delivery has no job")
   return job
 }
+
+/** A job as it is now. */
+const load = (jobId: string) =>
+  database.em.fork().findOneOrFail(Job, { id: jobId })
 
 /** Moves a job waiting for its next try on to now, and runs it. */
 async function tryAgainNow(job: Job) {
@@ -677,6 +708,54 @@ describe("resuming", () => {
         await inHome().findOneOrFail(WebhookDelivery, delivery.id)
       ).toMatchObject({ state: "waiting", tries: 1 })
     }
+  })
+
+  test("a delivery resent while a try is under way is sent again straight after", async () => {
+    const { id } = await addWebhook()
+    receiver.answer(500, "nope")
+    const underWay = await recordDeleted()
+    const lastTry = await recordDeleted()
+    const db = database.em.fork()
+    const lastTryJob = await jobOf(await deliveryOf(lastTry))
+    await db.nativeUpdate(
+      Job,
+      { id: lastTryJob.id },
+      { runAt: new Date(Date.now() + DAY) }
+    )
+
+    // One delivery's try is under way...
+    const send = holdNextSend()
+    const draining = jobs.drain()
+    await send.reached
+
+    // ...when the other's last try fails, pausing the webhook...
+    await db.nativeUpdate(
+      Job,
+      { id: lastTryJob.id },
+      { attempts: 7, runAt: new Date() }
+    )
+    jobs.wake()
+    await expect
+      .poll(async () => (await load(lastTryJob.id)).status)
+      .toBe("done")
+    expect((await webhookById(id)).state).toBe("paused")
+
+    // ...and someone resumes it, resending both.
+    const em = inHome()
+    const webhook = await em.findOneOrFail(Webhook, { id })
+    expect(await resumeWebhook(em, webhook, { resend: true })).toBe(2)
+    send.release()
+    await draining
+
+    // The try under way fails, but its delivery was resent meanwhile, so
+    // it's tried again now, not at that try's next turn.
+    const sendsOf = (event: WebhookEvent) =>
+      receiver.requests.filter(
+        (request) => request.headers["webhook-id"] === messageId(event)
+      )
+    expect(sendsOf(underWay)).toHaveLength(2)
+    expect(sendsOf(lastTry)).toHaveLength(2)
+    expect((await webhookById(id)).state).toBe("active")
   })
 })
 

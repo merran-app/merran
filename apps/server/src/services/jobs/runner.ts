@@ -339,21 +339,25 @@ export class JobRunner {
         // A job is Merran's own work, though adding it wakes the runner
         // from inside whichever request added it.
         const result = await withActor(MERRAN, () => handler.run(ctx))
-        await this.#finish(job.id, {
+        await this.#endTry(job.id, attempt, {
           status: "done",
           result: result ?? null,
           error: null,
+          finishedAt: new Date(),
         })
       } catch (err) {
         if (running.stopped === "cancelled") {
-          await this.#finish(job.id, { status: "cancelled" })
+          await this.#endTry(job.id, attempt, {
+            status: "cancelled",
+            finishedAt: new Date(),
+          })
         } else if (running.stopped === "shutdown") {
           // Runs again at the next start, without counting as a try.
-          await this.#em().nativeUpdate(
-            Job,
-            { id: job.id },
-            { status: "queued", attempts: attempt - 1, startedAt: null }
-          )
+          await this.#endTry(job.id, attempt, {
+            status: "queued",
+            attempts: attempt - 1,
+            startedAt: null,
+          })
         } else {
           const message = err instanceof Error ? err.message : String(err)
           if (attempt < job.maxAttempts) {
@@ -361,19 +365,19 @@ export class JobRunner {
             const wait =
               handler.retryDelays?.[attempt - 1] ??
               Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** (attempt - 1))
-            await this.#em().nativeUpdate(
-              Job,
-              { id: job.id },
-              {
-                status: "queued",
-                runAt: new Date(Date.now() + wait),
-                error: message,
-                startedAt: null,
-              }
-            )
+            await this.#endTry(job.id, attempt, {
+              status: "queued",
+              runAt: new Date(Date.now() + wait),
+              error: message,
+              startedAt: null,
+            })
           } else {
             logger.error({ err }, "Job failed")
-            await this.#finish(job.id, { status: "failed", error: message })
+            await this.#endTry(job.id, attempt, {
+              status: "failed",
+              error: message,
+              finishedAt: new Date(),
+            })
           }
         }
       } finally {
@@ -399,6 +403,43 @@ export class JobRunner {
       { id: jobId },
       { ...changes, finishedAt: new Date() }
     )
+  }
+
+  /**
+   * Saves how a try ended, if the job is still on the try it was taken for.
+   * One started over while it ran (`restartJob`) isn't: it goes back in the
+   * queue with the fresh start it was given, to run again from its first
+   * try, whatever this one came to.
+   */
+  async #endTry(
+    jobId: string,
+    attempt: number,
+    changes: Partial<
+      Pick<
+        Job,
+        | "status"
+        | "result"
+        | "error"
+        | "attempts"
+        | "runAt"
+        | "startedAt"
+        | "finishedAt"
+      >
+    >
+  ) {
+    const em = this.#em()
+    const saved = await em.nativeUpdate(
+      Job,
+      { id: jobId, attempts: attempt },
+      changes
+    )
+    if (saved === 0) {
+      await em.nativeUpdate(
+        Job,
+        { id: jobId },
+        { status: "queued", startedAt: null }
+      )
+    }
   }
 
   /** Makes sure a scheduled kind has its next run waiting. */
