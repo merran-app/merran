@@ -4412,6 +4412,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stores/walmart/filled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Say a Walmart fill is done
+         * @description The extension says it's finished filling the Walmart cart, with its totals: how many products went in and how many it left out. Webhooks are told the list was sent. What went in is recorded product by product, as it goes, with the sent route. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["walmartFilled"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stores/walmart/found": {
         parameters: {
             query?: never;
@@ -15741,7 +15761,8 @@ export interface components {
          *           "itemId": "0199e8b0-5a10-7a01-8b00-00000000001d",
          *           "packages": 1
          *         }
-         *       ]
+         *       ],
+         *       "notFound": 0
          *     }
          */
         SendBasket: {
@@ -15749,6 +15770,11 @@ export interface components {
                 itemId: string;
                 packages: number;
             }[];
+            /**
+             * @description How many lines of the basket had no product, and so aren't in lines. Only told to webhooks.
+             * @default 0
+             */
+            notFound: number;
         };
         /**
          * @example {
@@ -15830,6 +15856,18 @@ export interface components {
                 /** @description What to search Walmart for: the food as it's bought. */
                 words: string;
             }[];
+        };
+        /**
+         * @example {
+         *       "sent": 12,
+         *       "notFound": 2
+         *     }
+         */
+        WalmartFilled: {
+            /** @description How many products went in the cart. */
+            sent: number;
+            /** @description How many it left out: Walmart had no product for them. */
+            notFound: number;
         };
         /**
          * @example {
@@ -29212,6 +29250,55 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["WalmartBasket"];
                 };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Walmart isn't turned on on this server. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    walmartFilled: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WalmartFilled"];
+            };
+        };
+        responses: {
+            /** @description Noted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Not signed in. */
             401: {

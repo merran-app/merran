@@ -16879,6 +16879,12 @@
             },
             "minItems": 1,
             "maxItems": 300
+          },
+          "notFound": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "How many lines of the basket had no product, and so aren't in lines. Only told to webhooks."
           }
         },
         "required": [
@@ -16890,7 +16896,8 @@
               "itemId": "0199e8b0-5a10-7a01-8b00-00000000001d",
               "packages": 1
             }
-          ]
+          ],
+          "notFound": 0
         }
       },
       "PriceCheck": {
@@ -17020,6 +17027,29 @@
               "words": "eggs"
             }
           ]
+        }
+      },
+      "WalmartFilled": {
+        "type": "object",
+        "properties": {
+          "sent": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many products went in the cart."
+          },
+          "notFound": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many it left out: Walmart had no product for them."
+          }
+        },
+        "required": [
+          "sent",
+          "notFound"
+        ],
+        "example": {
+          "sent": 12,
+          "notFound": 2
         }
       },
       "WalmartFound": {
@@ -36690,6 +36720,73 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Walmart isn't turned on on this server.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/walmart/filled": {
+      "post": {
+        "operationId": "walmartFilled",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Say a Walmart fill is done",
+        "description": "The extension says it's finished filling the Walmart cart, with its totals: how many products went in and how many it left out. Webhooks are told the list was sent. What went in is recorded product by product, as it goes, with the sent route. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WalmartFilled"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Noted."
           },
           "401": {
             "description": "Not signed in.",

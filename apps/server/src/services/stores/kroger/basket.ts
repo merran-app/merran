@@ -17,6 +17,7 @@ import {
   type StoreLocation,
 } from "../../../database/entities/index.ts"
 import { householdToday } from "../../households/clock.ts"
+import { record } from "../../webhooks/record.ts"
 import { judgeSales } from "../history.ts"
 import { sentDetails } from "../sent.ts"
 import {
@@ -244,8 +245,10 @@ export async function saveKrogerProduct(
 export async function sendKrogerBasket(
   deps: BasketDeps,
   em: EntityManager,
-  lines: { itemId: string; packages: number }[]
+  householdId: string,
+  request: { lines: { itemId: string; packages: number }[]; notFound: number }
 ) {
+  const { lines, notFound } = request
   const { connection, location } = await ready(deps, em)
   const items = await em.find(ShoppingItem, {
     id: { $in: lines.map((line) => line.itemId) },
@@ -306,6 +309,15 @@ export async function sendKrogerBasket(
       ...sent,
     },
   }
+  // After the cart took it, so a send that failed tells nobody.
+  await record(em, householdId, {
+    type: "list.sent",
+    data: {
+      store: { id: "kroger", name: location.banner },
+      sent: Object.keys(sent).length,
+      notFound,
+    },
+  })
   await em.flush()
   return {
     sent: Object.keys(sent).length,

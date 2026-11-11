@@ -351,9 +351,16 @@ export const SendBasketSchema = z
       )
       .min(1)
       .max(300),
+    notFound: z.number().int().min(0).default(0).openapi({
+      description:
+        "How many lines of the basket had no product, and so aren't in lines. Only told to webhooks.",
+    }),
   })
   .openapi("SendBasket", {
-    example: { lines: [{ itemId: IDS.listItems[0], packages: 1 }] },
+    example: {
+      lines: [{ itemId: IDS.listItems[0], packages: 1 }],
+      notFound: 0,
+    },
   })
 
 export const SentSchema = z

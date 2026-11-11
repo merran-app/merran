@@ -345,12 +345,33 @@ async function runFind(job: Job & { kind: "find" }, connection: Connection) {
   job.state = "done"
 }
 
+/**
+ * Tells Merran a fill has ended, with its totals, so webhooks hear the list
+ * went to the cart. Only a report: a failure here never breaks the fill.
+ */
+async function reportFilled(
+  job: Job & { kind: "fill" },
+  connection: Connection
+) {
+  try {
+    await unwrap(
+      apiFor(connection).POST("/api/stores/walmart/filled", {
+        body: { sent: job.added.length, notFound: job.skipped.length },
+      }),
+      connection.origin
+    )
+  } catch {
+    // An older server doesn't have it, and a fill that went in is done.
+  }
+}
+
 /** Adds each product to the cart from its page, one at a time. */
 async function runFill(job: Job & { kind: "fill" }, connection: Connection) {
   const api = apiFor(connection)
   while (job.todo.length > 0) {
     if (job.stopping) {
       job.state = "stopped"
+      await reportFilled(job, connection)
       return
     }
     const next = job.todo[0]!
@@ -384,6 +405,7 @@ async function runFill(job: Job & { kind: "fill" }, connection: Connection) {
     if (job.todo.length > 0 && !job.stopping) await sleep(PAUSE_MS)
   }
   job.state = "done"
+  await reportFilled(job, connection)
 }
 
 /** Adds one product from its page: how many the cart has, or why not. */
