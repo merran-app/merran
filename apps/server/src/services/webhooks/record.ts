@@ -152,6 +152,10 @@ async function gatherChange(
       data: change.part,
     }),
   })
+  // Saved before its job is looked for, so outside a transaction any merge
+  // that starts from then on reads it. A crash before the job is saved
+  // leaves it for the next change's merge.
+  await em.flush()
   await queueGathering(em, householdId, change.type)
   await em.flush()
   return saved

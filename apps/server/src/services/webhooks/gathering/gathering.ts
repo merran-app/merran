@@ -70,10 +70,12 @@ const gatherJobKey = (householdId: string, type: GatheredEventType) =>
   `${WEBHOOK_GATHER_JOB}:${householdId}:${type}`
 
 /**
- * Makes sure a job will merge the household's gathered changes of `type`,
- * saved with the caller's next flush. One waiting will take this change
- * too. One running may have read the changes already, so it's started over
- * 30 seconds on, and the runner queues it again when its try ends.
+ * Makes sure a job will merge the household's gathered changes of `type`.
+ * Called once the change is written: within its transaction, or saved. One
+ * waiting will take this change too. One running may have read the changes
+ * already, so it's started over 30 seconds on, and the runner queues it
+ * again when its try ends. With neither, a new one is saved with the
+ * caller's next flush.
  */
 export async function queueGathering(
   em: EntityManager,
@@ -83,9 +85,21 @@ export async function queueGathering(
   const key = gatherJobKey(householdId, type)
   const runAt = new Date(Date.now() + GATHER_MS)
   const job = await em.findOne(Job, { key, status: { $in: [...ACTIVE] } })
-  if (job?.status === "queued") return
 
-  if (job?.status === "running") {
+  if (job) {
+    // The runner may take the job between that read and this change being
+    // saved, and merge without it. So the job is kept waiting by a write
+    // that only finds it while it's waiting. Within a transaction,
+    // Postgres then holds the runner's take until this change is saved,
+    // and SQLite lets one writer at a time; outside one, the change is
+    // saved already. If the runner took it meanwhile, it's running.
+    const kept = await em.nativeUpdate(
+      Job,
+      { id: job.id, status: "queued" },
+      { updatedAt: new Date() }
+    )
+    if (kept > 0) return
+
     // Only while it's still running: if it's finished meanwhile, this
     // change needs a job of its own.
     const rearmed = await em.nativeUpdate(

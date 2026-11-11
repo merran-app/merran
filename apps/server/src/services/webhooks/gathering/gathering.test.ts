@@ -1,4 +1,12 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest"
 import {
   Job,
   ShoppingItem,
@@ -24,7 +32,7 @@ import { withActor, type Actor } from "../actor.ts"
 import { recipeRef } from "../payloads.ts"
 import { record, WEBHOOK_DELIVERY_JOB } from "../record.ts"
 import { configureWebhooks, linkBase } from "../state.ts"
-import { GATHER_MS, WEBHOOK_GATHER_JOB } from "./gathering.ts"
+import { GATHER_MS, queueGathering, WEBHOOK_GATHER_JOB } from "./gathering.ts"
 
 let database: Database
 let jobs: JobRunner
@@ -281,6 +289,72 @@ describe("gathering", () => {
     expect(await sentEvents(database, home)).toEqual([
       expect.objectContaining({ type: "pantry.changed", usedUp: 1 }),
     ])
+  })
+
+  test("a change keeps a waiting job waiting with a write", async () => {
+    await withActor(KYLE, () =>
+      record(inHome(), home, { type: "pantry.changed", data: { added: 1 } })
+    )
+    const [job] = await gatherJobs()
+    const longAgo = new Date("2026-01-01T00:00:00Z")
+    await inHome().nativeUpdate(Job, { id: job!.id }, { updatedAt: longAgo })
+
+    await withActor(KYLE, () =>
+      record(inHome(), home, { type: "pantry.changed", data: { removed: 1 } })
+    )
+
+    // Written while still waiting, which holds the runner off until the
+    // change is saved, and no later than it was.
+    const [kept, ...others] = await gatherJobs()
+    expect(others).toEqual([])
+    expect(kept).toMatchObject({ id: job!.id, status: "queued", attempts: 0 })
+    expect(kept!.runAt).toEqual(job!.runAt)
+    expect(kept!.updatedAt.getTime()).toBeGreaterThan(longAgo.getTime())
+  })
+
+  test("a job taken between a change's read and its write is started over", async () => {
+    await withActor(KYLE, () =>
+      record(inHome(), home, { type: "pantry.changed", data: { added: 1 } })
+    )
+    const [waiting] = await gatherJobs()
+    // The runner takes it just after a change reads it.
+    await inHome().nativeUpdate(
+      Job,
+      { id: waiting!.id },
+      { status: "running", attempts: 1, startedAt: new Date() }
+    )
+    // The change reads it as it was, waiting.
+    const em = inHome()
+    vi.spyOn(em, "findOne").mockResolvedValueOnce(waiting as never)
+
+    const changed = Date.now()
+    await queueGathering(em, home, "pantry.changed")
+    await em.flush()
+
+    const [rearmed, ...others] = await gatherJobs()
+    expect(others).toEqual([])
+    expect(rearmed).toMatchObject({ id: waiting!.id, attempts: 0 })
+    expect(rearmed!.runAt.getTime()).toBeGreaterThanOrEqual(changed + GATHER_MS)
+  })
+
+  test("a change is saved before its job is looked for", async () => {
+    const em = inHome()
+    const findOne = em.findOne.bind(em)
+    let savedWhenLooked: number | null = null
+    vi.spyOn(em, "findOne").mockImplementation(async (entityName, ...rest) => {
+      if (entityName === Job) {
+        savedWhenLooked = await inHome().count(WebhookEvent, {})
+      }
+      return findOne(entityName, ...rest)
+    })
+
+    await withActor(KYLE, () =>
+      record(em, home, { type: "pantry.changed", data: { added: 1 } })
+    )
+
+    // So outside a transaction, a merge the runner starts from then on
+    // reads it.
+    expect(savedWhenLooked).toBe(1)
   })
 
   test("a webhook gone before the merge sends nothing", async () => {
