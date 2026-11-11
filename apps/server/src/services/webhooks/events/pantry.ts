@@ -9,6 +9,9 @@ import { record } from "../record.ts"
 // put in, used up, moved, changed and taken out, whatever did it. Each
 // pantry function says what it did, once, with its totals.
 
+/** What a change did to the pantry: a count it leaves out is none. */
+export type PantryCounts = GatheredPart<"pantry.changed">
+
 /**
  * Tells webhooks what a change did to the pantry. A change that counts
  * nothing records nothing.
@@ -16,9 +19,26 @@ import { record } from "../record.ts"
 export async function recordPantryChange(
   em: EntityManager,
   householdId: string,
-  counts: GatheredPart<"pantry.changed">
+  counts: PantryCounts
 ): Promise<void> {
   await record(em, householdId, { type: "pantry.changed", data: counts })
+}
+
+/**
+ * What taking a list row's put-away back out of one pantry item and
+ * putting it in again did, by the items' ids: the same item changed, or
+ * one taken from and another put in. Null is no item: nothing was there
+ * to take back from, or nothing went in.
+ */
+export function putInAgain(
+  tookFrom: string | null,
+  wentInto: string | null
+): PantryCounts {
+  if (tookFrom !== null && tookFrom === wentInto) return { changed: 1 }
+  return {
+    removed: tookFrom === null ? 0 : 1,
+    added: wentInto === null ? 0 : 1,
+  }
 }
 
 /** Something at home as people see it: where it's kept, and the rest. */

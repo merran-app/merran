@@ -11,7 +11,11 @@ import {
 import { householdKeys } from "../../foods/aliases.ts"
 import { putsAwayWhenChecked } from "../../households/households.ts"
 import { recordChecking } from "../../webhooks/events/list.ts"
-import { recordPantryChange } from "../../webhooks/events/pantry.ts"
+import {
+  putInAgain,
+  recordPantryChange,
+  type PantryCounts,
+} from "../../webhooks/events/pantry.ts"
 import { amountOf, measured } from "../pantry.ts"
 import {
   amountBought,
@@ -56,8 +60,8 @@ export async function setChecked(
       const wentIn = await putAway(item)
       if (wentIn) stored++
     } else {
-      const cameOut = await takeBack(tx, item)
-      if (cameOut) takenBack++
+      const tookFrom = await takeBack(tx, item)
+      if (tookFrom) takenBack++
     }
   }
   // Once, with the totals, after the rows' other writes.
@@ -149,28 +153,28 @@ function puttingAway(tx: EntityManager, householdId: string) {
  * what's left and never goes below nothing. If the pantry item's gone,
  * there's nothing to take. Undo sends what a row put away back from the
  * page, so a purchase or pantry item of another food is left alone. Says
- * whether there was a pantry item to take it back from.
+ * which pantry item it took it back from, if there was one.
  */
 export async function takeBack(
   tx: EntityManager,
   row: ShoppingItem
-): Promise<boolean> {
+): Promise<string | null> {
   const record = row.putAway
-  if (!record) return false
+  if (!record) return null
   row.putAway = null
   const isRowsFood = await foodTest(tx, row)
   const purchase = await tx.findOne(Purchase, { id: record.purchase })
   if (purchase && isRowsFood(purchase.foodKey)) tx.remove(purchase)
-  if (!record.pantryItem) return false
+  if (!record.pantryItem) return null
   const item = await tx.findOne(PantryItem, { id: record.pantryItem })
-  if (!item || !isRowsFood(item.foodKey)) return false
+  if (!item || !isRowsFood(item.foodKey)) return null
   item.forMeals = withoutShares(item, record.forMeals)
   if (record.quantity !== null) {
     takeBackAmount(tx, item, record)
   } else {
     takeBackWords(tx, item, record)
   }
-  return true
+  return item.id
 }
 
 /**
@@ -183,15 +187,15 @@ export async function takeBack(
  * food doesn't come back, and what someone said is at home stays as they
  * said it. When the row's own amounts can't be compared (words, or units
  * that don't convert), what went in comes out and the row goes in again,
- * into the item's place.
+ * into the item's place. Says what it did to the pantry, for webhooks.
  */
 export async function recountPutAway(
   tx: EntityManager,
   householdId: string,
   row: ShoppingItem
-): Promise<void> {
+): Promise<PantryCounts> {
   const record = row.putAway
-  if (!record) return
+  if (!record) return {}
   const context = await putAwayContext(tx, householdId)
   const bought = amountBought(row, context)
   const isRowsFood = await foodTest(tx, row)
@@ -202,11 +206,20 @@ export async function recountPutAway(
     found && isRowsFood(found.foodKey) && holdsWhatWentIn(found, record)
       ? found
       : null
-  if (item && !changeItem(tx, item, record, bought)) {
-    const keep = { storedIn: item.storedIn ?? null, useBy: item.useBy ?? null }
-    await takeBack(tx, row)
-    row.putAway = await putAwayItem(tx, householdId, row, context, keep)
-    return
+  // With no item that still holds what went in, the pantry stays as it is.
+  let counts: PantryCounts = {}
+  if (item) {
+    const inPlace = changeItem(tx, item, record, bought)
+    if (inPlace === null) {
+      const keep = {
+        storedIn: item.storedIn ?? null,
+        useBy: item.useBy ?? null,
+      }
+      const tookFrom = await takeBack(tx, row)
+      row.putAway = await putAwayItem(tx, householdId, row, context, keep)
+      return putInAgain(tookFrom, row.putAway.pantryItem)
+    }
+    counts = inPlace
   }
   const purchase = await tx.findOne(Purchase, { id: record.purchase })
   if (purchase && isRowsFood(purchase.foodKey)) {
@@ -222,6 +235,7 @@ export async function recountPutAway(
     unit: bought.unit,
     amountText: row.amountText ?? null,
   }
+  return counts
 }
 
 /**
@@ -248,37 +262,39 @@ function holdsWhatWentIn(item: PantryItem, record: PutAwayRecord) {
 
 /**
  * Changes a pantry item by how much more (or less) was bought than the row
- * first put in. Says whether it could: not when either is in words, or the
- * units don't convert.
+ * first put in. Says what that did to it, for webhooks, or null when it
+ * couldn't: when either is in words, or the units don't convert.
  */
 function changeItem(
   tx: EntityManager,
   item: PantryItem,
   record: PutAwayRecord,
   bought: { quantity: number | null; unit: string | null }
-) {
-  if (bought.quantity === null || record.quantity === null) return false
-  if (!measured(item)) return false
+): PantryCounts | null {
+  if (bought.quantity === null || record.quantity === null) return null
+  if (!measured(item)) return null
   const difference = subtractAmounts(bought, record, item.foodKey)
-  if (!difference) return false
-  if (Math.abs(difference.quantity) <= NOTHING) return true
+  if (!difference) return null
+  if (Math.abs(difference.quantity) <= NOTHING) return {}
   if (difference.quantity > 0) {
     const sum = addAmounts(amountOf(item), difference, item.foodKey)
-    if (!sum) return false
+    if (!sum) return null
     tx.assign(item, { quantity: sum.quantity, unit: sum.unit })
-    return true
+    return { changed: 1 }
   }
   const less = { quantity: -difference.quantity, unit: difference.unit }
   const rest = subtractAmounts(amountOf(item), less, item.foodKey)
-  if (!rest) return false
+  if (!rest) return null
   if (rest.quantity > NOTHING) {
     tx.assign(item, { quantity: rest.quantity, unit: rest.unit })
-  } else if (record.filledEmpty) {
-    tx.assign(item, { quantity: null, unit: null })
-  } else {
-    tx.remove(item)
+    return { changed: 1 }
   }
-  return true
+  if (record.filledEmpty) {
+    tx.assign(item, { quantity: null, unit: null })
+    return { changed: 1 }
+  }
+  tx.remove(item)
+  return { removed: 1 }
 }
 
 /**

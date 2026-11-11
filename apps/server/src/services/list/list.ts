@@ -31,6 +31,11 @@ import {
 import { putAwayContext, putAwayItem } from "../pantry/put-away/put-away.ts"
 import { asShown, recordListChange } from "../webhooks/events/list.ts"
 import {
+  putInAgain,
+  recordPantryChange,
+  type PantryCounts,
+} from "../webhooks/events/pantry.ts"
+import {
   aislesOf,
   describeAisle,
   findAisle,
@@ -293,7 +298,10 @@ export async function updateItem(
       !renamed &&
       changes.amount !== undefined &&
       amountDiffers(readAmount(changes.amount), item)
-    if (renamed) await takeBack(tx, item)
+    // What a rename or a new amount does to the pantry, told once at the
+    // end. Checking it off, or not, is setChecked's to tell.
+    let pantry: PantryCounts = {}
+    const tookFrom = renamed ? await takeBack(tx, item) : null
     if (nameChanged) {
       item.name = name
       item.foodKey = keyOf(name)
@@ -318,8 +326,14 @@ export async function updateItem(
       const context = await putAwayContext(tx, householdId)
       item.putAway = await putAwayItem(tx, householdId, item, context)
     }
+    if (renamed) {
+      // The old food out, and the new one in unless it's being unchecked.
+      // Then setChecked finds nothing left to take back, so it's all
+      // counted here.
+      pantry = putInAgain(tookFrom, item.putAway?.pantryItem ?? null)
+    }
     if (recounted && changes.checked !== false) {
-      await recountPutAway(tx, householdId, item)
+      pantry = await recountPutAway(tx, householdId, item)
     }
     // Last, so what goes in the pantry is the row as it's just been changed.
     if (changes.checked !== undefined) {
@@ -336,6 +350,7 @@ export async function updateItem(
         { movedFrom: [from] }
       )
     }
+    await recordPantryChange(tx, householdId, pantry)
     return (await describeItems(tx, [item]))[0]!
   })
 }

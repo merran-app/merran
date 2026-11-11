@@ -626,11 +626,31 @@ describe("checking off", () => {
     ])
   })
 
-  test("checking off puts things away, and unchecking takes them back", async () => {
-    // The household puts things away when they're checked off, as it does
-    // unless someone turns it off.
-    await clearAll()
+  // The household puts things away when they're checked off, as it does
+  // unless someone turns it off. The pantry starts empty, so what a row
+  // puts in is a thing of its own.
+
+  /** As clearAll, with the pantry emptied too. */
+  async function clearWithPantry() {
     await kyle.post("/api/pantry/clear")
+    await clearAll()
+  }
+
+  /** A row typed in and checked off, so it's in the pantry. */
+  async function boughtAndPutAway(text: string) {
+    const row = await type(text)
+    await check(row.id)
+    await gatherNow(database, jobs)
+    return row
+  }
+
+  async function edit(id: string, body: Record<string, unknown>) {
+    const res = await kyle.patch(`/api/list/items/${id}`, body)
+    expect(res.status, await res.clone().text()).toBe(200)
+  }
+
+  test("checking off puts things away, and unchecking takes them back", async () => {
+    await clearWithPantry()
     const milk = await type("milk")
     await gatherNow(database, jobs)
 
@@ -642,6 +662,59 @@ describe("checking off", () => {
     const unchecked = await sentBy(() => check(milk.id, false))
     expect(ofType(unchecked, "pantry.changed")).toEqual([
       expect.objectContaining({ added: 0, removed: 1 }),
+    ])
+  })
+
+  test("correcting a checked row's amount changes what it put away", async () => {
+    await clearWithPantry()
+    const chicken = await boughtAndPutAway("2 lb chicken thighs")
+
+    const sent = await sentBy(() => edit(chicken.id, { amount: "3 lb" }))
+
+    expect(ofType(sent, "pantry.changed")).toEqual([
+      expect.objectContaining({ added: 0, changed: 1, removed: 0 }),
+    ])
+  })
+
+  test("renaming a checked row takes the old food out and puts the new one in", async () => {
+    await clearWithPantry()
+    const chicken = await boughtAndPutAway("2 lb chicken thighs")
+
+    const sent = await sentBy(() => edit(chicken.id, { name: "ground beef" }))
+
+    expect(ofType(sent, "pantry.changed")).toEqual([
+      expect.objectContaining({ added: 1, changed: 0, removed: 1 }),
+    ])
+  })
+
+  test("renaming a checked row to another name for the same food changes it", async () => {
+    // The row joined what was there, which stays.
+    await clearWithPantry()
+    const stocked = await kyle.post("/api/pantry/items", {
+      text: "1 lb chicken thighs",
+    })
+    expect(stocked.status, await stocked.clone().text()).toBe(201)
+    const chicken = await boughtAndPutAway("2 lb chicken thighs")
+
+    const sent = await sentBy(() =>
+      edit(chicken.id, { name: "boneless skinless chicken thighs" })
+    )
+
+    expect(ofType(sent, "pantry.changed")).toEqual([
+      expect.objectContaining({ added: 0, changed: 1, removed: 0 }),
+    ])
+  })
+
+  test("renaming and unchecking at once takes it out once", async () => {
+    await clearWithPantry()
+    const chicken = await boughtAndPutAway("2 lb chicken thighs")
+
+    const sent = await sentBy(() =>
+      edit(chicken.id, { name: "ground beef", checked: false })
+    )
+
+    expect(ofType(sent, "pantry.changed")).toEqual([
+      expect.objectContaining({ added: 0, changed: 0, removed: 1 }),
     ])
   })
 })
