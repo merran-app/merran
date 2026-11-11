@@ -145,4 +145,50 @@ describe("public fetches", () => {
     await expect(fetcher(feed, unchanged)).rejects.toThrow(/error \(304\)/)
     server.close()
   })
+
+  test("sends a body exactly as given", async () => {
+    // A signature is made over these bytes, so they must arrive untouched.
+    let method = ""
+    let contentType = ""
+    const received: Buffer[] = []
+    const server = createServer((req, res) => {
+      method = req.method ?? ""
+      contentType = req.headers["content-type"] ?? ""
+      req.on("data", (chunk: Buffer) => received.push(chunk))
+      req.on("end", () => res.end("ok"))
+    })
+    await new Promise<void>((resolve) => server.listen(0, resolve))
+    const { port } = server.address() as AddressInfo
+    const fetcher = createPublicFetcher({ version: "0.0.0" })
+    const body = '{"title":"Crème brûlée 🍮"}'
+
+    await fetcher(`http://127.0.0.1:${port}/hook`, {
+      homeNetwork: true,
+      body,
+      headers: { "content-type": "application/json" },
+    })
+
+    expect(method).toBe("POST")
+    expect(contentType).toBe("application/json")
+    expect(Buffer.concat(received).equals(Buffer.from(body, "utf8"))).toBe(true)
+    server.close()
+  })
+
+  test("a redirect after a body is refused", async () => {
+    const server = createServer((_, res) => {
+      res.writeHead(307, { location: "http://127.0.0.1:1/elsewhere" })
+      res.end()
+    })
+    await new Promise<void>((resolve) => server.listen(0, resolve))
+    const { port } = server.address() as AddressInfo
+    const fetcher = createPublicFetcher({ version: "0.0.0" })
+
+    await expect(
+      fetcher(`http://127.0.0.1:${port}/hook`, {
+        homeNetwork: true,
+        body: "{}",
+      })
+    ).rejects.toThrow("That site sent a broken redirect.")
+    server.close()
+  })
 })

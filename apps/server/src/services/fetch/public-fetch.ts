@@ -118,6 +118,11 @@ export type FetchOptions = {
   json?: unknown
   /** Sends this as a form, in a POST: what OAuth token endpoints take. */
   form?: Record<string, string>
+  /**
+   * Sends this text as it is, in a POST, so something signed over its exact
+   * bytes still matches. The caller sets its `content-type` in `headers`.
+   */
+  body?: string
   /** Another method than GET, or POST with a body: PUT, say. */
   method?: "GET" | "POST" | "PUT" | "DELETE"
   /** More headers, like a token. */
@@ -220,6 +225,7 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
       referer,
       json,
       form,
+      body,
       method,
       headers = {},
       homeNetwork = false,
@@ -247,7 +253,11 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
                 method: method ?? "POST",
                 body: new URLSearchParams(form).toString(),
               }),
-          ...(method && json === undefined && form === undefined
+          ...(body === undefined ? {} : { method: method ?? "POST", body }),
+          ...(method &&
+          json === undefined &&
+          form === undefined &&
+          body === undefined
             ? { method }
             : {}),
           headers: {
@@ -291,7 +301,12 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
         const location = response.headers.get("location")
         await response.body?.cancel()
         // A POST isn't sent on to somewhere else.
-        if (!location || json !== undefined || form !== undefined) {
+        if (
+          !location ||
+          json !== undefined ||
+          form !== undefined ||
+          body !== undefined
+        ) {
           throw new AppError(
             "upstream",
             "site_error",
