@@ -7871,7 +7871,7 @@ export interface components {
              */
             everything: boolean;
             /**
-             * @description Up to 5 headers sent with each delivery, like a token for n8n's Header Auth. They can't replace `content-type`, `content-length`, `host`, `user-agent` or the `webhook-` headers.
+             * @description Up to 5 headers sent with each delivery, like a token for n8n's Header Auth. Each needs a value, on one line. They can't replace `content-type`, `content-length`, `host`, `user-agent` or the `webhook-` headers, or be one that's only for a single connection, like `connection` or `transfer-encoding`.
              * @default []
              */
             headers: {
@@ -7915,7 +7915,7 @@ export interface components {
             address?: string;
             events?: ("recipe.created" | "recipe.updated" | "recipe.deleted" | "recipe.restored")[];
             everything?: boolean;
-            /** @description Replaces its extra headers; `[]` removes them. */
+            /** @description Replaces its extra headers, so each needs its value again; `[]` removes them. */
             headers?: {
                 name: string;
                 value: string;

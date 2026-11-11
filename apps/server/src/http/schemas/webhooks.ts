@@ -110,6 +110,13 @@ const EventsSchema = z
   .array(z.enum(PICKABLE_WEBHOOK_EVENTS))
   .max(PICKABLE_WEBHOOK_EVENTS.length)
 
+/**
+ * What a header's value can hold and still be sent: tabs, spaces, visible
+ * ASCII and the rest of Latin-1, as fetch allows. Never a line break, which
+ * would start another header.
+ */
+const HEADER_VALUE = /^[\t\x20-\x7e\x80-\xff]*$/
+
 const HeadersSchema = z
   .array(
     z.object({
@@ -119,13 +126,20 @@ const HeadersSchema = z
           /^[A-Za-z0-9-]{1,64}$/,
           "Use up to 64 letters, digits and dashes."
         ),
-      value: z.string().max(1_000),
+      value: z
+        .string()
+        .min(1, "Give it a value.")
+        .max(1_000)
+        .regex(
+          HEADER_VALUE,
+          "A header can't hold line breaks or characters like emoji."
+        ),
     })
   )
   .max(5, "Use up to 5 headers.")
   .openapi({
     description:
-      "Up to 5 headers sent with each delivery, like a token for n8n's Header Auth. They can't replace `content-type`, `content-length`, `host`, `user-agent` or the `webhook-` headers.",
+      "Up to 5 headers sent with each delivery, like a token for n8n's Header Auth. Each needs a value, on one line. They can't replace `content-type`, `content-length`, `host`, `user-agent` or the `webhook-` headers, or be one that's only for a single connection, like `connection` or `transfer-encoding`.",
   })
 
 export const NewWebhookSchema = z
@@ -157,7 +171,8 @@ export const WebhookChangesSchema = z
     events: EventsSchema.optional(),
     everything: z.boolean().optional(),
     headers: HeadersSchema.optional().openapi({
-      description: "Replaces its extra headers; `[]` removes them.",
+      description:
+        "Replaces its extra headers, so each needs its value again; `[]` removes them.",
     }),
     paused: z.boolean().optional().openapi({
       description:

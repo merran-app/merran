@@ -300,6 +300,59 @@ describe("adding a webhook", () => {
     expect(receiver.requests[0]!.headers.authorization).toBe("Bearer x")
   })
 
+  test("each header needs a value it can carry", async () => {
+    const withValue = (value: string) =>
+      kyle.post(WEBHOOKS, newWebhook({ headers: [{ name: "X-Token", value }] }))
+
+    // Saved empty, it would fail n8n's Header Auth on every delivery.
+    const empty = await withValue("")
+    expect(empty.status).toBe(400)
+    expect((await errorOf(empty)).fields).toEqual({
+      "headers.0.value": "Give it a value.",
+    })
+
+    for (const value of ["one\r\nX-Other: two", "two\nlines", "lemon 🍋"]) {
+      const res = await withValue(value)
+      expect(res.status, value).toBe(400)
+      expect((await errorOf(res)).fields, value).toEqual({
+        "headers.0.value":
+          "A header can't hold line breaks or characters like emoji.",
+      })
+    }
+
+    // Tabs and accented letters are fine, and arrive as they were saved.
+    const { webhook } = await addWebhook({
+      headers: [{ name: "X-Token", value: "café\tcrème" }],
+    })
+    await kyle.post(`${WEBHOOKS}/${webhook.id}/test`)
+    expect(receiver.requests[0]!.headers["x-token"]).toBe("café\tcrème")
+  })
+
+  test("headers only for one connection can't be added", async () => {
+    const message = "That header can't be sent with a webhook."
+    for (const name of [
+      "Connection",
+      "keep-alive",
+      "Transfer-Encoding",
+      "TE",
+      "trailer",
+      "Upgrade",
+      "Proxy-Authorization",
+      "proxy-authenticate",
+    ]) {
+      const res = await kyle.post(
+        WEBHOOKS,
+        newWebhook({ headers: [{ name, value: "x" }] })
+      )
+      expect(res.status, name).toBe(400)
+      expect(await errorOf(res), name).toEqual({
+        code: "webhook_headers",
+        message,
+        fields: { headers: message },
+      })
+    }
+  })
+
   test("a household can have up to 10", async () => {
     for (let i = 0; i < 10; i++) {
       await addWebhook({ name: `Webhook ${i + 1}` })
@@ -464,6 +517,30 @@ describe("a webhook", () => {
     expect(receiver.requests.at(-1)!.headers["x-token"]).toBe(undefined)
   })
 
+  test("changing the headers without every value changes nothing", async () => {
+    const { webhook } = await addWebhook({
+      headers: [
+        { name: "X-Token", value: "kitchen" },
+        { name: "X-Other", value: "pantry" },
+      ],
+    })
+
+    // As the form would send after removing one: the other's value is
+    // sealed, so it isn't there to send back.
+    const removed = await kyle.patch(`${WEBHOOKS}/${webhook.id}`, {
+      headers: [{ name: "X-Token", value: "" }],
+    })
+    expect(removed.status).toBe(400)
+    expect((await errorOf(removed)).fields).toEqual({
+      "headers.0.value": "Give it a value.",
+    })
+
+    await kyle.post(`${WEBHOOKS}/${webhook.id}/test`)
+    const [sent] = receiver.requests
+    expect(sent!.headers["x-token"]).toBe("kitchen")
+    expect(sent!.headers["x-other"]).toBe("pantry")
+  })
+
   test("Send a test delivers once and shows the answer", async () => {
     const { webhook } = await addWebhook()
 
@@ -618,6 +695,7 @@ describe("deliveries", () => {
     const delivery = await deliveryOf(await recordDeleted())
     const resend = `${WEBHOOKS}/${webhook.id}/deliveries/${delivery.id}/resend`
 
+    // Its job is still to try it.
     const waiting = await kyle.post(resend)
     expect(waiting.status).toBe(409)
     expect(await errorOf(waiting)).toEqual({
@@ -657,6 +735,27 @@ describe("deliveries", () => {
     )
     expect(unknown.status).toBe(404)
     expect((await errorOf(unknown)).code).toBe("delivery_not_found")
+  })
+
+  test("a delivery left waiting with nothing to try it can be resent", async () => {
+    const { webhook } = await addWebhook({ everything: true })
+    const event = await recordDeleted()
+    const delivery = await deliveryOf(event)
+    // As after a crash, with the delivery saved and its job lost.
+    await database.em
+      .fork()
+      .nativeDelete(Job, { key: `${WEBHOOK_DELIVERY_JOB}:${delivery.id}` })
+
+    const resent = await kyle.post(
+      `${WEBHOOKS}/${webhook.id}/deliveries/${delivery.id}/resend`
+    )
+    expect(resent.status).toBe(200)
+    expect(await resent.json()).toMatchObject({ state: "waiting", tries: 0 })
+    expect(await activeJobsOf(delivery.id)).toHaveLength(1)
+
+    await jobs.drain()
+    expect(await deliveryOf(event)).toMatchObject({ state: "delivered" })
+    expect(receiver.requests).toHaveLength(1)
   })
 
   test("a test resent is still a test: tried once, and it never pauses", async () => {

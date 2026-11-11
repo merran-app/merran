@@ -192,7 +192,7 @@ The secret is `whsec_` and 32 random bytes, sealed in the secrets table, so `mer
 
 n8n can check the signature with the `standardwebhooks` package in a Code node. Home Assistant's webhook trigger checks nothing; its webhook id, in the address, is the secret, and the guide says so.
 
-A webhook may also have up to five headers of its own, sealed like the secret: for n8n's Header Auth, or a token a reverse proxy wants. They can't replace `content-type`, `user-agent`, `host`, `content-length` or the `webhook-` headers.
+A webhook may also have up to five headers of its own, sealed like the secret: for n8n's Header Auth, or a token a reverse proxy wants. They can't replace `content-type`, `user-agent`, `host`, `content-length` or the `webhook-` headers. Since November 10, 2026, each needs a value, on one line in the characters fetch can send (tabs, visible ASCII and the rest of Latin-1), and the headers that only apply to one connection (`connection`, `keep-alive`, `transfer-encoding`, `te`, `trailer`, `upgrade` and the two `proxy-` ones) are refused: fetch would refuse or drop them, and every delivery would fail without anyone seeing why. Changing the headers sends every value again, as they're never shown; the form asks for each.
 
 ### Sending
 
@@ -200,7 +200,8 @@ A webhook may also have up to five headers of its own, sealed like the secret: f
 - 10 seconds to answer. Redirects aren't followed: a 3xx is a failure.
 - Any 2xx is delivered. The first 1 KB of the answer, its status and how long it took are kept.
 - `410 Gone` pauses the webhook at once.
-- The delivery job (`webhooks.deliver`, its payload only the delivery's id) runs four at a time across the server.
+- The delivery job (`webhooks.deliver`, its payload only the delivery's id) runs two at a time across the server, fewer than the runner's four places. When looking for due work, the runner leaves out kinds already running as many as they may, so a pile of deliveries for a receiver that hangs can't keep imports, plans and schedules waiting (decided November 10, 2026).
+- `record()` saves the event, its deliveries and their jobs in one flush, so a delivery is never left waiting without a job, even when the change it's part of isn't in a transaction.
 
 ### Retries
 
@@ -211,11 +212,12 @@ The job runner gains an optional retry schedule for each kind of job, in place o
 - While a delivery is being retried, its webhook shows **Failing**, with the last error.
 - When a delivery runs out of tries, or gets a `410`, the webhook is **Paused**: nothing new is queued for it, and its waiting deliveries stop.
 - Its household admins see it on the Webhooks page, and get an email if the email module is set up. It goes in the audit log once there is one.
-- **Resume** starts sending new events, and offers to resend what failed in the last day.
+- **Resume** starts sending new events, and offers to resend what failed in the last day. It clears the last error too.
+- Only an active webhook pauses, so two last tries finishing together pause it once and send one email, and one paused by hand stays paused by hand.
 
 ### The deliveries log
 
-Each webhook shows its last 30 days of deliveries: the event, when it happened, how many tries, the status, the answer's status code, how long it took, the first 1 KB of the answer and the exact body sent. Each has **Resend**. The daily clean-up job (`jobs.cleanUp`) clears events and deliveries older than 30 days.
+Each webhook shows its last 30 days of deliveries: the event, when it happened, how many tries, the status, the answer's status code, how long it took, the first 1 KB of the answer and the exact body sent. A failed try shows its error and, under it, the answer, which is where a receiver like n8n says what was wrong. NUL characters are left out of the answer kept, since Postgres can't store them. Each has **Resend**. One still being tried can't be resent, unless no job is left to try it, as after a crash. The daily clean-up job (`jobs.cleanUp`) clears events and deliveries older than 30 days. While a webhook is open, its state and log refresh every few seconds.
 
 ## The home network
 

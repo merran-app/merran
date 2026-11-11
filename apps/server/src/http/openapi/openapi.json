@@ -4356,7 +4356,9 @@
                 },
                 "value": {
                   "type": "string",
-                  "maxLength": 1000
+                  "minLength": 1,
+                  "maxLength": 1000,
+                  "pattern": "^[\\t\\x20-\\x7e\\x80-\\xff]*$"
                 }
               },
               "required": [
@@ -4366,7 +4368,7 @@
             },
             "maxItems": 5,
             "default": [],
-            "description": "Up to 5 headers sent with each delivery, like a token for n8n's Header Auth. They can't replace `content-type`, `content-length`, `host`, `user-agent` or the `webhook-` headers."
+            "description": "Up to 5 headers sent with each delivery, like a token for n8n's Header Auth. Each needs a value, on one line. They can't replace `content-type`, `content-length`, `host`, `user-agent` or the `webhook-` headers, or be one that's only for a single connection, like `connection` or `transfer-encoding`."
           }
         },
         "required": [
@@ -4460,7 +4462,9 @@
                 },
                 "value": {
                   "type": "string",
-                  "maxLength": 1000
+                  "minLength": 1,
+                  "maxLength": 1000,
+                  "pattern": "^[\\t\\x20-\\x7e\\x80-\\xff]*$"
                 }
               },
               "required": [
@@ -4469,7 +4473,7 @@
               ]
             },
             "maxItems": 5,
-            "description": "Replaces its extra headers; `[]` removes them."
+            "description": "Replaces its extra headers, so each needs its value again; `[]` removes them."
           },
           "paused": {
             "type": "boolean",

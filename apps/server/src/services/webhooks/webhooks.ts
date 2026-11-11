@@ -11,7 +11,12 @@ import {
 import { checkWebhookAddress, homeNetworkAllowed } from "./addresses.ts"
 import { attemptDelivery, isMerransHeader } from "./deliver.ts"
 import { pauseWebhook, resumeWebhook } from "./pausing.ts"
-import { cancelDeliveryJobs, record, requeueDelivery } from "./record.ts"
+import {
+  activeDeliveryJob,
+  cancelDeliveryJobs,
+  record,
+  requeueDelivery,
+} from "./record.ts"
 import { newWebhookSecret } from "./signing.ts"
 import { webhooksEnabled } from "./state.ts"
 import { forgetWebhooks } from "./wanted.ts"
@@ -291,12 +296,16 @@ export async function findDelivery(
 /**
  * Sends a delivery again, from its first try. One still being tried, or
  * one for a paused webhook, which would only be stopped again, can't be.
+ * One left waiting with no job to try it, as after a crash, can.
  */
 export async function resendDelivery(
   em: EntityManager,
   delivery: WebhookDelivery
 ): Promise<WebhookDelivery> {
-  if (delivery.state === "waiting") {
+  if (
+    delivery.state === "waiting" &&
+    (await activeDeliveryJob(em, delivery.id))
+  ) {
     throw new AppError(
       "conflict",
       "delivery_waiting",
@@ -360,11 +369,37 @@ function checkEvents(webhook: {
   throw new AppError("invalid", "webhook_events", message, { events: message })
 }
 
-/** Refuses a header that would replace one Merran sets, however it's written. */
-function checkHeaders(headers: readonly WebhookHeader[]) {
-  if (!headers.some((header) => isMerransHeader(header.name))) return
+/**
+ * Headers about one connection rather than the request, which fetch
+ * refuses or drops, so a delivery would fail or go without them.
+ */
+const HOP_BY_HOP_HEADERS = new Set([
+  "connection",
+  "keep-alive",
+  "transfer-encoding",
+  "te",
+  "trailer",
+  "upgrade",
+  "proxy-authorization",
+  "proxy-authenticate",
+])
 
-  const message = "That header is one Merran sets itself."
+/**
+ * Refuses a header that would replace one Merran sets, or one that can't
+ * be sent, however it's written.
+ */
+function checkHeaders(headers: readonly WebhookHeader[]) {
+  if (headers.some((header) => isMerransHeader(header.name))) {
+    refuseHeaders("That header is one Merran sets itself.")
+  }
+  if (
+    headers.some((header) => HOP_BY_HOP_HEADERS.has(header.name.toLowerCase()))
+  ) {
+    refuseHeaders("That header can't be sent with a webhook.")
+  }
+}
+
+function refuseHeaders(message: string): never {
   throw new AppError("invalid", "webhook_headers", message, {
     headers: message,
   })
