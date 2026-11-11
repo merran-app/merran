@@ -34,7 +34,7 @@ Cooking and timers, and a daily summary, are still to come. A webhook set to **E
 
 - You need to be an **Owner** or **Admin** of the household. Members don't see webhooks.
 - A server admin can turn webhooks off for the whole server, with the **Let households send webhooks** switch in **Settings → Webhooks → Whole server** or `MERRAN_WEBHOOKS=false`. Then households don't see the **Webhooks** page, and saved webhooks are kept for later.
-- Set the server's public address (`MERRAN_PUBLIC_URL`) if you want each recipe's `url` in the messages. Without it, `url` is `null`.
+- Set the server's public address (`MERRAN_PUBLIC_URL`) if you want the links in the messages: each recipe's `url`, and the ones for imports, Review and a week of the plan. Without it, every `url` is `null`.
 - Webhooks are managed in the app only. API keys can't add, change or read them.
 - A household can have up to 10 webhooks, and each can have up to 5 extra headers.
 
@@ -174,7 +174,7 @@ Messages carry ids, names, titles and links, never whole recipes. Fetch more thr
 
 ### Gathered events
 
-Plan, list and pantry changes are gathered: `plan.changed`, `list.changed` and `pantry.changed` wait 30 seconds and are sent as one event for each person, so someone checking off 30 things at the store sends one `list.changed`, not 30. The counts in it are exact. Each person gets their own event, so `by`, `via` and `key` stay true, and a flow can still ignore the change it caused. A change made while the 30 seconds are running starts them again, so an event is sent 30 seconds after the last change.
+Plan, list and pantry changes are gathered: `plan.changed`, `list.changed` and `pantry.changed` wait 30 seconds and are sent as one event for each person, so someone checking off 30 things at the store sends one `list.changed`, not 30. The counts in it are exact. Each person gets their own event, so `by`, `via` and `key` stay true, and a flow can still ignore the change it caused. The 30 seconds start with the first change. Changes that arrive meanwhile join that event and don't extend the wait, so it goes out about 30 to 35 seconds after the first change. A change that arrives just as the event is being put together goes out with the next one, about 30 seconds later.
 
 ### recipe.created
 
