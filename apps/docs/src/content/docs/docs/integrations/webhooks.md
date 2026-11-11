@@ -174,7 +174,7 @@ Messages carry ids, names, titles and links, never whole recipes. Fetch more thr
 
 ### Gathered events
 
-Plan, list and pantry changes are gathered: `plan.changed`, `list.changed` and `pantry.changed` wait 30 seconds and are sent as one event for each person, so someone checking off 30 things at the store sends one `list.changed`, not 30. The counts in it are exact. Each person gets their own event, so `by`, `via` and `key` stay true, and a flow can still ignore the change it caused. The 30 seconds start with the first change. Changes that arrive meanwhile join that event and don't extend the wait, so it goes out about 30 to 35 seconds after the first change. A change that arrives just as the event is being put together goes out with the next one, about 30 seconds later.
+Plan, list and pantry changes are gathered: `plan.changed`, `list.changed` and `pantry.changed` wait 30 seconds and are sent as one event for each person, so someone checking off 30 things at the store sends one `list.changed`, not 30. The counts in it are exact. Each person gets their own event, so `by`, `via` and `key` stay true, and a flow can still ignore the change it caused. The 30 seconds start with the first change. Changes that arrive meanwhile join that event and don't extend the wait, so it goes out about 30 to 35 seconds after the first change. A change that arrives just as the event is being put together goes out with the next one, about 30 seconds later. An event's `timestamp` is when the last change in it was made, not when it was sent: the `list.changed` for a trip's check-offs has the time of the last check, which is also when the `list.completed` it caused happened.
 
 ### recipe.created
 

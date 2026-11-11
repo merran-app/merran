@@ -5430,7 +5430,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "recipe.created";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -5566,7 +5566,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "recipe.updated";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -5699,7 +5699,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "recipe.deleted";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -5826,7 +5826,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "recipe.restored";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -5953,7 +5953,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "import.finished";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -6087,7 +6087,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "tidy.ready";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -6218,7 +6218,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "review.waiting";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -6355,7 +6355,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "plan.changed";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -6484,7 +6484,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "plan.autoplanned";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -6599,7 +6599,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "meal.cooked";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -6770,7 +6770,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "meal.skipped";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -6935,7 +6935,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "list.changed";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -7073,7 +7073,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "list.completed";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -7199,7 +7199,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "list.sent";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -7326,7 +7326,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "pantry.changed";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {
@@ -7447,7 +7447,7 @@ export interface webhooks {
                     "application/json": {
                         /** @enum {string} */
                         type: "webhook.test";
-                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
                         timestamp: string;
                         /**
                          * @example {

@@ -469,7 +469,7 @@ export function webhookEnvelopeSchema<T extends WebhookEventType>(type: T) {
       type: z.literal(type),
       timestamp: z.string().openapi({
         description:
-          "When it happened, which isn't always when it's sent: deliveries can arrive out of order.",
+          "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made.",
       }),
       data,
     })

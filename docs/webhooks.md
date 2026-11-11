@@ -103,7 +103,7 @@ Every event is declared once, in `packages/shared/src/webhooks/events.ts`: its n
 
 ### Gathering
 
-`plan.changed`, `list.changed` and `pantry.changed` are gathered. Each change still records a small event, marked as gathered, and the first one queues a keyed job 30 seconds later (`webhooks.gather:<household>:<type>`), which the changes after it find by its key. The key has no unique index, so two transactions that both find no job each make one; the second finds nothing left to merge, or only what came since, so it's harmless. That job merges the household's gathered events of that type into one, which is sent like any other. The counts are exact, because nothing is added up in place. Each who (`by`, `via`, `key`) gets their own event.
+`plan.changed`, `list.changed` and `pantry.changed` are gathered. Each change still records a small event, marked as gathered, and the first one queues a keyed job 30 seconds later (`webhooks.gather:<household>:<type>`), which the changes after it find by its key. The key has no unique index, so two transactions that both find no job each make one; the second finds nothing left to merge, or only what came since, so it's harmless. That job merges the household's gathered events of that type into one, which is sent like any other. The counts are exact, because nothing is added up in place. Each who (`by`, `via`, `key`) gets their own event, and since November 11, 2026 it's stamped with when that person's last change in it was made, not when it was merged, as `timestamp` is when it happened: a receiver ordering by it no longer sees the `list.changed` for a trip's checks 30 seconds after the `list.completed` the last check caused, but at the same moment.
 
 How it holds together:
 

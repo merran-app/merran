@@ -45036,7 +45036,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -45293,7 +45293,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -45550,7 +45550,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -45782,7 +45782,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -46014,7 +46014,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -46275,7 +46275,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -46540,7 +46540,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -46799,7 +46799,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -47047,7 +47047,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -47258,7 +47258,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -47601,7 +47601,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -47927,7 +47927,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -48201,7 +48201,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -48431,7 +48431,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -48665,7 +48665,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",
@@ -48891,7 +48891,7 @@
                   },
                   "timestamp": {
                     "type": "string",
-                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
                   },
                   "data": {
                     "type": "object",

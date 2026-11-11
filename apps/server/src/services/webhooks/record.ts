@@ -96,6 +96,11 @@ export async function sendEvent<T extends WebhookEventType>(
     actor?: Actor
     /** One webhook only, with no job, for Send a test. */
     only?: string
+    /**
+     * When it happened, if that wasn't now: a gathered event happened with
+     * the last change merged into it, not when it was merged.
+     */
+    createdAt?: Date
   }
 ): Promise<WebhookEvent | null> {
   const webhookIds = await webhooksFor(em, householdId, event)
@@ -105,6 +110,7 @@ export async function sendEvent<T extends WebhookEventType>(
     household: householdId,
     type: event.type,
     payload: await payloadOf(em, householdId, event),
+    ...(event.createdAt ? { createdAt: event.createdAt } : {}),
   })
   const deliveries = webhookIds.map((webhookId) =>
     em.create(WebhookDelivery, {

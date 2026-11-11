@@ -29,6 +29,7 @@ import {
 } from "../../../test/webhooks.ts"
 import type { JobRunner } from "../../jobs/runner.ts"
 import { withActor, type Actor } from "../actor.ts"
+import { envelopeBody } from "../envelope.ts"
 import { recipeRef } from "../payloads.ts"
 import { record, WEBHOOK_DELIVERY_JOB } from "../record.ts"
 import { configureWebhooks, linkBase } from "../state.ts"
@@ -222,6 +223,47 @@ describe("gathering", () => {
         via: "api",
         key: { id: "k2", name: "Home Assistant" },
       }),
+    ])
+  })
+
+  test("each event happened when its last change was made", async () => {
+    const times = {
+      kyleFirst: new Date("2026-11-11T10:00:00.000Z"),
+      n8n: new Date("2026-11-11T10:00:03.000Z"),
+      kyleLast: new Date("2026-11-11T10:00:05.000Z"),
+    }
+    const changes: [Actor, Date][] = [
+      [KYLE, times.kyleFirst],
+      [N8N, times.n8n],
+      [KYLE, times.kyleLast],
+    ]
+    for (const [actor, at] of changes) {
+      const row = await withActor(actor, () =>
+        record(inHome(), home, { type: "pantry.changed", data: { added: 1 } })
+      )
+      // As if the change were made then.
+      await inHome().nativeUpdate(
+        WebhookEvent,
+        { id: row!.id },
+        { createdAt: at }
+      )
+    }
+
+    await gatherNow(database, jobs)
+
+    const sent = await inHome().find(
+      WebhookEvent,
+      { gathered: false },
+      { orderBy: { id: "asc" } }
+    )
+    const stamped = sent.map((event) => ({
+      via: event.payload.via,
+      added: event.payload.added,
+      timestamp: JSON.parse(envelopeBody(event)).timestamp,
+    }))
+    expect(stamped).toEqual([
+      { via: "app", added: 2, timestamp: times.kyleLast.toISOString() },
+      { via: "api", added: 1, timestamp: times.n8n.toISOString() },
     ])
   })
 

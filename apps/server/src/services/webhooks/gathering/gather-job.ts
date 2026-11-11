@@ -121,6 +121,8 @@ async function tallies(
 type Changes = {
   actor: Actor
   parts: Record<string, unknown>[]
+  /** When the last of them was made, which is when their event happened. */
+  lastAt: Date
 }
 
 /**
@@ -140,10 +142,11 @@ function byWho(rows: WebhookEvent[]): Changes[] {
 
     let group = groups.get(who)
     if (!group) {
-      group = { actor, parts: [] }
+      group = { actor, parts: [], lastAt: row.createdAt }
       groups.set(who, group)
     }
     group.parts.push(part)
+    if (row.createdAt > group.lastAt) group.lastAt = row.createdAt
   }
   return [...groups.values()]
 }
@@ -160,8 +163,11 @@ function gatheredType(payload: Record<string, unknown>): GatheredEventType {
 /**
  * Merges the household's gathered changes of one type and sends an event
  * for each person, in one transaction, so the changes are marked merged
- * only if their events are saved. When no webhook wants them any more, or
- * webhooks are off, they're marked merged and nothing is sent.
+ * only if their events are saved. Each event is stamped with its last
+ * change, so a receiver ordering by `timestamp` sees it where it happened,
+ * not 30 seconds on, after events sent at once since. When no webhook
+ * wants them any more, or webhooks are off, they're marked merged and
+ * nothing is sent.
  */
 async function mergeAndSend<T extends GatheredEventType>(
   tx: EntityManager,
@@ -181,6 +187,7 @@ async function mergeAndSend<T extends GatheredEventType>(
       type,
       data: await mergeParts(tx, type, group.parts as GatheredPart<T>[]),
       actor: group.actor,
+      createdAt: group.lastAt,
     })
     if (event) sent++
   }
