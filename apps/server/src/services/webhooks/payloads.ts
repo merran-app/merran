@@ -522,7 +522,7 @@ export const WEBHOOK_SUMMARIES: Record<
   "list.sent": {
     summary: "A shopping list was sent to a store",
     description:
-      "Sent when a list goes to a store's cart: Kroger's, or Walmart's through the extension. It says how many things were sent and how many the store had no product for. An extension too old to report when it's done sends nothing for Walmart.",
+      "Sent when a list goes to a store's cart: Kroger's, or Walmart's through the extension. It says how many things were sent and how many the store had no product for. The extension reports each stretch of a Walmart fill, with what's new since its last report, so a fill that's stopped and carried on sends one for each stretch and counts each product once. An extension too old to report sends nothing for Walmart.",
   },
   "pantry.changed": {
     summary: "The pantry changed",

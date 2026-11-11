@@ -590,7 +590,7 @@ Sent when the last unchecked thing on a list is checked off, however that's done
 
 ### list.sent
 
-Sent when a list goes to a store's cart: Kroger's, or Walmart's through the [browser extension](../browser-extension/). `store` is `kroger` or `walmart`, `sent` is how many things went to the cart, and `notFound` how many the store had no product for. For Walmart, the extension tells Merran when its fill is done, so this arrives when the run ends. An extension too old to report that sends no `list.sent` for Walmart.
+Sent when a list goes to a store's cart: Kroger's, or Walmart's through the [browser extension](../browser-extension/). `store` is `kroger` or `walmart`, `sent` is how many things went to the cart, and `notFound` how many the store had no product for. For Walmart, the extension reports each stretch of filling: when the fill is done, when someone stops it or it fails, and when a fill paused at Walmart's check that it's a person is stopped there. Each says only what went in and was left out since the last, so a fill stopped and carried on sends two, and adding up `sent` counts each product once. An extension too old to report sends no `list.sent` for Walmart.
 
 ```json
 {

@@ -4422,8 +4422,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Say a Walmart fill is done
-         * @description The extension says it's finished filling the Walmart cart, with its totals: how many products went in and how many it left out. Webhooks are told the list was sent. What went in is recorded product by product, as it goes, with the sent route. With an API key, it needs the `list: write` permission.
+         * Say what a Walmart fill put in the cart
+         * @description The extension says it's stopped filling the Walmart cart: the fill is done, someone stopped it, it failed, or a fill paused at Walmart's check was dismissed. It says how many products went in and how many it left out since it last said, so a fill that's stopped and carried on counts each product once. Webhooks are told the list was sent. What went in is recorded product by product, as it goes, with the sent route. With an API key, it needs the `list: write` permission.
          */
         post: operations["walmartFilled"];
         delete?: never;
@@ -7187,7 +7187,7 @@ export interface webhooks {
         put?: never;
         /**
          * A shopping list was sent to a store
-         * @description Sent when a list goes to a store's cart: Kroger's, or Walmart's through the extension. It says how many things were sent and how many the store had no product for. An extension too old to report when it's done sends nothing for Walmart.
+         * @description Sent when a list goes to a store's cart: Kroger's, or Walmart's through the extension. It says how many things were sent and how many the store had no product for. The extension reports each stretch of a Walmart fill, with what's new since its last report, so a fill that's stopped and carried on sends one for each stretch and counts each product once. An extension too old to report sends nothing for Walmart.
          */
         post: {
             parameters: {
@@ -15864,9 +15864,9 @@ export interface components {
          *     }
          */
         WalmartFilled: {
-            /** @description How many products went in the cart. */
+            /** @description How many products went in the cart since the extension last said. */
             sent: number;
-            /** @description How many it left out: Walmart had no product for them. */
+            /** @description How many it left out since then: Walmart had no product for them. */
             notFound: number;
         };
         /**

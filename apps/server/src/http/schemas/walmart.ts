@@ -154,13 +154,13 @@ export const WalmartPickSchema = z
 
 export const WalmartFilledSchema = z
   .object({
-    sent: z
-      .number()
-      .int()
-      .min(0)
-      .openapi({ description: "How many products went in the cart." }),
+    sent: z.number().int().min(0).openapi({
+      description:
+        "How many products went in the cart since the extension last said.",
+    }),
     notFound: z.number().int().min(0).openapi({
-      description: "How many it left out: Walmart had no product for them.",
+      description:
+        "How many it left out since then: Walmart had no product for them.",
     }),
   })
   .openapi("WalmartFilled", { example: { sent: 12, notFound: 2 } })

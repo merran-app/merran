@@ -14,9 +14,9 @@ const route = createRoute({
   path: "/stores/walmart/filled",
   operationId: "walmartFilled",
   tags: ["Stores"],
-  summary: "Say a Walmart fill is done",
+  summary: "Say what a Walmart fill put in the cart",
   description:
-    "The extension says it's finished filling the Walmart cart, with its totals: how many products went in and how many it left out. Webhooks are told the list was sent. What went in is recorded product by product, as it goes, with the sent route.",
+    "The extension says it's stopped filling the Walmart cart: the fill is done, someone stopped it, it failed, or a fill paused at Walmart's check was dismissed. It says how many products went in and how many it left out since it last said, so a fill that's stopped and carried on counts each product once. Webhooks are told the list was sent. What went in is recorded product by product, as it goes, with the sent route.",
   ...openToKeys("list", "write"),
   request: {
     body: {

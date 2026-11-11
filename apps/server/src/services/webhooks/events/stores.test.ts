@@ -11,7 +11,8 @@ import { eventsFrom, listenToEverything } from "../../../test/webhooks.ts"
 
 // list.sent: a list going to a store's cart. Kroger's is sent by the server,
 // so it tells what went. Walmart's is filled by the extension, which says
-// when it's done. Kroger here is a fake that knows a store and two products.
+// what each stretch of filling did. Kroger here is a fake that knows a
+// store and two products.
 
 const CLIENT_ID = "merran-test"
 const CLIENT_SECRET = "kroger-test-secret"
@@ -172,7 +173,7 @@ describe("sending to a store", () => {
     }
   })
 
-  test("the extension says when a Walmart fill is done", async () => {
+  test("the extension says what a Walmart fill did", async () => {
     // Off until the server admin turns it on.
     const off = await kyle.post("/api/stores/walmart/filled", {
       sent: 4,
