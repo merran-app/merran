@@ -21,6 +21,7 @@ import { inHouseholdTransaction } from "../../../database/transactions.ts"
 import { toNumber } from "../../../database/numbers.ts"
 import { KROGER, krogerConnection } from "../../stores/kroger/connection.ts"
 import { householdToday } from "../../households/clock.ts"
+import { recordListChange } from "../../webhooks/events/list.ts"
 import { store } from "../pantry.ts"
 import { placeOf } from "../places.ts"
 
@@ -180,6 +181,10 @@ export async function putAway(
     }
     for (const item of checked) tx.remove(item)
     await tx.flush()
+    // Each list it put away, told once with the total.
+    await recordListChange(tx, householdId, checked, {
+      removed: checked.length,
+    })
     return { stored, cleared: checked.length - stored }
   })
 }

@@ -16,6 +16,7 @@ import {
 import { householdKeys } from "../../foods/aliases.ts"
 import { useAi, type AiDeps } from "../../ai/run.ts"
 import { householdToday } from "../../households/clock.ts"
+import { recordListChange } from "../../webhooks/events/list.ts"
 import { placeFor, store } from "../pantry.ts"
 import { inHouseholdTransaction } from "../../../database/transactions.ts"
 import { toNumber } from "../../../database/numbers.ts"
@@ -454,7 +455,7 @@ export async function addReceipt(
     const byId = new Map(receipt.lines.map((line) => [line.id, line]))
     const today = await householdToday(tx, householdId)
     let added = 0
-    let offTheList = 0
+    const offTheList: ShoppingItem[] = []
     for (const chosen of options.items) {
       const line = byId.get(chosen.id)
       const name = chosen.name.trim()
@@ -502,7 +503,7 @@ export async function addReceipt(
       // A put-away row stays: it's checked, and what it put away stays put.
       if (bought && !line.listItem?.putAway) {
         tx.remove(bought)
-        offTheList++
+        offTheList.push(bought)
       }
       // So the next of the same food joins it.
       await tx.flush()
@@ -510,7 +511,10 @@ export async function addReceipt(
     }
     tx.remove(receipt)
     await tx.flush()
-    return { added, offTheList, receiptId: receipt.id }
+    await recordListChange(tx, householdId, offTheList, {
+      removed: offTheList.length,
+    })
+    return { added, offTheList: offTheList.length, receiptId: receipt.id }
   })
   await files.remove(`receipts/${householdId}/${result.receiptId}`)
   return { added: result.added, offTheList: result.offTheList }

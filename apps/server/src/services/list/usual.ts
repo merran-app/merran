@@ -20,6 +20,7 @@ import { aislesOf } from "./aisles.ts"
 import { describeItems } from "./list.ts"
 import { listsOf } from "./lists.ts"
 import { householdKeys } from "../foods/aliases.ts"
+import { recordListChange } from "../webhooks/events/list.ts"
 
 // Usual buys: what the household gets every so often, learned from the
 // shopping it's put away, offered when it's due again. Not what's on the
@@ -131,6 +132,7 @@ export async function addUsualBuys(
       source: "usual",
     })
   )
+  await recordListChange(em, householdId, added, { added: added.length })
   await em.flush()
   return describeItems(em, added)
 }

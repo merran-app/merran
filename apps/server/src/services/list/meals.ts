@@ -23,6 +23,7 @@ import { coverFromPantry, releasePantry } from "../pantry/stock.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import { toNumber } from "../../database/numbers.ts"
+import { recordListChange } from "../webhooks/events/list.ts"
 import { aislesOf } from "./aisles.ts"
 import { listsOf } from "./lists.ts"
 
@@ -97,7 +98,11 @@ export async function listMeals(
  * goes; one with more on it keeps the rest. What's at home set aside for
  * them is free again, unless they were skipped: that's a leftover to use.
  */
-async function unlistMeals(em: EntityManager, entries: readonly PlanEntry[]) {
+async function unlistMeals(
+  em: EntityManager,
+  householdId: string,
+  entries: readonly PlanEntry[]
+) {
   const ids = new Set(entries.map((entry) => entry.id))
   for (const entry of entries) entry.listedAt = null
   if (ids.size === 0) return
@@ -110,6 +115,8 @@ async function unlistMeals(em: EntityManager, entries: readonly PlanEntry[]) {
     )
   )
   const items = await em.find(ShoppingItem, { checked: false })
+  const removed: ShoppingItem[] = []
+  const lowered: ShoppingItem[] = []
   for (const item of items) {
     const shares = item.forMeals ?? []
     const leaving = shares.filter((share) => ids.has(share.meal))
@@ -127,6 +134,7 @@ async function unlistMeals(em: EntityManager, entries: readonly PlanEntry[]) {
       (item.source === "plan" && staying.length === 0)
     if (nothingLeft) {
       em.remove(item)
+      removed.push(item)
       continue
     }
     em.assign(item, {
@@ -134,7 +142,12 @@ async function unlistMeals(em: EntityManager, entries: readonly PlanEntry[]) {
       unit: amount.unit,
       forMeals: staying.length > 0 ? staying : null,
     })
+    lowered.push(item)
   }
+  await recordListChange(em, householdId, [...removed, ...lowered], {
+    changed: lowered.length,
+    removed: removed.length,
+  })
 }
 
 /**
@@ -224,6 +237,7 @@ export async function followPlan(
   if (changed.length === 0) return
   await unlistMeals(
     em,
+    householdId,
     changed
       .filter((change) => change.was !== null)
       .map((change) => change.entry)
@@ -339,7 +353,7 @@ export async function addEveryWeek(em: EntityManager, householdId: string) {
       aisle: item.aisle ?? guessed[index],
     }))
   )
-  for (const [index, item] of missing.entries()) {
+  const added = missing.map((item, index) =>
     em.create(ShoppingItem, {
       household: householdId,
       list: item.list ?? routed[index]!,
@@ -349,7 +363,8 @@ export async function addEveryWeek(em: EntityManager, householdId: string) {
       aisle: item.aisle ?? guessed[index] ?? null,
       source: "every-week",
     })
-  }
+  )
+  await recordListChange(em, householdId, added, { added: added.length })
   await em.flush()
   return missing.length
 }
@@ -363,6 +378,8 @@ export async function addMealNeeds(
 ) {
   let added = 0
   let merged = 0
+  const made: ShoppingItem[] = []
+  const joined = new Set<ShoppingItem>()
   if (combined.length > 0) {
     const waiting = await em.find(ShoppingItem, {
       checked: false,
@@ -401,24 +418,30 @@ export async function addMealNeeds(
           unit: sum.unit,
           forMeals: [...(match.forMeals ?? []), ...item.shares],
         })
+        if (!made.includes(match)) joined.add(match)
         merged++
       } else {
-        waiting.push(
-          em.create(ShoppingItem, {
-            household: householdId,
-            list: listId ?? lists[index]!,
-            foodKey: item.food,
-            name: item.name,
-            quantity: item.quantity,
-            unit: item.unit,
-            aisle: aisles[index] ?? null,
-            source: "plan",
-            forMeals: item.shares,
-          })
-        )
+        const line = em.create(ShoppingItem, {
+          household: householdId,
+          list: listId ?? lists[index]!,
+          foodKey: item.food,
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          aisle: aisles[index] ?? null,
+          source: "plan",
+          forMeals: item.shares,
+        })
+        waiting.push(line)
+        made.push(line)
         added++
       }
     }
   }
+  // A line made here and added to again is still one new line.
+  await recordListChange(em, householdId, [...made, ...joined], {
+    added: made.length,
+    changed: joined.size,
+  })
   return { added, merged }
 }

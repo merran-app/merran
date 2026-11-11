@@ -26,6 +26,7 @@ import { inHouseholdTransaction } from "../../../database/transactions.ts"
 import { saveSwap } from "../../recipes/swaps.ts"
 import { versionSnapshot } from "../../recipes/versions.ts"
 import { householdAliases, householdKeys } from "../../foods/aliases.ts"
+import { asShown, recordListChange } from "../../webhooks/events/list.ts"
 import { findItem, itemSnapshot, restoreItems } from "../list.ts"
 import { updateSwapQuantities } from "./quantities.ts"
 import { findList } from "../lists.ts"
@@ -114,10 +115,14 @@ export async function applyShoppingSwap(
       )
         throw changed()
       const snapshot = itemSnapshot(item)
+      const shown = asShown(item)
       const parsed = readItem(input.lines[0]!)
       const keyOf = await householdKeys(tx)
       tx.assign(item, { ...parsed, foodKey: keyOf(parsed.name) })
       await tx.flush()
+      if (asShown(item) !== shown) {
+        await recordListChange(tx, householdId, [item], { changed: 1 })
+      }
       return {
         undo: {
           meals: [],
