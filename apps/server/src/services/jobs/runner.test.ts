@@ -3,6 +3,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
 import { Household, Job } from "../../database/entities/index.ts"
 import type { Database } from "../../database/orm.ts"
 import { createTestDatabase } from "../../test/database.ts"
+import {
+  currentActor,
+  MERRAN,
+  withActor,
+  type Actor,
+} from "../webhooks/actor.ts"
 import { cancelJob, enqueue, retryJob } from "./jobs.ts"
 import {
   JobRunner,
@@ -152,6 +158,31 @@ describe("the job runner", () => {
       [2, 2],
     ])
     expect((await load(job.id)).status).toBe("done")
+  })
+
+  test("a job runs as Merran, even when someone's request started it", async () => {
+    let actor: Actor | undefined
+    const jobs = runner([
+      {
+        kind: "whoami",
+        run: async () => {
+          actor = currentActor()
+        },
+      },
+    ])
+    const kyle: Actor = {
+      by: { id: "u1", name: "Kyle" },
+      via: "app",
+      key: null,
+    }
+
+    // Adding a job wakes the runner from inside the request that added it.
+    await withActor(kyle, async () => {
+      await enqueue(em(), { kind: "whoami" })
+      await jobs.drain()
+    })
+
+    expect(actor).toEqual(MERRAN)
   })
 
   test("runs one of a kind at a time, unless it says more", async () => {
