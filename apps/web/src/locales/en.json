@@ -586,7 +586,10 @@
           "stopped": "Stopped"
         },
         "areas": {
-          "recipes": "Recipes"
+          "recipes": "Recipes",
+          "plan": "Plan",
+          "list": "Shopping list",
+          "pantry": "Pantry"
         },
         "events": {
           "recipe": {
@@ -594,6 +597,31 @@
             "updated": "A recipe is changed",
             "deleted": "A recipe is deleted",
             "restored": "A recipe is restored"
+          },
+          "import": {
+            "finished": "An import finishes"
+          },
+          "tidy": {
+            "ready": "Tidy up has suggestions"
+          },
+          "review": {
+            "waiting": "Something waits in Review"
+          },
+          "plan": {
+            "changed": "The plan changes",
+            "autoplanned": "The autoplan plans a week"
+          },
+          "meal": {
+            "cooked": "A meal is made",
+            "skipped": "A meal is skipped"
+          },
+          "list": {
+            "changed": "The list changes",
+            "completed": "A list is finished",
+            "sent": "A list goes to a store"
+          },
+          "pantry": {
+            "changed": "The pantry changes"
           },
           "webhook": {
             "test": "A test"
