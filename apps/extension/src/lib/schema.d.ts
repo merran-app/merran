@@ -5961,11 +5961,8 @@ export interface webhooks {
                          *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
                          *         "name": "The Riveras"
                          *       },
-                         *       "by": {
-                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
-                         *         "name": "Sam Rivera"
-                         *       },
-                         *       "via": "app",
+                         *       "by": null,
+                         *       "via": "merran",
                          *       "key": null,
                          *       "import": {
                          *         "id": "0199e8b0-5a10-7a01-8b00-00000000000b"
@@ -6098,11 +6095,8 @@ export interface webhooks {
                          *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
                          *         "name": "The Riveras"
                          *       },
-                         *       "by": {
-                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
-                         *         "name": "Sam Rivera"
-                         *       },
-                         *       "via": "app",
+                         *       "by": null,
+                         *       "via": "merran",
                          *       "key": null,
                          *       "count": 12,
                          *       "recipes": [
@@ -6232,11 +6226,8 @@ export interface webhooks {
                          *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
                          *         "name": "The Riveras"
                          *       },
-                         *       "by": {
-                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
-                         *         "name": "Sam Rivera"
-                         *       },
-                         *       "via": "app",
+                         *       "by": null,
+                         *       "via": "merran",
                          *       "key": null,
                          *       "source": "cook_note",
                          *       "count": 1,

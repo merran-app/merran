@@ -69,12 +69,36 @@ const MEAL_EXAMPLE = {
   side: SIDE_EXAMPLE,
 }
 
-/** What every event starts with, in the examples. */
+/** What every event starts with, in the examples: Sam, in the app. */
 const CONTEXT_EXAMPLE = {
   household: { id: IDS.household, name: "The Riveras" },
   by: { id: IDS.sam, name: "Sam Rivera" },
   via: "app" as const,
   key: null,
+}
+
+/** The same, for work Merran finishes on its own, in the background. */
+const MERRAN_CONTEXT_EXAMPLE = {
+  household: CONTEXT_EXAMPLE.household,
+  by: null,
+  via: "merran" as const,
+  key: null,
+}
+
+/**
+ * Who did it in each event's example, as its guide says: the events that
+ * finish in the background are Merran's own work. A cooking note turned
+ * into an edit is too, which is `review.waiting`'s example.
+ */
+function contextExample(type: WebhookEventType) {
+  switch (type) {
+    case "import.finished":
+    case "tidy.ready":
+    case "review.waiting":
+      return MERRAN_CONTEXT_EXAMPLE
+    default:
+      return CONTEXT_EXAMPLE
+  }
 }
 
 /** A sample of what each event carries besides, for the API reference. */
@@ -435,7 +459,7 @@ type PayloadShape<T extends WebhookEventType> =
 
 /** The body a delivery of an event of `type` sends. */
 export function webhookEnvelopeSchema<T extends WebhookEventType>(type: T) {
-  const example = { ...CONTEXT_EXAMPLE, ...EXAMPLES[type] }
+  const example = { ...contextExample(type), ...EXAMPLES[type] }
   const shape: PayloadShape<T> = WEBHOOK_PAYLOADS[type].shape
   const data = EventContextSchema.extend(shape).openapi({ example })
   return z

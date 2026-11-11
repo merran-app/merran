@@ -290,11 +290,8 @@ An import that fails as a whole, or that you stop, sends nothing: it shows on it
       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
       "name": "The Riveras"
     },
-    "by": {
-      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
-      "name": "Sam Rivera"
-    },
-    "via": "app",
+    "by": null,
+    "via": "merran",
     "key": null,
     "import": {
       "id": "0199e8b0-5a10-7a01-8b00-00000000000b"
@@ -322,11 +319,8 @@ Sent when Tidy up finishes with suggestions waiting in Review, whether it was st
       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
       "name": "The Riveras"
     },
-    "by": {
-      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
-      "name": "Sam Rivera"
-    },
-    "via": "app",
+    "by": null,
+    "via": "merran",
     "key": null,
     "count": 12,
     "recipes": [
@@ -361,11 +355,8 @@ Sent when something new waits in Review that didn't come from your own chat: a p
       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
       "name": "The Riveras"
     },
-    "by": {
-      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
-      "name": "Sam Rivera"
-    },
-    "via": "app",
+    "by": null,
+    "via": "merran",
     "key": null,
     "source": "cook_note",
     "count": 1,
