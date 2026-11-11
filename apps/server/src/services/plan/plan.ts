@@ -9,7 +9,6 @@ import {
   weekStartOf,
   type Meal,
   type Reason,
-  type MealRecipe,
 } from "@merran/shared"
 import { LockMode } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
@@ -27,6 +26,9 @@ import { photoUrls } from "../recipes/photos/photos.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import { toNumber } from "../../database/numbers.ts"
 import { totalMinutes } from "../recipes/recipes.ts"
+import { snapshotOf, type EntrySnapshot } from "./snapshots.ts"
+
+export { snapshotOf, type EntrySnapshot }
 
 // The week plan: meals on days, and the week's pool of meals for any day.
 // "Today" is always the household's, in its own time zone. The shopping
@@ -109,30 +111,6 @@ export function describeEntry(entry: PlanEntry) {
 }
 
 export type DescribedEntry = ReturnType<typeof describeEntry>
-
-/** A meal as it was, to put it back as it was (Undo). */
-export function snapshotOf(entry: PlanEntry) {
-  return {
-    id: entry.id,
-    date: entry.date,
-    anyDay: entry.anyDay,
-    meal: entry.meal,
-    position: entry.position,
-    status: entry.status,
-    recipe: entry.recipe?.id ?? null,
-    withRecipe: entry.withRecipe?.id ?? null,
-    note: entry.note ?? null,
-    servings: toNumber(entry.servings),
-    listedAt: entry.listedAt?.toISOString() ?? null,
-    why: entry.why ?? null,
-    cookedAt: entry.cookedAt?.toISOString() ?? null,
-    variants: entry.variants ?? [],
-  }
-}
-
-export type EntrySnapshot = Omit<ReturnType<typeof snapshotOf>, "variants"> & {
-  variants?: MealRecipe[]
-}
 
 /** Meals in the order a day has them. */
 export function sortEntries<
