@@ -508,6 +508,55 @@
         "cancel": "Cancel",
         "cancelled": "Invite cancelled."
       },
+      "webhooks": {
+        "title": "Webhooks",
+        "description": "Tell Home Assistant, n8n and other tools when things happen in your kitchen.",
+        "add": "Add webhook",
+        "edit": "Change webhook",
+        "formDescription": "Merran sends a message to this address when one of the events happens.",
+        "none": "No webhooks yet",
+        "noneHint": "Add one with the address Home Assistant or n8n gives you.",
+        "name": "Name",
+        "namePlaceholder": "Home Assistant",
+        "nameNeeded": "Give it a name.",
+        "address": "Address",
+        "addressNeeded": "Give it an address.",
+        "eventsTitle": "Events",
+        "eventsNeeded": "Pick at least one event, or send everything.",
+        "everything": "Everything, including events added later",
+        "everythingShort": "Everything",
+        "eventCount_one": "{{count}} event",
+        "eventCount_other": "{{count}} events",
+        "headers": "Extra headers",
+        "headersSealed": "Header values stay sealed. To change the headers, fill in every value again.",
+        "headerName": "Header name",
+        "headerValue": "Value",
+        "addHeader": "Add a header",
+        "removeHeader": "Remove header",
+        "state": {
+          "working": "Working",
+          "failing": "Failing",
+          "paused": "Paused"
+        },
+        "lastDelivered": "Last delivered {{date}}",
+        "neverDelivered": "Nothing delivered yet",
+        "saved": "Saved.",
+        "secret": "Signing secret",
+        "madeTitle": "Here's the secret",
+        "madeDescription": "Copy it into the tool that checks signatures. You can show it again later.",
+        "allowHomeNetwork": "Allow the home network for this household",
+        "areas": {
+          "recipes": "Recipes"
+        },
+        "events": {
+          "recipe": {
+            "created": "A recipe is added",
+            "updated": "A recipe is changed",
+            "deleted": "A recipe is deleted",
+            "restored": "A recipe is restored"
+          }
+        }
+      },
       "new": {
         "title": "Start another household",
         "description": "As a server admin, you can start more households. You'll own it and switch to it.",
