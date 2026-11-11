@@ -25,6 +25,7 @@ import {
   recordListChange,
   recordPutAwayFinished,
 } from "../../webhooks/events/list.ts"
+import { recordPantryChange } from "../../webhooks/events/pantry.ts"
 import { store } from "../pantry.ts"
 import { placeOf } from "../places.ts"
 
@@ -187,10 +188,12 @@ export async function putAway(
     await recordPutAwayFinished(tx, householdId, checked)
     for (const item of checked) tx.remove(item)
     await tx.flush()
-    // Each list it put away, told once with the total.
+    // Each list it put away, told once with the total, and what went in
+    // the pantry.
     await recordListChange(tx, householdId, checked, {
       removed: checked.length,
     })
+    await recordPantryChange(tx, householdId, { added: stored })
     return { stored, cleared: checked.length - stored }
   })
 }

@@ -17,6 +17,7 @@ import { householdKeys } from "../../foods/aliases.ts"
 import { useAi, type AiDeps } from "../../ai/run.ts"
 import { householdToday } from "../../households/clock.ts"
 import { recordListChange } from "../../webhooks/events/list.ts"
+import { recordPantryChange } from "../../webhooks/events/pantry.ts"
 import { placeFor, store } from "../pantry.ts"
 import { inHouseholdTransaction } from "../../../database/transactions.ts"
 import { toNumber } from "../../../database/numbers.ts"
@@ -514,6 +515,7 @@ export async function addReceipt(
     await recordListChange(tx, householdId, offTheList, {
       removed: offTheList.length,
     })
+    await recordPantryChange(tx, householdId, { added })
     return { added, offTheList: offTheList.length, receiptId: receipt.id }
   })
   await files.remove(`receipts/${householdId}/${result.receiptId}`)

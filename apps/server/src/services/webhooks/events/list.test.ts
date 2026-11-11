@@ -626,6 +626,22 @@ describe("checking off", () => {
     ])
   })
 
-  // Needs pantry.changed, which arrives with the pantry's events.
-  test.todo("checking off puts things away")
+  test("checking off puts things away, and unchecking takes them back", async () => {
+    // The household puts things away when they're checked off, as it does
+    // unless someone turns it off.
+    await clearAll()
+    await kyle.post("/api/pantry/clear")
+    const milk = await type("milk")
+    await gatherNow(database, jobs)
+
+    const checked = await sentBy(() => check(milk.id))
+    expect(ofType(checked, "pantry.changed")).toEqual([
+      expect.objectContaining({ added: 1, removed: 0 }),
+    ])
+
+    const unchecked = await sentBy(() => check(milk.id, false))
+    expect(ofType(unchecked, "pantry.changed")).toEqual([
+      expect.objectContaining({ added: 0, removed: 1 }),
+    ])
+  })
 })

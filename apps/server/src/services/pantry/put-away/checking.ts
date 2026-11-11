@@ -11,6 +11,7 @@ import {
 import { householdKeys } from "../../foods/aliases.ts"
 import { putsAwayWhenChecked } from "../../households/households.ts"
 import { recordChecking } from "../../webhooks/events/list.ts"
+import { recordPantryChange } from "../../webhooks/events/pantry.ts"
 import { amountOf, measured } from "../pantry.ts"
 import {
   amountBought,
@@ -44,19 +45,28 @@ export async function setChecked(
 ): Promise<ShoppingItem[]> {
   const putAway = puttingAway(tx, householdId)
   const changed: ShoppingItem[] = []
+  // For webhooks: rows that went in the pantry, and rows taken back out.
+  let stored = 0
+  let takenBack = 0
   for (const item of items) {
     const claimed = await claim(tx, item, checked)
     if (!claimed) continue
     changed.push(item)
     if (checked) {
-      await putAway(item)
+      const wentIn = await putAway(item)
+      if (wentIn) stored++
     } else {
-      await takeBack(tx, item)
+      const cameOut = await takeBack(tx, item)
+      if (cameOut) takenBack++
     }
   }
   // Once, with the totals, after the rows' other writes.
   await recordChecking(tx, householdId, changed, checked, {
     undo: options.undo ?? false,
+  })
+  await recordPantryChange(tx, householdId, {
+    added: stored,
+    removed: takenBack,
   })
   return changed
 }
@@ -81,9 +91,13 @@ export async function putAwayAlreadyChecked(
   const checked = checkedRows.filter((item) => !item.putAway)
   if (checked.length === 0) return 0
   const context = await putAwayContext(tx, householdId)
+  // Household things and what's always on hand are bought, not stored.
+  let stored = 0
   for (const item of checked) {
     item.putAway = await putAwayItem(tx, householdId, item, context)
+    if (item.putAway.pantryItem) stored++
   }
+  await recordPantryChange(tx, householdId, { added: stored })
   return checked.length
 }
 
@@ -107,21 +121,24 @@ async function claim(tx: EntityManager, item: ShoppingItem, checked: boolean) {
 
 /**
  * Puts checked rows away, when the household says to. The setting, and
- * what putting away needs to know, are read for the first row only.
+ * what putting away needs to know, are read for the first row only. Says
+ * whether the row went in the pantry: household things and what's always
+ * on hand are bought, not stored.
  */
 function puttingAway(tx: EntityManager, householdId: string) {
   let putsAway: boolean | undefined
   let context: PutAwayContext | undefined
-  return async (item: ShoppingItem) => {
+  return async (item: ShoppingItem): Promise<boolean> => {
     // Never twice.
-    if (item.putAway) return
+    if (item.putAway) return false
     if (putsAway === undefined) {
       const household = await tx.findOneOrFail(Household, { id: householdId })
       putsAway = putsAwayWhenChecked(household.settings)
     }
-    if (!putsAway) return
+    if (!putsAway) return false
     context ??= await putAwayContext(tx, householdId)
     item.putAway = await putAwayItem(tx, householdId, item, context)
+    return item.putAway.pantryItem !== null
   }
 }
 
@@ -131,27 +148,29 @@ function puttingAway(tx: EntityManager, householdId: string) {
  * added. Cooking or Used up may have taken some since, so it takes back
  * what's left and never goes below nothing. If the pantry item's gone,
  * there's nothing to take. Undo sends what a row put away back from the
- * page, so a purchase or pantry item of another food is left alone.
+ * page, so a purchase or pantry item of another food is left alone. Says
+ * whether there was a pantry item to take it back from.
  */
 export async function takeBack(
   tx: EntityManager,
   row: ShoppingItem
-): Promise<void> {
+): Promise<boolean> {
   const record = row.putAway
-  if (!record) return
+  if (!record) return false
   row.putAway = null
   const isRowsFood = await foodTest(tx, row)
   const purchase = await tx.findOne(Purchase, { id: record.purchase })
   if (purchase && isRowsFood(purchase.foodKey)) tx.remove(purchase)
-  if (!record.pantryItem) return
+  if (!record.pantryItem) return false
   const item = await tx.findOne(PantryItem, { id: record.pantryItem })
-  if (!item || !isRowsFood(item.foodKey)) return
+  if (!item || !isRowsFood(item.foodKey)) return false
   item.forMeals = withoutShares(item, record.forMeals)
   if (record.quantity !== null) {
     takeBackAmount(tx, item, record)
   } else {
     takeBackWords(tx, item, record)
   }
+  return true
 }
 
 /**
