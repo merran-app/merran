@@ -56,6 +56,8 @@ export function isBlockedAddress(address: string) {
 const linkLocal = new BlockList()
 linkLocal.addSubnet("169.254.0.0", 16, "ipv4")
 linkLocal.addSubnet("fe80::", 10, "ipv6")
+// The same IPv4 range through a NAT64 gateway (64:ff9b::169.254.x.x).
+linkLocal.addSubnet("64:ff9b::a9fe:0", 112, "ipv6")
 
 /**
  * Whether an address is link-local, like 169.254.169.254, where a cloud

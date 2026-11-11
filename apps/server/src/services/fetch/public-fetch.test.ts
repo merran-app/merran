@@ -38,6 +38,7 @@ describe("public fetches", () => {
       "169.254.0.1",
       "::ffff:169.254.1.1",
       "fe80::1",
+      "64:ff9b::a9fe:a9fe",
     ]) {
       expect(isLinkLocalAddress(address), address).toBe(true)
     }
@@ -174,6 +175,22 @@ describe("public fetches", () => {
     expect(checkLink(metadata, { homeNetwork: true }).hostname).toBe(
       "169.254.169.254"
     )
+  })
+
+  test("reach a home-network name while refusing link-local", async () => {
+    // By name, so the request goes through the lookup that drops link-local
+    // addresses: a webhook to homeassistant.lan has to keep working.
+    const server = createServer((_, res) => res.end("hello"))
+    await new Promise<void>((resolve) => server.listen(0, resolve))
+    const { port } = server.address() as AddressInfo
+    const fetcher = createPublicFetcher({ version: "0.0.0" })
+
+    const answer = await fetcher(`http://localhost:${port}/`, {
+      homeNetwork: true,
+      refuseLinkLocal: true,
+    })
+    expect(answer.body.toString()).toBe("hello")
+    server.close()
   })
 
   test("hand back a 304 as an answer, not a broken redirect", async () => {
