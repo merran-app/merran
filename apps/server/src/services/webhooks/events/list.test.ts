@@ -1,7 +1,11 @@
 import { addDays, clockIn, foodKey, weekStartOf } from "@merran/shared"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../app.ts"
-import { Purchase } from "../../../database/entities/index.ts"
+import {
+  Household,
+  Purchase,
+  WebhookEvent,
+} from "../../../database/entities/index.ts"
 import type { Database } from "../../../database/orm.ts"
 import { forHousehold } from "../../../database/scope.ts"
 import {
@@ -715,6 +719,90 @@ describe("checking off", () => {
 
     expect(ofType(sent, "pantry.changed")).toEqual([
       expect.objectContaining({ added: 0, changed: 0, removed: 1 }),
+    ])
+  })
+
+  async function putAwayWhenChecked(on: boolean) {
+    const res = await kyle.patch("/api/households/current", {
+      putAwayWhenChecked: on,
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+  }
+
+  /**
+   * Putting away turned on without putting away what's checked already, as
+   * for rows checked off before put-away kept records.
+   */
+  async function putAwayFromNowOn() {
+    const em = forHousehold(database.em.fork(), home)
+    const household = await em.findOneOrFail(Household, { id: home })
+    household.settings = {
+      ...household.settings,
+      pantry: { ...household.settings?.pantry, putAwayWhenChecked: true },
+    }
+    await em.flush()
+  }
+
+  /** The types of the gathered changes an action records, in order. */
+  async function gatheredBy(action: () => Promise<unknown>) {
+    const rows = () =>
+      forHousehold(database.em.fork(), home).find(
+        WebhookEvent,
+        { gathered: true },
+        { orderBy: { id: "asc" } }
+      )
+    const seen = new Set((await rows()).map((row) => row.id))
+    await action()
+    return (await rows())
+      .filter((row) => !seen.has(row.id))
+      .map((row) => row.type)
+  }
+
+  test("turning putting away on puts away what's checked", async () => {
+    await clearWithPantry()
+    await putAwayWhenChecked(false)
+    const milk = await type("milk")
+    await check(milk.id)
+    await gatherNow(database, jobs)
+
+    const sent = await sentBy(() => putAwayWhenChecked(true))
+
+    expect(ofType(sent, "pantry.changed")).toEqual([
+      expect.objectContaining({ added: 1, removed: 0 }),
+    ])
+  })
+
+  test("taking off a checked row that wasn't put away tells the list, then the pantry", async () => {
+    await clearWithPantry()
+    await putAwayWhenChecked(false)
+    const milk = await type("milk")
+    const eggs = await type("eggs")
+    await check(milk.id)
+    await check(eggs.id)
+    await putAwayFromNowOn()
+    await gatherNow(database, jobs)
+
+    // One, then the rest with Clear checked.
+    const takeOffs = [
+      () => kyle.delete(`/api/list/items/${milk.id}`),
+      () => kyle.post("/api/list/clear", { which: "checked" }),
+    ]
+    for (const takeOff of takeOffs) {
+      const types = await gatheredBy(async () => {
+        const res = await takeOff()
+        expect(res.status, await res.clone().text()).toBe(200)
+      })
+      // In the order checking off records them, so both take the merge
+      // jobs' rows in the same order.
+      expect(types).toEqual(["list.changed", "pantry.changed"])
+    }
+
+    const sent = await sentBy(() => gatherNow(database, jobs))
+    expect(ofType(sent, "list.changed")).toEqual([
+      expect.objectContaining({ removed: 2 }),
+    ])
+    expect(ofType(sent, "pantry.changed")).toEqual([
+      expect.objectContaining({ added: 2 }),
     ])
   })
 })

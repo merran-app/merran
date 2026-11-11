@@ -360,17 +360,18 @@ export async function updateItem(
  * household says to: rows checked off before the setting was on, or before
  * put-away kept records, go in now, before what they were is taken for
  * Undo, so Undo brings them back with what they put away. `only` limits
- * it to the rows being taken off.
+ * it to the rows being taken off. Says how many went in the pantry, for the
+ * caller to tell webhooks after it tells them what came off the list.
  */
 async function putAwayBeforeTakingOff(
   tx: EntityManager,
   householdId: string,
   only?: readonly ShoppingItem[]
-) {
-  if (only && !only.some((item) => item.checked && !item.putAway)) return
+): Promise<number> {
+  if (only && !only.some((item) => item.checked && !item.putAway)) return 0
   const household = await tx.findOneOrFail(Household, { id: householdId })
-  if (!putsAwayWhenChecked(household.settings)) return
-  await putAwayAlreadyChecked(
+  if (!putsAwayWhenChecked(household.settings)) return 0
+  return putAwayAlreadyChecked(
     tx,
     householdId,
     only?.map((item) => item.id)
@@ -384,12 +385,14 @@ export async function removeItem(
 ) {
   return inHouseholdTransaction(em, householdId, async (tx) => {
     const item = await findItem(tx, id)
-    await putAwayBeforeTakingOff(tx, householdId, [item])
+    const stored = await putAwayBeforeTakingOff(tx, householdId, [item])
     const before = itemSnapshot(item)
     tx.remove(item)
     await tx.flush()
     await unlistRemoved(tx, [item])
+    // The list before the pantry, as checking off tells them.
     await recordListChange(tx, householdId, [item], { removed: 1 })
+    await recordPantryChange(tx, householdId, { added: stored })
     return before
   })
 }
@@ -415,9 +418,10 @@ export async function bulkItems(
     const items = await tx.find(ShoppingItem, {
       id: { $in: ids.filter((id) => UUID.test(id)) },
     })
-    if (bulk.action === "remove") {
-      await putAwayBeforeTakingOff(tx, householdId, items)
-    }
+    const stored =
+      bulk.action === "remove"
+        ? await putAwayBeforeTakingOff(tx, householdId, items)
+        : 0
     const before = items.map(itemSnapshot)
     const was = items.map((item) => ({
       shown: asShown(item),
@@ -464,7 +468,9 @@ export async function bulkItems(
         break
     }
     await tx.flush()
+    // The list before the pantry, as checking off tells them.
     await recordBulk(tx, householdId, bulk, items, was)
+    await recordPantryChange(tx, householdId, { added: stored })
     return { changed: items.length, before }
   })
 }
@@ -547,7 +553,7 @@ export async function clearList(
 ) {
   return inHouseholdTransaction(em, householdId, async (tx) => {
     // Clearing either way takes off everything that's checked.
-    await putAwayBeforeTakingOff(tx, householdId)
+    const stored = await putAwayBeforeTakingOff(tx, householdId)
     const items = await tx.find(
       ShoppingItem,
       which === "checked" ? { checked: true } : {}
@@ -556,8 +562,10 @@ export async function clearList(
     for (const item of items) tx.remove(item)
     await tx.flush()
     await unlistRemoved(tx, items)
-    // Every list it cleared, told once with the total.
+    // Every list it cleared, told once with the total, then the pantry, as
+    // checking off tells them.
     await recordListChange(tx, householdId, items, { removed: items.length })
+    await recordPantryChange(tx, householdId, { added: stored })
     return { before }
   })
 }

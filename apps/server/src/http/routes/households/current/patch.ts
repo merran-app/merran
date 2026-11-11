@@ -3,7 +3,7 @@ import type { AppDeps } from "../../../../core/context.ts"
 import { Household } from "../../../../database/entities/index.ts"
 import { inHouseholdTransaction } from "../../../../database/transactions.ts"
 import { putsAwayWhenChecked } from "../../../../services/households/households.ts"
-import { putAwayAlreadyChecked } from "../../../../services/pantry/put-away/checking.ts"
+import { putAwayWhatsChecked } from "../../../../services/pantry/put-away/checking.ts"
 import { asHouseholdAdmin } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import {
@@ -68,7 +68,7 @@ export default (router: Router, _deps: AppDeps) => {
       await inHouseholdTransaction(em, householdId, async (tx) => {
         const saved = await tx.findOneOrFail(Household, householdId)
         saved.settings = settings
-        await putAwayAlreadyChecked(tx, householdId)
+        await putAwayWhatsChecked(tx, householdId)
         await tx.flush()
       })
     }

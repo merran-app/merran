@@ -76,10 +76,13 @@ export async function setChecked(
 }
 
 /**
- * Turning the setting on: what's checked off already is put away too, the
- * same as if it were checked now. Rows that went in already are left alone.
- * `only` limits it to those rows, for some being taken off the list. Says
- * how many rows went in.
+ * What's checked off already is put away too, the same as if it were
+ * checked now. Rows that went in already are left alone. `only` limits it
+ * to those rows, for some being taken off the list. Says how many went in
+ * the pantry, for the caller to tell webhooks once it's recorded what it
+ * did to the list: list before pantry, as checking off records them, so it
+ * takes the merge jobs' rows in the same order (docs/webhooks.md,
+ * "Gathering").
  */
 export async function putAwayAlreadyChecked(
   tx: EntityManager,
@@ -101,8 +104,19 @@ export async function putAwayAlreadyChecked(
     item.putAway = await putAwayItem(tx, householdId, item, context)
     if (item.putAway.pantryItem) stored++
   }
+  return stored
+}
+
+/**
+ * Turning the setting on: everything checked off already is put away, and
+ * webhooks are told what went in the pantry.
+ */
+export async function putAwayWhatsChecked(
+  tx: EntityManager,
+  householdId: string
+): Promise<void> {
+  const stored = await putAwayAlreadyChecked(tx, householdId)
   await recordPantryChange(tx, householdId, { added: stored })
-  return checked.length
 }
 
 /**
