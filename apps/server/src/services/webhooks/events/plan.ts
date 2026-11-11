@@ -1,9 +1,9 @@
 import type { EntityManager } from "@mikro-orm/sql"
-import type { PlanEntry } from "../../../database/entities/index.ts"
+import type { PlanEntry, Recipe } from "../../../database/entities/index.ts"
 import { toNumber } from "../../../database/numbers.ts"
 import { snapshotOf, type EntrySnapshot } from "../../plan/snapshots.ts"
 import type { GatheredPart } from "../gathering/gathering.ts"
-import { recipeRef, type MealRef } from "../payloads.ts"
+import { recipeRef, type MealRef, type RecipeRef } from "../payloads.ts"
 import { record, wantsEvent } from "../record.ts"
 
 // What the plan tells webhooks: plan.changed, gathered from every add, move
@@ -26,13 +26,19 @@ function movedBetween(before: EntrySnapshot, after: EntrySnapshot): boolean {
   )
 }
 
-/** Whether what a meal is has changed: its dishes, note or servings. */
+/**
+ * Whether what a meal is has changed: its dishes, note or servings.
+ * Servings given as a meal is marked made are how many it made, not a
+ * change to the plan, so they don't count then.
+ */
 function changedBetween(before: EntrySnapshot, after: EntrySnapshot): boolean {
+  const madeNow = after.status === "cooked" && before.status !== "cooked"
+  const servingsChanged = before.servings !== after.servings && !madeNow
   return (
     before.recipe !== after.recipe ||
     before.withRecipe !== after.withRecipe ||
     before.note !== after.note ||
-    before.servings !== after.servings ||
+    servingsChanged ||
     JSON.stringify(before.variants ?? []) !==
       JSON.stringify(after.variants ?? [])
   )
@@ -40,9 +46,9 @@ function changedBetween(before: EntrySnapshot, after: EntrySnapshot): boolean {
 
 /**
  * What changed between the meals as they were and as they are, matched by
- * id. Their status, when they were cooked or listed, and why they were
- * picked don't count: marking meals made or Didn't is meal.cooked and
- * meal.skipped.
+ * id. Their status, when they were cooked or listed, why they were picked,
+ * and the servings given with marking them made don't count: marking meals
+ * made or Didn't is meal.cooked and meal.skipped.
  */
 export function planChange(
   before: readonly EntrySnapshot[],
@@ -116,10 +122,18 @@ async function loadedMeal(em: EntityManager, entry: PlanEntry) {
     meal: entry.meal,
     pool: entry.anyDay,
     title: variant?.name ?? main?.name ?? entry.note ?? "",
-    recipe: main ? recipeRef(main) : null,
-    side: side ? recipeRef(side) : null,
+    recipe: shownRecipe(main),
+    side: shownRecipe(side),
   }
   return { ref, main, variant }
+}
+
+/**
+ * A meal's recipe or side as events name it: none while it's in Recently
+ * deleted, as the plan shows it.
+ */
+function shownRecipe(recipe: Recipe | undefined): RecipeRef | null {
+  return recipe && !recipe.deletedAt ? recipeRef(recipe) : null
 }
 
 /** How many servings a meal made: its own, else its version's or recipe's. */

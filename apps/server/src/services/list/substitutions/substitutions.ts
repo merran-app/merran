@@ -19,6 +19,7 @@ import type {
 } from "../../../http/schemas/shopping-swaps.ts"
 import { findEntry } from "../../plan/plan.ts"
 import { loadMealLines } from "../../plan/meal-lines.ts"
+import { snapshotOf, type EntrySnapshot } from "../../plan/snapshots.ts"
 import { recipeForMeal } from "../../plan/recipe-variants.ts"
 import { getTastes } from "../../households/tastes.ts"
 import { findRecipe, updateRecipe } from "../../recipes/recipes.ts"
@@ -27,6 +28,7 @@ import { saveSwap } from "../../recipes/swaps.ts"
 import { versionSnapshot } from "../../recipes/versions.ts"
 import { householdAliases, householdKeys } from "../../foods/aliases.ts"
 import { asShown, recordListChange } from "../../webhooks/events/list.ts"
+import { recordPlanEvents } from "../../webhooks/events/plan.ts"
 import { findItem, itemSnapshot, restoreItems } from "../list.ts"
 import { updateSwapQuantities } from "./quantities.ts"
 import { findList } from "../lists.ts"
@@ -153,6 +155,8 @@ export async function applyShoppingSwap(
     if (new Set(keys).size !== keys.length) throw changed()
     const entries: PlanEntry[] = []
     const before: { mealId: string; variants: MealRecipe[] }[] = []
+    // The meals as they were, for webhooks: a swap changes what they are.
+    const meals: EntrySnapshot[] = []
     const matched = [] as {
       target: (typeof targets)[number]
       replacement: (typeof replacements)[number]["replacement"]
@@ -193,6 +197,7 @@ export async function applyShoppingSwap(
           mealId: entry.id,
           variants: structuredClone(entry.variants ?? []),
         })
+        meals.push(snapshotOf(entry))
       }
       matched.push({ target, replacement })
     }
@@ -259,6 +264,8 @@ export async function applyShoppingSwap(
           expected: saved.recipe.updatedAt,
         }
     }
+    // After the list's, as late as it can be.
+    await recordPlanEvents(tx, householdId, { before: meals, after: entries })
     await tx.flush()
     return {
       undo: {
@@ -314,6 +321,8 @@ export async function undoShoppingSwap(
     }
     const linesOf = await loadMealLines(tx, householdId, entries)
     const previous = entries.map((entry) => linesOf(entry))
+    // The meals as they were before Undo, for webhooks.
+    const meals = entries.map(snapshotOf)
     entries.forEach((entry, index) => {
       entry.variants = undo.meals[index]!.variants
     })
@@ -340,6 +349,12 @@ export async function undoShoppingSwap(
         source: "restore",
       })
     }
+    // After the list's, as late as it can be.
+    await recordPlanEvents(tx, householdId, {
+      before: meals,
+      after: entries,
+      undo: true,
+    })
     await tx.flush()
     return { done: true }
   })

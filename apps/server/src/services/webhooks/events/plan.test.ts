@@ -143,6 +143,24 @@ describe("planChange", () => {
       ],
       expected: {},
     },
+    {
+      name: "marking it made with how many it made, which counts nothing",
+      before: [meal("a")],
+      after: [
+        meal("a", {
+          status: "cooked",
+          cookedAt: "2026-10-14T18:00:00.000Z",
+          servings: 6,
+        }),
+      ],
+      expected: {},
+    },
+    {
+      name: "servings changed on a meal that was made already",
+      before: [meal("a", { status: "cooked" })],
+      after: [meal("a", { status: "cooked", servings: 6 })],
+      expected: { days: [DAY], changed: 1 },
+    },
   ]
 
   test.each(cases)("$name", ({ before, after, expected }) => {
@@ -347,6 +365,73 @@ describe("plan.changed", () => {
     })
 
     expect(sent).toEqual([])
+  })
+
+  test("marking a meal cooked with how many it made sends no plan.changed", async () => {
+    await clearAll()
+    const soup = await add({
+      date: today,
+      meal: "dinner",
+      recipe: "tomato-soup",
+    })
+    await gatherNow(database, jobs)
+
+    const sent = await planChanges(async () => {
+      const res = await kyle.patch(`/api/plan/entries/${soup.id}`, {
+        status: "cooked",
+        servings: 6,
+      })
+      expect(res.status, await res.clone().text()).toBe(200)
+    })
+
+    expect(sent).toEqual([])
+  })
+
+  test("a swap made from the shopping list changes the meal, and so does its Undo", async () => {
+    await clearAll()
+    const soup = await add({
+      date: today,
+      meal: "dinner",
+      recipe: "tomato-soup",
+    })
+    const listed = await kyle.post("/api/list/from-plan", {
+      from: today,
+      to: today,
+    })
+    expect(listed.status, await listed.clone().text()).toBe(200)
+    const items = (await (await kyle.get("/api/list")).json()).items as {
+      id: string
+      name: string
+    }[]
+    const onion = items.find((item) => item.name.includes("onion"))!
+    const found = await kyle.get(`/api/list/items/${onion.id}/substitutions`)
+    expect(found.status, await found.clone().text()).toBe(200)
+    const [target] = (await found.json()).targets
+    await gatherNow(database, jobs)
+
+    let undo: unknown
+    const swapped = await planChanges(async () => {
+      const res = await kyle.post(`/api/list/items/${onion.id}/substitutions`, {
+        recipeId: target.recipe.recipeId,
+        ingredientId: target.ingredientId,
+        state: target.state,
+        targets: [{ mealId: soup.id, revision: target.revision }],
+        lines: ["1 shallot"],
+      })
+      expect(res.status, await res.clone().text()).toBe(200)
+      undo = (await res.json()).undo
+    })
+    expect(swapped).toHaveLength(1)
+    expect(swapped[0]).toMatchObject({ days: [today], changed: 1, added: 0 })
+
+    const undone = await planChanges(async () => {
+      const res = await kyle.post("/api/list/substitutions/undo", undo)
+      expect(res.status, await res.clone().text()).toBe(200)
+    })
+    expect(undone).toHaveLength(1)
+    expect(undone[0]).toMatchObject({ days: [today], changed: 1, added: 0 })
+
+    await kyle.post("/api/list/clear", { which: "all" })
   })
 
   test("removing a meal tells webhooks which day", async () => {

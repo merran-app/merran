@@ -42,7 +42,7 @@ beforeAll(async () => {
   ).id
   today = clockIn("UTC").today
   week = weekStartOf(today, 1)
-  for (const name of ["Tomato Soup", "Soda Bread"]) {
+  for (const name of ["Tomato Soup", "Soda Bread", "Garlic Rice"]) {
     const res = await kyle.post("/api/recipes", {
       name,
       servings: 4,
@@ -121,6 +121,8 @@ describe("meal.cooked", () => {
       by: { name: "Kyle" },
       via: "app",
     })
+    // How many it made isn't a change to the plan.
+    expect(ofType(sent, "plan.changed")).toEqual([])
   })
 
   test("without servings it says the recipe's", async () => {
@@ -166,6 +168,28 @@ describe("meal.cooked", () => {
     })
 
     expect(ofType(sent, "meal.cooked")[0]).toMatchObject({ servings: 8 })
+  })
+
+  test("Made it with servings on a planned meal sends no plan.changed", async () => {
+    await clearAll()
+    const soup = await add({
+      date: today,
+      meal: "dinner",
+      recipe: "tomato-soup",
+    })
+    await gatherNow(database, jobs)
+
+    const sent = await sentBy(async () => {
+      const res = await kyle.post("/api/recipes/tomato-soup/made", {
+        servings: 6,
+      })
+      expect(res.status, await res.clone().text()).toBe(200)
+    })
+
+    expect(ofType(sent, "meal.cooked")).toEqual([
+      expect.objectContaining({ entryId: soup.id, servings: 6, planned: true }),
+    ])
+    expect(ofType(sent, "plan.changed")).toEqual([])
   })
 
   test("Made it on a meal in the week's pool is planned", async () => {
@@ -261,6 +285,25 @@ describe("meal.cooked", () => {
 
     expect(ofType(sent, "meal.cooked")[0]).toMatchObject({
       side: { slug: "soda-bread" },
+    })
+  })
+
+  test("a side in Recently deleted isn't named, as the plan leaves it out", async () => {
+    await clearAll()
+    const soup = await add({
+      date: today,
+      meal: "dinner",
+      recipe: "tomato-soup",
+      withRecipe: "garlic-rice",
+    })
+    const deleted = await kyle.delete("/api/recipes/garlic-rice")
+    expect(deleted.status, await deleted.clone().text()).toBeLessThan(300)
+
+    const sent = await sentBy(() => setStatus(soup.id, { status: "cooked" }))
+
+    expect(ofType(sent, "meal.cooked")[0]).toMatchObject({
+      recipe: { slug: "tomato-soup" },
+      side: null,
     })
   })
 

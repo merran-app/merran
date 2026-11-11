@@ -373,11 +373,11 @@ Sent when something new waits in Review that didn't come from your own chat: a p
 
 ### plan.changed
 
-Sent when meals are added, moved, changed or removed, whatever did it: someone in the app, the autoplan, a proposal, **Repeat last week**, **Clear**, **Undo**, or **Made it** when it adds a meal or moves one out of the pool. It's [gathered](#gathered-events), so someone filling a whole week sends one.
+Sent when meals are added, moved, changed or removed, whatever did it: someone in the app, the autoplan, a proposal, **Repeat last week**, **Clear**, **Undo**, a substitute picked with **Find a substitute** on the shopping list, or **Made it** when it adds a meal or moves one out of the pool. It's [gathered](#gathered-events), so someone filling a whole week sends one.
 
-`days` are the days touched, earliest first, and `pools` are the weeks whose pool was touched, each by its first day. `added`, `moved`, `changed` and `removed` count meals: `moved` is a meal on another day or at another meal, or with its dishes in another order, and `changed` is a meal whose recipe, side, note or servings changed.
+`days` are the days touched, earliest first, and `pools` are the weeks whose pool was touched, each by its first day. `added`, `moved`, `changed` and `removed` count meals: `moved` is a meal on another day or at another meal, or with its dishes in another order, and `changed` is a meal whose recipe, side, note or servings changed, or whose ingredients a substitute changed.
 
-Marking a meal made or **Didn't** isn't a plan change: it sends [`meal.cooked`](#mealcooked) or [`meal.skipped`](#mealskipped). **Undo** puts meals back and sends this event, but never `meal.cooked` or `meal.skipped` again.
+Marking a meal made or **Didn't** isn't a plan change: it sends [`meal.cooked`](#mealcooked) or [`meal.skipped`](#mealskipped). Servings given as a meal is marked made aren't either: they're how many it made, which `meal.cooked` carries. **Undo** puts meals back and sends this event, but never `meal.cooked` or `meal.skipped` again.
 
 ```json
 {
@@ -432,7 +432,7 @@ Sent when the autoplan plans a week, on its schedule or when someone runs it. `w
 
 ### meal.cooked
 
-Sent when a meal is marked made, wherever that happens: cook view, the plan, Today's **Did you make these?**, or a recipe made off the plan. `planned` says whether the meal was on the plan before, and `servings` how many were made, or `null`. `date` is the meal's day, or the first day of the week for a meal in the pool, and `recipe` is `null` for a meal that's only a note. Setting a meal back to planned sends nothing, and **Undo** never sends this again.
+Sent when a meal is marked made, wherever that happens: cook view, the plan, Today's **Did you make these?**, or a recipe made off the plan. `planned` says whether the meal was on the plan before, and `servings` how many were made, or `null`. `date` is the meal's day, or the first day of the week for a meal in the pool, and `recipe` is `null` for a meal that's only a note. `side` is `null` when the meal has none, or its side is in Recently deleted, as the plan leaves it out. Setting a meal back to planned sends nothing, and **Undo** never sends this again.
 
 ```json
 {

@@ -237,10 +237,12 @@ export const MealRefSchema = z.object({
       "The recipe's name, or the note for a meal that's only a note.",
   }),
   recipe: RecipeRefSchema.nullable().openapi({
-    description: "The recipe. Null for a meal that's only a note.",
+    description:
+      "The recipe. Null for a meal that's only a note, or one whose recipe is in Recently deleted.",
   }),
   side: RecipeRefSchema.nullable().openapi({
-    description: "The side dish, if it has one.",
+    description:
+      "The side dish, if it has one. Null while it's in Recently deleted, as the plan leaves it out.",
   }),
 })
 export type MealRef = z.infer<typeof MealRefSchema>
@@ -370,7 +372,7 @@ export const WEBHOOK_PAYLOADS = {
         "How many meals were moved to another day or meal, or had their dishes put in another order."
       ),
       changed: count(
-        "How many meals had their recipe, side, note or servings changed."
+        "How many meals had their recipe, side, note or servings changed, or their ingredients changed by a substitute. Servings given as a meal is marked made say how many it made, and don't count."
       ),
       removed: count("How many meals were removed."),
     })
@@ -516,7 +518,7 @@ export const WEBHOOK_SUMMARIES: Record<
   "plan.changed": {
     summary: "The plan changed",
     description:
-      "Sent when meals are added, moved, changed or removed, whatever did it: someone in the app, the autoplan, a proposal, Repeat last week, Clear, Undo, or Made it. Changes are gathered for 30 seconds and sent as one event for each person, so someone adding a whole week sends one. Marking meals made or Didn't isn't a plan change; those send `meal.cooked` and `meal.skipped`. Undo sends this, but never `meal.cooked` or `meal.skipped` again.",
+      "Sent when meals are added, moved, changed or removed, whatever did it: someone in the app, the autoplan, a proposal, Repeat last week, Clear, Undo, a substitute found from the shopping list, or Made it. Changes are gathered for 30 seconds and sent as one event for each person, so someone adding a whole week sends one. Marking meals made or Didn't isn't a plan change; those send `meal.cooked` and `meal.skipped`. Undo sends this, but never `meal.cooked` or `meal.skipped` again.",
   },
   "plan.autoplanned": {
     summary: "The autoplan planned a week",
