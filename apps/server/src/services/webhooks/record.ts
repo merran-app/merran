@@ -6,7 +6,14 @@ import {
   WebhookDelivery,
   WebhookEvent,
 } from "../../database/entities/index.ts"
-import { ACTIVE, enqueue, restartJob } from "../jobs/jobs.ts"
+import {
+  ACTIVE,
+  createJob,
+  enqueue,
+  restartJob,
+  wakeRunner,
+  type NewJob,
+} from "../jobs/jobs.ts"
 import { currentActor, type Actor } from "./actor.ts"
 import type { EventData } from "./payloads.ts"
 import { webhooksEnabled } from "./state.ts"
@@ -28,7 +35,8 @@ export const WEBHOOK_MAX_ATTEMPTS = 8
  *
  * When webhooks are off, or no active webhook wants the event, it writes
  * nothing and returns null. Otherwise it saves the event, a delivery for
- * each webhook that wants it, and a job to send each.
+ * each webhook that wants it, and a job to send each, all in one flush, so
+ * even outside a transaction no delivery is left without its job.
  */
 export async function record<T extends WebhookEventType>(
   em: EntityManager,
@@ -66,13 +74,15 @@ export async function record<T extends WebhookEventType>(
       event: saved,
     })
   )
-  await em.flush()
-
   if (!event.only) {
+    // Each delivery is new, so no job can have its key yet.
     for (const delivery of deliveries) {
-      await queueDelivery(em, { householdId, deliveryId: delivery.id })
+      createJob(em, deliveryJob({ householdId, deliveryId: delivery.id }))
     }
   }
+  await em.flush()
+
+  if (!event.only) wakeRunner()
   return saved
 }
 
@@ -83,17 +93,32 @@ export async function record<T extends WebhookEventType>(
 const deliveryJobKey = (deliveryId: string) =>
   `${WEBHOOK_DELIVERY_JOB}:${deliveryId}`
 
-/** Queues the job that sends a delivery, unless it has one already. */
-export function queueDelivery(
-  em: EntityManager,
-  input: { householdId: string; deliveryId: string }
-): Promise<Job> {
-  return enqueue(em, {
+type DeliveryRef = { householdId: string; deliveryId: string }
+
+/** The job that sends a delivery: eight tries, found again by its key. */
+function deliveryJob(input: DeliveryRef): NewJob {
+  return {
     kind: WEBHOOK_DELIVERY_JOB,
     key: deliveryJobKey(input.deliveryId),
     householdId: input.householdId,
     payload: { deliveryId: input.deliveryId },
     maxAttempts: WEBHOOK_MAX_ATTEMPTS,
+  }
+}
+
+/** Queues the job that sends a delivery, unless it has one already. */
+export function queueDelivery(
+  em: EntityManager,
+  input: DeliveryRef
+): Promise<Job> {
+  return enqueue(em, deliveryJob(input))
+}
+
+/** The job waiting or running to send a delivery, if it has one. */
+export function activeDeliveryJob(em: EntityManager, deliveryId: string) {
+  return em.findOne(Job, {
+    key: deliveryJobKey(deliveryId),
+    status: { $in: [...ACTIVE] },
   })
 }
 
@@ -104,12 +129,9 @@ export function queueDelivery(
  */
 export async function requeueDelivery(
   em: EntityManager,
-  input: { householdId: string; deliveryId: string }
+  input: DeliveryRef
 ): Promise<Job> {
-  const job = await em.findOne(Job, {
-    key: deliveryJobKey(input.deliveryId),
-    status: { $in: [...ACTIVE] },
-  })
+  const job = await activeDeliveryJob(em, input.deliveryId)
   return job ? restartJob(em, job) : queueDelivery(em, input)
 }
 

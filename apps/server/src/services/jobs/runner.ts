@@ -246,12 +246,6 @@ export class JobRunner {
     if (this.#stopping) return
     const free = this.#maxRunning - this.#running.size
     if (free <= 0) return
-    const em = this.#em()
-    const due = await em.find(
-      Job,
-      { status: "queued", runAt: { $lte: new Date() } },
-      { orderBy: { runAt: "asc", createdAt: "asc" }, limit: 50 }
-    )
     const byKind = new Map<string, number>()
     const byHousehold = new Map<string, number>()
     for (const running of this.#running.values()) {
@@ -259,6 +253,8 @@ export class JobRunner {
       const household = running.householdId ?? ""
       byHousehold.set(household, (byHousehold.get(household) ?? 0) + 1)
     }
+    const em = this.#em()
+    const due = await this.#dueJobs(em, this.#kindsAtLimit(byKind))
 
     let started = 0
     // A fair share: households with the least running go first.
@@ -295,6 +291,34 @@ export class JobRunner {
       this.#run(handler, job, job.attempts + 1)
       started++
     }
+  }
+
+  /** The kinds running as many at once as they may. */
+  #kindsAtLimit(byKind: ReadonlyMap<string, number>) {
+    return [...byKind]
+      .filter(
+        ([kind, running]) =>
+          running >= (this.#handlers.get(kind)?.concurrency ?? 1)
+      )
+      .map(([kind]) => kind)
+  }
+
+  /**
+   * The jobs that are due, oldest first, as many as one look takes in.
+   * Kinds at their limit are left out: they couldn't start anyway, and
+   * when more of one are due than a look takes in, as when deliveries pile
+   * up for a receiver that hangs, they'd keep every other kind waiting.
+   */
+  #dueJobs(em: EntityManager, kindsAtLimit: readonly string[]) {
+    return em.find(
+      Job,
+      {
+        status: "queued",
+        runAt: { $lte: new Date() },
+        ...(kindsAtLimit.length > 0 ? { kind: { $nin: kindsAtLimit } } : {}),
+      },
+      { orderBy: { runAt: "asc", createdAt: "asc" }, limit: 50 }
+    )
   }
 
   #run(handler: JobHandler, job: Job, attempt: number) {

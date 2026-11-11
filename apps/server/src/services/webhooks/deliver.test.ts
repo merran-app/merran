@@ -446,6 +446,20 @@ describe("delivering", () => {
     expect((await deliveryOf(event)).answer).toBe("x".repeat(1_024))
   })
 
+  test("an answer with NUL characters is kept without them", async () => {
+    // As a binary or UTF-16 answer has, which Postgres can't keep as text.
+    await addWebhook()
+    receiver.answer(200, "o\u0000k")
+
+    const event = await recordDeleted()
+    await jobs.drain()
+
+    expect(await deliveryOf(event)).toMatchObject({
+      state: "delivered",
+      answer: "ok",
+    })
+  })
+
   test("an unreachable address is a failure, not a crash", async () => {
     // A port nothing listens on any more.
     const server = createServer()
@@ -616,6 +630,7 @@ describe("resuming", () => {
         pausedReason: "gave_up",
         pausedAt: ago(60_000),
         failingSince: ago(27 * HOUR),
+        lastError: "That address answered with an error (500).",
       }
     )
     forgetWebhooks(home)
@@ -630,6 +645,7 @@ describe("resuming", () => {
       pausedReason: null,
       pausedAt: null,
       failingSince: null,
+      lastError: null,
     })
     // Each one resent has one job, from its first try.
     for (const event of [lastTry, stopped]) {

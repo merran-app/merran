@@ -1,4 +1,12 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest"
 import {
   Household,
   Job,
@@ -149,6 +157,24 @@ describe("record", () => {
     expect(envelope.data.recipe.url).toBe(
       "http://merran.test/recipes/lemon-chicken"
     )
+  })
+
+  test("saves the event, its deliveries and their jobs together", async () => {
+    await addWebhook({ everything: true })
+    await addWebhook({ everything: true })
+    const em = inHome()
+    const flush = vi.spyOn(em, "flush")
+
+    await record(em, home, {
+      type: "recipe.deleted",
+      data: { recipe: lemonChicken() },
+    })
+
+    // One save, so a crash between two can't leave a delivery with no job
+    // to send it.
+    expect(flush).toHaveBeenCalledTimes(1)
+    expect(await inHome().count(WebhookDelivery, {})).toBe(2)
+    expect(await deliveryJobs()).toHaveLength(2)
   })
 
   test("a change that rolls back records nothing", async () => {

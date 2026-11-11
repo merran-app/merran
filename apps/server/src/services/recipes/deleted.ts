@@ -7,6 +7,7 @@ import {
   HOUSEHOLD_FILTER,
   NOT_DELETED_FILTER,
 } from "../../database/scope.ts"
+import { inHouseholdTransaction } from "../../database/transactions.ts"
 import type { JobHandler } from "../jobs/runner.ts"
 import type { FileStore } from "../storage/files.ts"
 import { recipeRef } from "../webhooks/payloads.ts"
@@ -144,25 +145,43 @@ export async function emptyDeleted(em: EntityManager, files: FileStore) {
   await deleteRecipes(em, files, recipes)
 }
 
+/** The picked recipes that are in Recently deleted. */
+const pickedDeleted = (em: EntityManager, ids: readonly string[]) =>
+  em.find(
+    Recipe,
+    { id: { $in: [...ids] }, deletedAt: { $ne: null } },
+    SEE_DELETED
+  )
+
 /** Puts back, or deletes for good, recipes picked in Recently deleted. */
 export async function bulkDeleted(
   em: EntityManager,
   files: FileStore,
+  householdId: string,
   input: DeletedBulkInput
 ) {
-  const recipes = await em.find(
-    Recipe,
-    { id: { $in: input.ids }, deletedAt: { $ne: null } },
-    SEE_DELETED
-  )
   if (input.action === "restore") {
-    for (const recipe of recipes) {
-      recipe.deletedAt = null
-      await recordRestored(em, recipe)
-    }
-    await em.flush()
-  } else {
-    await deleteRecipes(em, files, recipes)
+    return inHouseholdTransaction(em, householdId, (tx) =>
+      restorePicked(tx, input.ids)
+    )
   }
+
+  const recipes = await pickedDeleted(em, input.ids)
+  await deleteRecipes(em, files, recipes)
+  return { changed: recipes.length }
+}
+
+/**
+ * Puts the picked recipes back, telling webhooks of each. Each one's event
+ * saves what came before it, so this runs in a transaction: all of them
+ * come back, or none do.
+ */
+async function restorePicked(tx: EntityManager, ids: readonly string[]) {
+  const recipes = await pickedDeleted(tx, ids)
+  for (const recipe of recipes) {
+    recipe.deletedAt = null
+    await recordRestored(tx, recipe)
+  }
+  await tx.flush()
   return { changed: recipes.length }
 }

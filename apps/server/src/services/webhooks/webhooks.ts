@@ -170,6 +170,7 @@ export async function updateWebhook(
     replaceHeaders(em, deps, webhook, changes.headers)
   }
   await em.flush()
+  forgetWebhooks(householdId)
 
   // Pausing and resuming save their change, and forget, themselves.
   if (changes.paused === true && webhook.state === "active") {
@@ -177,7 +178,6 @@ export async function updateWebhook(
   } else if (changes.paused === false && webhook.state === "paused") {
     await resumeWebhook(em, webhook, { resend: changes.resend ?? false })
   }
-  forgetWebhooks(householdId)
   return webhook
 }
 
@@ -203,12 +203,12 @@ export async function deleteWebhook(em: EntityManager, webhook: Webhook) {
   }
   em.remove(webhook)
   await em.flush()
+  forgetWebhooks(webhook.household.id)
 
   await cancelDeliveryJobs(
     em,
     waiting.map((delivery) => delivery.id)
   )
-  forgetWebhooks(webhook.household.id)
 }
 
 /** Where a webhook sends. It's sealed, since it's often the receiver's password. */

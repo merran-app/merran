@@ -1,9 +1,9 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import {
   Household,
+  Webhook,
   WebhookDelivery,
   type PauseReason,
-  type Webhook,
 } from "../../database/entities/index.ts"
 import { emailConfiguration, sendEmail } from "../../modules/email/sender.ts"
 import { webhookPausedEmail } from "../../modules/email/templates.ts"
@@ -16,9 +16,10 @@ import { forgetWebhooks } from "./wanted.ts"
 // answers 410 Gone, or when someone pauses it. Nothing new is queued for it
 // then, and what was waiting stops, until someone resumes it.
 //
-// Both functions save their change before forgetting what the household's
-// webhooks want, so a change being recorded meanwhile can't read the old
-// state back into memory. Call them outside any transaction.
+// Both functions forget what the household's webhooks want as soon as their
+// change is saved, before anything else that could fail, so a change being
+// recorded meanwhile can't read the old state back into memory. Call them
+// outside any transaction.
 
 /** How far back Resume resends what didn't arrive. */
 const RESEND_WITHIN_MS = 24 * 60 * 60_000
@@ -27,35 +28,55 @@ const RESEND_WITHIN_MS = 24 * 60 * 60_000
  * Stops sending to a webhook, and stops what was waiting, with its jobs.
  * Unless someone paused it by hand, its household's owners and admins are
  * told by email, if the server can send it.
+ *
+ * Only an active webhook pauses, so two last tries finishing together pause
+ * it once and send one email, and one paused by hand stays paused by hand.
+ * Returns whether this paused it; either way, `webhook` is brought up to
+ * date with how it is now.
  */
 export async function pauseWebhook(
   em: EntityManager,
   deps: Pick<JobDeps, "settings" | "logger" | "config">,
   webhook: Webhook,
   reason: PauseReason
-): Promise<void> {
-  webhook.state = "paused"
-  webhook.pausedReason = reason
-  webhook.pausedAt = new Date()
-  const stopped = await em.find(WebhookDelivery, {
-    webhook: webhook.id,
-    state: "waiting",
-  })
-  for (const delivery of stopped) {
-    delivery.state = "stopped"
-  }
-  await em.flush()
-  await cancelDeliveryJobs(
-    em,
-    stopped.map((delivery) => delivery.id)
+): Promise<boolean> {
+  const paused = await em.nativeUpdate(
+    Webhook,
+    { id: webhook.id, state: "active" },
+    { state: "paused", pausedReason: reason, pausedAt: new Date() }
   )
   forgetWebhooks(webhook.household.id)
+  await em.findOne(Webhook, { id: webhook.id }, { refresh: true })
+  if (paused === 0) return false
 
+  await stopWaiting(em, webhook)
   if (reason !== "by_hand") {
     await tellAdmins(em, deps, webhook, reason).catch((err: unknown) =>
       deps.logger.warn({ err }, "Couldn't email that a webhook paused")
     )
   }
+  return true
+}
+
+/**
+ * Stops a paused webhook's waiting deliveries, and cancels their jobs. One
+ * delivered while this ran stays delivered.
+ */
+async function stopWaiting(em: EntityManager, webhook: Webhook) {
+  const waiting = await em.find(
+    WebhookDelivery,
+    { webhook: webhook.id, state: "waiting" },
+    { fields: ["id"] }
+  )
+  const ids = waiting.map((delivery) => delivery.id)
+  if (ids.length === 0) return
+
+  await em.nativeUpdate(
+    WebhookDelivery,
+    { id: { $in: ids }, state: "waiting" },
+    { state: "stopped" }
+  )
+  await cancelDeliveryJobs(em, ids)
 }
 
 /**
@@ -71,12 +92,14 @@ export async function resumeWebhook(
   webhook.pausedReason = null
   webhook.pausedAt = null
   webhook.failingSince = null
+  webhook.lastError = null
   const resent = options.resend ? await lastDaysUndelivered(em, webhook) : []
   for (const delivery of resent) {
     delivery.state = "waiting"
     delivery.tries = 0
   }
   await em.flush()
+  forgetWebhooks(webhook.household.id)
 
   for (const delivery of resent) {
     await requeueDelivery(em, {
@@ -84,7 +107,6 @@ export async function resumeWebhook(
       deliveryId: delivery.id,
     })
   }
-  forgetWebhooks(webhook.household.id)
   return resent.length
 }
 

@@ -256,6 +256,43 @@ describe("the job runner", () => {
     expect(started.slice(0, 2).sort()).toEqual(["home 1", "next door"])
   })
 
+  test("a kind at its limit doesn't keep other kinds from their turn", async () => {
+    // More of one kind are due than the runner looks at in one go, as when
+    // deliveries pile up for a receiver that hangs, and they came first.
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    let otherRan = false
+    const jobs = runner([
+      { kind: "hog", run: () => held },
+      {
+        kind: "other",
+        run: async () => {
+          otherRan = true
+        },
+      },
+    ])
+    const tx = em()
+    const longAgo = new Date(Date.now() - 60 * 60_000)
+    for (let i = 0; i < 60; i++) {
+      tx.create(Job, { kind: "hog", payload: {}, runAt: longAgo })
+    }
+    await tx.flush()
+    await enqueue(em(), { kind: "other" })
+
+    const draining = jobs.drain()
+    try {
+      await expect
+        .poll(() => em().count(Job, { kind: "hog", status: "running" }))
+        .toBe(1)
+      // The next look for work, as the runner makes every few seconds.
+      jobs.wake()
+      await expect.poll(() => otherRan).toBe(true)
+    } finally {
+      letThemGo()
+      await draining
+    }
+  })
+
   test("adds one job per key while it's waiting or running", async () => {
     const first = await enqueue(em(), { kind: "x", key: "only-one" })
     const second = await enqueue(em(), { kind: "x", key: "only-one" })

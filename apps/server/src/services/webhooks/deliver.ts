@@ -280,7 +280,7 @@ async function send(
     })
     return {
       statusCode: answer.status,
-      answer: answer.body.toString("utf8").slice(0, ANSWER_KEPT),
+      answer: keptAnswer(answer.body),
       error: isSuccess(answer.status)
         ? null
         : `That address answered with an error (${answer.status}).`,
@@ -296,6 +296,15 @@ async function send(
       triedAt,
     }
   }
+}
+
+/**
+ * The start of an answer, as text the deliveries log can keep. NUL
+ * characters are left out: Postgres can't keep them in text, and a binary
+ * or UTF-16 answer is full of them.
+ */
+function keptAnswer(body: Buffer) {
+  return body.toString("utf8").replaceAll("\0", "").slice(0, ANSWER_KEPT)
 }
 
 /** Any 2xx is delivered; a redirect isn't followed, so it's a failure. */
@@ -314,13 +323,14 @@ function noteTry(delivery: WebhookDelivery, result: TryResult) {
 }
 
 /**
- * Sends one delivery, four at a time across the server, on Standard
- * Webhooks' schedule. A try that fails is thrown, so the runner waits for
- * the next; the last one pauses the webhook instead.
+ * Sends one delivery, two at a time across the server, on Standard
+ * Webhooks' schedule: fewer than the runner's places, so receivers that
+ * hang can't take them all. A try that fails is thrown, so the runner
+ * waits for the next; the last one pauses the webhook instead.
  */
 export const webhookDeliveryJob: JobHandler = {
   kind: WEBHOOK_DELIVERY_JOB,
-  concurrency: 4,
+  concurrency: 2,
   retryDelays: WEBHOOK_RETRY_DELAYS,
   async run({ em, payload, attempt, maxAttempts, deps }) {
     const deliveryId = payload.deliveryId

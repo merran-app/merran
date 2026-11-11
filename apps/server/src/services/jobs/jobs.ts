@@ -46,7 +46,19 @@ export async function enqueue(em: EntityManager, job: NewJob) {
     })
     if (existing) return existing
   }
-  const created = em.create(Job, {
+  const created = createJob(em, job)
+  await em.flush()
+  wake()
+  return created
+}
+
+/**
+ * A job not yet saved, for a change that saves it with everything else in
+ * one flush and then calls `wakeRunner`. Unlike `enqueue`, it doesn't look
+ * for a job with the same key, so the caller makes sure there can't be one.
+ */
+export function createJob(em: EntityManager, job: NewJob) {
+  return em.create(Job, {
     kind: job.kind,
     payload: job.payload ?? {},
     forHousehold: job.householdId ?? null,
@@ -56,9 +68,11 @@ export async function enqueue(em: EntityManager, job: NewJob) {
     createdBy: job.createdBy ?? null,
     result: job.result ?? null,
   })
-  await em.flush()
+}
+
+/** Tells the runner there's new work, once jobs made with `createJob` are saved. */
+export function wakeRunner() {
   wake()
-  return created
 }
 
 /** Jobs that come round again have this key (see runner.ts). */
