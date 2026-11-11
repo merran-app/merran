@@ -5,6 +5,7 @@ import { KEY_PERMISSION } from "../middleware/auth.ts"
 import { BETTER_AUTH_ENDPOINTS } from "../routes/auth/better-auth.ts"
 import { OAUTH_PROTOCOL_ENDPOINTS } from "../auth/oauth.ts"
 import { authOverrides } from "./auth-overrides.ts"
+import { registerWebhookEvents } from "./webhooks.ts"
 
 type Document = ReturnType<OpenAPIHono<AppEnv>["getOpenAPI31Document"]>
 type Operation = Record<string, unknown>
@@ -116,6 +117,7 @@ export async function buildOpenApiDocument(
   auth: Auth,
   { version, serverUrl }: { version: string; serverUrl: string }
 ): Promise<Document> {
+  registerWebhookEvents(app.openAPIRegistry)
   const document = app.getOpenAPI31Document({
     openapi: "3.1.0",
     info: {

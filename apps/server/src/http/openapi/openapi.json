@@ -75,6 +75,10 @@
       "description": "What changes in the household, as it happens: the live updates the app uses, and who has the list open."
     },
     {
+      "name": "Webhooks",
+      "description": "Telling tools like Home Assistant and n8n when things happen in the household, signed in the Standard Webhooks format: each webhook's address, events, secret and deliveries log. Managed by the household's admins in the app, never with API keys."
+    },
+    {
       "name": "Stores",
       "description": "Stores with an API: Kroger (Fry's, Ralphs...), its products and prices, and sending the list to a linked account's cart."
     },
@@ -4145,6 +4149,516 @@
           "kind",
           "name"
         ]
+      },
+      "Webhook": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "host": {
+            "type": "string",
+            "description": "Where it sends. The rest of the address is kept sealed, since it's often the receiver's password."
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "recipe.created",
+                "recipe.updated",
+                "recipe.deleted",
+                "recipe.restored"
+              ]
+            },
+            "description": "The events it's sent, unless it's sent everything."
+          },
+          "everything": {
+            "type": "boolean",
+            "description": "Whether it's sent every event, including ones added later."
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The names of its extra headers. Their values are kept sealed and never shown."
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "working",
+              "failing",
+              "paused"
+            ],
+            "description": "`failing` while a delivery is being tried again; `paused` when nothing is sent to it."
+          },
+          "pausedReason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "gave_up",
+              "gone",
+              "by_hand",
+              null
+            ],
+            "description": "Why it's paused: `gave_up` when a delivery ran out of tries, `gone` when its address answered 410 Gone, or `by_hand`."
+          },
+          "pausedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "failingSince": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When its deliveries began failing in a row."
+          },
+          "lastError": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why its last delivery that failed did."
+          },
+          "lastDeliveredAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "host",
+          "events",
+          "everything",
+          "headers",
+          "state",
+          "pausedReason",
+          "pausedAt",
+          "failingSince",
+          "lastError",
+          "lastDeliveredAt",
+          "createdAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000034",
+          "name": "Home Assistant",
+          "host": "192.168.1.20:8123",
+          "events": [
+            "recipe.created"
+          ],
+          "everything": false,
+          "headers": [],
+          "state": "working",
+          "pausedReason": null,
+          "pausedAt": null,
+          "failingSince": null,
+          "lastError": null,
+          "lastDeliveredAt": "2026-10-15T18:30:00.000Z",
+          "createdAt": "2026-10-01T17:30:00.000Z"
+        }
+      },
+      "WebhookCreated": {
+        "type": "object",
+        "properties": {
+          "webhook": {
+            "$ref": "#/components/schemas/Webhook"
+          },
+          "secret": {
+            "type": "string",
+            "description": "The secret its deliveries are signed with, for the receiver to check them."
+          }
+        },
+        "required": [
+          "webhook",
+          "secret"
+        ],
+        "example": {
+          "webhook": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000034",
+            "name": "Home Assistant",
+            "host": "192.168.1.20:8123",
+            "events": [
+              "recipe.created"
+            ],
+            "everything": false,
+            "headers": [],
+            "state": "working",
+            "pausedReason": null,
+            "pausedAt": null,
+            "failingSince": null,
+            "lastError": null,
+            "lastDeliveredAt": "2026-10-15T18:30:00.000Z",
+            "createdAt": "2026-10-01T17:30:00.000Z"
+          },
+          "secret": "whsec_GABmWOVDpDHcyCEkbbUEMKosvEGEC3mYhXOM7W4ZiDY="
+        }
+      },
+      "NewWebhook": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Where to send, `http` or `https`, with no user name or password in it: put those in a header. An address on the home network needs the server admin's leave."
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "recipe.created",
+                "recipe.updated",
+                "recipe.deleted",
+                "recipe.restored"
+              ]
+            },
+            "maxItems": 4,
+            "default": [],
+            "description": "The events to send. At least one, unless `everything`."
+          },
+          "everything": {
+            "type": "boolean",
+            "default": false,
+            "description": "Send every event, including ones added later."
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9-]{1,64}$"
+                },
+                "value": {
+                  "type": "string",
+                  "maxLength": 1000
+                }
+              },
+              "required": [
+                "name",
+                "value"
+              ]
+            },
+            "maxItems": 5,
+            "default": [],
+            "description": "Up to 5 headers sent with each delivery, like a token for n8n's Header Auth. They can't replace `content-type`, `content-length`, `host`, `user-agent` or the `webhook-` headers."
+          }
+        },
+        "required": [
+          "name",
+          "address"
+        ],
+        "example": {
+          "name": "Home Assistant",
+          "address": "http://192.168.1.20:8123/api/webhook/merran-kitchen",
+          "events": [
+            "recipe.created"
+          ],
+          "everything": false,
+          "headers": []
+        }
+      },
+      "WebhookDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Webhook"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "address": {
+                "type": "string",
+                "description": "The whole address it sends to."
+              }
+            },
+            "required": [
+              "address"
+            ]
+          }
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000034",
+          "name": "Home Assistant",
+          "host": "192.168.1.20:8123",
+          "events": [
+            "recipe.created"
+          ],
+          "everything": false,
+          "headers": [],
+          "state": "working",
+          "pausedReason": null,
+          "pausedAt": null,
+          "failingSince": null,
+          "lastError": null,
+          "lastDeliveredAt": "2026-10-15T18:30:00.000Z",
+          "createdAt": "2026-10-01T17:30:00.000Z",
+          "address": "http://192.168.1.20:8123/api/webhook/merran-kitchen"
+        }
+      },
+      "WebhookChanges": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Where to send, `http` or `https`, with no user name or password in it: put those in a header. An address on the home network needs the server admin's leave."
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "recipe.created",
+                "recipe.updated",
+                "recipe.deleted",
+                "recipe.restored"
+              ]
+            },
+            "maxItems": 4
+          },
+          "everything": {
+            "type": "boolean"
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9-]{1,64}$"
+                },
+                "value": {
+                  "type": "string",
+                  "maxLength": 1000
+                }
+              },
+              "required": [
+                "name",
+                "value"
+              ]
+            },
+            "maxItems": 5,
+            "description": "Replaces its extra headers; `[]` removes them."
+          },
+          "paused": {
+            "type": "boolean",
+            "description": "`true` pauses it: nothing new is sent, and what's waiting stops. `false` resumes it."
+          },
+          "resend": {
+            "type": "boolean",
+            "description": "With `paused: false`, also send again what didn't arrive in the last day."
+          }
+        },
+        "example": {
+          "paused": false,
+          "resend": true
+        }
+      },
+      "WebhookDeliveryList": {
+        "type": "object",
+        "properties": {
+          "deliveries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookDelivery"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "How many it has in all."
+          }
+        },
+        "required": [
+          "deliveries",
+          "total"
+        ],
+        "example": {
+          "deliveries": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000035",
+              "event": {
+                "id": "msg_0199e8b0-5a10-7a01-8b00-000000000036",
+                "type": "webhook.test",
+                "createdAt": "2026-10-15T18:30:00.000Z"
+              },
+              "state": "delivered",
+              "tries": 1,
+              "statusCode": 200,
+              "answer": "",
+              "durationMs": 84,
+              "error": null,
+              "lastTriedAt": "2026-10-15T18:30:00.000Z",
+              "deliveredAt": "2026-10-15T18:30:00.000Z",
+              "body": "{\"type\":\"webhook.test\",\"timestamp\":\"2026-10-15T18:30:00.000Z\",\"data\":{\"household\":{\"id\":\"0199e8b0-5a10-7a01-8b00-000000000003\",\"name\":\"The Riveras\"},\"by\":{\"id\":\"0199e8b0-5a10-7a01-8b00-000000000001\",\"name\":\"Sam Rivera\"},\"via\":\"app\",\"key\":null,\"webhook\":{\"id\":\"0199e8b0-5a10-7a01-8b00-000000000034\",\"name\":\"Home Assistant\"}}}"
+            }
+          ],
+          "total": 1
+        }
+      },
+      "WebhookDelivery": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "event": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The `webhook-id` header: the same on every try, so a receiver can drop repeats."
+              },
+              "type": {
+                "type": "string",
+                "example": "recipe.created"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When it happened."
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "createdAt"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "waiting",
+              "delivered",
+              "failed",
+              "stopped"
+            ],
+            "description": "`waiting` to be tried, `delivered`, `failed` when it ran out of tries, or `stopped` when its webhook was paused."
+          },
+          "tries": {
+            "type": "number"
+          },
+          "statusCode": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "What the last try was answered with; null when there was no answer."
+          },
+          "answer": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The first 1,024 characters of the last answer."
+          },
+          "durationMs": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "How long the last try took."
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why the last try failed."
+          },
+          "lastTriedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "deliveredAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "body": {
+            "type": "string",
+            "description": "Exactly what's sent, and signed."
+          }
+        },
+        "required": [
+          "id",
+          "event",
+          "state",
+          "tries",
+          "statusCode",
+          "answer",
+          "durationMs",
+          "error",
+          "lastTriedAt",
+          "deliveredAt",
+          "body"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000035",
+          "event": {
+            "id": "msg_0199e8b0-5a10-7a01-8b00-000000000036",
+            "type": "webhook.test",
+            "createdAt": "2026-10-15T18:30:00.000Z"
+          },
+          "state": "delivered",
+          "tries": 1,
+          "statusCode": 200,
+          "answer": "",
+          "durationMs": 84,
+          "error": null,
+          "lastTriedAt": "2026-10-15T18:30:00.000Z",
+          "deliveredAt": "2026-10-15T18:30:00.000Z",
+          "body": "{\"type\":\"webhook.test\",\"timestamp\":\"2026-10-15T18:30:00.000Z\",\"data\":{\"household\":{\"id\":\"0199e8b0-5a10-7a01-8b00-000000000003\",\"name\":\"The Riveras\"},\"by\":{\"id\":\"0199e8b0-5a10-7a01-8b00-000000000001\",\"name\":\"Sam Rivera\"},\"via\":\"app\",\"key\":null,\"webhook\":{\"id\":\"0199e8b0-5a10-7a01-8b00-000000000034\",\"name\":\"Home Assistant\"}}}"
+        }
+      },
+      "WebhookSecret": {
+        "type": "object",
+        "properties": {
+          "secret": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "secret"
+        ],
+        "example": {
+          "secret": "whsec_GABmWOVDpDHcyCEkbbUEMKosvEGEC3mYhXOM7W4ZiDY="
+        }
       },
       "HouseholdImport": {
         "type": "object",
@@ -21532,6 +22046,727 @@
           },
           "403": {
             "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/webhooks": {
+      "get": {
+        "operationId": "listWebhooks",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "The household's webhooks",
+        "description": "Household admins only. Each with the host it sends to, but not the whole address or its secret.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "In the order they were added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Webhook"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createWebhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Add a webhook",
+        "description": "Household admins only, up to 10 a household. Its signing secret is made now and returned with it. An address on the home network is refused unless the server admin allows it for this household (`webhook_home_network`).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewWebhook"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The address, the events or a header can't be used, with a message for each field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The household has 10 webhooks already.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/webhooks/{webhookId}": {
+      "get": {
+        "operationId": "getWebhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "One webhook, with its address",
+        "description": "Household admins only. The whole address, for editing it; the secret is shown on its own.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000034"
+            },
+            "required": true,
+            "name": "webhookId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The webhook.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such webhook in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateWebhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Change, pause or resume a webhook",
+        "description": "Household admins only. Only what's sent changes. A new address is checked as when adding one. Resuming can resend what didn't arrive in the last day.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000034"
+            },
+            "required": true,
+            "name": "webhookId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookChanges"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Webhook"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The address, the events or a header can't be used, with a message for each field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such webhook in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteWebhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Delete a webhook",
+        "description": "Household admins only. It stops at once, and its deliveries log goes with it.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000034"
+            },
+            "required": true,
+            "name": "webhookId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such webhook in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/webhooks/{webhookId}/deliveries": {
+      "get": {
+        "operationId": "listWebhookDeliveries",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "A webhook's deliveries log",
+        "description": "Household admins only. What was sent in the last 30 days, newest first: the event, how many tries, the last answer and the exact body sent.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000034"
+            },
+            "required": true,
+            "name": "webhookId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of deliveries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such webhook in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/webhooks/{webhookId}/deliveries/{deliveryId}/resend": {
+      "post": {
+        "operationId": "resendWebhookDelivery",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Resend a delivery",
+        "description": "Household admins only. Sends it again from its first try, on the usual schedule, with the same `webhook-id`. Not while it's still being tried (`delivery_waiting`), or while its webhook is paused (`webhook_paused`).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000034"
+            },
+            "required": true,
+            "name": "webhookId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000035"
+            },
+            "required": true,
+            "name": "deliveryId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Waiting to be sent again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDelivery"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such webhook or delivery in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It's still being tried, or its webhook is paused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/webhooks/{webhookId}/secret": {
+      "get": {
+        "operationId": "getWebhookSecret",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Show a webhook's secret",
+        "description": "Household admins only. The secret its deliveries are signed with now, in the Standard Webhooks form (`whsec_…`).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000034"
+            },
+            "required": true,
+            "name": "webhookId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The secret.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSecret"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such webhook in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/webhooks/{webhookId}/secret/rotate": {
+      "post": {
+        "operationId": "rotateWebhookSecret",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Rotate a webhook's secret",
+        "description": "Household admins only. Makes a new secret. For 24 hours each delivery is signed with the old one too, so a receiver can change over without missing one.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000034"
+            },
+            "required": true,
+            "name": "webhookId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The new secret.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSecret"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such webhook in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/webhooks/{webhookId}/test": {
+      "post": {
+        "operationId": "testWebhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Send a test",
+        "description": "Household admins only. Sends a `webhook.test` event to this webhook alone, now, even when it's paused, and answers with what came of it. It's tried once and logged like any delivery, but never retried, and it never pauses the webhook.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000034"
+            },
+            "required": true,
+            "name": "webhookId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tried: delivered or failed, with the answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDelivery"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such webhook in this household.",
             "content": {
               "application/json": {
                 "schema": {
@@ -43613,5 +44848,1198 @@
       }
     }
   },
-  "webhooks": {}
+  "webhooks": {
+    "recipe.created": {
+      "post": {
+        "summary": "A recipe was added",
+        "description": "Sent when a recipe is added: typed in, imported from a link, a page, text, photos or a video, sent from the extension or a share, or applied from a proposal. Links imported many at once send one each, but recipes brought in from another app or a Merran archive don't send it.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+              "example": "msg_2KWPBgLlAfxdpx2AI54pPJ85f4W"
+            },
+            "required": true,
+            "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+            "name": "webhook-id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+              "example": "1731268800"
+            },
+            "required": true,
+            "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+            "name": "webhook-timestamp",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+              "example": "v1,K5oZfzN95Z9UVu1EsfQmfVNQhnkZ2pj9o9NDN/H/pI4="
+            },
+            "required": true,
+            "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+            "name": "webhook-signature",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "recipe.created"
+                    ]
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "household": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                          "name": "The Riveras"
+                        }
+                      },
+                      "by": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                          "name": "Sam Rivera"
+                        },
+                        "description": "Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links."
+                      },
+                      "via": {
+                        "type": "string",
+                        "enum": [
+                          "app",
+                          "api",
+                          "mcp",
+                          "merran"
+                        ],
+                        "description": "How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own."
+                      },
+                      "key": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                          "name": "Home Assistant"
+                        },
+                        "description": "The API key or OAuth connection used, for `api` and `mcp`. Null otherwise."
+                      },
+                      "recipe": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "slug",
+                          "title",
+                          "url"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                          "slug": "lemon-chicken",
+                          "title": "Lemon Chicken",
+                          "url": "https://merran.example.com/recipes/lemon-chicken"
+                        }
+                      },
+                      "origin": {
+                        "type": "string",
+                        "enum": [
+                          "manual",
+                          "link",
+                          "video",
+                          "text",
+                          "photo",
+                          "assistant"
+                        ],
+                        "description": "How it was added. Pages, the extension and shares arrive as `link`."
+                      },
+                      "sourceUrl": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "The link it came from, if it came from one."
+                      }
+                    },
+                    "required": [
+                      "household",
+                      "by",
+                      "via",
+                      "key",
+                      "recipe",
+                      "origin",
+                      "sourceUrl"
+                    ],
+                    "example": {
+                      "household": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                        "name": "The Riveras"
+                      },
+                      "by": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                        "name": "Sam Rivera"
+                      },
+                      "via": "app",
+                      "key": null,
+                      "recipe": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                        "slug": "lemon-chicken",
+                        "title": "Lemon Chicken",
+                        "url": "https://merran.example.com/recipes/lemon-chicken"
+                      },
+                      "origin": "link",
+                      "sourceUrl": "https://example.com/lemon-chicken"
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "example": {
+                  "type": "recipe.created",
+                  "timestamp": "2026-10-15T18:30:00.000Z",
+                  "data": {
+                    "household": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                      "name": "The Riveras"
+                    },
+                    "by": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                      "name": "Sam Rivera"
+                    },
+                    "via": "app",
+                    "key": null,
+                    "recipe": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                      "slug": "lemon-chicken",
+                      "title": "Lemon Chicken",
+                      "url": "https://merran.example.com/recipes/lemon-chicken"
+                    },
+                    "origin": "link",
+                    "sourceUrl": "https://example.com/lemon-chicken"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Any 2xx answer counts as delivered. 410 Gone pauses the webhook."
+          }
+        }
+      }
+    },
+    "recipe.updated": {
+      "post": {
+        "summary": "A recipe was changed",
+        "description": "Sent when someone saves edits to a recipe, applies a tidy-up or proposal, saves a swap, restores a version, or changes its photo, diets or what can be left out, saying which parts changed. Nothing is sent when nothing changed, and stars, cooking notes, tags changed on many recipes at once, renamed tags and background nutrition, photo and food-matching runs don't send it.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+              "example": "msg_2KWPBgLlAfxdpx2AI54pPJ85f4W"
+            },
+            "required": true,
+            "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+            "name": "webhook-id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+              "example": "1731268800"
+            },
+            "required": true,
+            "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+            "name": "webhook-timestamp",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+              "example": "v1,K5oZfzN95Z9UVu1EsfQmfVNQhnkZ2pj9o9NDN/H/pI4="
+            },
+            "required": true,
+            "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+            "name": "webhook-signature",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "recipe.updated"
+                    ]
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "household": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                          "name": "The Riveras"
+                        }
+                      },
+                      "by": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                          "name": "Sam Rivera"
+                        },
+                        "description": "Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links."
+                      },
+                      "via": {
+                        "type": "string",
+                        "enum": [
+                          "app",
+                          "api",
+                          "mcp",
+                          "merran"
+                        ],
+                        "description": "How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own."
+                      },
+                      "key": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                          "name": "Home Assistant"
+                        },
+                        "description": "The API key or OAuth connection used, for `api` and `mcp`. Null otherwise."
+                      },
+                      "recipe": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "slug",
+                          "title",
+                          "url"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                          "slug": "lemon-chicken",
+                          "title": "Lemon Chicken",
+                          "url": "https://merran.example.com/recipes/lemon-chicken"
+                        }
+                      },
+                      "parts": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "details",
+                            "ingredients",
+                            "steps",
+                            "tags",
+                            "photo",
+                            "diets"
+                          ]
+                        },
+                        "minItems": 1,
+                        "description": "Which parts of the recipe changed."
+                      }
+                    },
+                    "required": [
+                      "household",
+                      "by",
+                      "via",
+                      "key",
+                      "recipe",
+                      "parts"
+                    ],
+                    "example": {
+                      "household": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                        "name": "The Riveras"
+                      },
+                      "by": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                        "name": "Sam Rivera"
+                      },
+                      "via": "app",
+                      "key": null,
+                      "recipe": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                        "slug": "lemon-chicken",
+                        "title": "Lemon Chicken",
+                        "url": "https://merran.example.com/recipes/lemon-chicken"
+                      },
+                      "parts": [
+                        "ingredients",
+                        "steps"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "example": {
+                  "type": "recipe.updated",
+                  "timestamp": "2026-10-15T18:30:00.000Z",
+                  "data": {
+                    "household": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                      "name": "The Riveras"
+                    },
+                    "by": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                      "name": "Sam Rivera"
+                    },
+                    "via": "app",
+                    "key": null,
+                    "recipe": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                      "slug": "lemon-chicken",
+                      "title": "Lemon Chicken",
+                      "url": "https://merran.example.com/recipes/lemon-chicken"
+                    },
+                    "parts": [
+                      "ingredients",
+                      "steps"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Any 2xx answer counts as delivered. 410 Gone pauses the webhook."
+          }
+        }
+      }
+    },
+    "recipe.deleted": {
+      "post": {
+        "summary": "A recipe was deleted",
+        "description": "Sent when a recipe goes to Recently deleted. Deleting it for good from there sends nothing more.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+              "example": "msg_2KWPBgLlAfxdpx2AI54pPJ85f4W"
+            },
+            "required": true,
+            "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+            "name": "webhook-id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+              "example": "1731268800"
+            },
+            "required": true,
+            "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+            "name": "webhook-timestamp",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+              "example": "v1,K5oZfzN95Z9UVu1EsfQmfVNQhnkZ2pj9o9NDN/H/pI4="
+            },
+            "required": true,
+            "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+            "name": "webhook-signature",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "recipe.deleted"
+                    ]
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "household": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                          "name": "The Riveras"
+                        }
+                      },
+                      "by": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                          "name": "Sam Rivera"
+                        },
+                        "description": "Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links."
+                      },
+                      "via": {
+                        "type": "string",
+                        "enum": [
+                          "app",
+                          "api",
+                          "mcp",
+                          "merran"
+                        ],
+                        "description": "How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own."
+                      },
+                      "key": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                          "name": "Home Assistant"
+                        },
+                        "description": "The API key or OAuth connection used, for `api` and `mcp`. Null otherwise."
+                      },
+                      "recipe": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "slug",
+                          "title",
+                          "url"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                          "slug": "lemon-chicken",
+                          "title": "Lemon Chicken",
+                          "url": "https://merran.example.com/recipes/lemon-chicken"
+                        }
+                      }
+                    },
+                    "required": [
+                      "household",
+                      "by",
+                      "via",
+                      "key",
+                      "recipe"
+                    ],
+                    "example": {
+                      "household": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                        "name": "The Riveras"
+                      },
+                      "by": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                        "name": "Sam Rivera"
+                      },
+                      "via": "app",
+                      "key": null,
+                      "recipe": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                        "slug": "lemon-chicken",
+                        "title": "Lemon Chicken",
+                        "url": "https://merran.example.com/recipes/lemon-chicken"
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "example": {
+                  "type": "recipe.deleted",
+                  "timestamp": "2026-10-15T18:30:00.000Z",
+                  "data": {
+                    "household": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                      "name": "The Riveras"
+                    },
+                    "by": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                      "name": "Sam Rivera"
+                    },
+                    "via": "app",
+                    "key": null,
+                    "recipe": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                      "slug": "lemon-chicken",
+                      "title": "Lemon Chicken",
+                      "url": "https://merran.example.com/recipes/lemon-chicken"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Any 2xx answer counts as delivered. 410 Gone pauses the webhook."
+          }
+        }
+      }
+    },
+    "recipe.restored": {
+      "post": {
+        "summary": "A recipe was restored",
+        "description": "Sent when a recipe comes back from Recently deleted.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+              "example": "msg_2KWPBgLlAfxdpx2AI54pPJ85f4W"
+            },
+            "required": true,
+            "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+            "name": "webhook-id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+              "example": "1731268800"
+            },
+            "required": true,
+            "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+            "name": "webhook-timestamp",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+              "example": "v1,K5oZfzN95Z9UVu1EsfQmfVNQhnkZ2pj9o9NDN/H/pI4="
+            },
+            "required": true,
+            "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+            "name": "webhook-signature",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "recipe.restored"
+                    ]
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "household": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                          "name": "The Riveras"
+                        }
+                      },
+                      "by": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                          "name": "Sam Rivera"
+                        },
+                        "description": "Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links."
+                      },
+                      "via": {
+                        "type": "string",
+                        "enum": [
+                          "app",
+                          "api",
+                          "mcp",
+                          "merran"
+                        ],
+                        "description": "How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own."
+                      },
+                      "key": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                          "name": "Home Assistant"
+                        },
+                        "description": "The API key or OAuth connection used, for `api` and `mcp`. Null otherwise."
+                      },
+                      "recipe": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "slug",
+                          "title",
+                          "url"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                          "slug": "lemon-chicken",
+                          "title": "Lemon Chicken",
+                          "url": "https://merran.example.com/recipes/lemon-chicken"
+                        }
+                      }
+                    },
+                    "required": [
+                      "household",
+                      "by",
+                      "via",
+                      "key",
+                      "recipe"
+                    ],
+                    "example": {
+                      "household": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                        "name": "The Riveras"
+                      },
+                      "by": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                        "name": "Sam Rivera"
+                      },
+                      "via": "app",
+                      "key": null,
+                      "recipe": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                        "slug": "lemon-chicken",
+                        "title": "Lemon Chicken",
+                        "url": "https://merran.example.com/recipes/lemon-chicken"
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "example": {
+                  "type": "recipe.restored",
+                  "timestamp": "2026-10-15T18:30:00.000Z",
+                  "data": {
+                    "household": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                      "name": "The Riveras"
+                    },
+                    "by": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                      "name": "Sam Rivera"
+                    },
+                    "via": "app",
+                    "key": null,
+                    "recipe": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                      "slug": "lemon-chicken",
+                      "title": "Lemon Chicken",
+                      "url": "https://merran.example.com/recipes/lemon-chicken"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Any 2xx answer counts as delivered. 410 Gone pauses the webhook."
+          }
+        }
+      }
+    },
+    "webhook.test": {
+      "post": {
+        "summary": "A test was sent",
+        "description": "Sent only when someone chooses Send a test for a webhook, and only to that webhook, even when it's paused. It's tried once, never retried, and never pauses the webhook.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+              "example": "msg_2KWPBgLlAfxdpx2AI54pPJ85f4W"
+            },
+            "required": true,
+            "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+            "name": "webhook-id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+              "example": "1731268800"
+            },
+            "required": true,
+            "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+            "name": "webhook-timestamp",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+              "example": "v1,K5oZfzN95Z9UVu1EsfQmfVNQhnkZ2pj9o9NDN/H/pI4="
+            },
+            "required": true,
+            "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+            "name": "webhook-signature",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "webhook.test"
+                    ]
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order."
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "household": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                          "name": "The Riveras"
+                        }
+                      },
+                      "by": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                          "name": "Sam Rivera"
+                        },
+                        "description": "Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links."
+                      },
+                      "via": {
+                        "type": "string",
+                        "enum": [
+                          "app",
+                          "api",
+                          "mcp",
+                          "merran"
+                        ],
+                        "description": "How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own."
+                      },
+                      "key": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                          "name": "Home Assistant"
+                        },
+                        "description": "The API key or OAuth connection used, for `api` and `mcp`. Null otherwise."
+                      },
+                      "webhook": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000034",
+                          "name": "Home Assistant"
+                        }
+                      }
+                    },
+                    "required": [
+                      "household",
+                      "by",
+                      "via",
+                      "key",
+                      "webhook"
+                    ],
+                    "example": {
+                      "household": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                        "name": "The Riveras"
+                      },
+                      "by": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                        "name": "Sam Rivera"
+                      },
+                      "via": "app",
+                      "key": null,
+                      "webhook": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000034",
+                        "name": "Home Assistant"
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "example": {
+                  "type": "webhook.test",
+                  "timestamp": "2026-10-15T18:30:00.000Z",
+                  "data": {
+                    "household": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                      "name": "The Riveras"
+                    },
+                    "by": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                      "name": "Sam Rivera"
+                    },
+                    "via": "app",
+                    "key": null,
+                    "webhook": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000034",
+                      "name": "Home Assistant"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Any 2xx answer counts as delivered. 410 Gone pauses the webhook."
+          }
+        }
+      }
+    }
+  }
 }

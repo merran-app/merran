@@ -1125,6 +1125,158 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/households/current/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The household's webhooks
+         * @description Household admins only. Each with the host it sends to, but not the whole address or its secret.
+         */
+        get: operations["listWebhooks"];
+        put?: never;
+        /**
+         * Add a webhook
+         * @description Household admins only, up to 10 a household. Its signing secret is made now and returned with it. An address on the home network is refused unless the server admin allows it for this household (`webhook_home_network`).
+         */
+        post: operations["createWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/webhooks/{webhookId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One webhook, with its address
+         * @description Household admins only. The whole address, for editing it; the secret is shown on its own.
+         */
+        get: operations["getWebhook"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a webhook
+         * @description Household admins only. It stops at once, and its deliveries log goes with it.
+         */
+        delete: operations["deleteWebhook"];
+        options?: never;
+        head?: never;
+        /**
+         * Change, pause or resume a webhook
+         * @description Household admins only. Only what's sent changes. A new address is checked as when adding one. Resuming can resend what didn't arrive in the last day.
+         */
+        patch: operations["updateWebhook"];
+        trace?: never;
+    };
+    "/api/households/current/webhooks/{webhookId}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A webhook's deliveries log
+         * @description Household admins only. What was sent in the last 30 days, newest first: the event, how many tries, the last answer and the exact body sent.
+         */
+        get: operations["listWebhookDeliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/webhooks/{webhookId}/deliveries/{deliveryId}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend a delivery
+         * @description Household admins only. Sends it again from its first try, on the usual schedule, with the same `webhook-id`. Not while it's still being tried (`delivery_waiting`), or while its webhook is paused (`webhook_paused`).
+         */
+        post: operations["resendWebhookDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/webhooks/{webhookId}/secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Show a webhook's secret
+         * @description Household admins only. The secret its deliveries are signed with now, in the Standard Webhooks form (`whsec_…`).
+         */
+        get: operations["getWebhookSecret"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/webhooks/{webhookId}/secret/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate a webhook's secret
+         * @description Household admins only. Makes a new secret. For 24 hours each delivery is signed with the old one too, so a receiver can change over without missing one.
+         */
+        post: operations["rotateWebhookSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/webhooks/{webhookId}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a test
+         * @description Household admins only. Sends a `webhook.test` event to this webhook alone, now, even when it's paused, and answers with what came of it. It's tried once and logged like any delivery, but never retried, and it never pauses the webhook.
+         */
+        post: operations["testWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/households/import": {
         parameters: {
             query?: never;
@@ -5225,7 +5377,651 @@ export interface paths {
         trace?: never;
     };
 }
-export type webhooks = Record<string, never>;
+export interface webhooks {
+    "recipe.created": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A recipe was added
+         * @description Sent when a recipe is added: typed in, imported from a link, a page, text, photos or a video, sent from the extension or a share, or applied from a proposal. Links imported many at once send one each, but recipes brought in from another app or a Merran archive don't send it.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already. */
+                    "webhook-id": string;
+                    /** @description When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now. */
+                    "webhook-timestamp": string;
+                    /** @description `v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced. */
+                    "webhook-signature": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "recipe.created";
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        timestamp: string;
+                        /**
+                         * @example {
+                         *       "household": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                         *         "name": "The Riveras"
+                         *       },
+                         *       "by": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "via": "app",
+                         *       "key": null,
+                         *       "recipe": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                         *         "slug": "lemon-chicken",
+                         *         "title": "Lemon Chicken",
+                         *         "url": "https://merran.example.com/recipes/lemon-chicken"
+                         *       },
+                         *       "origin": "link",
+                         *       "sourceUrl": "https://example.com/lemon-chicken"
+                         *     }
+                         */
+                        data: {
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                             *       "name": "The Riveras"
+                             *     }
+                             */
+                            household: {
+                                id: string;
+                                name: string;
+                            };
+                            /**
+                             * @description Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            by: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own.
+                             * @enum {string}
+                             */
+                            via: "app" | "api" | "mcp" | "merran";
+                            /**
+                             * @description The API key or OAuth connection used, for `api` and `mcp`. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                             *       "name": "Home Assistant"
+                             *     }
+                             */
+                            key: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                             *       "slug": "lemon-chicken",
+                             *       "title": "Lemon Chicken",
+                             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                             *     }
+                             */
+                            recipe: {
+                                id: string;
+                                slug: string;
+                                title: string;
+                                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                url: string | null;
+                            };
+                            /**
+                             * @description How it was added. Pages, the extension and shares arrive as `link`.
+                             * @enum {string}
+                             */
+                            origin: "manual" | "link" | "video" | "text" | "photo" | "assistant";
+                            /** @description The link it came from, if it came from one. */
+                            sourceUrl: string | null;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Any 2xx answer counts as delivered. 410 Gone pauses the webhook. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "recipe.updated": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A recipe was changed
+         * @description Sent when someone saves edits to a recipe, applies a tidy-up or proposal, saves a swap, restores a version, or changes its photo, diets or what can be left out, saying which parts changed. Nothing is sent when nothing changed, and stars, cooking notes, tags changed on many recipes at once, renamed tags and background nutrition, photo and food-matching runs don't send it.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already. */
+                    "webhook-id": string;
+                    /** @description When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now. */
+                    "webhook-timestamp": string;
+                    /** @description `v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced. */
+                    "webhook-signature": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "recipe.updated";
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        timestamp: string;
+                        /**
+                         * @example {
+                         *       "household": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                         *         "name": "The Riveras"
+                         *       },
+                         *       "by": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "via": "app",
+                         *       "key": null,
+                         *       "recipe": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                         *         "slug": "lemon-chicken",
+                         *         "title": "Lemon Chicken",
+                         *         "url": "https://merran.example.com/recipes/lemon-chicken"
+                         *       },
+                         *       "parts": [
+                         *         "ingredients",
+                         *         "steps"
+                         *       ]
+                         *     }
+                         */
+                        data: {
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                             *       "name": "The Riveras"
+                             *     }
+                             */
+                            household: {
+                                id: string;
+                                name: string;
+                            };
+                            /**
+                             * @description Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            by: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own.
+                             * @enum {string}
+                             */
+                            via: "app" | "api" | "mcp" | "merran";
+                            /**
+                             * @description The API key or OAuth connection used, for `api` and `mcp`. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                             *       "name": "Home Assistant"
+                             *     }
+                             */
+                            key: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                             *       "slug": "lemon-chicken",
+                             *       "title": "Lemon Chicken",
+                             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                             *     }
+                             */
+                            recipe: {
+                                id: string;
+                                slug: string;
+                                title: string;
+                                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                url: string | null;
+                            };
+                            /** @description Which parts of the recipe changed. */
+                            parts: ("details" | "ingredients" | "steps" | "tags" | "photo" | "diets")[];
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Any 2xx answer counts as delivered. 410 Gone pauses the webhook. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "recipe.deleted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A recipe was deleted
+         * @description Sent when a recipe goes to Recently deleted. Deleting it for good from there sends nothing more.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already. */
+                    "webhook-id": string;
+                    /** @description When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now. */
+                    "webhook-timestamp": string;
+                    /** @description `v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced. */
+                    "webhook-signature": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "recipe.deleted";
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        timestamp: string;
+                        /**
+                         * @example {
+                         *       "household": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                         *         "name": "The Riveras"
+                         *       },
+                         *       "by": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "via": "app",
+                         *       "key": null,
+                         *       "recipe": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                         *         "slug": "lemon-chicken",
+                         *         "title": "Lemon Chicken",
+                         *         "url": "https://merran.example.com/recipes/lemon-chicken"
+                         *       }
+                         *     }
+                         */
+                        data: {
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                             *       "name": "The Riveras"
+                             *     }
+                             */
+                            household: {
+                                id: string;
+                                name: string;
+                            };
+                            /**
+                             * @description Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            by: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own.
+                             * @enum {string}
+                             */
+                            via: "app" | "api" | "mcp" | "merran";
+                            /**
+                             * @description The API key or OAuth connection used, for `api` and `mcp`. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                             *       "name": "Home Assistant"
+                             *     }
+                             */
+                            key: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                             *       "slug": "lemon-chicken",
+                             *       "title": "Lemon Chicken",
+                             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                             *     }
+                             */
+                            recipe: {
+                                id: string;
+                                slug: string;
+                                title: string;
+                                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                url: string | null;
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Any 2xx answer counts as delivered. 410 Gone pauses the webhook. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "recipe.restored": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A recipe was restored
+         * @description Sent when a recipe comes back from Recently deleted.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already. */
+                    "webhook-id": string;
+                    /** @description When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now. */
+                    "webhook-timestamp": string;
+                    /** @description `v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced. */
+                    "webhook-signature": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "recipe.restored";
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        timestamp: string;
+                        /**
+                         * @example {
+                         *       "household": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                         *         "name": "The Riveras"
+                         *       },
+                         *       "by": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "via": "app",
+                         *       "key": null,
+                         *       "recipe": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                         *         "slug": "lemon-chicken",
+                         *         "title": "Lemon Chicken",
+                         *         "url": "https://merran.example.com/recipes/lemon-chicken"
+                         *       }
+                         *     }
+                         */
+                        data: {
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                             *       "name": "The Riveras"
+                             *     }
+                             */
+                            household: {
+                                id: string;
+                                name: string;
+                            };
+                            /**
+                             * @description Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            by: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own.
+                             * @enum {string}
+                             */
+                            via: "app" | "api" | "mcp" | "merran";
+                            /**
+                             * @description The API key or OAuth connection used, for `api` and `mcp`. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                             *       "name": "Home Assistant"
+                             *     }
+                             */
+                            key: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                             *       "slug": "lemon-chicken",
+                             *       "title": "Lemon Chicken",
+                             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                             *     }
+                             */
+                            recipe: {
+                                id: string;
+                                slug: string;
+                                title: string;
+                                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                url: string | null;
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Any 2xx answer counts as delivered. 410 Gone pauses the webhook. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "webhook.test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A test was sent
+         * @description Sent only when someone chooses Send a test for a webhook, and only to that webhook, even when it's paused. It's tried once, never retried, and never pauses the webhook.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already. */
+                    "webhook-id": string;
+                    /** @description When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now. */
+                    "webhook-timestamp": string;
+                    /** @description `v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced. */
+                    "webhook-signature": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "webhook.test";
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. */
+                        timestamp: string;
+                        /**
+                         * @example {
+                         *       "household": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                         *         "name": "The Riveras"
+                         *       },
+                         *       "by": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "via": "app",
+                         *       "key": null,
+                         *       "webhook": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000034",
+                         *         "name": "Home Assistant"
+                         *       }
+                         *     }
+                         */
+                        data: {
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                             *       "name": "The Riveras"
+                             *     }
+                             */
+                            household: {
+                                id: string;
+                                name: string;
+                            };
+                            /**
+                             * @description Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            by: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own.
+                             * @enum {string}
+                             */
+                            via: "app" | "api" | "mcp" | "merran";
+                            /**
+                             * @description The API key or OAuth connection used, for `api` and `mcp`. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                             *       "name": "Home Assistant"
+                             *     }
+                             */
+                            key: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000034",
+                             *       "name": "Home Assistant"
+                             *     }
+                             */
+                            webhook: {
+                                id: string;
+                                name: string;
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Any 2xx answer counts as delivered. 410 Gone pauses the webhook. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+}
 export interface components {
     schemas: {
         Error: {
@@ -6968,6 +7764,257 @@ export interface components {
             name: string;
             tag?: string;
         } | null;
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000034",
+         *       "name": "Home Assistant",
+         *       "host": "192.168.1.20:8123",
+         *       "events": [
+         *         "recipe.created"
+         *       ],
+         *       "everything": false,
+         *       "headers": [],
+         *       "state": "working",
+         *       "pausedReason": null,
+         *       "pausedAt": null,
+         *       "failingSince": null,
+         *       "lastError": null,
+         *       "lastDeliveredAt": "2026-10-15T18:30:00.000Z",
+         *       "createdAt": "2026-10-01T17:30:00.000Z"
+         *     }
+         */
+        Webhook: {
+            id: string;
+            name: string;
+            /** @description Where it sends. The rest of the address is kept sealed, since it's often the receiver's password. */
+            host: string;
+            /** @description The events it's sent, unless it's sent everything. */
+            events: ("recipe.created" | "recipe.updated" | "recipe.deleted" | "recipe.restored")[];
+            /** @description Whether it's sent every event, including ones added later. */
+            everything: boolean;
+            /** @description The names of its extra headers. Their values are kept sealed and never shown. */
+            headers: string[];
+            /**
+             * @description `failing` while a delivery is being tried again; `paused` when nothing is sent to it.
+             * @enum {string}
+             */
+            state: "working" | "failing" | "paused";
+            /**
+             * @description Why it's paused: `gave_up` when a delivery ran out of tries, `gone` when its address answered 410 Gone, or `by_hand`.
+             * @enum {string|null}
+             */
+            pausedReason: "gave_up" | "gone" | "by_hand" | null;
+            /** Format: date-time */
+            pausedAt: string | null;
+            /**
+             * Format: date-time
+             * @description When its deliveries began failing in a row.
+             */
+            failingSince: string | null;
+            /** @description Why its last delivery that failed did. */
+            lastError: string | null;
+            /** Format: date-time */
+            lastDeliveredAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /**
+         * @example {
+         *       "webhook": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000034",
+         *         "name": "Home Assistant",
+         *         "host": "192.168.1.20:8123",
+         *         "events": [
+         *           "recipe.created"
+         *         ],
+         *         "everything": false,
+         *         "headers": [],
+         *         "state": "working",
+         *         "pausedReason": null,
+         *         "pausedAt": null,
+         *         "failingSince": null,
+         *         "lastError": null,
+         *         "lastDeliveredAt": "2026-10-15T18:30:00.000Z",
+         *         "createdAt": "2026-10-01T17:30:00.000Z"
+         *       },
+         *       "secret": "whsec_GABmWOVDpDHcyCEkbbUEMKosvEGEC3mYhXOM7W4ZiDY="
+         *     }
+         */
+        WebhookCreated: {
+            webhook: components["schemas"]["Webhook"];
+            /** @description The secret its deliveries are signed with, for the receiver to check them. */
+            secret: string;
+        };
+        /**
+         * @example {
+         *       "name": "Home Assistant",
+         *       "address": "http://192.168.1.20:8123/api/webhook/merran-kitchen",
+         *       "events": [
+         *         "recipe.created"
+         *       ],
+         *       "everything": false,
+         *       "headers": []
+         *     }
+         */
+        NewWebhook: {
+            name: string;
+            /** @description Where to send, `http` or `https`, with no user name or password in it: put those in a header. An address on the home network needs the server admin's leave. */
+            address: string;
+            /**
+             * @description The events to send. At least one, unless `everything`.
+             * @default []
+             */
+            events: ("recipe.created" | "recipe.updated" | "recipe.deleted" | "recipe.restored")[];
+            /**
+             * @description Send every event, including ones added later.
+             * @default false
+             */
+            everything: boolean;
+            /**
+             * @description Up to 5 headers sent with each delivery, like a token for n8n's Header Auth. They can't replace `content-type`, `content-length`, `host`, `user-agent` or the `webhook-` headers.
+             * @default []
+             */
+            headers: {
+                name: string;
+                value: string;
+            }[];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000034",
+         *       "name": "Home Assistant",
+         *       "host": "192.168.1.20:8123",
+         *       "events": [
+         *         "recipe.created"
+         *       ],
+         *       "everything": false,
+         *       "headers": [],
+         *       "state": "working",
+         *       "pausedReason": null,
+         *       "pausedAt": null,
+         *       "failingSince": null,
+         *       "lastError": null,
+         *       "lastDeliveredAt": "2026-10-15T18:30:00.000Z",
+         *       "createdAt": "2026-10-01T17:30:00.000Z",
+         *       "address": "http://192.168.1.20:8123/api/webhook/merran-kitchen"
+         *     }
+         */
+        WebhookDetail: components["schemas"]["Webhook"] & {
+            /** @description The whole address it sends to. */
+            address: string;
+        };
+        /**
+         * @example {
+         *       "paused": false,
+         *       "resend": true
+         *     }
+         */
+        WebhookChanges: {
+            name?: string;
+            /** @description Where to send, `http` or `https`, with no user name or password in it: put those in a header. An address on the home network needs the server admin's leave. */
+            address?: string;
+            events?: ("recipe.created" | "recipe.updated" | "recipe.deleted" | "recipe.restored")[];
+            everything?: boolean;
+            /** @description Replaces its extra headers; `[]` removes them. */
+            headers?: {
+                name: string;
+                value: string;
+            }[];
+            /** @description `true` pauses it: nothing new is sent, and what's waiting stops. `false` resumes it. */
+            paused?: boolean;
+            /** @description With `paused: false`, also send again what didn't arrive in the last day. */
+            resend?: boolean;
+        };
+        /**
+         * @example {
+         *       "deliveries": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000035",
+         *           "event": {
+         *             "id": "msg_0199e8b0-5a10-7a01-8b00-000000000036",
+         *             "type": "webhook.test",
+         *             "createdAt": "2026-10-15T18:30:00.000Z"
+         *           },
+         *           "state": "delivered",
+         *           "tries": 1,
+         *           "statusCode": 200,
+         *           "answer": "",
+         *           "durationMs": 84,
+         *           "error": null,
+         *           "lastTriedAt": "2026-10-15T18:30:00.000Z",
+         *           "deliveredAt": "2026-10-15T18:30:00.000Z",
+         *           "body": "{\"type\":\"webhook.test\",\"timestamp\":\"2026-10-15T18:30:00.000Z\",\"data\":{\"household\":{\"id\":\"0199e8b0-5a10-7a01-8b00-000000000003\",\"name\":\"The Riveras\"},\"by\":{\"id\":\"0199e8b0-5a10-7a01-8b00-000000000001\",\"name\":\"Sam Rivera\"},\"via\":\"app\",\"key\":null,\"webhook\":{\"id\":\"0199e8b0-5a10-7a01-8b00-000000000034\",\"name\":\"Home Assistant\"}}}"
+         *         }
+         *       ],
+         *       "total": 1
+         *     }
+         */
+        WebhookDeliveryList: {
+            deliveries: components["schemas"]["WebhookDelivery"][];
+            /** @description How many it has in all. */
+            total: number;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000035",
+         *       "event": {
+         *         "id": "msg_0199e8b0-5a10-7a01-8b00-000000000036",
+         *         "type": "webhook.test",
+         *         "createdAt": "2026-10-15T18:30:00.000Z"
+         *       },
+         *       "state": "delivered",
+         *       "tries": 1,
+         *       "statusCode": 200,
+         *       "answer": "",
+         *       "durationMs": 84,
+         *       "error": null,
+         *       "lastTriedAt": "2026-10-15T18:30:00.000Z",
+         *       "deliveredAt": "2026-10-15T18:30:00.000Z",
+         *       "body": "{\"type\":\"webhook.test\",\"timestamp\":\"2026-10-15T18:30:00.000Z\",\"data\":{\"household\":{\"id\":\"0199e8b0-5a10-7a01-8b00-000000000003\",\"name\":\"The Riveras\"},\"by\":{\"id\":\"0199e8b0-5a10-7a01-8b00-000000000001\",\"name\":\"Sam Rivera\"},\"via\":\"app\",\"key\":null,\"webhook\":{\"id\":\"0199e8b0-5a10-7a01-8b00-000000000034\",\"name\":\"Home Assistant\"}}}"
+         *     }
+         */
+        WebhookDelivery: {
+            id: string;
+            event: {
+                /** @description The `webhook-id` header: the same on every try, so a receiver can drop repeats. */
+                id: string;
+                /** @example recipe.created */
+                type: string;
+                /**
+                 * Format: date-time
+                 * @description When it happened.
+                 */
+                createdAt: string;
+            };
+            /**
+             * @description `waiting` to be tried, `delivered`, `failed` when it ran out of tries, or `stopped` when its webhook was paused.
+             * @enum {string}
+             */
+            state: "waiting" | "delivered" | "failed" | "stopped";
+            tries: number;
+            /** @description What the last try was answered with; null when there was no answer. */
+            statusCode: number | null;
+            /** @description The first 1,024 characters of the last answer. */
+            answer: string | null;
+            /** @description How long the last try took. */
+            durationMs: number | null;
+            /** @description Why the last try failed. */
+            error: string | null;
+            /** Format: date-time */
+            lastTriedAt: string | null;
+            /** Format: date-time */
+            deliveredAt: string | null;
+            /** @description Exactly what's sent, and signed. */
+            body: string;
+        };
+        /**
+         * @example {
+         *       "secret": "whsec_GABmWOVDpDHcyCEkbbUEMKosvEGEC3mYhXOM7W4ZiDY="
+         *     }
+         */
+        WebhookSecret: {
+            secret: string;
+        };
         /**
          * @example {
          *       "household": {
@@ -16731,6 +17778,520 @@ export interface operations {
             };
             /** @description Not allowed. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listWebhooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description In the order they were added. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Webhook"][];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewWebhook"];
+            };
+        };
+        responses: {
+            /** @description Added. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookCreated"];
+                };
+            };
+            /** @description The address, the events or a header can't be used, with a message for each field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The household has 10 webhooks already. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhookId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The webhook. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDetail"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such webhook in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhookId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such webhook in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhookId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookChanges"];
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Webhook"];
+                };
+            };
+            /** @description The address, the events or a header can't be used, with a message for each field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such webhook in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listWebhookDeliveries: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number | null;
+            };
+            header?: never;
+            path: {
+                webhookId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of deliveries. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDeliveryList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such webhook in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    resendWebhookDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhookId: string;
+                deliveryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Waiting to be sent again. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDelivery"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such webhook or delivery in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It's still being tried, or its webhook is paused. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getWebhookSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhookId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The secret. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookSecret"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such webhook in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    rotateWebhookSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhookId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The new secret. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookSecret"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such webhook in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    testWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                webhookId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tried: delivered or failed, with the answer. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDelivery"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such webhook in this household. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
