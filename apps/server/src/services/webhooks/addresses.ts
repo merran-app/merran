@@ -42,7 +42,7 @@ export async function checkWebhookAddress(
     if (error instanceof AppError && error.code === "private_address") {
       throw addressError(
         "webhook_home_network",
-        "This address is on your home network. The server admin can allow that in Settings → This server → Webhooks."
+        "This address is on your home network. The server admin can allow that in Settings → Server → Webhooks."
       )
     }
     throw error

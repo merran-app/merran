@@ -15,6 +15,10 @@ Password recovery provides public `POST /api/auth/password-reset/request` with `
 
 Recipe share links are read through public `GET /api/shared/{token}`, which returns the shared recipe's trimmed contents, and `GET /api/shared/{token}/photo`, which returns its photo. Neither needs sign-in, and both ignore cookies and API keys, so the token in the share link is the only credential: keep it private. Every failure to find a link, whether it was stopped, sharing was turned off by the household, or the recipe is in Recently deleted, answers the same `404`. The recipe and its photo are each limited to 120 reads a minute per link, with `429` and `Retry-After`. Responses use `Cache-Control: no-store` (the photo is cached privately when its `v` matches the recipe's photo) and `Referrer-Policy: no-referrer`. Making a link is `POST /api/recipes/{recipe}/share` and stopping it is `DELETE` on the same path; both need `recipes:write` from API keys. Reading a recipe's link is `GET` with `recipes:read`. Household admins see every shared recipe at `GET /api/households/current/shares`, which needs a browser session.
 
+## Webhooks
+
+Merran can also call your tool when something happens. Household owners and admins add [webhooks](../integrations/webhooks/) in **Settings → Household → Webhooks**, which is session-only: API keys can't manage them. Each event, such as `recipe.created`, and its body is described in the API reference under Webhooks, signed as [Standard Webhooks](https://www.standardwebhooks.com/) describes, and the integration guide shows how to check signatures.
+
 ## Create a key
 
 :::note[shopping substitutions]

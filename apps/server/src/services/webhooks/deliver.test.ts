@@ -793,7 +793,7 @@ describe("addresses", () => {
 
   test("go to the home network only when the server admin allows it", async () => {
     const homeNetwork =
-      "This address is on your home network. The server admin can allow that in Settings → This server → Webhooks."
+      "This address is on your home network. The server admin can allow that in Settings → Server → Webhooks."
     for (const address of [
       "http://192.168.1.20:8123/api/webhook/kitchen",
       "http://localhost:8123/api/webhook/kitchen",

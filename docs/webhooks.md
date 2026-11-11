@@ -1,6 +1,6 @@
 # Webhooks
 
-Planned November 10, 2026. This scopes "Webhooks for Home Assistant, n8n and others" in [features.md](features.md), and replaces the outline that was in [platform.md](platform.md#webhooks). Nothing here is built yet.
+Planned November 10, 2026. This scopes "Webhooks for Home Assistant, n8n and others" in [features.md](features.md), and replaces the outline that was in [platform.md](platform.md#webhooks). The first pull request (the engine, the Webhooks page and server card, and the recipe events) was built on November 10, 2026; the rest is still planned.
 
 ## Goal
 
@@ -76,7 +76,7 @@ Every event is declared once, in `packages/shared/src/webhooks/events.ts`: its n
       "title": "Lemon Chicken",
       "url": "https://merran.example.com/recipes/lemon-chicken"
     },
-    "source": "link",
+    "origin": "link",
     "sourceUrl": "https://example.com/lemon-chicken"
   }
 }
@@ -219,8 +219,8 @@ Each webhook shows its last 30 days of deliveries: the event, when it happened, 
 
 ## The home network
 
-- A server setting in Settings → This server → Webhooks, **Webhooks to the home network**: Off (the default), Every household, or Chosen households, picked from the server's households. `MERRAN_WEBHOOKS_HOME_NETWORK=off|all|chosen` sets it from the environment and locks it.
-- **When a webhook is saved,** a household that isn't allowed must give an address that leads only to public addresses, looked up then (`checkPublicLink`). Otherwise it's refused with: "This address is on your home network. The server admin can allow that in Settings → This server → Webhooks." When the person saving it is the server admin, which is usual on a server with one household, a button allows it right there.
+- A server setting in Settings → Server → Webhooks, **Webhooks to the home network**: Off (the default), Every household, or Chosen households, picked from the server's households. `MERRAN_WEBHOOKS_HOME_NETWORK=off|all|chosen` sets it from the environment and locks it.
+- **When a webhook is saved,** a household that isn't allowed must give an address that leads only to public addresses, looked up then (`checkPublicLink`). Otherwise it's refused with: "This address is on your home network. The server admin can allow that in Settings → Server → Webhooks." When the person saving it is the server admin, which is usual on a server with one household, a button allows it right there.
 - **On every send,** a household that isn't allowed goes through the public agent, which refuses private addresses whenever the name is looked up, so a name that starts pointing home later is refused too. An allowed household's deliveries use the home agent.
 - Addresses must be `http` or `https`, with no user name or password in them (use a header), and at most 2,000 characters. Plain `http` is allowed, since Home Assistant on a home network usually has no certificate.
 - The guide says to use Home Assistant's IP address or a real host name: `homeassistant.local` often doesn't resolve inside Docker.
@@ -262,7 +262,7 @@ A `webhooks` module in `apps/server/src/modules/webhooks/`: its settings (`setti
 
 - `webhooks.enabled` (`MERRAN_WEBHOOKS`), a switch, on by default: off hides the page, refuses the routes, records nothing and leaves saved webhooks as they are.
 - `webhooks.homeNetwork` (`MERRAN_WEBHOOKS_HOME_NETWORK`): `off`, `all` or `chosen`.
-- `webhooks.homeNetworkHouseholds`: the chosen households, picked in Settings → This server; not from the environment.
+- `webhooks.homeNetworkHouseholds`: the chosen households, picked in Settings → Server; not from the environment.
 
 ## Cooking sessions and timers
 

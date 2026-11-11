@@ -656,7 +656,7 @@ Let households send webhooks to tools like Home Assistant and n8n when things ha
 
 ## webhooks.homeNetwork
 
-Whether webhooks may go to addresses on the home network, like Home Assistant's: off, for every household, or for the households chosen in Settings → This server. Off by default, because on a shared server it would let any household make Merran call machines on your network.
+Whether webhooks may go to addresses on the home network, like Home Assistant's: off, for every household, or for the households chosen in Settings → Server. Off by default, because on a shared server it would let any household make Merran call machines on your network.
 
 - **Scope:** server
 - **Type:** choice

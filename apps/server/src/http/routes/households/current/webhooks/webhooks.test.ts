@@ -52,7 +52,7 @@ const HOUR = 60 * 60_000
 const DAY = 24 * HOUR
 
 const HOME_NETWORK_MESSAGE =
-  "This address is on your home network. The server admin can allow that in Settings → This server → Webhooks."
+  "This address is on your home network. The server admin can allow that in Settings → Server → Webhooks."
 
 beforeAll(async () => {
   const test = await createTestApp({
