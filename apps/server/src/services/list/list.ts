@@ -210,7 +210,9 @@ export async function addTyped(
 
 /**
  * A line typed in, read already: on the aisle and list given, else where
- * its food goes. It's saved with the next flush.
+ * its food goes. Telling webhooks saves it at once when one wants
+ * list.changed; otherwise it's saved with the caller's next flush, which
+ * every caller makes either way.
  */
 export async function typedItem(
   em: EntityManager,

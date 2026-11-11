@@ -255,11 +255,8 @@ export const appImportJob: JobHandler = {
           signal,
           logger,
         })
-        if (job.from === "file") {
-          // Done with: an upload that failed stays for Try again, a week at most.
-          source.close()
-          await rm(job.file, { force: true })
-        }
+        // Before the upload goes, so if telling webhooks fails, the import
+        // fails with its file still there for Try again.
         await record(em, householdId, {
           type: "import.finished",
           data: {
@@ -272,6 +269,11 @@ export const appImportJob: JobHandler = {
             url: appLink("/settings/import-export"),
           },
         })
+        if (job.from === "file") {
+          // Done with: an upload that failed stays for Try again, a week at most.
+          source.close()
+          await rm(job.file, { force: true })
+        }
         return result
       } finally {
         source.close()
