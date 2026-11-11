@@ -2,10 +2,11 @@ import type { WebhookEventType } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import {
   Household,
+  Job,
   WebhookDelivery,
   WebhookEvent,
 } from "../../database/entities/index.ts"
-import { enqueue } from "../jobs/jobs.ts"
+import { ACTIVE, enqueue, restartJob } from "../jobs/jobs.ts"
 import { currentActor, type Actor } from "./actor.ts"
 import type { EventData } from "./payloads.ts"
 import { webhooksEnabled } from "./state.ts"
@@ -69,13 +70,58 @@ export async function record<T extends WebhookEventType>(
 
   if (!event.only) {
     for (const delivery of deliveries) {
-      await enqueue(em, {
-        kind: WEBHOOK_DELIVERY_JOB,
-        householdId,
-        payload: { deliveryId: delivery.id },
-        maxAttempts: WEBHOOK_MAX_ATTEMPTS,
-      })
+      await queueDelivery(em, { householdId, deliveryId: delivery.id })
     }
   }
   return saved
+}
+
+// Each delivery has at most one job waiting or running, found by its key,
+// so pausing can cancel it and sending again starts it over, rather than an
+// old job turning up later to send it twice.
+
+const deliveryJobKey = (deliveryId: string) =>
+  `${WEBHOOK_DELIVERY_JOB}:${deliveryId}`
+
+/** Queues the job that sends a delivery, unless it has one already. */
+export function queueDelivery(
+  em: EntityManager,
+  input: { householdId: string; deliveryId: string }
+): Promise<Job> {
+  return enqueue(em, {
+    kind: WEBHOOK_DELIVERY_JOB,
+    key: deliveryJobKey(input.deliveryId),
+    householdId: input.householdId,
+    payload: { deliveryId: input.deliveryId },
+    maxAttempts: WEBHOOK_MAX_ATTEMPTS,
+  })
+}
+
+/**
+ * Sends a delivery again from its first try, now: for Resume and Resend.
+ * A job it still has, waiting or running, starts over; otherwise it gets a
+ * new one.
+ */
+export async function requeueDelivery(
+  em: EntityManager,
+  input: { householdId: string; deliveryId: string }
+): Promise<Job> {
+  const job = await em.findOne(Job, {
+    key: deliveryJobKey(input.deliveryId),
+    status: { $in: [...ACTIVE] },
+  })
+  return job ? restartJob(em, job) : queueDelivery(em, input)
+}
+
+/** Cancels the waiting jobs of deliveries that won't be sent. One running finishes its try. */
+export async function cancelDeliveryJobs(
+  em: EntityManager,
+  deliveryIds: readonly string[]
+) {
+  if (deliveryIds.length === 0) return
+  await em.nativeUpdate(
+    Job,
+    { key: { $in: deliveryIds.map(deliveryJobKey) }, status: "queued" },
+    { status: "cancelled", finishedAt: new Date() }
+  )
 }

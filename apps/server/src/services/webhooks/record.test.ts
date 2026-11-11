@@ -138,6 +138,8 @@ describe("record", () => {
     for (const job of jobs) {
       expect(job.maxAttempts).toBe(8)
       expect(job.forHousehold?.id).toBe(home)
+      // One job a delivery, so pausing and resending can find it.
+      expect(job.key).toBe(`webhooks.deliver:${String(job.payload.deliveryId)}`)
     }
 
     const envelope = webhookEnvelopeSchema("recipe.created").parse(

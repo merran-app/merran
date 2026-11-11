@@ -150,6 +150,19 @@ export async function cancelJob(
   return job
 }
 
+/**
+ * Starts a job that's still to finish over: from its first try, now. One
+ * that's running finishes this try first, and counts its next from the start.
+ */
+export async function restartJob(em: EntityManager, job: Job) {
+  job.attempts = 0
+  job.runAt = new Date()
+  job.error = null
+  await em.flush()
+  wake()
+  return job
+}
+
 /** Tries a failed or cancelled job again, from the start. */
 export async function retryJob(em: EntityManager, job: Job) {
   if (job.status !== "failed" && job.status !== "cancelled") {

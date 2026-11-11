@@ -8,9 +8,8 @@ import {
 import { emailConfiguration, sendEmail } from "../../modules/email/sender.ts"
 import { webhookPausedEmail } from "../../modules/email/templates.ts"
 import { householdAdminEmails } from "../households/households.ts"
-import { enqueue } from "../jobs/jobs.ts"
 import type { JobDeps } from "../jobs/runner.ts"
-import { WEBHOOK_DELIVERY_JOB, WEBHOOK_MAX_ATTEMPTS } from "./record.ts"
+import { cancelDeliveryJobs, requeueDelivery } from "./record.ts"
 import { forgetWebhooks } from "./wanted.ts"
 
 // A webhook pauses when a delivery runs out of tries, when its receiver
@@ -25,9 +24,9 @@ import { forgetWebhooks } from "./wanted.ts"
 const RESEND_WITHIN_MS = 24 * 60 * 60_000
 
 /**
- * Stops sending to a webhook, and stops what was waiting. Unless someone
- * paused it by hand, its household's owners and admins are told by email,
- * if the server can send it.
+ * Stops sending to a webhook, and stops what was waiting, with its jobs.
+ * Unless someone paused it by hand, its household's owners and admins are
+ * told by email, if the server can send it.
  */
 export async function pauseWebhook(
   em: EntityManager,
@@ -38,11 +37,17 @@ export async function pauseWebhook(
   webhook.state = "paused"
   webhook.pausedReason = reason
   webhook.pausedAt = new Date()
+  const stopped = await em.find(WebhookDelivery, {
+    webhook: webhook.id,
+    state: "waiting",
+  })
+  for (const delivery of stopped) {
+    delivery.state = "stopped"
+  }
   await em.flush()
-  await em.nativeUpdate(
-    WebhookDelivery,
-    { webhook: webhook.id, state: "waiting" },
-    { state: "stopped" }
+  await cancelDeliveryJobs(
+    em,
+    stopped.map((delivery) => delivery.id)
   )
   forgetWebhooks(webhook.household.id)
 
@@ -74,11 +79,9 @@ export async function resumeWebhook(
   await em.flush()
 
   for (const delivery of resent) {
-    await enqueue(em, {
-      kind: WEBHOOK_DELIVERY_JOB,
+    await requeueDelivery(em, {
       householdId: webhook.household.id,
-      payload: { deliveryId: delivery.id },
-      maxAttempts: WEBHOOK_MAX_ATTEMPTS,
+      deliveryId: delivery.id,
     })
   }
   forgetWebhooks(webhook.household.id)
@@ -88,13 +91,14 @@ export async function resumeWebhook(
 /**
  * The webhook's deliveries from the last day that never arrived. The one
  * that ran out of tries began about 27 hours ago, so one tried in the last
- * day counts too.
+ * day counts too. Tests were only ever meant to be tried once.
  */
 function lastDaysUndelivered(em: EntityManager, webhook: Webhook) {
   const since = new Date(Date.now() - RESEND_WITHIN_MS)
   return em.find(WebhookDelivery, {
     webhook: webhook.id,
     state: { $in: ["failed", "stopped"] },
+    event: { type: { $ne: "webhook.test" } },
     $or: [{ createdAt: { $gte: since } }, { lastTriedAt: { $gte: since } }],
   })
 }

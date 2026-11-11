@@ -154,9 +154,21 @@ const deliveryOf = (event: WebhookEvent) =>
 
 const webhookById = (id: string) => inHome().findOneOrFail(Webhook, { id })
 
+/** A delivery's jobs, oldest first. */
+async function jobsOf(delivery: WebhookDelivery) {
+  const all = await database.em
+    .fork()
+    .find(
+      Job,
+      { kind: WEBHOOK_DELIVERY_JOB },
+      { orderBy: { createdAt: "asc", id: "asc" } }
+    )
+  return all.filter((job) => job.payload.deliveryId === delivery.id)
+}
+
+/** Its latest job. */
 async function jobOf(delivery: WebhookDelivery) {
-  const all = await database.em.fork().find(Job, { kind: WEBHOOK_DELIVERY_JOB })
-  const job = all.find((job) => job.payload.deliveryId === delivery.id)
+  const job = (await jobsOf(delivery)).at(-1)
   if (!job) throw new Error("The delivery has no job")
   return job
 }
@@ -286,9 +298,93 @@ describe("delivering", () => {
       (await inHome().findOneOrFail(WebhookDelivery, other.id)).state
     ).toBe("stopped")
 
-    // The one that was waiting is never sent.
+    // The one that was waiting is never sent: its job is cancelled.
+    expect((await jobOf(other)).status).toBe("cancelled")
     await tryAgainNow(await jobOf(other))
     expect(receiver.requests).toHaveLength(8)
+  })
+
+  test("a webhook's own headers can't replace Merran's", async () => {
+    // Saving refuses these, but sending doesn't count on it.
+    const { secret } = await addWebhook({
+      headers: [
+        { name: "User-Agent", value: "Someone else" },
+        { name: "Webhook-Signature", value: "v1,forged" },
+        { name: "Content-Type", value: "text/plain" },
+        { name: "content-length", value: "1" },
+        { name: "Accept", value: "application/json" },
+        { name: "X-Kitchen", value: "on" },
+      ],
+    })
+
+    await recordDeleted()
+    await jobs.drain()
+
+    const [request] = receiver.requests as [ReceivedRequest]
+    expect(request.headers["user-agent"]).toMatch(/^Merran\//)
+    expect(request.headers["content-type"]).toBe("application/json")
+    expect(signatures(request)).toHaveLength(1)
+    expect(request.headers["webhook-signature"]).not.toContain("forged")
+    expect(() => verify(secret, request)).not.toThrow()
+    // Its own replace the fetcher's defaults, rather than joining them.
+    expect(request.headers.accept).toBe("application/json")
+    expect(request.headers["x-kitchen"]).toBe("on")
+  })
+
+  test("saved parts that can't be opened fail the try like any other", async () => {
+    const otherKey = await addWebhook()
+    const brokenHeaders = await addWebhook()
+    const noSecret = await addWebhook()
+    const em = inHome()
+    // Sealed with a key this server doesn't have, as after losing it.
+    const sealedElsewhere = em.create(Secret, {
+      keyId: "000000000000",
+      dataKey: "sealed elsewhere",
+      value: "sealed elsewhere",
+    })
+    // Headers that aren't the JSON they should be.
+    const notJson = em.create(Secret, settings.seal("Bearer {kitchen-token"))
+    await em.flush()
+    await em.nativeUpdate(
+      Webhook,
+      { id: otherKey.id },
+      { secret: sealedElsewhere.id }
+    )
+    await em.nativeUpdate(
+      Webhook,
+      { id: brokenHeaders.id },
+      { headers: notJson.id }
+    )
+    await em.nativeUpdate(Webhook, { id: noSecret.id }, { secret: null })
+
+    const event = await recordDeleted()
+    await jobs.drain()
+
+    expect(receiver.requests).toHaveLength(0)
+    const deliveries = await inHome().find(
+      WebhookDelivery,
+      { event: event.id },
+      { populate: ["webhook"] }
+    )
+    expect(deliveries).toHaveLength(3)
+    const unreadable =
+      "Merran couldn't open this webhook's saved address, secret or headers."
+    for (const delivery of deliveries) {
+      expect(delivery).toMatchObject({
+        state: "waiting",
+        tries: 1,
+        statusCode: null,
+        error: unreadable,
+      })
+      expect(delivery.webhook.getEntity()).toMatchObject({
+        state: "active",
+        lastError: unreadable,
+      })
+      expect(delivery.webhook.getEntity().failingSince).not.toBeNull()
+      // It waits its turn, and nothing sealed shows on the Jobs page.
+      const job = await jobOf(delivery)
+      expect(job).toMatchObject({ status: "queued", error: unreadable })
+    }
   })
 
   test("410 Gone pauses at once", async () => {
@@ -448,8 +544,18 @@ describe("resuming", () => {
     const lastTry = await recordDeleted()
     const stopped = await recordDeleted()
     const stale = await recordDeleted()
-    await inHome().nativeDelete(Job, { kind: WEBHOOK_DELIVERY_JOB })
+    const sentTest = await record(inHome(), home, {
+      type: "webhook.test",
+      data: { webhook: { id, name: "Home Assistant" } },
+      only: id,
+    })
     const ago = (ms: number) => new Date(Date.now() - ms)
+    // A test is tried once, whatever comes of it.
+    await inHome().nativeUpdate(
+      WebhookDelivery,
+      { event: sentTest!.id },
+      { state: "failed", tries: 1, lastTriedAt: ago(60_000) }
+    )
     // The one that ran out of tries began 27 hours ago, but failed just now.
     await inHome().nativeUpdate(
       WebhookDelivery,
@@ -494,13 +600,83 @@ describe("resuming", () => {
       pausedAt: null,
       failingSince: null,
     })
+    // Each one resent has one job, from its first try.
+    for (const event of [lastTry, stopped]) {
+      const itsJobs = await jobsOf(await deliveryOf(event))
+      expect(itsJobs).toHaveLength(1)
+      expect(itsJobs[0]).toMatchObject({ status: "queued", attempts: 0 })
+    }
     await jobs.drain()
     expect((await deliveryOf(lastTry)).state).toBe("delivered")
     expect((await deliveryOf(stopped)).state).toBe("delivered")
     expect((await deliveryOf(stale)).state).toBe("stopped")
+    expect((await deliveryOf(sentTest!)).state).toBe("failed")
     expect(receiver.requests).toHaveLength(2)
     // New events go to it again.
     expect(await recordAnyDeleted()).not.toBeNull()
+  })
+
+  test("starts each delivery over, once, so an old job can't send it again", async () => {
+    const { id } = await addWebhook()
+    receiver.answer(500, "nope")
+    const first = await deliveryOf(await recordDeleted())
+    const second = await deliveryOf(await recordDeleted())
+    await jobs.drain()
+    // Both have been failing for a day: each is down to its last try, and
+    // the second's isn't due for hours.
+    const db = database.em.fork()
+    await db.nativeUpdate(
+      Job,
+      { id: (await jobOf(first)).id },
+      { attempts: 7, runAt: new Date() }
+    )
+    await db.nativeUpdate(
+      Job,
+      { id: (await jobOf(second)).id },
+      { attempts: 7, runAt: new Date(Date.now() + 10 * HOUR) }
+    )
+
+    // The first's last try is a 410: the webhook pauses, and the second
+    // stops, with its job cancelled.
+    receiver.answer(410, "Gone")
+    await jobs.drain()
+    expect(await webhookById(id)).toMatchObject({
+      state: "paused",
+      pausedReason: "gone",
+    })
+    expect((await jobOf(second)).status).toBe("cancelled")
+
+    // A try under way as it paused would put its job back, due now.
+    await db.nativeUpdate(
+      Job,
+      { id: (await jobOf(second)).id },
+      { status: "queued", finishedAt: null, runAt: new Date() }
+    )
+
+    receiver.answer(500, "nope")
+    receiver.requests.length = 0
+    const em = inHome()
+    const webhook = await em.findOneOrFail(Webhook, { id })
+    expect(await resumeWebhook(em, webhook, { resend: true })).toBe(2)
+
+    // Each has one job to run, from its first try.
+    for (const delivery of [first, second]) {
+      const toRun = (await jobsOf(delivery)).filter(
+        (job) => job.status === "queued"
+      )
+      expect(toRun).toHaveLength(1)
+      expect(toRun[0]).toMatchObject({ attempts: 0 })
+    }
+    await jobs.drain()
+
+    // Sent once each, and one failure doesn't pause it again.
+    expect(receiver.requests).toHaveLength(2)
+    expect((await webhookById(id)).state).toBe("active")
+    for (const delivery of [first, second]) {
+      expect(
+        await inHome().findOneOrFail(WebhookDelivery, delivery.id)
+      ).toMatchObject({ state: "waiting", tries: 1 })
+    }
   })
 })
 

@@ -31,10 +31,32 @@ export const WEBHOOK_TIMEOUT_MS = 10_000
 /** How much of an answer is kept for the deliveries log. */
 export const ANSWER_KEPT = 1024
 
+/** Headers Merran or its fetcher sets, besides every `webhook-` one. */
+const MERRANS_HEADERS = new Set([
+  "content-type",
+  "content-length",
+  "host",
+  "user-agent",
+])
+
+/** Whether a header is one Merran sets itself, which a webhook's own can't replace. */
+export function isMerransHeader(name: string) {
+  const lower = name.toLowerCase()
+  return MERRANS_HEADERS.has(lower) || lower.startsWith("webhook-")
+}
+
+/**
+ * What a try records when the webhook's sealed address, secrets or headers
+ * can't be opened. It's always this, since what went wrong may quote them.
+ */
+const UNREADABLE =
+  "Merran couldn't open this webhook's saved address, secret or headers."
+
 /**
  * What came of a try: it arrived; it'll be tried again; it ran out of tries
  * (or was a test that failed); the receiver is gone; or there was nothing
- * to send, because it's gone, settled already or its webhook is paused.
+ * to send, because it's gone, settled already, its webhook is paused or
+ * webhooks are off.
  */
 export type DeliveryOutcome =
   "delivered" | "retry" | "gave_up" | "gone" | "skipped"
@@ -89,13 +111,7 @@ export async function attemptDelivery(
 
   // Read before sending, and saved after, so no transaction waits on the
   // receiver.
-  const request = await prepareRequest(
-    deps,
-    webhook,
-    delivery.event.getEntity()
-  )
-  if (!request) return "skipped"
-  const result = await send(deps, request)
+  const result = await tryOnce(deps, webhook, delivery.event.getEntity())
   noteTry(delivery, result)
 
   if (isSuccess(result.statusCode)) {
@@ -130,11 +146,49 @@ export async function attemptDelivery(
   return gone ? "gone" : "gave_up"
 }
 
-type PreparedRequest = {
+/**
+ * One try: open what's sealed, sign, send. A webhook whose sealed parts
+ * can't be opened, because the server's key changed or one is missing,
+ * fails the try like an address that can't be reached, so it's retried and
+ * paused like any other rather than left waiting.
+ */
+async function tryOnce(
+  deps: DeliveryDeps,
+  webhook: Webhook,
+  event: WebhookEvent
+): Promise<TryResult> {
+  let request: SignedRequest
+  try {
+    request = signedRequest(deps, webhook, event)
+  } catch (error) {
+    // Only its name: the message may quote what was sealed.
+    deps.logger.warn(
+      {
+        webhook: webhook.id,
+        error: error instanceof Error ? error.name : null,
+      },
+      "Couldn't open a webhook's saved address, secret or headers"
+    )
+    return {
+      statusCode: null,
+      answer: null,
+      error: UNREADABLE,
+      durationMs: 0,
+      triedAt: new Date(),
+    }
+  }
+
+  const homeNetwork = await homeNetworkAllowed(
+    deps.settings,
+    webhook.household.id
+  )
+  return send(deps, request, { homeNetwork })
+}
+
+type SignedRequest = {
   address: string
   body: string
   headers: Record<string, string>
-  homeNetwork: boolean
 }
 
 /**
@@ -142,13 +196,14 @@ type PreparedRequest = {
  * body. For the day after a rotation, the secret before signs too, so a
  * receiver that hasn't switched yet still verifies it.
  */
-async function prepareRequest(
+function signedRequest(
   deps: DeliveryDeps,
   webhook: Webhook,
   event: WebhookEvent
-): Promise<PreparedRequest | null> {
-  // Its sealed address and secret only go when it's being deleted.
-  if (!webhook.address || !webhook.secret) return null
+): SignedRequest {
+  if (!webhook.address || !webhook.secret) {
+    throw new Error("The webhook's sealed address or secret is missing.")
+  }
 
   const secrets = [deps.settings.open(webhook.secret.getEntity())]
   const previousSecret = webhook.previousSecret?.getEntity()
@@ -173,11 +228,15 @@ async function prepareRequest(
       "webhook-timestamp": String(timestamp),
       "webhook-signature": signatureHeader({ id, timestamp, body, secrets }),
     },
-    homeNetwork: await homeNetworkAllowed(deps.settings, webhook.household.id),
   }
 }
 
-/** The headers the household added, sealed as JSON: `[{ name, value }]`. */
+/**
+ * The headers the household added, sealed as JSON: `[{ name, value }]`.
+ * Merran's own are left out however they were saved, and names are made
+ * lowercase, so one like `Accept` replaces the fetcher's rather than being
+ * sent alongside it.
+ */
 function extraHeaders(deps: DeliveryDeps, webhook: Webhook) {
   const sealed = webhook.headers?.getEntity()
   if (!sealed) return {}
@@ -187,7 +246,9 @@ function extraHeaders(deps: DeliveryDeps, webhook: Webhook) {
     value: string
   }[]
   return Object.fromEntries(
-    headers.map((header) => [header.name, header.value])
+    headers
+      .filter((header) => !isMerransHeader(header.name))
+      .map((header) => [header.name.toLowerCase(), header.value])
   )
 }
 
@@ -198,7 +259,8 @@ function extraHeaders(deps: DeliveryDeps, webhook: Webhook) {
  */
 async function send(
   deps: DeliveryDeps,
-  request: PreparedRequest
+  request: SignedRequest,
+  { homeNetwork }: { homeNetwork: boolean }
 ): Promise<TryResult> {
   const triedAt = new Date()
   const started = performance.now()
@@ -208,7 +270,7 @@ async function send(
     const answer = await deps.fetcher(request.address, {
       body: request.body,
       headers: request.headers,
-      homeNetwork: request.homeNetwork,
+      homeNetwork,
       keepErrors: true,
       timeoutMs: WEBHOOK_TIMEOUT_MS,
       maxBytes: 1_000_000,
