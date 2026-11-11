@@ -587,6 +587,9 @@
             "updated": "A recipe is changed",
             "deleted": "A recipe is deleted",
             "restored": "A recipe is restored"
+          },
+          "webhook": {
+            "test": "A test"
           }
         }
       },

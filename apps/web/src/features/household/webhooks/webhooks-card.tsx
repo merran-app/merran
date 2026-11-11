@@ -73,6 +73,7 @@ export function WebhooksCard() {
       <WebhookFormDialog open={adding} onOpenChange={setAdding} />
       {opened && (
         <WebhookDetailsDialog
+          key={opened}
           webhookId={opened}
           open={viewing}
           onOpenChange={setViewing}

@@ -1,6 +1,8 @@
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { isWebhookEventType, type WebhookEventType } from "@merran/shared"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import type { TFunction } from "i18next"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -15,12 +17,24 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
-import type { PickableEvent } from "./event-picker"
 import {
   DELIVERIES_PAGE_SIZE,
   webhookDeliveriesQuery,
   type WebhookDelivery,
 } from "./queries"
+
+const EVENT_LABELS = {
+  "recipe.created": "settings.household.webhooks.events.recipe.created",
+  "recipe.updated": "settings.household.webhooks.events.recipe.updated",
+  "recipe.deleted": "settings.household.webhooks.events.recipe.deleted",
+  "recipe.restored": "settings.household.webhooks.events.recipe.restored",
+  "webhook.test": "settings.household.webhooks.events.webhook.test",
+} as const satisfies Record<WebhookEventType, string>
+
+/** An event's label, or its type as the server names it if it's one this app doesn't know. */
+function eventLabel(t: TFunction, type: string) {
+  return isWebhookEventType(type) ? t(EVENT_LABELS[type]) : type
+}
 
 const STATE_BADGES = {
   waiting: "outline",
@@ -165,9 +179,7 @@ function DeliveryRow({
         <CollapsibleTrigger className="group flex w-full items-center gap-3 p-4 text-start outline-none first:rounded-t-2xl focus-visible:ring-[3px] focus-visible:ring-ring/50">
           <div className="min-w-0 flex-1 space-y-1">
             <p className="text-sm font-medium break-words">
-              {t(
-                `settings.household.webhooks.events.${delivery.event.type as PickableEvent}`
-              )}
+              {eventLabel(t, delivery.event.type)}
             </p>
             <p className="text-sm text-muted-foreground">
               {summary.join(" · ")}
