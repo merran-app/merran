@@ -192,7 +192,7 @@ The secret is `whsec_` and 32 random bytes, sealed in the secrets table, so `mer
 
 n8n can check the signature with the `standardwebhooks` package in a Code node. Home Assistant's webhook trigger checks nothing; its webhook id, in the address, is the secret, and the guide says so.
 
-A webhook may also have up to five headers of its own, sealed like the secret: for n8n's Header Auth, or a token a reverse proxy wants. They can't replace `content-type`, `user-agent`, `host`, `content-length` or the `webhook-` headers. Since November 10, 2026, each needs a value, on one line in the characters fetch can send (tabs, visible ASCII and the rest of Latin-1), and the headers that only apply to one connection (`connection`, `keep-alive`, `transfer-encoding`, `te`, `trailer`, `upgrade` and the two `proxy-` ones) are refused: fetch would refuse or drop them, and every delivery would fail without anyone seeing why. Changing the headers sends every value again, as they're never shown; the form asks for each.
+A webhook may also have up to five headers of its own, sealed like the secret: for n8n's Header Auth, or a token a reverse proxy wants. They can't replace `content-type`, `user-agent`, `host`, `content-length` or the `webhook-` headers. Since November 10, 2026, each needs a value, on one line in the characters fetch can send (tabs, visible ASCII and the rest of Latin-1), and the headers that only apply to one connection (`connection`, `keep-alive`, `transfer-encoding`, `te`, `trailer`, `upgrade` and the two `proxy-` ones) are refused: fetch would refuse or drop them, and every delivery would fail without anyone seeing why. Since November 11, 2026, `expect` is refused too, as fetch refuses to send it at all, and sending leaves out any refused header saved before, so one can't fail every delivery. Changing the headers sends every value again, as they're never shown; the form asks for each.
 
 ### Sending
 
@@ -217,13 +217,14 @@ The job runner gains an optional retry schedule for each kind of job, in place o
 
 ### The deliveries log
 
-Each webhook shows its last 30 days of deliveries: the event, when it happened, how many tries, the status, the answer's status code, how long it took, the first 1 KB of the answer and the exact body sent. A failed try shows its error and, under it, the answer, which is where a receiver like n8n says what was wrong. NUL characters are left out of the answer kept, since Postgres can't store them. Each has **Resend**. One still being tried can't be resent, unless no job is left to try it, as after a crash. The daily clean-up job (`jobs.cleanUp`) clears events and deliveries older than 30 days. While a webhook is open, its state and log refresh every few seconds.
+Each webhook shows its last 30 days of deliveries: the event, when it happened, how many tries, the status, the answer's status code, how long it took, the first 1 KB of the answer and the exact body sent. A failed try shows its error and, under it, the answer, which is where a receiver like n8n says what was wrong. NUL characters are left out of the answer kept, since Postgres can't store them. Each has **Resend**. One still being tried can't be resent, unless no job is left to try it, as after a crash. Send a test tries its delivery with no job, so since November 11, 2026 a test waiting in its first 15 seconds (the 10 to answer, and 5 more) counts as still being tried, and isn't sent twice. The daily clean-up job (`jobs.cleanUp`) clears events and deliveries older than 30 days. While a webhook is open, its state and log refresh every few seconds.
 
 ## The home network
 
 - A server setting in Settings → Webhooks → Whole server, **Webhooks to the home network**: Off (the default), Every household, or Chosen households, picked from the server's households. `MERRAN_WEBHOOKS_HOME_NETWORK=off|all|chosen` sets it from the environment and locks it.
 - **When a webhook is saved,** a household that isn't allowed must give an address that leads only to public addresses, looked up then (`checkPublicLink`). Otherwise it's refused with: "This address is on your home network. The server admin can allow that in Settings → Webhooks → Whole server." When the person saving it is the server admin, which is usual on a server with one household, a button allows it right there.
 - **On every send,** a household that isn't allowed goes through the public agent, which refuses private addresses whenever the name is looked up, so a name that starts pointing home later is refused too. An allowed household's deliveries use the home agent.
+- **Link-local addresses** (`169.254.0.0/16`, `fe80::/10`, and IPv4 ones inside IPv6), where cloud metadata services answer, are refused even for an allowed household (decided November 11, 2026): on saving, an address that is one or whose name looks up to one, with "Webhooks can't reach link-local addresses, like 169.254.169.254."; on every send, through a home agent whose lookup drops them (the fetcher's `refuseLinkLocal`). The server admin's own addresses, like their Mealie's, aren't held to this.
 - Addresses must be `http` or `https`, with no user name or password in them (use a header), and at most 2,000 characters. Plain `http` is allowed, since Home Assistant on a home network usually has no certificate.
 - The guide says to use Home Assistant's IP address or a real host name: `homeassistant.local` often doesn't resolve inside Docker.
 
@@ -235,7 +236,7 @@ A **Webhooks** page in Settings, after Apps and devices. Moved there from the Ho
 - **Whole server**, for the server admin: the switch that turns webhooks on and off, and the home-network choice. It shows even while webhooks are off, so they can be turned back on; a household admin's half then says webhooks are turned off for every household.
 
 - **The list:** each webhook's name, the host it sends to, how many events it wants, its state (**Working**, **Failing** or **Paused**) and its last delivery.
-- **Add webhook** and editing open in a dialog on larger screens and a drawer on mobile: a name, the address, the events as checkboxes grouped by area with a line on each, or **Everything, including events added later**, and the extra headers. After saving, the secret is shown with a copy button.
+- **Add webhook** and editing open in a dialog on larger screens and a drawer on mobile: a name, the address, the events as checkboxes grouped by area with a line on each, or **Everything, including events added later**, and the extra headers. Each event's line says what sends it, like "Moved to Recently deleted." (`eventHints` in `en.json`), and is its checkbox's description for screen readers. After saving, the secret is shown with a copy button.
 - **Each webhook** opens to its deliveries log, **Send a test**, **Pause** or **Resume**, **Rotate secret**, **Show secret** and **Delete**, which asks first.
 - **Send a test** is sent at once, even to a paused webhook, tried once, and its answer shown. It's logged like any delivery, but it's never retried and never pauses the webhook.
 - **Daily summary at**, a time, arrives with slice 3, for every webhook that wants `day.summary`.
@@ -265,7 +266,7 @@ One migration for SQLite and one for Postgres for each slice that adds tables.
 
 A `webhooks` module in `apps/server/src/modules/webhooks/`: its settings (`settings.ts`, and `modules/settings.ts`), its status and the `webhooks` capability. Its jobs are listed in `services/jobs/handlers.ts` and its routes under `http/routes/`, like every module's; the addresses it calls are the ones households chose. Nothing calls out until a household adds a webhook. Its settings:
 
-- `webhooks.enabled` (`MERRAN_WEBHOOKS`), a switch, on by default: off hides the page, refuses the routes, records nothing and leaves saved webhooks as they are.
+- `webhooks.enabled` (`MERRAN_WEBHOOKS`), a switch, on by default: off hides the page, refuses the routes, records nothing and leaves saved webhooks as they are. A delivery whose next try comes while it's off is stopped, and isn't sent when it's turned back on; each can be sent again with **Resend**.
 - `webhooks.homeNetwork` (`MERRAN_WEBHOOKS_HOME_NETWORK`): `off`, `all` or `chosen`.
 - `webhooks.homeNetworkHouseholds`: the chosen households, picked in Settings → Webhooks → Whole server; not from the environment.
 
@@ -319,7 +320,7 @@ On SQLite and Postgres (`test:all`):
 - **Signing** against Standard Webhooks' published test vectors, with the `standardwebhooks` package checking signatures in the tests only.
 - **Delivery** to a receiver started on `127.0.0.1` in the test, with the home network allowed: the body sent is the body signed, headers, a 2xx, a timeout, a 3xx, a `410`.
 - **Retries** on a fake clock: the whole schedule, then pausing; resuming and resending.
-- **The home network:** refused when saved and when sent, for a household that isn't allowed; a name that resolves home after saving; allowed for every household and for chosen ones.
+- **The home network:** refused when saved and when sent, for a household that isn't allowed; a name that resolves home after saving; allowed for every household and for chosen ones; link-local addresses refused even then.
 - **Households stay apart:** a webhook never hears another household's events, and the routes are covered by the generated isolation tests.
 - **`record()`** does nothing with no webhook that wants the event, and a change that rolls back sends nothing.
 - **Gathering:** 30 changes in a window make one event, with exact counts.

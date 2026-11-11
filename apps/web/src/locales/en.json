@@ -598,6 +598,14 @@
           "webhook": {
             "test": "A test"
           }
+        },
+        "eventHints": {
+          "recipe": {
+            "created": "Typed in, imported, or added from a suggestion.",
+            "updated": "Edits, tidy-ups, swaps, restored versions, and photo or diet changes.",
+            "deleted": "Moved to Recently deleted.",
+            "restored": "Brought back from Recently deleted."
+          }
         }
       },
       "new": {

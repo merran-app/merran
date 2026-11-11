@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Field,
+  FieldContent,
+  FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldLegend,
@@ -30,6 +32,26 @@ const AREAS = WEBHOOK_AREAS.filter((area): area is PickableEntry["area"] =>
   PICKABLE.some((event) => event.area === area)
 )
 
+/** Each pickable event's label, and the line under it saying what sends it. */
+const EVENT_TEXT = {
+  "recipe.created": {
+    label: "settings.household.webhooks.events.recipe.created",
+    hint: "settings.household.webhooks.eventHints.recipe.created",
+  },
+  "recipe.updated": {
+    label: "settings.household.webhooks.events.recipe.updated",
+    hint: "settings.household.webhooks.eventHints.recipe.updated",
+  },
+  "recipe.deleted": {
+    label: "settings.household.webhooks.events.recipe.deleted",
+    hint: "settings.household.webhooks.eventHints.recipe.deleted",
+  },
+  "recipe.restored": {
+    label: "settings.household.webhooks.events.recipe.restored",
+    hint: "settings.household.webhooks.eventHints.recipe.restored",
+  },
+} as const satisfies Record<PickableEvent, { label: string; hint: string }>
+
 /** The events a webhook is told about, as checkboxes under their areas. */
 export function EventPicker({
   value,
@@ -55,19 +77,27 @@ export function EventPicker({
           <FieldLegend variant="label">
             {t(`settings.household.webhooks.areas.${area}`)}
           </FieldLegend>
-          {PICKABLE.filter((event) => event.area === area).map((event) => (
-            <Field key={event.type} orientation="horizontal">
-              <Checkbox
-                id={`webhook-event-${event.type}`}
-                checked={value.includes(event.type)}
-                onCheckedChange={(checked) => toggle(event.type, checked)}
-                disabled={disabled}
-              />
-              <FieldLabel htmlFor={`webhook-event-${event.type}`}>
-                {t(`settings.household.webhooks.events.${event.type}`)}
-              </FieldLabel>
-            </Field>
-          ))}
+          {PICKABLE.filter((event) => event.area === area).map((event) => {
+            const id = `webhook-event-${event.type}`
+            const text = EVENT_TEXT[event.type]
+            return (
+              <Field key={event.type} orientation="horizontal">
+                <Checkbox
+                  id={id}
+                  aria-describedby={`${id}-hint`}
+                  checked={value.includes(event.type)}
+                  onCheckedChange={(checked) => toggle(event.type, checked)}
+                  disabled={disabled}
+                />
+                <FieldContent>
+                  <FieldLabel htmlFor={id}>{t(text.label)}</FieldLabel>
+                  <FieldDescription id={`${id}-hint`}>
+                    {t(text.hint)}
+                  </FieldDescription>
+                </FieldContent>
+              </Field>
+            )
+          })}
         </FieldSet>
       ))}
     </FieldGroup>
