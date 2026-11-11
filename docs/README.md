@@ -46,6 +46,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio, which thes
 | [flaresolverr-imports.md](flaresolverr-imports.md) | Importing links from sites that turn Merran away, through the server admin's own FlareSolverr, and what stays honest (released in alpha.7) |
 | [mobile-gestures.md](mobile-gestures.md) | Swiping rows on the list and in the pantry, pull to refresh and swiping back in the installed app (built November 8, 2026) |
 | [recipe-sharing.md](recipe-sharing.md) | Sharing one recipe by link through the phone's share sheet: what the recipient sees, what stays private, and no AI or editing (implemented November 8, 2026) |
+| [webhooks.md](webhooks.md) | Webhooks for Home Assistant and n8n: every event and its payload, signing and retries, the home network, cook view reporting cooking and timers, daily heads-ups, and the build order (planned November 10, 2026) |
 | [features.md](features.md) | Every feature with its importance and status, for the marketing and docs sites |
 | [scope.md](scope.md) | Where each REFERENCE feature lands, what's not coming over, and the build order |
 | [foods.md](foods.md) | One vocabulary of foods: names in every language, kinds of, brands, what Merran knows about each, and matching a line to its food |
