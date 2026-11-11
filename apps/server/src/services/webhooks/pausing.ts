@@ -46,6 +46,9 @@ export async function pauseWebhook(
     { state: "paused", pausedReason: reason, pausedAt: new Date() }
   )
   forgetWebhooks(webhook.household.id)
+  // The update went straight to the database, so what's in memory catches
+  // up, for whatever shows the webhook next: paused by this, or as someone
+  // else left it.
   await em.findOne(Webhook, { id: webhook.id }, { refresh: true })
   if (paused === 0) return false
 
