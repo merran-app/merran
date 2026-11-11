@@ -362,6 +362,26 @@ describe("delivering", () => {
     expect(request.headers["x-kitchen"]).toBe("on")
   })
 
+  test("a saved header fetch can't send is left out, and the delivery arrives", async () => {
+    // Saving refuses `Expect` now, but one saved before mustn't fail every
+    // delivery: fetch refuses to send it at all.
+    await addWebhook({
+      headers: [
+        { name: "Expect", value: "100-continue" },
+        { name: "X-Kitchen", value: "on" },
+      ],
+    })
+
+    const event = await recordDeleted()
+    await jobs.drain()
+
+    expect(receiver.requests).toHaveLength(1)
+    const [request] = receiver.requests as [ReceivedRequest]
+    expect(request.headers).not.toHaveProperty("expect")
+    expect(request.headers["x-kitchen"]).toBe("on")
+    expect(await deliveryOf(event)).toMatchObject({ state: "delivered" })
+  })
+
   test("saved parts that can't be opened fail the try like any other", async () => {
     const otherKey = await addWebhook()
     const brokenHeaders = await addWebhook()
@@ -564,6 +584,22 @@ describe("delivering", () => {
     } finally {
       await allowHomeNetwork("all")
     }
+  })
+
+  test("a link-local address saved before is refused when sending", async () => {
+    // Saving refuses it now, but a delivery checks for itself.
+    await addWebhook({ address: "http://169.254.169.254/latest/meta-data" })
+
+    const event = await recordDeleted()
+    await jobs.drain()
+
+    const delivery = await deliveryOf(event)
+    expect(delivery).toMatchObject({
+      state: "waiting",
+      tries: 1,
+      statusCode: null,
+    })
+    expect(delivery.error).toMatch(/private network/)
   })
 
   test("nothing is sent while webhooks are off", async () => {
@@ -828,6 +864,32 @@ describe("addresses", () => {
       { homeNetwork: true }
     )
     expect(allowed.host).toBe("192.168.1.20:8123")
+  })
+
+  test("never go link-local, even with the home network allowed", async () => {
+    const linkLocal =
+      "Webhooks can't reach link-local addresses, like 169.254.169.254."
+    for (const address of [
+      "http://169.254.169.254/latest/meta-data",
+      "http://[::ffff:169.254.169.254]/latest",
+      "http://[fe80::1]:8123/api/webhook/kitchen",
+    ]) {
+      await expect(
+        checkWebhookAddress(address, { homeNetwork: true }),
+        address
+      ).rejects.toMatchObject({
+        code: "webhook_address",
+        message: linkLocal,
+        fields: { address: linkLocal },
+      })
+    }
+
+    // A name only the home network knows may still be saved.
+    const unknown = await checkWebhookAddress(
+      "http://no-such-name.invalid/api/webhook/kitchen",
+      { homeNetwork: true }
+    )
+    expect(unknown.host).toBe("no-such-name.invalid")
   })
 
   test("the home network is allowed for every household, or chosen ones", async () => {

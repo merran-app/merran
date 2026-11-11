@@ -46,6 +46,28 @@ export function isMerransHeader(name: string) {
 }
 
 /**
+ * Headers fetch refuses or drops, so a delivery with one would fail or go
+ * without it: those about one connection rather than the request, and
+ * `expect`, which fetch refuses outright.
+ */
+const UNSENDABLE_HEADERS = new Set([
+  "connection",
+  "keep-alive",
+  "transfer-encoding",
+  "te",
+  "trailer",
+  "upgrade",
+  "proxy-authorization",
+  "proxy-authenticate",
+  "expect",
+])
+
+/** Whether a header can't be sent with a delivery, however it's written. */
+export function isUnsendableHeader(name: string) {
+  return UNSENDABLE_HEADERS.has(name.toLowerCase())
+}
+
+/**
  * What a try records when the webhook's sealed address, secrets or headers
  * can't be opened. It's always this, since what went wrong may quote them.
  */
@@ -236,9 +258,10 @@ function signedRequest(
 
 /**
  * The headers the household added, sealed as JSON: `[{ name, value }]`.
- * Merran's own are left out however they were saved, and names are made
- * lowercase, so one like `Accept` replaces the fetcher's rather than being
- * sent alongside it.
+ * Merran's own, and those fetch can't send, are left out however they were
+ * saved, so one saved before saving refused it can't fail every delivery.
+ * Names are made lowercase, so one like `Accept` replaces the fetcher's
+ * rather than being sent alongside it.
  */
 function extraHeaders(deps: DeliveryDeps, webhook: Webhook) {
   const sealed = webhook.headers?.getEntity()
@@ -251,14 +274,16 @@ function extraHeaders(deps: DeliveryDeps, webhook: Webhook) {
   return Object.fromEntries(
     headers
       .filter((header) => !isMerransHeader(header.name))
+      .filter((header) => !isUnsendableHeader(header.name))
       .map((header) => [header.name.toLowerCase(), header.value])
   )
 }
 
 /**
  * POSTs the body as it was signed. An error answer is kept rather than
- * thrown, and anything thrown, like an address that can't be reached or is
- * on the home network when that isn't allowed, is the try's error.
+ * thrown, and anything thrown, like an address that can't be reached, is
+ * link-local, or is on the home network when that isn't allowed, is the
+ * try's error.
  */
 async function send(
   deps: DeliveryDeps,
@@ -274,6 +299,9 @@ async function send(
       body: request.body,
       headers: request.headers,
       homeNetwork,
+      // A household gave this address, not the server admin, so even on the
+      // home network it never reaches the cloud metadata service.
+      refuseLinkLocal: true,
       keepErrors: true,
       timeoutMs: WEBHOOK_TIMEOUT_MS,
       maxBytes: 1_000_000,

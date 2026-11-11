@@ -9,7 +9,12 @@ import {
   WebhookDelivery,
 } from "../../database/entities/index.ts"
 import { checkWebhookAddress, homeNetworkAllowed } from "./addresses.ts"
-import { attemptDelivery, isMerransHeader } from "./deliver.ts"
+import {
+  attemptDelivery,
+  isMerransHeader,
+  isUnsendableHeader,
+  WEBHOOK_TIMEOUT_MS,
+} from "./deliver.ts"
 import { pauseWebhook, resumeWebhook } from "./pausing.ts"
 import {
   activeDeliveryJob,
@@ -31,6 +36,12 @@ const MAX_WEBHOOKS = 10
 
 /** How long the secret before a rotation still signs, so a receiver can change over. */
 const PREVIOUS_SECRET_MS = 24 * 60 * 60_000
+
+/**
+ * How long Send a test may still be trying its delivery, which waits with
+ * no job meanwhile: the receiver's time to answer, and a little more.
+ */
+const TEST_UNDER_WAY_MS = WEBHOOK_TIMEOUT_MS + 5_000
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -294,18 +305,16 @@ export async function findDelivery(
 }
 
 /**
- * Sends a delivery again, from its first try. One still being tried, or
- * one for a paused webhook, which would only be stopped again, can't be.
- * One left waiting with no job to try it, as after a crash, can.
+ * Sends a delivery again, from its first try. One still being tried, by
+ * its job or by Send a test, or one for a paused webhook, which would only
+ * be stopped again, can't be. One left waiting with nothing to try it, as
+ * after a crash, can.
  */
 export async function resendDelivery(
   em: EntityManager,
   delivery: WebhookDelivery
 ): Promise<WebhookDelivery> {
-  if (
-    delivery.state === "waiting" &&
-    (await activeDeliveryJob(em, delivery.id))
-  ) {
+  if (delivery.state === "waiting" && (await stillBeingTried(em, delivery))) {
     throw new AppError(
       "conflict",
       "delivery_waiting",
@@ -328,6 +337,20 @@ export async function resendDelivery(
     deliveryId: delivery.id,
   })
   return delivery
+}
+
+/**
+ * Whether something is trying a waiting delivery now: its job, or Send a
+ * test, which tries its delivery with no job for up to its timeout, so
+ * resending it then would send the test twice.
+ */
+async function stillBeingTried(em: EntityManager, delivery: WebhookDelivery) {
+  const testUnderWay =
+    delivery.event.getEntity().type === "webhook.test" &&
+    delivery.createdAt.getTime() > Date.now() - TEST_UNDER_WAY_MS
+  if (testUnderWay) return true
+
+  return (await activeDeliveryJob(em, delivery.id)) !== null
 }
 
 /**
@@ -370,21 +393,6 @@ function checkEvents(webhook: {
 }
 
 /**
- * Headers about one connection rather than the request, which fetch
- * refuses or drops, so a delivery would fail or go without them.
- */
-const HOP_BY_HOP_HEADERS = new Set([
-  "connection",
-  "keep-alive",
-  "transfer-encoding",
-  "te",
-  "trailer",
-  "upgrade",
-  "proxy-authorization",
-  "proxy-authenticate",
-])
-
-/**
  * Refuses a header that would replace one Merran sets, or one that can't
  * be sent, however it's written.
  */
@@ -392,9 +400,7 @@ function checkHeaders(headers: readonly WebhookHeader[]) {
   if (headers.some((header) => isMerransHeader(header.name))) {
     refuseHeaders("That header is one Merran sets itself.")
   }
-  if (
-    headers.some((header) => HOP_BY_HOP_HEADERS.has(header.name.toLowerCase()))
-  ) {
+  if (headers.some((header) => isUnsendableHeader(header.name))) {
     refuseHeaders("That header can't be sent with a webhook.")
   }
 }

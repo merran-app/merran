@@ -1,6 +1,8 @@
+import { lookup } from "node:dns/promises"
+import { isIP } from "node:net"
 import { AppError } from "../../core/errors.ts"
 import { WEBHOOKS } from "../../modules/webhooks/settings.ts"
-import { checkPublicLink } from "../fetch/public-fetch.ts"
+import { checkPublicLink, isLinkLocalAddress } from "../fetch/public-fetch.ts"
 import type { Settings } from "../settings/settings.ts"
 
 // Where a webhook may send. Home Assistant is usually on the home network,
@@ -26,15 +28,16 @@ export async function homeNetworkAllowed(
 /**
  * An address a webhook may be saved with: http or https, with no user name
  * or password in it, and, unless the household may reach the home network,
- * one whose name leads only to public addresses, looked up now. Sending
- * checks again, since a name can start pointing home later.
+ * one whose name leads only to public addresses, looked up now. Even when
+ * it may, never a link-local one. Sending checks again, since a name can
+ * start pointing home later.
  */
 export async function checkWebhookAddress(
   raw: string,
   options: { homeNetwork: boolean }
 ): Promise<URL> {
   const url = parseAddress(raw)
-  if (options.homeNetwork) return url
+  if (options.homeNetwork) return refuseLinkLocal(url)
 
   try {
     return await checkPublicLink(url.href)
@@ -47,6 +50,30 @@ export async function checkWebhookAddress(
     }
     throw error
   }
+}
+
+/**
+ * Refuses an address that is, or whose name leads to, a link-local address,
+ * like 169.254.169.254, where a cloud server's metadata service hands out
+ * its keys: the home network being allowed doesn't reach those. A name
+ * that can't be looked up now may be one only the home network knows, so
+ * it's allowed; sending refuses it if it turns out link-local.
+ */
+async function refuseLinkLocal(url: URL): Promise<URL> {
+  const host = url.hostname.replace(/^\[|\]$/g, "")
+  const addresses = isIP(host)
+    ? [host]
+    : (await lookup(host, { all: true }).catch(() => [])).map(
+        (found) => found.address
+      )
+
+  if (addresses.some(isLinkLocalAddress)) {
+    throw addressError(
+      "webhook_address",
+      "Webhooks can't reach link-local addresses, like 169.254.169.254."
+    )
+  }
+  return url
 }
 
 /** The rules any address follows, wherever it leads. */

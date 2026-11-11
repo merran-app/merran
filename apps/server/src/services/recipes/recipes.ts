@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util"
 import { toNumber } from "../../database/numbers.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import {
@@ -715,7 +716,7 @@ export async function setPhoto(
   return loadRecipe(em, recipe.id)
 }
 
-/** Takes a recipe's photo away, and deletes it. */
+/** Takes a recipe's photo away, and deletes it. Webhooks hear only if it had one. */
 export async function clearPhoto(
   em: EntityManager,
   files: FileStore,
@@ -725,7 +726,7 @@ export async function clearPhoto(
   const old = recipe.image
   recipe.image = null
   recipe.imageByAi = false
-  await recordParts(em, options.householdId, recipe, ["photo"])
+  if (old) await recordParts(em, options.householdId, recipe, ["photo"])
   await em.flush()
   await removePhoto(files, options.householdId, old)
   return loadRecipe(em, recipe.id)
@@ -734,7 +735,8 @@ export async function clearPhoto(
 /**
  * Corrects a recipe's diet labels. Only corrections that differ from what
  * the ingredients suggest are kept; they stick when the recipe is edited.
- * Not an edit, so no version is kept.
+ * Not an edit, so no version is kept. Webhooks hear only if the kept
+ * corrections changed.
  */
 export async function setDiets(
   em: EntityManager,
@@ -744,10 +746,14 @@ export async function setDiets(
   const suggested = dietsFor(
     recipe.ingredients.getItems().map((line) => line.rawText)
   )
+  const before = recipe.dietOverrides ?? null
   const kept = keptOverrides(suggested, options.overrides)
   recipe.dietOverrides = Object.keys(kept).length > 0 ? kept : null
   recipe.diets = encodeDiets(applyDietOverrides(suggested, kept))
-  await recordParts(em, recipe.household.id, recipe, ["diets"])
+  // As plain data: Postgres hands JSON back with its keys in its own order.
+  if (!isDeepStrictEqual(before, recipe.dietOverrides)) {
+    await recordParts(em, recipe.household.id, recipe, ["diets"])
+  }
   await em.flush()
   return loadRecipe(em, recipe.id)
 }
@@ -755,6 +761,7 @@ export async function setDiets(
 /**
  * Says which foods a recipe can't do without, so a dislike in it rules it
  * out rather than being left out. Not an edit, so no version is kept.
+ * Webhooks hear only if what it needs, or a line's mark, changed.
  */
 export async function setNeeds(
   em: EntityManager,
@@ -771,18 +778,27 @@ export async function setNeeds(
       options.foods.map((food) => food.trim().toLowerCase()).filter(Boolean)
     ),
   ]
+  let changed = !sameFoods(recipe.needs ?? [], foods)
   recipe.needs = foods.length > 0 ? foods : null
   // The household's word over tidy up's: its lines can come out.
   for (const food of options.canLeaveOut ?? []) {
     for (const line of recipe.ingredients.getItems()) {
       if (line.mark === "needed" && namesFood(line.rawText, food)) {
         line.mark = "optional"
+        changed = true
       }
     }
   }
-  await recordParts(em, recipe.household.id, recipe, ["ingredients"])
+  if (changed) {
+    await recordParts(em, recipe.household.id, recipe, ["ingredients"])
+  }
   await em.flush()
   return loadRecipe(em, recipe.id)
+}
+
+/** Whether two lists of foods hold the same ones, in any order. */
+function sameFoods(a: readonly string[], b: readonly string[]) {
+  return isDeepStrictEqual([...a].sort(), [...b].sort())
 }
 
 /** Rates a recipe, or clears its rating. Not an edit, so no version is kept. */

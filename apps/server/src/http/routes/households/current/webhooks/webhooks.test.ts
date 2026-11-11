@@ -228,6 +228,24 @@ describe("adding a webhook", () => {
     }
   })
 
+  test("a link-local address is refused even with the home network allowed", async () => {
+    // Where cloud metadata services answer, with the server's own keys.
+    const message =
+      "Webhooks can't reach link-local addresses, like 169.254.169.254."
+
+    const res = await kyle.post(
+      WEBHOOKS,
+      newWebhook({ address: "http://169.254.169.254/latest" })
+    )
+
+    expect(res.status).toBe(400)
+    expect(await errorOf(res)).toEqual({
+      code: "webhook_address",
+      message,
+      fields: { address: message },
+    })
+  })
+
   test("addresses must be http or https, without a password", async () => {
     for (const address of [
       "ftp://example.com/h",
@@ -328,7 +346,7 @@ describe("adding a webhook", () => {
     expect(receiver.requests[0]!.headers["x-token"]).toBe("café\tcrème")
   })
 
-  test("headers only for one connection can't be added", async () => {
+  test("headers only for one connection, or that fetch refuses, can't be added", async () => {
     const message = "That header can't be sent with a webhook."
     for (const name of [
       "Connection",
@@ -339,6 +357,7 @@ describe("adding a webhook", () => {
       "Upgrade",
       "Proxy-Authorization",
       "proxy-authenticate",
+      "Expect",
     ]) {
       const res = await kyle.post(
         WEBHOOKS,
@@ -756,6 +775,38 @@ describe("deliveries", () => {
     await jobs.drain()
     expect(await deliveryOf(event)).toMatchObject({ state: "delivered" })
     expect(receiver.requests).toHaveLength(1)
+  })
+
+  test("a test still being sent can't be resent, but one left waiting can", async () => {
+    const { webhook } = await addWebhook()
+    const tested = await (
+      await kyle.post(`${WEBHOOKS}/${webhook.id}/test`)
+    ).json()
+    const resend = `${WEBHOOKS}/${webhook.id}/deliveries/${tested.id}/resend`
+    // As while Send a test is still trying it: waiting, with no job.
+    await inHome().nativeUpdate(
+      WebhookDelivery,
+      { id: tested.id },
+      { state: "waiting", createdAt: new Date() }
+    )
+
+    const underWay = await kyle.post(resend)
+    expect(underWay.status).toBe(409)
+    expect(await errorOf(underWay)).toEqual({
+      code: "delivery_waiting",
+      message: "That delivery is still being tried.",
+    })
+    expect(await activeJobsOf(tested.id)).toHaveLength(0)
+
+    // Long past its 10 seconds, as when the server stopped mid-send.
+    await inHome().nativeUpdate(
+      WebhookDelivery,
+      { id: tested.id },
+      { createdAt: new Date(Date.now() - 20_000) }
+    )
+    const left = await kyle.post(resend)
+    expect(left.status).toBe(200)
+    expect(await activeJobsOf(tested.id)).toHaveLength(1)
   })
 
   test("a test resent is still a test: tried once, and it never pauses", async () => {

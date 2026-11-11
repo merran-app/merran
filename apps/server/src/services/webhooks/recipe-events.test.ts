@@ -211,6 +211,52 @@ describe("editing a recipe", () => {
   })
 })
 
+describe("setters that change nothing", () => {
+  test("clearing a photo that isn't there sends nothing", async () => {
+    const recipe = await addRecipe({ ...LEMON_CHICKEN, name: "No photo" })
+
+    const sent = await eventsFrom(async () => {
+      const res = await kyle.delete(`/api/recipes/${recipe.slug}/photo`)
+      expect(res.status).toBe(200)
+    })
+
+    expect(sent).toEqual([])
+  })
+
+  test("the same diets twice send one update", async () => {
+    const recipe = await addRecipe({ ...LEMON_CHICKEN, name: "Same diets" })
+    // Two corrections, which Postgres keeps in its own order.
+    const setDiets = async () => {
+      const res = await kyle.put(`/api/recipes/${recipe.slug}/diets`, {
+        overrides: { vegetarian: true, vegan: true },
+      })
+      expect(res.status).toBe(200)
+    }
+
+    const first = await eventsFrom(setDiets)
+    const second = await eventsFrom(setDiets)
+
+    expect(first.map((event) => event.parts)).toEqual([["diets"]])
+    expect(second).toEqual([])
+  })
+
+  test("the same needs twice send one update", async () => {
+    const recipe = await addRecipe({ ...LEMON_CHICKEN, name: "Same needs" })
+    const setNeeds = (foods: string[]) => async () => {
+      const res = await kyle.put(`/api/recipes/${recipe.slug}/needs`, {
+        foods,
+      })
+      expect(res.status).toBe(200)
+    }
+
+    const first = await eventsFrom(setNeeds(["chicken", "lemon"]))
+    const second = await eventsFrom(setNeeds(["lemon", "chicken"]))
+
+    expect(first.map((event) => event.parts)).toEqual([["ingredients"]])
+    expect(second).toEqual([])
+  })
+})
+
 describe("deleting and restoring", () => {
   test("deleting and restoring", async () => {
     const recipe = await addRecipe({ ...LEMON_CHICKEN, name: "Gone" })

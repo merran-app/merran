@@ -6,6 +6,7 @@ import {
   checkPublicLink,
   createPublicFetcher,
   isBlockedAddress,
+  isLinkLocalAddress,
 } from "./public-fetch.ts"
 
 describe("public fetches", () => {
@@ -28,6 +29,26 @@ describe("public fetches", () => {
     }
     for (const address of ["93.184.216.34", "1.1.1.1", "2606:4700::1111"]) {
       expect(isBlockedAddress(address), address).toBe(false)
+    }
+  })
+
+  test("tell link-local addresses, where cloud metadata answers", () => {
+    for (const address of [
+      "169.254.169.254",
+      "169.254.0.1",
+      "::ffff:169.254.1.1",
+      "fe80::1",
+    ]) {
+      expect(isLinkLocalAddress(address), address).toBe(true)
+    }
+    for (const address of [
+      "192.168.1.10",
+      "10.0.0.1",
+      "127.0.0.1",
+      "8.8.8.8",
+      "::1",
+    ]) {
+      expect(isLinkLocalAddress(address), address).toBe(false)
     }
   })
 
@@ -124,6 +145,35 @@ describe("public fetches", () => {
       fetcher(`${home}/away`, { homeNetwork: true })
     ).rejects.toThrow(/redirects somewhere else/)
     server.close()
+  })
+
+  test("refuse link-local addresses on the home network when asked", async () => {
+    // A household's webhook may reach the home network, but never the cloud
+    // metadata service; the server admin's own addresses still may.
+    const metadata = "http://169.254.169.254/"
+    const fetcher = createPublicFetcher({ version: "0.0.0" })
+
+    await expect(
+      fetcher(metadata, { homeNetwork: true, refuseLinkLocal: true })
+    ).rejects.toThrow(/private network/)
+    expect(() =>
+      checkLink(metadata, { homeNetwork: true, refuseLinkLocal: true })
+    ).toThrow(/private network/)
+    expect(() =>
+      checkLink("http://[::ffff:169.254.169.254]/", {
+        homeNetwork: true,
+        refuseLinkLocal: true,
+      })
+    ).toThrow(/private network/)
+    expect(() =>
+      checkLink("http://192.168.1.20:8123/", {
+        homeNetwork: true,
+        refuseLinkLocal: true,
+      })
+    ).not.toThrow()
+    expect(checkLink(metadata, { homeNetwork: true }).hostname).toBe(
+      "169.254.169.254"
+    )
   })
 
   test("hand back a 304 as an answer, not a broken redirect", async () => {
