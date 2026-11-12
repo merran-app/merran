@@ -22,6 +22,7 @@ import {
   setUpServer,
   type TestClient,
 } from "../../../test/app.ts"
+import { testDatabaseKind } from "../../../test/database.ts"
 import {
   gatherNow,
   listenToEverything,
@@ -498,6 +499,116 @@ describe("gathering", () => {
     expect(await inHome().count(WebhookEvent, {})).toBe(0)
     expect(await gatherJobs()).toEqual([])
   })
+
+  test("within a transaction, the job is written as it commits", async () => {
+    await inHouseholdTransaction(database.em.fork(), home, async (tx) => {
+      await withActor(KYLE, async () => {
+        await record(tx, home, { type: "pantry.changed", data: { added: 1 } })
+        await record(tx, home, {
+          type: "list.changed",
+          data: { lists: [], checked: 2 },
+        })
+        await record(tx, home, { type: "pantry.changed", data: { removed: 1 } })
+      })
+
+      // The changes are written, but not their jobs, so nothing holds a
+      // merge job's row while the transaction goes on.
+      expect(await tx.count(WebhookEvent, { gathered: true })).toBe(3)
+      expect(await tx.count(Job, { kind: WEBHOOK_GATHER_JOB })).toBe(0)
+    })
+
+    // One job for each type, however many changes it had.
+    const queued = await gatherJobs()
+    expect(queued.map((job) => job.key).sort()).toEqual([
+      `webhooks.gather:${home}:list.changed`,
+      `webhooks.gather:${home}:pantry.changed`,
+    ])
+
+    await gatherNow(database, jobs)
+    // The two jobs may run in either order.
+    const sent = await sentEvents(database, home)
+    expect(sent.sort((a, b) => a.type.localeCompare(b.type))).toEqual([
+      expect.objectContaining({ type: "list.changed", checked: 2 }),
+      expect.objectContaining({ type: "pantry.changed", added: 1, removed: 1 }),
+    ])
+  })
+
+  test("a change in a savepoint is queued only if the savepoint is kept", async () => {
+    await inHouseholdTransaction(database.em.fork(), home, async (tx) => {
+      await expect(
+        inHouseholdTransaction(tx, home, async (savepoint) => {
+          await record(savepoint, home, {
+            type: "pantry.changed",
+            data: { added: 1 },
+          })
+          throw new Error("Rolled back to the savepoint")
+        })
+      ).rejects.toThrow("Rolled back to the savepoint")
+
+      await inHouseholdTransaction(tx, home, (savepoint) =>
+        record(savepoint, home, {
+          type: "list.changed",
+          data: { lists: [], added: 1 },
+        })
+      )
+      // Released, but still part of the transaction around it.
+      expect(await tx.count(Job, { kind: WEBHOOK_GATHER_JOB })).toBe(0)
+    })
+
+    const queued = await gatherJobs()
+    expect(queued.map((job) => job.key)).toEqual([
+      `webhooks.gather:${home}:list.changed`,
+    ])
+  })
+
+  // Two open transactions need two connections, which SQLite in memory
+  // doesn't have; it lets one writer at a time anyway.
+  test.runIf(testDatabaseKind === "postgres")(
+    "an open change doesn't keep another from writing the job",
+    async () => {
+      await withActor(KYLE, () =>
+        record(inHome(), home, { type: "pantry.changed", data: { added: 1 } })
+      )
+      const [waiting] = await gatherJobs()
+
+      await inHouseholdTransaction(database.em.fork(), home, async (tx) => {
+        await withActor(KYLE, () =>
+          record(tx, home, { type: "pantry.changed", data: { added: 2 } })
+        )
+
+        // Another change, made and committed while this one is still open.
+        // If this one held the waiting job's row, the other would wait for
+        // it, and this one would never get to commit: the lock timeout
+        // ends the wait.
+        await inHouseholdTransaction(
+          database.em.fork(),
+          home,
+          async (other) => {
+            await other.execute("set local lock_timeout = '2s'")
+            await withActor(KYLE, () =>
+              record(other, home, {
+                type: "pantry.changed",
+                data: { removed: 1 },
+              })
+            )
+          }
+        )
+      })
+
+      const [kept, ...others] = await gatherJobs()
+      expect(others).toEqual([])
+      expect(kept!.id).toBe(waiting!.id)
+
+      await gatherNow(database, jobs)
+      expect(await sentEvents(database, home)).toEqual([
+        expect.objectContaining({
+          type: "pantry.changed",
+          added: 3,
+          removed: 1,
+        }),
+      ])
+    }
+  )
 
   test("other events aren't gathered", async () => {
     const event = await record(inHome(), home, {

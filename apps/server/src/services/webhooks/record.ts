@@ -16,9 +16,9 @@ import {
 } from "../jobs/jobs.ts"
 import { currentActor, type Actor } from "./actor.ts"
 import {
+  gatherAtCommit,
   isEmptyPart,
   isGathered,
-  queueGathering,
   type GatheredEventType,
   type GatheredPart,
 } from "./gathering/gathering.ts"
@@ -133,8 +133,8 @@ export async function sendEvent<T extends WebhookEventType>(
 
 /**
  * Saves one change to a gathered event, with no deliveries, and makes sure
- * a job will merge it with the others like it. A change that counts nothing
- * isn't saved.
+ * a job will merge it with the others like it: within a transaction, as it
+ * commits. A change that counts nothing isn't saved.
  */
 async function gatherChange(
   em: EntityManager,
@@ -162,8 +162,7 @@ async function gatherChange(
   // that starts from then on reads it. A crash before the job is saved
   // leaves it for the next change's merge.
   await em.flush()
-  await queueGathering(em, householdId, change.type)
-  await em.flush()
+  await gatherAtCommit(em, householdId, change.type)
   return saved
 }
 

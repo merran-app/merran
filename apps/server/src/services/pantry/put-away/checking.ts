@@ -80,9 +80,7 @@ export async function setChecked(
  * checked now. Rows that went in already are left alone. `only` limits it
  * to those rows, for some being taken off the list. Says how many went in
  * the pantry, for the caller to tell webhooks once it's recorded what it
- * did to the list: list before pantry, as checking off records them, so it
- * takes the merge jobs' rows in the same order (docs/webhooks.md,
- * "Gathering").
+ * did to the list: list before pantry, as checking off records them.
  */
 export async function putAwayAlreadyChecked(
   tx: EntityManager,
