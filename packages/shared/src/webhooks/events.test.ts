@@ -1,5 +1,6 @@
 import { expect, test } from "vitest"
 import {
+  COOKING_OUTCOMES,
   isWebhookEventType,
   PICKABLE_WEBHOOK_EVENTS,
   WEBHOOK_AREAS,
@@ -17,6 +18,12 @@ test("every event is named once, and the test isn't pickable", () => {
     "import.finished",
     "tidy.ready",
     "review.waiting",
+    "cooking.started",
+    "cooking.ended",
+    "timer.started",
+    "timer.extended",
+    "timer.finished",
+    "timer.cancelled",
     "plan.changed",
     "plan.autoplanned",
     "meal.cooked",
@@ -48,4 +55,23 @@ test("every area has an event, and the plan's come in order", () => {
     "meal.cooked",
     "meal.skipped",
   ])
+})
+
+test("cooking has its own area, before the plan", () => {
+  expect(WEBHOOK_AREAS.indexOf("cooking")).toBe(1)
+
+  const cooking = WEBHOOK_EVENTS.filter((event) => event.area === "cooking")
+  expect(cooking.map((event) => event.type)).toEqual([
+    "cooking.started",
+    "cooking.ended",
+    "timer.started",
+    "timer.extended",
+    "timer.finished",
+    "timer.cancelled",
+  ])
+  for (const event of cooking) expect(event.pickable, event.type).toBe(true)
+
+  const cooked = WEBHOOK_EVENTS.find((event) => event.type === "meal.cooked")
+  expect(cooked?.area).toBe("plan")
+  expect(COOKING_OUTCOMES).toEqual(["made", "stopped", "timed_out"])
 })

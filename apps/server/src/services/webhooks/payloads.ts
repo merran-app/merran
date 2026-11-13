@@ -1,5 +1,5 @@
 import { z } from "@hono/zod-openapi"
-import { MEALS, type WebhookEventType } from "@merran/shared"
+import { COOKING_OUTCOMES, MEALS, type WebhookEventType } from "@merran/shared"
 import { IDS, TIMES } from "../../http/schemas/examples.ts"
 import { ACTOR_VIAS } from "./actor.ts"
 import { linkBase } from "./state.ts"
@@ -69,6 +69,22 @@ const MEAL_EXAMPLE = {
   side: SIDE_EXAMPLE,
 }
 
+const COOK_EXAMPLE = { id: IDS.sam, name: "Sam Rivera" }
+
+/** A cooking session's part of every cooking event's example. */
+const COOKING_EXAMPLE = {
+  cook: COOK_EXAMPLE,
+  session: { id: IDS.cookingSession },
+  recipe: RECIPE_EXAMPLE,
+}
+
+const TIMER_EXAMPLE = {
+  id: "t-4f2a",
+  label: "Simmer the sauce",
+  seconds: 600,
+  endsAt: "2026-10-15T18:40:00.000Z",
+}
+
 /** What every event starts with, in the examples: Sam, in the app. */
 const CONTEXT_EXAMPLE = {
   household: { id: IDS.household, name: "The Riveras" },
@@ -95,6 +111,8 @@ function contextExample(type: WebhookEventType) {
     case "import.finished":
     case "tidy.ready":
     case "review.waiting":
+    case "cooking.ended":
+    case "timer.finished":
       return MERRAN_CONTEXT_EXAMPLE
     default:
       return CONTEXT_EXAMPLE
@@ -134,6 +152,29 @@ const EXAMPLES = {
     recipe: RECIPE_EXAMPLE,
     url: "https://merran.example.com/recipes/review",
   },
+  "cooking.started": {
+    ...COOKING_EXAMPLE,
+    with: SIDE_EXAMPLE,
+    meal: MEAL_EXAMPLE,
+    servings: 4,
+  },
+  "cooking.ended": {
+    ...COOKING_EXAMPLE,
+    with: SIDE_EXAMPLE,
+    outcome: "timed_out" as const,
+    minutes: 74,
+  },
+  "timer.started": { ...COOKING_EXAMPLE, timer: TIMER_EXAMPLE },
+  "timer.extended": {
+    ...COOKING_EXAMPLE,
+    timer: {
+      ...TIMER_EXAMPLE,
+      seconds: 660,
+      endsAt: "2026-10-15T18:41:00.000Z",
+    },
+  },
+  "timer.finished": { ...COOKING_EXAMPLE, timer: TIMER_EXAMPLE },
+  "timer.cancelled": { ...COOKING_EXAMPLE, timer: TIMER_EXAMPLE },
   "plan.changed": {
     days: ["2026-10-15", "2026-10-16"],
     pools: ["2026-10-11"],
@@ -256,6 +297,46 @@ export const ListTallySchema = z.object({
 })
 export type ListTally = z.infer<typeof ListTallySchema>
 
+/** A kitchen timer as events carry it. */
+export const TimerRefSchema = z
+  .object({
+    id: z.string().openapi({
+      description: "The timer's id, which cook view picked when it started.",
+    }),
+    label: z.string().openapi({
+      description: 'What it\'s for, like "Simmer the sauce" or "10 minutes".',
+    }),
+    seconds: z.number().int().min(1).openapi({
+      description:
+        "How long it runs, in seconds: its length when started, with each minute added.",
+    }),
+    endsAt: z.string().openapi({
+      description:
+        "When it goes off, by the server's clock: cook view says how many seconds are left, not when.",
+    }),
+  })
+  .openapi({ example: TIMER_EXAMPLE })
+export type TimerRef = z.infer<typeof TimerRefSchema>
+
+/** Who's cooking, and what: the start of every cooking and timer event. */
+const CookingSchema = z.object({
+  cook: named(COOK_EXAMPLE).nullable().openapi({
+    description:
+      "Who's cooking. It stays set when Merran ends the session or a timer goes off, when `by` is null. Null if they've since left Merran.",
+  }),
+  session: z.object({ id: z.string() }).openapi({
+    description:
+      "The cooking session: one person cooking a recipe on one device, from leaving Get ready in cook view until cooking ends.",
+  }),
+  recipe: RecipeRefSchema,
+})
+
+/** The recipe cooked with it, when it's cooked as a pairing. */
+const withRecipe = RecipeRefSchema.nullable().openapi({
+  description:
+    "The recipe cooked with it, when cook view cooks two as a pairing. Null otherwise.",
+})
+
 /** Whose household it happened in, who did it, how, and with which key. */
 const EventContextSchema = z.object({
   household: named(CONTEXT_EXAMPLE.household),
@@ -358,6 +439,42 @@ export const WEBHOOK_PAYLOADS = {
       }),
     })
     .openapi({ example: EXAMPLES["review.waiting"] }),
+  "cooking.started": z
+    .object({
+      ...CookingSchema.shape,
+      with: withRecipe,
+      meal: MealRefSchema.nullable().openapi({
+        description: "The planned meal it's cooked for, if there is one.",
+      }),
+      servings: z.number().nullable().openapi({
+        description:
+          "How many servings it's making, as cook view shows them. Null for a recipe that doesn't say.",
+      }),
+    })
+    .openapi({ example: EXAMPLES["cooking.started"] }),
+  "cooking.ended": z
+    .object({
+      ...CookingSchema.shape,
+      with: withRecipe,
+      outcome: z.enum(COOKING_OUTCOMES).openapi({
+        description:
+          "How it ended: `made` with Made it; `stopped` when cook view was left, once its timers were done; or `timed_out` when cook view went quiet for 30 minutes with no timer running, or 12 hours after it started.",
+      }),
+      minutes: count("How long cooking went on, in whole minutes."),
+    })
+    .openapi({ example: EXAMPLES["cooking.ended"] }),
+  "timer.started": z
+    .object({ ...CookingSchema.shape, timer: TimerRefSchema })
+    .openapi({ example: EXAMPLES["timer.started"] }),
+  "timer.extended": z
+    .object({ ...CookingSchema.shape, timer: TimerRefSchema })
+    .openapi({ example: EXAMPLES["timer.extended"] }),
+  "timer.finished": z
+    .object({ ...CookingSchema.shape, timer: TimerRefSchema })
+    .openapi({ example: EXAMPLES["timer.finished"] }),
+  "timer.cancelled": z
+    .object({ ...CookingSchema.shape, timer: TimerRefSchema })
+    .openapi({ example: EXAMPLES["timer.cancelled"] }),
   "plan.changed": z
     .object({
       days: z.array(z.string()).openapi({
@@ -514,6 +631,36 @@ export const WEBHOOK_SUMMARIES: Record<
     summary: "Something is waiting in Review",
     description:
       "Sent when something new waits in Review that didn't come from your own chat: an AI app's proposal over MCP, or a cooking note that became an edit. A cooking note turned into an edit is sent as Merran's own work.",
+  },
+  "cooking.started": {
+    summary: "Cooking started",
+    description:
+      "Sent when someone leaves Get ready in cook view, or opens cook view on a recipe with nothing to get ready. Each device cooking is a session of its own. A reload carries on with the same session and sends nothing, and guests cooking from a shared link never send it.",
+  },
+  "cooking.ended": {
+    summary: "Cooking ended",
+    description:
+      "Sent when a cooking session ends: with Made it (`made`), even with timers running; when cook view is left (`stopped`), at once with no timer running, or when its last running timer is done or cancelled; a minute after cook view's page is closed, unless it comes back (`stopped`); or when cook view goes quiet for 30 minutes with no timer running, or 12 hours after it started (`timed_out`). Made it, and leaving with nothing running, are sent as the cook; the rest are Merran's own, with `cook` saying who was cooking.",
+  },
+  "timer.started": {
+    summary: "A timer started",
+    description:
+      "Sent when a timer starts in cook view, from a time in a step or as a new timer. It says when it goes off, by the server's clock.",
+  },
+  "timer.extended": {
+    summary: "A timer got more time",
+    description:
+      "Sent when a timer gets +1 minute, in cook view or on the message when it goes off. One that's gone off runs again, and is sent `timer.finished` again when it's done.",
+  },
+  "timer.finished": {
+    summary: "A timer is done",
+    description:
+      "Sent by the server when a timer's time is up, even if the device that started it is asleep or closed. It's Merran's own, with `cook` saying whose timer it was.",
+  },
+  "timer.cancelled": {
+    summary: "A timer was cancelled",
+    description:
+      "Sent when a timer is cancelled before it goes off. Dismissing one that's gone off sends nothing.",
   },
   "plan.changed": {
     summary: "The plan changed",

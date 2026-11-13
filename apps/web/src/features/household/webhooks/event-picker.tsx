@@ -65,6 +65,36 @@ const EVENT_TEXT = {
     hint: "settings.household.webhooks.eventHints.review.waiting",
     chip: "settings.household.webhooks.chips.review.waiting",
   },
+  "cooking.started": {
+    label: "settings.household.webhooks.events.cooking.started",
+    hint: "settings.household.webhooks.eventHints.cooking.started",
+    chip: "settings.household.webhooks.chips.cooking.started",
+  },
+  "cooking.ended": {
+    label: "settings.household.webhooks.events.cooking.ended",
+    hint: "settings.household.webhooks.eventHints.cooking.ended",
+    chip: "settings.household.webhooks.chips.cooking.ended",
+  },
+  "timer.started": {
+    label: "settings.household.webhooks.events.timer.started",
+    hint: "settings.household.webhooks.eventHints.timer.started",
+    chip: "settings.household.webhooks.chips.timer.started",
+  },
+  "timer.extended": {
+    label: "settings.household.webhooks.events.timer.extended",
+    hint: "settings.household.webhooks.eventHints.timer.extended",
+    chip: "settings.household.webhooks.chips.timer.extended",
+  },
+  "timer.finished": {
+    label: "settings.household.webhooks.events.timer.finished",
+    hint: "settings.household.webhooks.eventHints.timer.finished",
+    chip: "settings.household.webhooks.chips.timer.finished",
+  },
+  "timer.cancelled": {
+    label: "settings.household.webhooks.events.timer.cancelled",
+    hint: "settings.household.webhooks.eventHints.timer.cancelled",
+    chip: "settings.household.webhooks.chips.timer.cancelled",
+  },
   "plan.changed": {
     label: "settings.household.webhooks.events.plan.changed",
     hint: "settings.household.webhooks.eventHints.plan.changed",

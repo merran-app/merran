@@ -51,6 +51,7 @@ export const IDS = {
   webhook: id(52),
   webhookDelivery: id(53),
   webhookEvent: id(54),
+  cookingSession: id(55),
 }
 
 export const TIMES = {
