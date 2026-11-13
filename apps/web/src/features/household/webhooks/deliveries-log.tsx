@@ -46,6 +46,9 @@ const EVENT_LABELS = {
   "list.completed": "settings.household.webhooks.events.list.completed",
   "list.sent": "settings.household.webhooks.events.list.sent",
   "pantry.changed": "settings.household.webhooks.events.pantry.changed",
+  "day.summary": "settings.household.webhooks.events.day.summary",
+  "meal.time_to_start": "settings.household.webhooks.events.meal.time_to_start",
+  "pantry.use_soon": "settings.household.webhooks.events.pantry.use_soon",
   "webhook.test": "settings.household.webhooks.events.webhook.test",
 } as const satisfies Record<WebhookEventType, string>
 

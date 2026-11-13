@@ -15428,7 +15428,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "unique": false,
+          "unique": true,
           "length": null,
           "precision": null,
           "scale": null,
@@ -15454,6 +15454,23 @@
           "collation": null,
           "enumItems": [],
           "mappedType": "uuid"
+        },
+        "key": {
+          "name": "key",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
         },
         "merged": {
           "name": "merged",
@@ -15540,6 +15557,17 @@
           "keyName": "webhook_events_household_id_index",
           "primary": false,
           "unique": false
+        },
+        {
+          "columnNames": [
+            "household_id",
+            "key"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "webhook_events_household_id_key_unique",
+          "primary": false,
+          "unique": true
         },
         {
           "columnNames": [

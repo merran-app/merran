@@ -15,6 +15,7 @@ import {
   isUnsendableHeader,
   WEBHOOK_TIMEOUT_MS,
 } from "./deliver.ts"
+import { scheduleHeadsUps } from "./heads-ups/schedule.ts"
 import { pauseWebhook, resumeWebhook } from "./pausing.ts"
 import {
   activeDeliveryJob,
@@ -149,6 +150,7 @@ export async function createWebhook(
   })
   await em.flush()
   forgetWebhooks(householdId)
+  await scheduleHeadsUps(em)
   return { webhook, secret }
 }
 
@@ -194,6 +196,8 @@ export async function updateWebhook(
   } else if (changes.paused === false && webhook.state === "paused") {
     await resumeWebhook(em, webhook, { resend: changes.resend ?? false })
   }
+  // A webhook that now wants a heads-up starts the schedule, if it wasn't.
+  await scheduleHeadsUps(em)
   return webhook
 }
 
