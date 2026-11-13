@@ -2041,6 +2041,648 @@
       "comment": null
     },
     {
+      "name": "cooking_sessions",
+      "schema": "public",
+      "columns": {
+        "closing_at": {
+          "name": "closing_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "cook_id": {
+          "name": "cook_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "ended_at": {
+          "name": "ended_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "entry_id": {
+          "name": "entry_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "heard_at": {
+          "name": "heard_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "left_at": {
+          "name": "left_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [
+            "made",
+            "stopped",
+            "timed_out"
+          ],
+          "mappedType": "enum"
+        },
+        "paired_id": {
+          "name": "paired_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "recipe_id": {
+          "name": "recipe_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "servings": {
+          "name": "servings",
+          "type": "double precision",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "double"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "entry_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "cooking_sessions_entry_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "household_id",
+            "ended_at"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "cooking_sessions_household_id_ended_at_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "household_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "cooking_sessions_household_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "paired_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "cooking_sessions_paired_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "cooking_sessions_pkey",
+          "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "recipe_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "cooking_sessions_recipe_id_index",
+          "primary": false,
+          "unique": false
+        }
+      ],
+      "checks": [
+        {
+          "name": "cooking_sessions_outcome_check",
+          "expression": "\"outcome\" in ('made', 'stopped', 'timed_out')",
+          "definition": "check (\"outcome\" in ('made', 'stopped', 'timed_out'))",
+          "columnName": "outcome"
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": {
+        "cooking_sessions_cook_id_foreign": {
+          "columnNames": [
+            "cook_id"
+          ],
+          "constraintName": "cooking_sessions_cook_id_foreign",
+          "localTableName": "public.cooking_sessions",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.users",
+          "deleteRule": "set null"
+        },
+        "cooking_sessions_entry_id_foreign": {
+          "columnNames": [
+            "entry_id"
+          ],
+          "constraintName": "cooking_sessions_entry_id_foreign",
+          "localTableName": "public.cooking_sessions",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.plan_entries",
+          "deleteRule": "set null"
+        },
+        "cooking_sessions_household_id_foreign": {
+          "columnNames": [
+            "household_id"
+          ],
+          "constraintName": "cooking_sessions_household_id_foreign",
+          "localTableName": "public.cooking_sessions",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.households",
+          "deleteRule": "cascade"
+        },
+        "cooking_sessions_paired_id_foreign": {
+          "columnNames": [
+            "paired_id"
+          ],
+          "constraintName": "cooking_sessions_paired_id_foreign",
+          "localTableName": "public.cooking_sessions",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.recipes",
+          "deleteRule": "set null"
+        },
+        "cooking_sessions_recipe_id_foreign": {
+          "columnNames": [
+            "recipe_id"
+          ],
+          "constraintName": "cooking_sessions_recipe_id_foreign",
+          "localTableName": "public.cooking_sessions",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.recipes",
+          "deleteRule": "cascade"
+        }
+      },
+      "comment": null
+    },
+    {
+      "name": "cooking_timers",
+      "schema": "public",
+      "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "label": {
+          "name": "label",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "seconds": {
+          "name": "seconds",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'running'",
+          "comment": null,
+          "collation": null,
+          "enumItems": [
+            "running",
+            "finished",
+            "cancelled"
+          ],
+          "mappedType": "enum"
+        },
+        "timer_id": {
+          "name": "timer_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "household_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "cooking_timers_household_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "cooking_timers_pkey",
+          "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "session_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "cooking_timers_session_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "session_id",
+            "timer_id"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "cooking_timers_session_id_timer_id_unique",
+          "primary": false,
+          "unique": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "cooking_timers_state_check",
+          "expression": "\"state\" in ('running', 'finished', 'cancelled')",
+          "definition": "check (\"state\" in ('running', 'finished', 'cancelled'))",
+          "columnName": "state"
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": {
+        "cooking_timers_household_id_foreign": {
+          "columnNames": [
+            "household_id"
+          ],
+          "constraintName": "cooking_timers_household_id_foreign",
+          "localTableName": "public.cooking_timers",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.households",
+          "deleteRule": "cascade"
+        },
+        "cooking_timers_session_id_foreign": {
+          "columnNames": [
+            "session_id"
+          ],
+          "constraintName": "cooking_timers_session_id_foreign",
+          "localTableName": "public.cooking_timers",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.cooking_sessions",
+          "deleteRule": "cascade"
+        }
+      },
+      "comment": null
+    },
+    {
       "name": "discoveries",
       "schema": "public",
       "columns": {
