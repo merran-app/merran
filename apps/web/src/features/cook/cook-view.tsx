@@ -261,6 +261,7 @@ export function CookView({
         slug: recipe.slug,
         scale: currentScale,
         ...(paired ? { with: paired.slug } : {}),
+        ...(mealId ? { meal: mealId } : {}),
         ...(session.sessionId ? { session: session.sessionId } : {}),
       }
     : null

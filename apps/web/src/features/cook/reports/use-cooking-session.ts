@@ -1,5 +1,6 @@
 import * as React from "react"
 
+import { afterCheckIn, openingStep } from "./opening"
 import { forgetSession, rememberedSession, rememberSession } from "./remembered"
 import {
   checkIn,
@@ -118,23 +119,27 @@ export function useCookingSession({
     if (answer === "gone" && current.current === id) await startAgain()
   }, [startAgain])
 
-  // Starts cooking, or carries on with this device's session for it.
+  // Carries on with this device's session for this cooking, wherever cook
+  // view opens (a reload may open it on Get ready), or starts one once
+  // cooking starts.
   React.useEffect(() => {
-    if (!enabled || !begun) return
+    if (!enabled) return
+    const remembered = rememberedSession(progressId)
+    if (openingStep(remembered, begun) === "wait") return
     let active = true
 
     async function begin() {
-      const remembered = rememberedSession(progressId)
       if (remembered) {
         stayOn(remembered)
         const answer = await checkIn(remembered, latest.current.servings)
         if (!active) return
-        // A check-in that couldn't be made keeps the session: it's likely
-        // still open, and starting another would say cooking started twice.
-        if (answer !== "gone") {
+        const next = afterCheckIn(answer, begun)
+        if (next === "keep") {
           adopt(remembered)
           return
         }
+        forgetSession(progressId)
+        if (next === "wait") return
       }
       const id = await startOnce(progressId, {
         ...latest.current.cooking,

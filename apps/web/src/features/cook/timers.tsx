@@ -26,6 +26,8 @@ export type Cooking = {
   slug: string
   scale: number
   with?: string
+  /** The planned meal it's cooked for, so coming back keeps its place. */
+  meal?: string
   session?: string
 }
 
@@ -357,6 +359,7 @@ export function TimerBadges() {
                 search={{
                   scale: timer.cooking.scale,
                   ...(timer.cooking.with ? { with: timer.cooking.with } : {}),
+                  ...(timer.cooking.meal ? { meal: timer.cooking.meal } : {}),
                 }}
                 className={style}
                 title={timer.label}
