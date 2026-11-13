@@ -17,6 +17,7 @@ import { createEventBus } from "./services/events/events.ts"
 import { JOB_HANDLERS, JOB_SCHEDULES } from "./services/jobs/handlers.ts"
 import { JobRunner } from "./services/jobs/runner.ts"
 import { rekeyFoodsSoon } from "./services/list/rekey.ts"
+import { startHeadsUps } from "./services/webhooks/heads-ups/schedule.ts"
 import { createSettings } from "./services/settings/settings.ts"
 import { LocalFileStore } from "./services/storage/files.ts"
 import { createVideoTools } from "./services/recipes/import/video/tools.ts"
@@ -127,6 +128,8 @@ const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   }
 })
 await jobs.start()
+// The daily heads-ups, while a webhook wants one.
+await startHeadsUps(database.em.fork())
 // Food keys made a new way: the ones kept are made again, once.
 await rekeyFoodsSoon(database.em.fork())
 // A look for a newer release, rather than waiting for the next 6 hours.

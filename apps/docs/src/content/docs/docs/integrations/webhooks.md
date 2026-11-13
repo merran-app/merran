@@ -9,32 +9,35 @@ A webhook is an address Merran sends a message to when something happens. Add on
 
 Merran sends these events:
 
-| Event                                  | When                                                                       |
-| -------------------------------------- | -------------------------------------------------------------------------- |
-| [`recipe.created`](#recipecreated)     | A recipe is added                                                          |
-| [`recipe.updated`](#recipeupdated)     | A recipe is changed                                                        |
-| [`recipe.deleted`](#recipedeleted)     | A recipe goes to Recently deleted                                          |
-| [`recipe.restored`](#reciperestored)   | A recipe comes back from Recently deleted                                  |
-| [`import.finished`](#importfinished)   | An import runs to its end                                                  |
-| [`tidy.ready`](#tidyready)             | Tidy up finishes with suggestions waiting                                  |
-| [`review.waiting`](#reviewwaiting)     | Something new waits in Review                                              |
-| [`cooking.started`](#cookingstarted)   | Someone starts cooking in cook view                                        |
-| [`cooking.ended`](#cookingended)       | Cooking ends: Done cooking, cook view left, or no word for 30 minutes      |
-| [`timer.started`](#timerstarted)       | A timer starts in cook view                                                |
-| [`timer.extended`](#timerextended)     | A timer gets **+1 min**                                                    |
-| [`timer.finished`](#timerfinished)     | A timer's time is up                                                       |
-| [`timer.cancelled`](#timercancelled)   | A timer is cancelled before it goes off                                    |
-| [`plan.changed`](#planchanged)         | Meals are added, moved, changed or removed (gathered)                      |
-| [`plan.autoplanned`](#planautoplanned) | The autoplan plans a week                                                  |
-| [`meal.cooked`](#mealcooked)           | A meal is marked made                                                      |
-| [`meal.skipped`](#mealskipped)         | A planned meal is marked Didn't                                            |
-| [`list.changed`](#listchanged)         | Things on a list are added, checked off, changed or removed (gathered)     |
-| [`list.completed`](#listcompleted)     | The last thing on a list is checked off, or it's put away with things left |
-| [`list.sent`](#listsent)               | A list goes to a store's cart                                              |
-| [`pantry.changed`](#pantrychanged)     | Things are put away, used up, moved, changed or removed (gathered)         |
-| [`webhook.test`](#webhooktest)         | Someone chooses **Send a test**                                            |
+| Event                                      | When                                                                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| [`recipe.created`](#recipecreated)         | A recipe is added                                                                          |
+| [`recipe.updated`](#recipeupdated)         | A recipe is changed                                                                        |
+| [`recipe.deleted`](#recipedeleted)         | A recipe goes to Recently deleted                                                          |
+| [`recipe.restored`](#reciperestored)       | A recipe comes back from Recently deleted                                                  |
+| [`import.finished`](#importfinished)       | An import runs to its end                                                                  |
+| [`tidy.ready`](#tidyready)                 | Tidy up finishes with suggestions waiting                                                  |
+| [`review.waiting`](#reviewwaiting)         | Something new waits in Review                                                              |
+| [`cooking.started`](#cookingstarted)       | Someone starts cooking in cook view                                                        |
+| [`cooking.ended`](#cookingended)           | Cooking ends: Done cooking, cook view left, or no word for 30 minutes                      |
+| [`timer.started`](#timerstarted)           | A timer starts in cook view                                                                |
+| [`timer.extended`](#timerextended)         | A timer gets **+1 min**                                                                    |
+| [`timer.finished`](#timerfinished)         | A timer's time is up                                                                       |
+| [`timer.cancelled`](#timercancelled)       | A timer is cancelled before it goes off                                                    |
+| [`plan.changed`](#planchanged)             | Meals are added, moved, changed or removed (gathered)                                      |
+| [`plan.autoplanned`](#planautoplanned)     | The autoplan plans a week                                                                  |
+| [`meal.cooked`](#mealcooked)               | A meal is marked made                                                                      |
+| [`meal.skipped`](#mealskipped)             | A planned meal is marked Didn't                                                            |
+| [`list.changed`](#listchanged)             | Things on a list are added, checked off, changed or removed (gathered)                     |
+| [`list.completed`](#listcompleted)         | The last thing on a list is checked off, or it's put away with things left                 |
+| [`list.sent`](#listsent)                   | A list goes to a store's cart                                                              |
+| [`pantry.changed`](#pantrychanged)         | Things are put away, used up, moved, changed or removed (gathered)                         |
+| [`day.summary`](#daysummary)               | Each day at **Daily summary at**: the day's meals, the pool, what to use soon and the list |
+| [`meal.time_to_start`](#mealtime_to_start) | It's time to start cooking a planned meal                                                  |
+| [`pantry.use_soon`](#pantryuse_soon)       | Things at home come within 2 days of their use-by date                                     |
+| [`webhook.test`](#webhooktest)             | Someone chooses **Send a test**                                                            |
 
-A daily summary is still to come. A webhook set to **Everything, including events added later** hears it when it arrives.
+`day.summary`, `meal.time_to_start` and `pantry.use_soon` are the [daily heads-ups](#daily-heads-ups), which Merran sends on a schedule rather than when someone changes something.
 
 ## Before you start
 
@@ -62,6 +65,14 @@ Each webhook in the list shows its name, the host it sends to, how many events i
 - **Paused**: Merran has stopped sending. See [Retries and pausing](#retries-and-pausing).
 
 Open a webhook to see its **Deliveries**, and to **Edit**, **Pause** or **Resume**, **Rotate secret**, **Show secret** or **Delete** it.
+
+## Daily heads-ups
+
+Three events come on a schedule, under **Heads-ups** in a webhook's events: **Daily summary** (`day.summary`), **Time to start** (`meal.time_to_start`) and **Use soon** (`pantry.use_soon`). They work on the household's clock, in the **Time zone** set in **Settings → Household**, and Merran looks for them every 5 minutes.
+
+- **Daily summary** goes once a day at the time under **Daily heads-ups** in **Settings → Webhooks**: **Daily summary at**, 07:00 unless you change it. Choose **Save** after changing it. A time that's already gone by today starts tomorrow, and a webhook added after today's time hears tomorrow's. If the server was off at that time, the summary goes when it's back that day.
+- **Use soon** goes at the same time, but only when something at home has come within 2 days of its use-by date since it was last sent, and lists only those. The first one a webhook hears lists everything that's close.
+- **Time to start** goes when a planned meal's longest dish needs starting: the meal's time less that dish's total time, or its prep and cook times added up when the recipe gives no total. A meal's time is the one on the **Plan** page: the time set for that day, or the household's usual time for the meal under **Usual meal times** in **Settings → Planning → Calendar subscriptions**. A meal whose dishes don't say how long they take sends nothing, nor do meals in **This week, any day**, made ones or ones marked **Didn't**. It goes within 5 minutes of the start, once, and never more than 15 minutes late, so a meal planned after its start has gone by says nothing.
 
 ## The home network
 
@@ -184,6 +195,52 @@ actions:
       message: "{{ trigger.json.data.timer.label }} is done"
 ```
 
+### A morning summary and "time to start"
+
+To get the day's meals on your phone each morning and hear when to start dinner, tick the **Heads-ups** area's **Daily summary** and **Time to start** (`day.summary`, `meal.time_to_start`), and use:
+
+```yaml
+alias: Meal heads-ups
+triggers:
+  - trigger: webhook
+    webhook_id: merran-heads-ups-5e2a9c7b3d1f
+    allowed_methods:
+      - POST
+    local_only: true
+actions:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.json.type == 'day.summary' }}"
+        sequence:
+          - action: notify.notify
+            data:
+              title: Today's meals
+              message: >-
+                {% set day = trigger.json.data %}
+                {% for meal in day.meals %}
+                {{ meal.meal | capitalize }} at {{ meal.time }}: {{ meal.dishes | map(attribute='title') | join(' and ') }}.
+                {% else %}
+                Nothing planned today.
+                {% endfor %}
+                {% if day.useSoon %}Use soon: {{ day.useSoon | map(attribute='name') | join(', ') }}.{% endif %}
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.json.type == 'meal.time_to_start' }}"
+        sequence:
+          - action: tts.speak
+            target:
+              entity_id: tts.home_assistant_cloud
+            data:
+              media_player_entity_id: media_player.kitchen
+              message: >-
+                Time to start {{ trigger.json.data.meal }}:
+                {{ trigger.json.data.dishes | map(attribute='title') | join(' and ') }},
+                ready at {{ trigger.json.data.time }}
+```
+
+The summary is sent even on a day with nothing planned, so the morning message still comes. To show what to use soon on a wall display instead, tick **Use soon** (`pantry.use_soon`) too, and keep the latest `trigger.json.data.items` in a template sensor or a text helper.
+
 ### Who's cooking now
 
 A sensor can read who's cooking, with their running timers, from `GET /api/cooking/sessions`, using an [API key](../../api/) with **Plan** read access. No webhook is needed. An empty `sessions` list means nobody's cooking:
@@ -229,6 +286,14 @@ new Webhook(secret).verify(payload, {
 
 return [{ json: JSON.parse(payload) }]
 ```
+
+To post the day's meals to a chat each morning, tick **Daily summary** (`day.summary`) and, after the Code node, add an **If** node that checks `{{ $json.type }}` is equal to `day.summary`. On its true branch, add a Discord, Telegram or Slack node with this message:
+
+```text
+{{ $json.data.meals.length === 0 ? "Nothing planned today." : $json.data.meals.map((meal) => `${meal.meal} at ${meal.time}: ${meal.dishes.map((dish) => dish.title).join(" and ")}`).join("\n") }}
+```
+
+For "time to start", tick **Time to start** (`meal.time_to_start`) and check for that type instead: `$json.data.startAt` is when to start, `$json.data.serveAt` when it's served, and `$json.data.dishes` what's cooking.
 
 n8n Cloud can't call your home network, and a self-hosted n8n beside Merran may need its container's address rather than `localhost`. If the Code node can't load `standardwebhooks`, a self-hosted n8n needs `NODE_FUNCTION_ALLOW_EXTERNAL=standardwebhooks` and the package installed.
 
@@ -863,6 +928,142 @@ Sent when things are put away, used up, moved to another place, changed or remov
 }
 ```
 
+### day.summary
+
+Sent once a day at **Daily summary at** on the household's clock, by Merran, so `by` is `null` and `via` is `merran`. It's sent even on a day with nothing planned. See [Daily heads-ups](#daily-heads-ups) for when.
+
+- `date` is today, in the household.
+- `meals` are the day's meals in the order they're served, each with its `time` (HH:mm on the household's clock) and its `dishes`. Dishes marked **Didn't** are left out.
+- Each dish has its `entryId` in the plan, its `title` as the plan shows it, its `recipe` and `side` (`null` for a note, or a side in Recently deleted), and `totalMinutes`: the recipe's total time, or its prep and cook times added up, or its side's when that's longer, or `null` when neither says.
+- `pool` is what's waiting in this week's **This week, any day** and isn't made yet, shaped like [`meal.cooked`](#mealcooked)'s meal.
+- `useSoon` is everything at home within 2 days of its use-by date, or past it, soonest first. `place` is `fridge`, `freezer`, `cupboard` or `null`.
+- `list.items` is how many things on the shopping lists aren't checked off.
+
+```json
+{
+  "type": "day.summary",
+  "timestamp": "2026-10-15T14:00:02.118Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": null,
+    "via": "merran",
+    "key": null,
+    "date": "2026-10-15",
+    "meals": [
+      {
+        "meal": "dinner",
+        "time": "18:00",
+        "dishes": [
+          {
+            "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+            "title": "Lemon Chicken",
+            "recipe": {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "slug": "lemon-chicken",
+              "title": "Lemon Chicken",
+              "url": "https://merran.example.com/recipes/lemon-chicken"
+            },
+            "side": {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+              "slug": "garlic-rice",
+              "title": "Garlic Rice",
+              "url": "https://merran.example.com/recipes/garlic-rice"
+            },
+            "totalMinutes": 45
+          }
+        ]
+      }
+    ],
+    "pool": [],
+    "useSoon": [
+      {
+        "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+        "name": "Spinach",
+        "place": "fridge",
+        "useBy": "2026-10-16"
+      }
+    ],
+    "list": { "items": 12 }
+  }
+}
+```
+
+### meal.time_to_start
+
+Sent by Merran when it's time to start cooking a planned meal: its time less its longest dish's time. See [Daily heads-ups](#daily-heads-ups) for which meals send it. `time` is when it's served on the household's clock, `serveAt` and `startAt` are the same moments as timestamps, and `minutes` is how long the longest dish takes. `dishes` are the meal's dishes still to make, shaped like `day.summary`'s.
+
+```json
+{
+  "type": "meal.time_to_start",
+  "timestamp": "2026-10-16T00:15:03.402Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": null,
+    "via": "merran",
+    "key": null,
+    "date": "2026-10-15",
+    "meal": "dinner",
+    "time": "18:00",
+    "serveAt": "2026-10-16T01:00:00.000Z",
+    "startAt": "2026-10-16T00:15:00.000Z",
+    "minutes": 45,
+    "dishes": [
+      {
+        "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+        "title": "Lemon Chicken",
+        "recipe": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+          "slug": "lemon-chicken",
+          "title": "Lemon Chicken",
+          "url": "https://merran.example.com/recipes/lemon-chicken"
+        },
+        "side": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+          "slug": "garlic-rice",
+          "title": "Garlic Rice",
+          "url": "https://merran.example.com/recipes/garlic-rice"
+        },
+        "totalMinutes": 45
+      }
+    ]
+  }
+}
+```
+
+### pantry.use_soon
+
+Sent by Merran with the daily summary, at **Daily summary at**, when things at home have come within 2 days of their use-by date since it was last sent. `items` lists only those, soonest first, shaped like `day.summary`'s `useSoon`: something put away since the last one is listed even if its use-by date has gone by. Nothing is sent when nothing has come close. The first one a webhook hears lists everything that's close.
+
+```json
+{
+  "type": "pantry.use_soon",
+  "timestamp": "2026-10-15T14:00:02.240Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": null,
+    "via": "merran",
+    "key": null,
+    "items": [
+      {
+        "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+        "name": "Spinach",
+        "place": "fridge",
+        "useBy": "2026-10-16"
+      }
+    ]
+  }
+}
+```
+
 ### webhook.test
 
 Sent only when someone chooses **Send a test**, and only to that webhook, even when it's paused. It's tried once, never retried, and never pauses the webhook. `webhook` is the webhook it was sent to, and `by` the person who sent it.
@@ -969,10 +1170,12 @@ Open a webhook's **Deliveries** to see the last 30 days: the event, when it happ
 
 ## Troubleshooting
 
-| What you see                                        | What to try                                                                                                                                                  |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| "This address is on your home network…" when saving | A server admin allows it in **Settings → Webhooks → Whole server**. See [The home network](#the-home-network).                                               |
-| The test fails for a Home Assistant name            | Use its IP address instead of `homeassistant.local`.                                                                                                         |
-| The test works, but a real event never arrives      | Check the webhook wants that event under **Edit**, and that it isn't **Paused**.                                                                             |
-| Signatures never match                              | Check the whole body as received, the secret from **Show secret**, and that the receiver's clock is within 5 minutes. After a rotation, both work for a day. |
-| **Webhooks** isn't in Settings                      | You need to be an **Owner** or **Admin**, and a server admin may have turned webhooks off.                                                                   |
+| What you see                                        | What to try                                                                                                                                                                       |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "This address is on your home network…" when saving | A server admin allows it in **Settings → Webhooks → Whole server**. See [The home network](#the-home-network).                                                                    |
+| The test fails for a Home Assistant name            | Use its IP address instead of `homeassistant.local`.                                                                                                                              |
+| The test works, but a real event never arrives      | Check the webhook wants that event under **Edit**, and that it isn't **Paused**.                                                                                                  |
+| Signatures never match                              | Check the whole body as received, the secret from **Show secret**, and that the receiver's clock is within 5 minutes. After a rotation, both work for a day.                      |
+| **Webhooks** isn't in Settings                      | You need to be an **Owner** or **Admin**, and a server admin may have turned webhooks off.                                                                                        |
+| The daily summary comes at the wrong hour           | It goes at **Daily summary at** on the household's clock: check the **Time zone** in **Settings → Household**.                                                                    |
+| "Time to start" never comes for a meal              | Its dishes need a total time, or prep and cook times, on their recipes. It also says nothing more than 15 minutes late, so a meal planned after its start has gone by is skipped. |

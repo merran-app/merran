@@ -20,8 +20,14 @@ export const WebhookEvent = defineEntity({
     gathered: p.boolean().default(false),
     /** Merged into the event that was sent. */
     merged: p.boolean().default(false),
+    /**
+     * Unique in the household, for an event that must go once however
+     * often it's looked for: a daily heads-up, "day.summary:2026-11-10".
+     */
+    key: p.string().nullable(),
     createdAt: createdAt(),
   },
+  uniques: [{ properties: ["household", "key"] }],
   indexes: [
     { properties: ["household", "createdAt"] },
     { properties: ["household", "gathered", "merged"] },
