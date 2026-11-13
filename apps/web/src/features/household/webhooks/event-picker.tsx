@@ -21,6 +21,10 @@ import {
   type PickableEvent,
 } from "./event-areas"
 
+/** A chosen event's chip fills in, like the recipe filters. */
+const CHIP =
+  "rounded-full aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+
 /**
  * Each pickable event's full name, the line saying what sends it, and the
  * short label on its chip.
@@ -205,6 +209,7 @@ export function EventPicker({
                         <Toggle
                           variant="outline"
                           size="sm"
+                          className={CHIP}
                           pressed={value.includes(event.type)}
                           onPressedChange={(pressed) =>
                             toggle(area, event.type, pressed)

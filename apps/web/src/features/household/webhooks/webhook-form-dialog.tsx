@@ -139,7 +139,7 @@ function WebhookForm({
   const defaults = React.useMemo(() => defaultsFor(webhook), [webhook])
   const form = useForm<Form>({ defaultValues: defaults })
   const headers = useFieldArray({ control: form.control, name: "headers" })
-  const { errors, isSubmitting } = form.formState
+  const { errors, isSubmitting, submitCount } = form.formState
   const everything = form.watch("everything")
   const editing = webhook !== undefined
   // Headers are usually left out, so their row starts closed unless there are some.
@@ -148,10 +148,11 @@ function WebhookForm({
   )
   const headersFailed = Boolean(errors.headers)
 
-  // A header's error is hidden in a closed row, so a failed save opens it.
+  // A header's error is hidden in a closed row, so every save that fails on
+  // one opens it, even if it was closed again after the last.
   React.useEffect(() => {
     if (headersFailed) setHeadersOpen(true)
-  }, [headersFailed])
+  }, [headersFailed, submitCount])
 
   /**
    * Whether saving sends the headers: always for a new webhook, and for one
