@@ -530,6 +530,10 @@
         "eventsNeeded": "Pick at least one event, or send everything.",
         "everything": "Everything, including events added later",
         "everythingShort": "Everything",
+        "everythingChosen": "Every event, including ones added later.",
+        "areaCount": "{{chosen}} of {{total}}",
+        "areaAll": "Every event in {{area}}",
+        "optional": "Optional",
         "eventCount_one": "{{count}} event",
         "eventCount_other": "{{count}} events",
         "headers": "Extra headers",
@@ -625,6 +629,39 @@
           },
           "webhook": {
             "test": "A test"
+          }
+        },
+        "chips": {
+          "recipe": {
+            "created": "Added",
+            "updated": "Changed",
+            "deleted": "Deleted",
+            "restored": "Restored"
+          },
+          "import": {
+            "finished": "Import finished"
+          },
+          "tidy": {
+            "ready": "Tidy-up ready"
+          },
+          "review": {
+            "waiting": "Waiting in Review"
+          },
+          "plan": {
+            "changed": "Changed",
+            "autoplanned": "Autoplanned"
+          },
+          "meal": {
+            "cooked": "Cooked",
+            "skipped": "Skipped"
+          },
+          "list": {
+            "changed": "Changed",
+            "completed": "Completed",
+            "sent": "Sent to a store"
+          },
+          "pantry": {
+            "changed": "Changed"
           }
         },
         "eventHints": {

@@ -1,4 +1,8 @@
-import { Add01Icon, Cancel01Icon } from "@hugeicons/core-free-icons"
+import {
+  Add01Icon,
+  ArrowDown01Icon,
+  Cancel01Icon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useQueryClient } from "@tanstack/react-query"
 import * as React from "react"
@@ -28,6 +32,11 @@ import {
   FieldLegend,
   FieldSet,
 } from "@/components/ui/field"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
 import { useMe } from "@/features/auth/use-me"
@@ -38,7 +47,8 @@ import {
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { showFormError } from "@/lib/form-errors"
 
-import { EventPicker, type PickableEvent } from "./event-picker"
+import { type PickableEvent } from "./event-areas"
+import { EventPicker } from "./event-picker"
 import { allowHomeNetwork, type HomeNetworkSetting } from "./home-network"
 import { webhooksQuery, type WebhookDetail } from "./queries"
 
@@ -132,6 +142,16 @@ function WebhookForm({
   const { errors, isSubmitting } = form.formState
   const everything = form.watch("everything")
   const editing = webhook !== undefined
+  // Headers are usually left out, so their row starts closed unless there are some.
+  const [headersOpen, setHeadersOpen] = React.useState(
+    defaults.headers.length > 0
+  )
+  const headersFailed = Boolean(errors.headers)
+
+  // A header's error is hidden in a closed row, so a failed save opens it.
+  React.useEffect(() => {
+    if (headersFailed) setHeadersOpen(true)
+  }, [headersFailed])
 
   /**
    * Whether saving sends the headers: always for a new webhook, and for one
@@ -323,69 +343,84 @@ function WebhookForm({
               <EventPicker
                 value={field.value}
                 onChange={field.onChange}
-                disabled={everything}
+                everything={everything}
               />
             )}
           />
           {errors.events && <FieldError>{errors.events.message}</FieldError>}
         </FieldSet>
-        <FieldSet>
-          <FieldLegend variant="label">
-            {t("settings.household.webhooks.headers")}
-          </FieldLegend>
-          {editing && headers.fields.length > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {t("settings.household.webhooks.headersSealed")}
-            </p>
-          )}
-          {headers.fields.map((header, index) => (
-            <div key={header.id} className="flex items-start gap-2">
-              <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
-                <TextField
-                  label={t("settings.household.webhooks.headerName")}
-                  autoComplete="off"
-                  error={errors.headers?.[index]?.name?.message}
-                  {...form.register(`headers.${index}.name`)}
-                />
-                <TextField
-                  label={t("settings.household.webhooks.headerValue")}
-                  autoComplete="off"
-                  error={errors.headers?.[index]?.value?.message}
-                  {...form.register(`headers.${index}.value`, {
-                    validate: checkHeaderValue,
-                  })}
-                />
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="mt-6"
-                onClick={() => headers.remove(index)}
-              >
-                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
-                <span className="sr-only">
-                  {t("settings.household.webhooks.removeHeader")}
-                </span>
-              </Button>
-            </div>
-          ))}
-          {errors.headers?.message && (
-            <FieldError>{errors.headers.message}</FieldError>
-          )}
-          {headers.fields.length < MAX_HEADERS && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-fit"
-              onClick={() => headers.append({ name: "", value: "" })}
-            >
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
-              {t("settings.household.webhooks.addHeader")}
-            </Button>
-          )}
-        </FieldSet>
+        <Collapsible open={headersOpen} onOpenChange={setHeadersOpen}>
+          <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-md py-1 text-start text-sm font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
+            <span>{t("settings.household.webhooks.headers")}</span>
+            <span className="text-muted-foreground">
+              {headers.fields.length > 0
+                ? headers.fields.length
+                : t("settings.household.webhooks.optional")}
+            </span>
+            <HugeiconsIcon
+              icon={ArrowDown01Icon}
+              strokeWidth={2}
+              className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[panel-open]:rotate-180"
+            />
+          </CollapsibleTrigger>
+          {/* Kept mounted so the fields stay registered while the row is closed. */}
+          <CollapsibleContent keepMounted>
+            <FieldSet className="pt-3">
+              {editing && headers.fields.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {t("settings.household.webhooks.headersSealed")}
+                </p>
+              )}
+              {headers.fields.map((header, index) => (
+                <div key={header.id} className="flex items-start gap-2">
+                  <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
+                    <TextField
+                      label={t("settings.household.webhooks.headerName")}
+                      autoComplete="off"
+                      error={errors.headers?.[index]?.name?.message}
+                      {...form.register(`headers.${index}.name`)}
+                    />
+                    <TextField
+                      label={t("settings.household.webhooks.headerValue")}
+                      autoComplete="off"
+                      error={errors.headers?.[index]?.value?.message}
+                      {...form.register(`headers.${index}.value`, {
+                        validate: checkHeaderValue,
+                      })}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="mt-6"
+                    onClick={() => headers.remove(index)}
+                  >
+                    <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+                    <span className="sr-only">
+                      {t("settings.household.webhooks.removeHeader")}
+                    </span>
+                  </Button>
+                </div>
+              ))}
+              {errors.headers?.message && (
+                <FieldError>{errors.headers.message}</FieldError>
+              )}
+              {headers.fields.length < MAX_HEADERS && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-fit"
+                  onClick={() => headers.append({ name: "", value: "" })}
+                >
+                  <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
+                  {t("settings.household.webhooks.addHeader")}
+                </Button>
+              )}
+            </FieldSet>
+          </CollapsibleContent>
+        </Collapsible>
       </FieldGroup>
       <DialogFooter>
         <DialogClose render={<Button variant="outline" type="button" />}>
