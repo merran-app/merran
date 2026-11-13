@@ -1,5 +1,6 @@
 import type { WebhookEventType } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
+import { atCommit } from "../../../database/at-commit.ts"
 import { Job } from "../../../database/entities/index.ts"
 import { ACTIVE, createJob } from "../../jobs/jobs.ts"
 
@@ -70,12 +71,37 @@ const gatherJobKey = (householdId: string, type: GatheredEventType) =>
   `${WEBHOOK_GATHER_JOB}:${householdId}:${type}`
 
 /**
+ * Makes sure a job will merge the household's gathered changes of `type`,
+ * once a change is written. Within a transaction, the job's row is written
+ * as the transaction commits (database/at-commit.ts). Written part way
+ * through, it would stay locked while the transaction went on to lock
+ * other rows, and deadlock with a transaction that locked those first and
+ * then recorded a change of its own. Each type's job is written once,
+ * however many changes the transaction made, and in the order of their
+ * keys, so two transactions take them in the same order. Outside a
+ * transaction, it's written now.
+ */
+export async function gatherAtCommit(
+  em: EntityManager,
+  householdId: string,
+  type: GatheredEventType
+): Promise<void> {
+  const later = atCommit(em, gatherJobKey(householdId, type), (tx) =>
+    queueGathering(tx, householdId, type)
+  )
+  if (later) return
+
+  await queueGathering(em, householdId, type)
+  await em.flush()
+}
+
+/**
  * Makes sure a job will merge the household's gathered changes of `type`.
- * Called once the change is written: within its transaction, or saved. One
- * waiting will take this change too. One running may have read the changes
- * already, so it's started over 30 seconds on, and the runner queues it
- * again when its try ends. With neither, a new one is saved with the
- * caller's next flush.
+ * Called once the change is written: as its transaction commits, or once
+ * it's saved (gatherAtCommit). One waiting will take this change too. One
+ * running may have read the changes already, so it's started over 30
+ * seconds on, and the runner queues it again when its try ends. With
+ * neither, a new one is saved with the caller's next flush.
  */
 export async function queueGathering(
   em: EntityManager,
@@ -89,10 +115,11 @@ export async function queueGathering(
   if (job) {
     // The runner may take the job between that read and this change being
     // saved, and merge without it. So the job is kept waiting by a write
-    // that only finds it while it's waiting. Within a transaction,
-    // Postgres then holds the runner's take until this change is saved,
-    // and SQLite lets one writer at a time; outside one, the change is
-    // saved already. If the runner took it meanwhile, it's running.
+    // that only finds it while it's waiting. Within a transaction, whose
+    // last write this is, Postgres then holds the runner's take until it
+    // commits, and SQLite lets one writer at a time; outside one, the
+    // change is saved already. If the runner took it meanwhile, it's
+    // running.
     const kept = await em.nativeUpdate(
       Job,
       { id: job.id, status: "queued" },

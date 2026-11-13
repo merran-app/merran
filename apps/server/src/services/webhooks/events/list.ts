@@ -67,9 +67,7 @@ export async function recordChecking(
 ): Promise<void> {
   if (claimed.length === 0) return
 
-  // A finished list is sent at once, not gathered, so it goes first: the
-  // gathered change below holds the merge job's lock until the transaction
-  // ends.
+  // A finished list is sent at once; the checking is gathered.
   if (checked && !options.undo) {
     await recordFinishedLists(tx, householdId, claimed)
   }
