@@ -1,14 +1,16 @@
 import { lookup } from "node:dns"
 import { lookup as lookUpAll } from "node:dns/promises"
-import { BlockList, isIP } from "node:net"
+import { BlockList, isIP, type LookupFunction } from "node:net"
 import { Agent, fetch } from "undici"
 import { AppError } from "../../core/errors.ts"
 
 // The one way Merran fetches things from the internet for someone: pages
 // to import, their photos, later feeds and store prices. It only reaches
 // public addresses, so it can't be used to poke at machines on the home
-// network, and it says honestly what it is. The one exception is an address
-// the server admin gave, like their Mealie's (see `homeNetwork`).
+// network, and it says honestly what it is. The exceptions are an address
+// the server admin gave, like their Mealie's (see `homeNetwork`), and a
+// webhook's, for a household the server admin lets reach the home network,
+// which still never reaches link-local addresses (see `refuseLinkLocal`).
 
 /**
  * Addresses a public fetch must never reach: loopback, private networks,
@@ -50,36 +52,78 @@ export function isBlockedAddress(address: string) {
   return blocked.check(address, family === 6 ? "ipv6" : "ipv4")
 }
 
+/** Link-local addresses, where cloud metadata services answer. */
+const linkLocal = new BlockList()
+linkLocal.addSubnet("169.254.0.0", 16, "ipv4")
+linkLocal.addSubnet("fe80::", 10, "ipv6")
+// The same IPv4 range through a NAT64 gateway (64:ff9b::169.254.x.x).
+linkLocal.addSubnet("64:ff9b::a9fe:0", 112, "ipv6")
+
 /**
- * Looks names up itself and refuses to connect to a blocked address, so a
- * name that resolves to the home network is refused too, whenever it's
- * looked up.
+ * Whether an address is link-local, like 169.254.169.254, where a cloud
+ * server's metadata service hands out its keys. IPv4 inside IPv6
+ * (::ffff:169.254.169.254) counts too: BlockList reads it as the IPv4
+ * address it holds.
  */
+export function isLinkLocalAddress(address: string) {
+  const family = isIP(address)
+  if (!family) return false
+  return linkLocal.check(address, family === 6 ? "ipv6" : "ipv4")
+}
+
+/**
+ * A lookup that refuses to connect to the addresses `refused` picks out,
+ * so a name that resolves to one is refused too, whenever it's looked up.
+ */
+function lookupRefusing(refused: (address: string) => boolean): LookupFunction {
+  return (hostname, options, callback) => {
+    lookup(hostname, { all: true }, (error, addresses) => {
+      if (error) return callback(error, "", 4)
+      const allowed = addresses.filter((a) => !refused(a.address))
+      if (allowed.length === 0) {
+        return callback(
+          Object.assign(new Error(`${hostname} is a private address`), {
+            code: "EBLOCKED",
+          }),
+          "",
+          4
+        )
+      }
+      if (options.all) return callback(null, allowed as never, 4)
+      callback(null, allowed[0]!.address, allowed[0]!.family)
+    })
+  }
+}
+
+/** Reaches only public addresses, however a name resolves. */
 const publicAgent = new Agent({
   allowH2: true,
-  connect: {
-    lookup(hostname, options, callback) {
-      lookup(hostname, { all: true }, (error, addresses) => {
-        if (error) return callback(error, "", 4)
-        const allowed = addresses.filter((a) => !isBlockedAddress(a.address))
-        if (allowed.length === 0) {
-          return callback(
-            Object.assign(new Error(`${hostname} is a private address`), {
-              code: "EBLOCKED",
-            }),
-            "",
-            4
-          )
-        }
-        if (options.all) return callback(null, allowed as never, 4)
-        callback(null, allowed[0]!.address, allowed[0]!.family)
-      })
-    },
-  },
+  connect: { lookup: lookupRefusing(isBlockedAddress) },
 })
 
 /** For addresses the server admin gave, which may be on the home network. */
 const homeAgent = new Agent({ allowH2: true })
+
+/**
+ * For addresses a household gave, when it may reach the home network:
+ * anywhere but link-local, however a name resolves.
+ */
+const homeButNotLinkLocalAgent = new Agent({
+  allowH2: true,
+  connect: { lookup: lookupRefusing(isLinkLocalAddress) },
+})
+
+/** The agent that reaches only the addresses a request may. */
+function agentFor({
+  homeNetwork,
+  refuseLinkLocal,
+}: {
+  homeNetwork: boolean
+  refuseLinkLocal: boolean
+}) {
+  if (!homeNetwork) return publicAgent
+  return refuseLinkLocal ? homeButNotLinkLocalAgent : homeAgent
+}
 
 /**
  * A fetch for another library to call an address with, like an AI SDK
@@ -118,6 +162,11 @@ export type FetchOptions = {
   json?: unknown
   /** Sends this as a form, in a POST: what OAuth token endpoints take. */
   form?: Record<string, string>
+  /**
+   * Sends this text as it is, in a POST, so something signed over its exact
+   * bytes still matches. The caller sets its `content-type` in `headers`.
+   */
+  body?: string
   /** Another method than GET, or POST with a body: PUT, say. */
   method?: "GET" | "POST" | "PUT" | "DELETE"
   /** More headers, like a token. */
@@ -128,6 +177,12 @@ export type FetchOptions = {
    * redirects must stay where they started.
    */
   homeNetwork?: boolean
+  /**
+   * With `homeNetwork`, still refuses link-local addresses, like the cloud
+   * metadata service at 169.254.169.254: for an address a household gave,
+   * like its webhook's, rather than the server admin.
+   */
+  refuseLinkLocal?: boolean
   /** Hands back an error answer, with its status, rather than throwing. */
   keepErrors?: boolean
   /** How long to wait for all of it: 15 seconds unless it's known to be slow. */
@@ -146,9 +201,13 @@ const notALink = () =>
 
 /**
  * A link Merran may fetch: http or https, and not to a private address
- * unless it's on the home network on purpose.
+ * unless it's on the home network on purpose, nor a link-local one when
+ * `refuseLinkLocal` says so.
  */
-export function checkLink(raw: string, { homeNetwork = false } = {}): URL {
+export function checkLink(
+  raw: string,
+  { homeNetwork = false, refuseLinkLocal = false } = {}
+): URL {
   let url: URL
   try {
     url = new URL(raw)
@@ -157,9 +216,10 @@ export function checkLink(raw: string, { homeNetwork = false } = {}): URL {
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") throw notALink()
   const host = url.hostname.replace(/^\[|\]$/g, "")
-  if (!homeNetwork && isIP(host) && isBlockedAddress(host)) {
-    throw privateAddress()
-  }
+  if (!isIP(host)) return url
+
+  if (!homeNetwork && isBlockedAddress(host)) throw privateAddress()
+  if (refuseLinkLocal && isLinkLocalAddress(host)) throw privateAddress()
   return url
 }
 
@@ -220,14 +280,17 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
       referer,
       json,
       form,
+      body,
       method,
       headers = {},
       homeNetwork = false,
+      refuseLinkLocal = false,
       keepErrors = false,
       timeoutMs = TIMEOUT_MS,
     } = {}
   ) => {
-    let url = checkLink(raw, { homeNetwork })
+    const reach = { homeNetwork, refuseLinkLocal }
+    let url = checkLink(raw, reach)
     const start = url.origin
     const signal = AbortSignal.timeout(timeoutMs)
 
@@ -235,7 +298,7 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
       let response
       try {
         response = await fetch(url, {
-          dispatcher: homeNetwork ? homeAgent : publicAgent,
+          dispatcher: agentFor(reach),
           redirect: "manual",
           signal,
           ...(json === undefined
@@ -247,7 +310,11 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
                 method: method ?? "POST",
                 body: new URLSearchParams(form).toString(),
               }),
-          ...(method && json === undefined && form === undefined
+          ...(body === undefined ? {} : { method: method ?? "POST", body }),
+          ...(method &&
+          json === undefined &&
+          form === undefined &&
+          body === undefined
             ? { method }
             : {}),
           headers: {
@@ -291,14 +358,19 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
         const location = response.headers.get("location")
         await response.body?.cancel()
         // A POST isn't sent on to somewhere else.
-        if (!location || json !== undefined || form !== undefined) {
+        if (
+          !location ||
+          json !== undefined ||
+          form !== undefined ||
+          body !== undefined
+        ) {
           throw new AppError(
             "upstream",
             "site_error",
             "That site sent a broken redirect."
           )
         }
-        url = checkLink(new URL(location, url).toString(), { homeNetwork })
+        url = checkLink(new URL(location, url).toString(), reach)
         if (homeNetwork && url.origin !== start) {
           throw new AppError(
             "upstream",

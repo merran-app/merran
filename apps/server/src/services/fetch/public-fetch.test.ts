@@ -6,6 +6,7 @@ import {
   checkPublicLink,
   createPublicFetcher,
   isBlockedAddress,
+  isLinkLocalAddress,
 } from "./public-fetch.ts"
 
 describe("public fetches", () => {
@@ -28,6 +29,27 @@ describe("public fetches", () => {
     }
     for (const address of ["93.184.216.34", "1.1.1.1", "2606:4700::1111"]) {
       expect(isBlockedAddress(address), address).toBe(false)
+    }
+  })
+
+  test("tell link-local addresses, where cloud metadata answers", () => {
+    for (const address of [
+      "169.254.169.254",
+      "169.254.0.1",
+      "::ffff:169.254.1.1",
+      "fe80::1",
+      "64:ff9b::a9fe:a9fe",
+    ]) {
+      expect(isLinkLocalAddress(address), address).toBe(true)
+    }
+    for (const address of [
+      "192.168.1.10",
+      "10.0.0.1",
+      "127.0.0.1",
+      "8.8.8.8",
+      "::1",
+    ]) {
+      expect(isLinkLocalAddress(address), address).toBe(false)
     }
   })
 
@@ -126,6 +148,51 @@ describe("public fetches", () => {
     server.close()
   })
 
+  test("refuse link-local addresses on the home network when asked", async () => {
+    // A household's webhook may reach the home network, but never the cloud
+    // metadata service; the server admin's own addresses still may.
+    const metadata = "http://169.254.169.254/"
+    const fetcher = createPublicFetcher({ version: "0.0.0" })
+
+    await expect(
+      fetcher(metadata, { homeNetwork: true, refuseLinkLocal: true })
+    ).rejects.toThrow(/private network/)
+    expect(() =>
+      checkLink(metadata, { homeNetwork: true, refuseLinkLocal: true })
+    ).toThrow(/private network/)
+    expect(() =>
+      checkLink("http://[::ffff:169.254.169.254]/", {
+        homeNetwork: true,
+        refuseLinkLocal: true,
+      })
+    ).toThrow(/private network/)
+    expect(() =>
+      checkLink("http://192.168.1.20:8123/", {
+        homeNetwork: true,
+        refuseLinkLocal: true,
+      })
+    ).not.toThrow()
+    expect(checkLink(metadata, { homeNetwork: true }).hostname).toBe(
+      "169.254.169.254"
+    )
+  })
+
+  test("reach a home-network name while refusing link-local", async () => {
+    // By name, so the request goes through the lookup that drops link-local
+    // addresses: a webhook to homeassistant.lan has to keep working.
+    const server = createServer((_, res) => res.end("hello"))
+    await new Promise<void>((resolve) => server.listen(0, resolve))
+    const { port } = server.address() as AddressInfo
+    const fetcher = createPublicFetcher({ version: "0.0.0" })
+
+    const answer = await fetcher(`http://localhost:${port}/`, {
+      homeNetwork: true,
+      refuseLinkLocal: true,
+    })
+    expect(answer.body.toString()).toBe("hello")
+    server.close()
+  })
+
   test("hand back a 304 as an answer, not a broken redirect", async () => {
     // Like a recipe site's feed that hasn't changed since Merran last read
     // it: a 304, with no location to go to.
@@ -143,6 +210,52 @@ describe("public fetches", () => {
     expect(answer.status).toBe(304)
     expect(answer.etag).toBe('"1"')
     await expect(fetcher(feed, unchanged)).rejects.toThrow(/error \(304\)/)
+    server.close()
+  })
+
+  test("sends a body exactly as given", async () => {
+    // A signature is made over these bytes, so they must arrive untouched.
+    let method = ""
+    let contentType = ""
+    const received: Buffer[] = []
+    const server = createServer((req, res) => {
+      method = req.method ?? ""
+      contentType = req.headers["content-type"] ?? ""
+      req.on("data", (chunk: Buffer) => received.push(chunk))
+      req.on("end", () => res.end("ok"))
+    })
+    await new Promise<void>((resolve) => server.listen(0, resolve))
+    const { port } = server.address() as AddressInfo
+    const fetcher = createPublicFetcher({ version: "0.0.0" })
+    const body = '{"title":"Crème brûlée 🍮"}'
+
+    await fetcher(`http://127.0.0.1:${port}/hook`, {
+      homeNetwork: true,
+      body,
+      headers: { "content-type": "application/json" },
+    })
+
+    expect(method).toBe("POST")
+    expect(contentType).toBe("application/json")
+    expect(Buffer.concat(received).equals(Buffer.from(body, "utf8"))).toBe(true)
+    server.close()
+  })
+
+  test("a redirect after a body is refused", async () => {
+    const server = createServer((_, res) => {
+      res.writeHead(307, { location: "http://127.0.0.1:1/elsewhere" })
+      res.end()
+    })
+    await new Promise<void>((resolve) => server.listen(0, resolve))
+    const { port } = server.address() as AddressInfo
+    const fetcher = createPublicFetcher({ version: "0.0.0" })
+
+    await expect(
+      fetcher(`http://127.0.0.1:${port}/hook`, {
+        homeNetwork: true,
+        body: "{}",
+      })
+    ).rejects.toThrow("That site sent a broken redirect.")
     server.close()
   })
 })

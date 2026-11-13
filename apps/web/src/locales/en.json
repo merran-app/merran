@@ -239,6 +239,7 @@
       "server": "Whole server",
       "serverNote": "Changes here reach every household on this server.",
       "onlyServer": {
+        "switchedOff": "This is turned off for every household, so only the server's settings are here.",
         "noHousehold": "You're not in a household, so only the server's settings are here.",
         "notAdmin": "You're not an admin of this household, so only the server's settings are here."
       }
@@ -255,6 +256,10 @@
       "apps": {
         "title": "Apps and devices",
         "description": "Merran on your devices, and other apps that connect to it."
+      },
+      "webhooks": {
+        "title": "Webhooks",
+        "description": "Tell Home Assistant, n8n and other tools when things happen."
       },
       "household": {
         "title": "Household",
@@ -507,6 +512,101 @@
         "expires": "Expires {{date}}",
         "cancel": "Cancel",
         "cancelled": "Invite cancelled."
+      },
+      "webhooks": {
+        "title": "Webhooks",
+        "description": "Tell Home Assistant, n8n and other tools when things happen in your kitchen.",
+        "add": "Add webhook",
+        "editTitle": "Change webhook",
+        "formDescription": "Merran sends a message to this address when one of the events happens.",
+        "none": "No webhooks yet",
+        "noneHint": "Add one with the address Home Assistant or n8n gives you.",
+        "name": "Name",
+        "namePlaceholder": "Home Assistant",
+        "nameNeeded": "Give it a name.",
+        "address": "Address",
+        "addressNeeded": "Give it an address.",
+        "eventsTitle": "Events",
+        "eventsNeeded": "Pick at least one event, or send everything.",
+        "everything": "Everything, including events added later",
+        "everythingShort": "Everything",
+        "eventCount_one": "{{count}} event",
+        "eventCount_other": "{{count}} events",
+        "headers": "Extra headers",
+        "headersSealed": "Header values stay sealed. To change the headers, fill in every value again.",
+        "headerName": "Header name",
+        "headerValue": "Value",
+        "headerValueNeeded": "Give it a value.",
+        "headerValueCharacters": "A header can't hold line breaks or characters like emoji.",
+        "addHeader": "Add a header",
+        "removeHeader": "Remove header",
+        "state": {
+          "working": "Working",
+          "failing": "Failing",
+          "paused": "Paused"
+        },
+        "lastDelivered": "Last delivered {{date}}",
+        "neverDelivered": "Nothing delivered yet",
+        "saved": "Saved.",
+        "secret": "Signing secret",
+        "madeTitle": "Here's the secret",
+        "madeDescription": "Copy it into the tool that checks signatures. You can show it again later.",
+        "allowHomeNetwork": "Allow the home network for this household",
+        "test": "Send a test",
+        "tested": "Delivered: {{status}}.",
+        "testFailed": "Not delivered: {{error}}",
+        "edit": "Edit",
+        "pause": "Pause",
+        "resume": "Resume",
+        "resumeAndResend": "Resume and resend",
+        "resumeDescription": "Also resend what failed in the last day?",
+        "showSecret": "Show secret",
+        "rotateSecret": "Rotate secret",
+        "rotateDescription": "Deliveries are signed with both secrets for a day, so you can change over without missing any.",
+        "delete": "Delete",
+        "deleteTitle": "Delete {{name}}?",
+        "deleteDescription": "It stops at once, and its deliveries log goes with it.",
+        "deliveries": "Deliveries",
+        "noDeliveries": "Nothing sent yet.",
+        "resend": "Resend",
+        "showMore": "Show more",
+        "tries_one": "{{count}} try",
+        "tries_other": "{{count}} tries",
+        "answer": "Answer",
+        "body": "Body",
+        "pausedReason": {
+          "gave_up": "Paused after a day of failed deliveries.",
+          "gone": "Paused: it answered that it's gone.",
+          "by_hand": "Paused by hand."
+        },
+        "deliveryState": {
+          "waiting": "Trying",
+          "delivered": "Delivered",
+          "failed": "Failed",
+          "stopped": "Stopped"
+        },
+        "areas": {
+          "recipes": "Recipes"
+        },
+        "events": {
+          "recipe": {
+            "created": "A recipe is added",
+            "updated": "A recipe is changed",
+            "deleted": "A recipe is deleted",
+            "restored": "A recipe is restored"
+          },
+          "webhook": {
+            "test": "A test"
+          }
+        },
+        "eventHints": {
+          "recipe": {
+            "created": "Typed in, imported, or added from a suggestion.",
+            "updated": "Edits, tidy-ups, swaps, restored versions, and photo or diet changes.",
+            "deleted": "Moved to Recently deleted.",
+            "restored": "Brought back from Recently deleted."
+          }
+        }
       },
       "new": {
         "title": "Start another household",
@@ -850,6 +950,17 @@
         "enabledHint": "Households with an OpenAI or Google key can make them, and make them for their whole library.",
         "auto": "For each new recipe",
         "autoHint": "One made by itself for a recipe added without a photo: typed in, read from text, or from the assistant. Never for a library moved in at once."
+      },
+      "webhooks": {
+        "title": "Webhooks",
+        "description": "Households can tell other tools, like Home Assistant and n8n, when things happen.",
+        "enabled": "Let households send webhooks",
+        "enabledHint": "Off stops every household's webhooks, and keeps them for later.",
+        "homeNetwork": "Webhooks to the home network",
+        "homeNetworkHint": "Home Assistant usually lives on the home network. On a server shared with others, allow only the households you trust to reach it.",
+        "homeNetworkOff": "Off",
+        "homeNetworkAll": "Every household",
+        "homeNetworkChosen": "Chosen households"
       },
       "voice": {
         "title": "Voice",

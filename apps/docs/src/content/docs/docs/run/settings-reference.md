@@ -643,6 +643,40 @@ Check GitHub every six hours for a newer release and show its notes to the serve
 
 [Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/updates/settings.ts)
 
+## webhooks.enabled
+
+Let households send webhooks to tools like Home Assistant and n8n when things happen. Off sends nothing and keeps their webhooks for later.
+
+- **Scope:** server
+- **Type:** switch
+- **Default:** `true`
+- **Environment:** `MERRAN_WEBHOOKS`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/webhooks/settings.ts)
+
+## webhooks.homeNetwork
+
+Whether webhooks may go to addresses on the home network, like Home Assistant's: off, for every household, or for the households chosen in Settings → Webhooks → Whole server. Off by default, because on a shared server it would let any household make Merran call machines on your network.
+
+- **Scope:** server
+- **Type:** choice
+- **Default:** `off`
+- **Environment:** `MERRAN_WEBHOOKS_HOME_NETWORK`
+- **Choices:** `off`, `all`, `chosen`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/webhooks/settings.ts)
+
+## webhooks.homeNetworkHouseholds
+
+The households whose webhooks may go to the home network, when that's set to chosen.
+
+- **Scope:** server
+- **Type:** list
+- **Default:** `[]`
+- **Environment:** None
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/modules/webhooks/settings.ts)
+
 ## Next steps
 
 Use [troubleshooting](../troubleshooting/) for startup errors and locked settings, [household roles](../household-roles/) for access rules, and [updating, backups, and recovery](../updating-and-backups/) before changing the installation.

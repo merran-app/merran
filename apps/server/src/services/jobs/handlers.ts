@@ -15,6 +15,7 @@ import { readSitesJob } from "../recipes/discover/sites/read-job.ts"
 import { checkPricesJob } from "../stores/prices.ts"
 import { importJob } from "../transfer/import.ts"
 import { rekeyFoodsJob } from "../list/rekey.ts"
+import { webhookDeliveryJob } from "../webhooks/deliver.ts"
 import { cleanUpJobsJob } from "./clean-up.ts"
 import type { JobHandler, JobSchedule } from "./runner.ts"
 
@@ -40,6 +41,7 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
   checkPricesJob,
   rekeyFoodsJob,
   checkUpdatesJob,
+  webhookDeliveryJob,
 ]
 
 /** Jobs that come round again, in the server's time. */

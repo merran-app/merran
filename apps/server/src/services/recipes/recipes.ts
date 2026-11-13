@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util"
 import { toNumber } from "../../database/numbers.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import {
@@ -48,8 +49,17 @@ import { photoUrls, removePhoto, storePhoto } from "./photos/photos.ts"
 import { uniqueSlug } from "./slugs.ts"
 import { pruneTags, setTags, tagKey, tagsOf } from "./tags.ts"
 import { saveVersion, type VersionSource } from "./versions.ts"
+import { recipeRef, type RecipePart } from "../webhooks/payloads.ts"
+import { changedParts } from "../webhooks/recipe-parts.ts"
+import { record } from "../webhooks/record.ts"
 
 export type RecipeOrigin = (typeof RECIPE_ORIGINS)[number]
+
+/** How a person or Merran adds a recipe, as against importing another app's or an archive's. */
+export type CreatedOrigin = Exclude<
+  RecipeOrigin,
+  "mealie" | "paprika" | "merran"
+>
 
 export const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -335,7 +345,7 @@ export async function createRecipe(
     householdId: string
     userId: string | null
     input: RecipeInput
-    origin?: RecipeOrigin
+    origin?: CreatedOrigin
     /** A photo already stored for it (see photos.ts). */
     photoId?: string | null
     /** Its nutrition from the recipe's site. */
@@ -356,6 +366,14 @@ export async function createRecipe(
         nutrition: options.nutrition ?? null,
       })
       await fill(tx, options.householdId, recipe, options.input)
+      await record(tx, options.householdId, {
+        type: "recipe.created",
+        data: {
+          recipe: recipeRef(recipe),
+          origin: options.origin ?? "manual",
+          sourceUrl: recipe.sourceUrl ?? null,
+        },
+      })
       return recipe.id
     }
   )
@@ -491,6 +509,7 @@ export async function updateRecipe(
     async (tx) => {
       const recipe = await findRecipe(tx, options.recipe)
       const tags = (await tagsOf(tx, [recipe.id])).get(recipe.id) ?? []
+      const before = describeRecipe(recipe, tags)
       await saveVersion(tx, {
         householdId: options.householdId,
         recipe,
@@ -508,6 +527,14 @@ export async function updateRecipe(
       )
       if (options.tidied) recipe.tidiedAt = new Date()
       await pruneTags(tx)
+      const tagsAfter = (await tagsOf(tx, [recipe.id])).get(recipe.id) ?? []
+      const parts = changedParts(before, describeRecipe(recipe, tagsAfter))
+      if (parts.length > 0) {
+        await record(tx, options.householdId, {
+          type: "recipe.updated",
+          data: { recipe: recipeRef(recipe), parts },
+        })
+      }
       const missing = !recipe.nutrition && Boolean(options.input.servings)
       return { id: recipe.id, workOut: ingredientsChanged || missing }
     }
@@ -652,7 +679,24 @@ export async function moveToDeleted(em: EntityManager, idOrSlug: string) {
     )
   }
   recipe.deletedAt = new Date()
+  await record(em, recipe.household.id, {
+    type: "recipe.deleted",
+    data: { recipe: recipeRef(recipe) },
+  })
   await em.flush()
+}
+
+/** Tells webhooks a recipe changed in these parts, for the setters that save it themselves. */
+export async function recordParts(
+  em: EntityManager,
+  householdId: string,
+  recipe: { id: string; slug: string; name: string },
+  parts: RecipePart[]
+) {
+  await record(em, householdId, {
+    type: "recipe.updated",
+    data: { recipe: recipeRef(recipe), parts },
+  })
 }
 
 /** Gives a recipe a new photo, in place of any it had. */
@@ -666,12 +710,13 @@ export async function setPhoto(
   const old = recipe.image
   recipe.image = photoId
   recipe.imageByAi = false
+  await recordParts(em, options.householdId, recipe, ["photo"])
   await em.flush()
   await removePhoto(files, options.householdId, old)
   return loadRecipe(em, recipe.id)
 }
 
-/** Takes a recipe's photo away, and deletes it. */
+/** Takes a recipe's photo away, and deletes it. Webhooks hear only if it had one. */
 export async function clearPhoto(
   em: EntityManager,
   files: FileStore,
@@ -681,6 +726,7 @@ export async function clearPhoto(
   const old = recipe.image
   recipe.image = null
   recipe.imageByAi = false
+  if (old) await recordParts(em, options.householdId, recipe, ["photo"])
   await em.flush()
   await removePhoto(files, options.householdId, old)
   return loadRecipe(em, recipe.id)
@@ -689,7 +735,8 @@ export async function clearPhoto(
 /**
  * Corrects a recipe's diet labels. Only corrections that differ from what
  * the ingredients suggest are kept; they stick when the recipe is edited.
- * Not an edit, so no version is kept.
+ * Not an edit, so no version is kept. Webhooks hear only if the kept
+ * corrections changed.
  */
 export async function setDiets(
   em: EntityManager,
@@ -699,9 +746,14 @@ export async function setDiets(
   const suggested = dietsFor(
     recipe.ingredients.getItems().map((line) => line.rawText)
   )
+  const before = recipe.dietOverrides ?? null
   const kept = keptOverrides(suggested, options.overrides)
   recipe.dietOverrides = Object.keys(kept).length > 0 ? kept : null
   recipe.diets = encodeDiets(applyDietOverrides(suggested, kept))
+  // As plain data: Postgres hands JSON back with its keys in its own order.
+  if (!isDeepStrictEqual(before, recipe.dietOverrides)) {
+    await recordParts(em, recipe.household.id, recipe, ["diets"])
+  }
   await em.flush()
   return loadRecipe(em, recipe.id)
 }
@@ -709,6 +761,7 @@ export async function setDiets(
 /**
  * Says which foods a recipe can't do without, so a dislike in it rules it
  * out rather than being left out. Not an edit, so no version is kept.
+ * Webhooks hear only if what it needs, or a line's mark, changed.
  */
 export async function setNeeds(
   em: EntityManager,
@@ -725,17 +778,27 @@ export async function setNeeds(
       options.foods.map((food) => food.trim().toLowerCase()).filter(Boolean)
     ),
   ]
+  let changed = !sameFoods(recipe.needs ?? [], foods)
   recipe.needs = foods.length > 0 ? foods : null
   // The household's word over tidy up's: its lines can come out.
   for (const food of options.canLeaveOut ?? []) {
     for (const line of recipe.ingredients.getItems()) {
       if (line.mark === "needed" && namesFood(line.rawText, food)) {
         line.mark = "optional"
+        changed = true
       }
     }
   }
+  if (changed) {
+    await recordParts(em, recipe.household.id, recipe, ["ingredients"])
+  }
   await em.flush()
   return loadRecipe(em, recipe.id)
+}
+
+/** Whether two lists of foods hold the same ones, in any order. */
+function sameFoods(a: readonly string[], b: readonly string[]) {
+  return isDeepStrictEqual([...a].sort(), [...b].sort())
 }
 
 /** Rates a recipe, or clears its rating. Not an edit, so no version is kept. */

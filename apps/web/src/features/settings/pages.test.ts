@@ -11,8 +11,8 @@ import {
   type Viewer,
 } from "./pages.ts"
 
-// A server with OAuth on, so every half has something to show.
-const capabilities = ["auth.oauth"]
+// A server with OAuth and webhooks on, so every half has something to show.
+const capabilities = ["auth.oauth", "webhooks"]
 
 const member = {
   serverAdmin: false,
@@ -72,6 +72,7 @@ test("a household admin sees every page but Server, none with a server half", ()
     "profile",
     "signIn",
     "apps",
+    "webhooks",
     "household",
     "planning",
     "recipes",
@@ -84,14 +85,42 @@ test("a household admin sees every page but Server, none with a server half", ()
   }
 })
 
-test("the server admin gets every page, and a switch on seven", () => {
-  assert.equal(ids(runsServer).length, 10)
+test("the server admin gets every page, and a switch on eight", () => {
+  assert.equal(ids(runsServer).length, 11)
   const switched = visiblePages(runsServer).filter(
     (each) => each.halves.length === 2
   )
   assert.deepEqual(
     switched.map((each) => each.id),
-    ["signIn", "apps", "household", "recipes", "ai", "shopping", "importExport"]
+    [
+      "signIn",
+      "apps",
+      "webhooks",
+      "household",
+      "recipes",
+      "ai",
+      "shopping",
+      "importExport",
+    ]
+  )
+})
+
+test("with webhooks off, only the server admin sees Webhooks, to turn them on", () => {
+  const webhooksOff = ["auth.oauth"]
+  assert.deepEqual(
+    halves({ ...runsServer, capabilities: webhooksOff }, "webhooks"),
+    ["server"]
+  )
+  assert.equal(
+    page({ ...householdAdmin, capabilities: webhooksOff }, "webhooks"),
+    undefined
+  )
+  assert.equal(
+    missingHouseholdHalf("webhooks", {
+      ...runsServer,
+      capabilities: webhooksOff,
+    }),
+    "switchedOff"
   )
 })
 
@@ -145,6 +174,7 @@ test("a server admin with no household keeps the server halves", () => {
     "profile",
     "signIn",
     "apps",
+    "webhooks",
     "household",
     "recipes",
     "ai",

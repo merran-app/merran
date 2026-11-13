@@ -73,13 +73,13 @@ These are features we intend to build. Their order here does not indicate priori
 - **Swap planned meals:** exchange two meals directly while preserving their details and shopping-list state. Moving a meal to another day or the any-day pool already works.
 - **Offline recipes, plans, and shopping lists:** keep previously opened recipes, the week's plan, and shopping lists useful without a connection, with list check-offs syncing when you reconnect.
 - **Prep reminders:** help you remember to thaw ingredients, start a marinade, or begin cooking before dinner is due.
-- **Webhooks:** let tools such as Home Assistant and n8n react when recipes, plans, lists, or pantry items change.
+- **More webhook events:** webhooks to tools such as Home Assistant and n8n already tell them when recipes are added, changed, deleted and restored. Planned next are events for imports, tidy-up, the plan, the list and the pantry, then cooking and timers, then a daily summary.
 - **Translations:** make the interface available beyond English, including the planned option to translate recipes as they are imported. Measurement conversion already works.
 - **After-cooking pantry checks:** offer a checklist of ingredients that ran out, with an option to put them on the shopping list. Existing planned-meal deductions remain available.
 - **Server administration:** add automatic backups before migrations, a consolidated Problems page, an audit log, and a guided SQLite-to-Postgres transfer. Manual restore smoke tests and secret rotation already exist; they do not implement these additions.
 - **Distribution and project services:** add an Unraid template and a hosted app demo. The published documentation site and scripted homepage previews are already available.
 
-Password sign-in remains the default, with the additional alpha.5 methods available when an operator enables them. The interface remains English-only. [Scoped API keys](../../api/), [MCP](../../integrations/mcp/) and [live events](../../api/live-events/) do not provide webhook delivery. Cook timers are available, but scheduled prep notifications are not.
+Password sign-in remains the default, with the additional alpha.5 methods available when an operator enables them. The interface remains English-only. [Scoped API keys](../../api/), [MCP](../../integrations/mcp/) and [live events](../../api/live-events/) do not provide webhook delivery; [webhooks](../../integrations/webhooks/) do. Cook timers are available, but scheduled prep notifications are not.
 
 Installing Merran on a home screen does not provide offline data access: the current service worker receives shared files, while recipes, plans, and lists still need the server. Likewise, localization infrastructure is present, but English is the only bundled interface language.
 

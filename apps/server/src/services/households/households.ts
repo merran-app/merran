@@ -51,6 +51,19 @@ export async function membersByEmail(em: EntityManager, householdId: string) {
     (email && byEmail.get(email.toLowerCase())) ?? null
 }
 
+/** Where to tell the people who run a household about something: its owners and admins. */
+export async function householdAdminEmails(
+  em: EntityManager,
+  householdId: string
+): Promise<string[]> {
+  const admins = await em.find(
+    HouseholdMember,
+    { household: householdId, role: { $in: ["owner", "admin"] } },
+    { ...ACROSS_HOUSEHOLDS, populate: ["user"] }
+  )
+  return admins.map((admin) => admin.user.getEntity().email)
+}
+
 /**
  * Starts a household with its first person as the owner, and the main
  * shopping list every household has.

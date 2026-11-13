@@ -6,6 +6,7 @@ import { ErrorSchema, handleError, handleNotFound } from "./http/errors.ts"
 import { entityManager } from "./http/middleware/entity-manager.ts"
 import { requestLogger } from "./http/middleware/request-logger.ts"
 import { authenticateRequests } from "./http/middleware/auth.ts"
+import { rememberActor } from "./http/middleware/actor.ts"
 import { announceChanges } from "./http/middleware/live.ts"
 import {
   clientAddress,
@@ -66,6 +67,7 @@ export function createApp(deps: AppDeps) {
         : undefined
     )
   )
+  app.use(rememberActor())
   app.use(announceChanges(deps.events))
 
   const api = createRouter()

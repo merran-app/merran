@@ -5,6 +5,7 @@ import { KEY_PERMISSION } from "../middleware/auth.ts"
 import { BETTER_AUTH_ENDPOINTS } from "../routes/auth/better-auth.ts"
 import { OAUTH_PROTOCOL_ENDPOINTS } from "../auth/oauth.ts"
 import { authOverrides } from "./auth-overrides.ts"
+import { registerWebhookEvents } from "./webhooks.ts"
 
 type Document = ReturnType<OpenAPIHono<AppEnv>["getOpenAPI31Document"]>
 type Operation = Record<string, unknown>
@@ -79,6 +80,11 @@ const TAGS = [
       "What changes in the household, as it happens: the live updates the app uses, and who has the list open.",
   },
   {
+    name: "Webhooks",
+    description:
+      "Telling tools like Home Assistant and n8n when things happen in the household, signed in the Standard Webhooks format: each webhook's address, events, secret and deliveries log. Managed by the household's admins in the app, never with API keys.",
+  },
+  {
     name: "Stores",
     description:
       "Stores with an API: Kroger (Fry's, Ralphs...), its products and prices, and sending the list to a linked account's cart.",
@@ -111,6 +117,7 @@ export async function buildOpenApiDocument(
   auth: Auth,
   { version, serverUrl }: { version: string; serverUrl: string }
 ): Promise<Document> {
+  registerWebhookEvents(app.openAPIRegistry)
   const document = app.getOpenAPI31Document({
     openapi: "3.1.0",
     info: {
