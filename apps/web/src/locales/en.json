@@ -707,7 +707,7 @@
           },
           "timer": {
             "started": "A step's time, or a new timer, in cook view.",
-            "extended": "+1 minute, in cook view or on its message.",
+            "extended": "+1 min, in cook view or on its message.",
             "finished": "Time's up. Sent by the server, even if the screen is off.",
             "cancelled": "Cancelled before it went off."
           },
