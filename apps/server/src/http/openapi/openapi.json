@@ -59,6 +59,10 @@
       "description": "Recipe sites a household follows, and their newest recipes, read in the background as Merran, following robots.txt."
     },
     {
+      "name": "Cooking",
+      "description": "Who's cooking now: cook view starts a session when someone leaves Get ready, checks in while it's open, and reports its timers, which the server keeps so they go off on time. Each sends a webhook event. For a Home Assistant sensor, read sessions with plan read access."
+    },
+    {
       "name": "Plan",
       "description": "The week plan: meals on days and in the week's pool, what's next, and Fill the week's ideas, each saying why. Today is always the household's, in its time zone."
     },
@@ -1812,6 +1816,478 @@
           ],
           "createdAt": "2026-10-15T18:30:00.000Z",
           "finishedAt": null
+        }
+      },
+      "CookingSessions": {
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CookingSession"
+            }
+          }
+        },
+        "required": [
+          "sessions"
+        ],
+        "example": {
+          "sessions": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000037",
+              "cook": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                "name": "Sam Rivera"
+              },
+              "recipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                "slug": "lemon-chicken",
+                "title": "Lemon Chicken",
+                "url": "https://merran.example.com/recipes/lemon-chicken"
+              },
+              "with": null,
+              "meal": null,
+              "servings": 4,
+              "startedAt": "2026-10-15T18:30:00.000Z",
+              "heardAt": "2026-10-15T18:30:00.000Z",
+              "leaving": false,
+              "endedAt": null,
+              "outcome": null,
+              "timers": [
+                {
+                  "id": "t-4f2a",
+                  "label": "Simmer the sauce",
+                  "seconds": 600,
+                  "endsAt": "2026-10-15T18:40:00.000Z"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "CookingSession": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "cook": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "description": "Who's cooking. Null if they've left Merran."
+          },
+          "recipe": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "url": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+              }
+            },
+            "required": [
+              "id",
+              "slug",
+              "title",
+              "url"
+            ],
+            "example": {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "slug": "lemon-chicken",
+              "title": "Lemon Chicken",
+              "url": "https://merran.example.com/recipes/lemon-chicken"
+            }
+          },
+          "with": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "url": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+              }
+            },
+            "required": [
+              "id",
+              "slug",
+              "title",
+              "url"
+            ],
+            "example": {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "slug": "lemon-chicken",
+              "title": "Lemon Chicken",
+              "url": "https://merran.example.com/recipes/lemon-chicken"
+            },
+            "description": "The recipe cooked with it as a pairing, if any."
+          },
+          "meal": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "entryId": {
+                "type": "string",
+                "description": "The meal's entry in the plan."
+              },
+              "date": {
+                "type": "string",
+                "description": "Its day, as YYYY-MM-DD. For a meal in the week's pool, the first day of that week."
+              },
+              "meal": {
+                "type": "string",
+                "enum": [
+                  "breakfast",
+                  "lunch",
+                  "dinner",
+                  "snack"
+                ]
+              },
+              "pool": {
+                "type": "boolean",
+                "description": "Whether it's in the week's pool, waiting for a day, rather than planned for one."
+              },
+              "title": {
+                "type": "string",
+                "description": "The recipe's name, or the note for a meal that's only a note."
+              },
+              "recipe": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "slug": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+                  }
+                },
+                "required": [
+                  "id",
+                  "slug",
+                  "title",
+                  "url"
+                ],
+                "example": {
+                  "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                  "slug": "lemon-chicken",
+                  "title": "Lemon Chicken",
+                  "url": "https://merran.example.com/recipes/lemon-chicken"
+                },
+                "description": "The recipe. Null for a meal that's only a note, or one whose recipe is in Recently deleted."
+              },
+              "side": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "slug": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+                  }
+                },
+                "required": [
+                  "id",
+                  "slug",
+                  "title",
+                  "url"
+                ],
+                "example": {
+                  "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                  "slug": "lemon-chicken",
+                  "title": "Lemon Chicken",
+                  "url": "https://merran.example.com/recipes/lemon-chicken"
+                },
+                "description": "The side dish, if it has one. Null while it's in Recently deleted, as the plan leaves it out."
+              }
+            },
+            "required": [
+              "entryId",
+              "date",
+              "meal",
+              "pool",
+              "title",
+              "recipe",
+              "side"
+            ],
+            "description": "The planned meal it's cooked for, if any."
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "heardAt": {
+            "type": "string",
+            "description": "When cook view last said it's still cooking."
+          },
+          "leaving": {
+            "type": "boolean",
+            "description": "Cook view was left with a timer still running, or its page went away a moment ago: it ends when the timers are done, or in a minute."
+          },
+          "endedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "outcome": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "made",
+              "stopped",
+              "timed_out",
+              null
+            ]
+          },
+          "timers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The timer's id, which cook view picked when it started."
+                },
+                "label": {
+                  "type": "string",
+                  "description": "What it's for, like \"Simmer the sauce\" or \"10 minutes\"."
+                },
+                "seconds": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "How long it runs, in seconds: its length when started, with each minute added."
+                },
+                "endsAt": {
+                  "type": "string",
+                  "description": "When it goes off, by the server's clock: cook view says how many seconds are left, not when."
+                }
+              },
+              "required": [
+                "id",
+                "label",
+                "seconds",
+                "endsAt"
+              ],
+              "example": {
+                "id": "t-4f2a",
+                "label": "Simmer the sauce",
+                "seconds": 600,
+                "endsAt": "2026-10-15T18:40:00.000Z"
+              }
+            },
+            "description": "Its running timers, the soonest first."
+          }
+        },
+        "required": [
+          "id",
+          "cook",
+          "recipe",
+          "with",
+          "meal",
+          "servings",
+          "startedAt",
+          "heardAt",
+          "leaving",
+          "endedAt",
+          "outcome",
+          "timers"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000037",
+          "cook": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+            "name": "Sam Rivera"
+          },
+          "recipe": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+            "slug": "lemon-chicken",
+            "title": "Lemon Chicken",
+            "url": "https://merran.example.com/recipes/lemon-chicken"
+          },
+          "with": null,
+          "meal": null,
+          "servings": 4,
+          "startedAt": "2026-10-15T18:30:00.000Z",
+          "heardAt": "2026-10-15T18:30:00.000Z",
+          "leaving": false,
+          "endedAt": null,
+          "outcome": null,
+          "timers": [
+            {
+              "id": "t-4f2a",
+              "label": "Simmer the sauce",
+              "seconds": 600,
+              "endsAt": "2026-10-15T18:40:00.000Z"
+            }
+          ]
+        }
+      },
+      "NewCookingSession": {
+        "type": "object",
+        "properties": {
+          "recipe": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The recipe being cooked, by its id or slug."
+          },
+          "with": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "description": "The recipe cooked with it as a pairing, by id or slug."
+          },
+          "meal": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "The planned meal it's cooked for: its entry in the plan."
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 1000,
+            "description": "How many servings it's making, as cook view shows them. Null for a recipe that doesn't say."
+          }
+        },
+        "required": [
+          "recipe"
+        ],
+        "example": {
+          "recipe": "lemon-chicken",
+          "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+          "servings": 4
+        }
+      },
+      "CookingSessionChanges": {
+        "type": "object",
+        "properties": {
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 1000,
+            "description": "How many servings it's making, as cook view shows them. Null for a recipe that doesn't say."
+          }
+        },
+        "example": {
+          "servings": 6
+        }
+      },
+      "LeaveCooking": {
+        "type": "object",
+        "properties": {
+          "soon": {
+            "type": "boolean",
+            "description": "Cook view's page went away, which may be a reload: end it a minute from now, unless cook view checks in first."
+          }
+        },
+        "example": {}
+      },
+      "TimerSetting": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "What it's for, like \"Simmer the sauce\"."
+          },
+          "seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 86400,
+            "description": "How many seconds are left. The server works out when it ends, so a device whose clock is off doesn't move it."
+          }
+        },
+        "required": [
+          "label",
+          "seconds"
+        ],
+        "example": {
+          "label": "Simmer the sauce",
+          "seconds": 600
         }
       },
       "DiscoveryList": {
@@ -19644,6 +20120,516 @@
           },
           "409": {
             "description": "A search is going already.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cooking/sessions": {
+      "get": {
+        "operationId": "listCookingSessions",
+        "tags": [
+          "Cooking"
+        ],
+        "summary": "Who's cooking now",
+        "description": "Everyone in the household cooking now, in cook view, earliest first, with what they're cooking and their running timers. Cook view never reads this: it's for a sensor in Home Assistant or a kitchen display. Sessions end when cooking does, so an empty list means nobody's cooking. With an API key, it needs the `plan: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "plan:read",
+        "responses": {
+          "200": {
+            "description": "Who's cooking now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CookingSessions"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "startCooking",
+        "tags": [
+          "Cooking"
+        ],
+        "summary": "Start cooking",
+        "description": "Cook view calls this when someone leaves Get ready, or opens it on a recipe with nothing to get ready. Sends `cooking.started`. Each device cooking is a session of its own, and only its cook can change or end it. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewCookingSession"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cooking started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CookingSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe, or no such meal on the plan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cooking/sessions/{sessionId}": {
+      "patch": {
+        "operationId": "checkInCooking",
+        "tags": [
+          "Cooking"
+        ],
+        "summary": "Still cooking",
+        "description": "Cook view checks in every 5 minutes while it's open and on screen, when it's on screen again, and when servings change. A session with no word for 30 minutes and no timer running ends. Checking in calls off an ending that was coming: a reload's page going away, or leaving with a timer running. Sends nothing. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "sessionId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CookingSessionChanges"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Still cooking.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CookingSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such cooking session of yours, or it's ended: start a new one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cooking/sessions/{sessionId}/end": {
+      "post": {
+        "operationId": "leaveCooking",
+        "tags": [
+          "Cooking"
+        ],
+        "summary": "Leave cooking",
+        "description": "Cook view was left without Made it. Cooking ends now, sending `cooking.ended` (`stopped`), or, with a timer still running, when the last one is done or cancelled. With `soon`, for a page that went away, it ends a minute from now unless cook view checks in first, as a reload does. Made it ends a session through its own routes instead. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "sessionId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaveCooking"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Left: ended, or ending when its timers are done or in a minute.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CookingSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such cooking session of yours, or it's ended.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cooking/sessions/{sessionId}/timers/{timerId}": {
+      "put": {
+        "operationId": "setCookingTimer",
+        "tags": [
+          "Cooking"
+        ],
+        "summary": "Start a timer, or give it more time",
+        "description": "Cook view calls this when a timer starts, sending `timer.started`, and when it gets +1 minute, sending `timer.extended`, even after it's gone off: it runs again. `seconds` is how many are left; the server works out when it ends and sends `timer.finished` then itself. A new timer needs the session to be open, but one it has can get more time after it ends, as timers keep ringing in the app after cook view is left. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "sessionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "description": "The timer's id, which cook view picks when it starts one."
+            },
+            "required": true,
+            "description": "The timer's id, which cook view picks when it starts one.",
+            "name": "timerId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimerSetting"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The timer, with when it ends.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "The timer's id, which cook view picked when it started."
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "What it's for, like \"Simmer the sauce\" or \"10 minutes\"."
+                    },
+                    "seconds": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "description": "How long it runs, in seconds: its length when started, with each minute added."
+                    },
+                    "endsAt": {
+                      "type": "string",
+                      "description": "When it goes off, by the server's clock: cook view says how many seconds are left, not when."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "label",
+                    "seconds",
+                    "endsAt"
+                  ],
+                  "example": {
+                    "id": "t-4f2a",
+                    "label": "Simmer the sauce",
+                    "seconds": 600,
+                    "endsAt": "2026-10-15T18:40:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such cooking session of yours, or, for a new timer, it's ended.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The session has 20 timers running already.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "cancelCookingTimer",
+        "tags": [
+          "Cooking"
+        ],
+        "summary": "Cancel a timer",
+        "description": "Cook view calls this when a timer is cancelled before it goes off, sending `timer.cancelled`. Cancelling one that's gone off changes nothing and sends nothing. A session that was left with timers running ends when its last one is cancelled. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "sessionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "description": "The timer's id, which cook view picks when it starts one."
+            },
+            "required": true,
+            "description": "The timer's id, which cook view picks when it starts one.",
+            "name": "timerId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Cancelled, or it had gone off already."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such cooking session of yours, or no such timer.",
             "content": {
               "application/json": {
                 "schema": {

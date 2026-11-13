@@ -60,6 +60,11 @@ const TAGS = [
       "Recipe sites a household follows, and their newest recipes, read in the background as Merran, following robots.txt.",
   },
   {
+    name: "Cooking",
+    description:
+      "Who's cooking now: cook view starts a session when someone leaves Get ready, checks in while it's open, and reports its timers, which the server keeps so they go off on time. Each sends a webhook event. For a Home Assistant sensor, read sessions with plan read access.",
+  },
+  {
     name: "Plan",
     description:
       "The week plan: meals on days and in the week's pool, what's next, and Fill the week's ideas, each saying why. Today is always the household's, in its time zone.",
