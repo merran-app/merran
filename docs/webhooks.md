@@ -1,6 +1,6 @@
 # Webhooks
 
-Planned November 10, 2026. This scopes "Webhooks for Home Assistant, n8n and others" in [features.md](features.md), and replaces the outline that was in [platform.md](platform.md#webhooks). The first pull request (the engine, the Webhooks page and server card, and the recipe events) was built on November 10, 2026; the rest is still planned.
+Planned November 10, 2026. This scopes "Webhooks for Home Assistant, n8n and others" in [features.md](features.md), and replaces the outline that was in [platform.md](platform.md#webhooks). The first pull request (the engine, the Webhooks page and server card, and the recipe events) was built on November 10, 2026. The second (the rest of slice 1: imports, tidy-up, Review, the plan, meals, the list and the pantry, and gathering) was built on November 11, 2026; cooking, timers and the daily heads-ups are still planned.
 
 ## Goal
 
@@ -38,6 +38,18 @@ Mirroring the shopping list item by item into another app was considered and lef
 | `MERRAN_OUTBOUND=minimal` | Turns webhooks off too, once that setting is built ([operations.md](operations.md)) | Like reading followed sites, a household chose them but Merran sends them on its own |
 | How many | Up to 10 webhooks a household | Enough for every tool in a home; a bound on what one household can make the server send |
 | Ruled out | A sentence in each payload ("Kyle added Lemon Chicken") | It would need the server to translate; Home Assistant and n8n templates make their own from the fields |
+| Gathered per person (November 11, 2026) | A gathering window gives one event for each who (`by`, `via`, `key`), not one for the household | `by` stays exact, and an n8n flow can still ignore the change it caused. One person checking off 30 things still makes one event |
+| Gathering re-arms (November 11, 2026) | A change made while the merge job runs puts that job back in the queue, 30 seconds on | The runner already runs a job started over while it runs again from its first try. The merge job runs one at a time across the server (`concurrency: 1`), so two merges never take the same rows |
+| Gathered events count `changed` (November 11, 2026) | A meal's recipe, side, note, servings or version (a substitute found from the shopping list changes it); a list item's name, amount, aisle or list; a pantry item's amount, aisle, name or use-by. Reordering a meal's dishes counts as `moved`. Servings given as a meal is marked made, by Made it or with its status, are how many it made, so they don't count | Without it, swapping tonight's dish or fixing an amount would send nothing. Marking meals made or Didn't isn't a plan change: it's `meal.cooked` and `meal.skipped`, which carries the servings |
+| What `plan.changed` covers (November 11, 2026) | Every add, move, change and removal, whatever did it: the autoplan (beside `plan.autoplanned`), applying a proposal, Repeat last week, Clear, Undo, a substitute found from the shopping list and its Undo, and Made it when it adds a meal or moves one from the pool (beside `meal.cooked`) | A receiver that mirrors the plan needs every change, not only the ones people made by hand |
+| Undo restores (November 11, 2026) | Putting meals back sends `plan.changed` but never `meal.cooked` or `meal.skipped` again. Setting a meal back to planned sends nothing. Undo on the list sends `list.changed` but never `list.completed` | Undo puts things back as they were; it isn't a second time cooking or shopping |
+| Meals are in the Plan area (November 11, 2026) | `meal.cooked` and `meal.skipped` sit under Plan in the picker. Cooking, its own area, arrives with the sessions and timers | There's nothing else in Cooking yet, and an area with two events isn't worth a heading |
+| What ends a shopping trip (November 11, 2026) | `list.completed` is sent when the last unchecked item on a list is checked off, however that's done (except Undo), and when Put away (`POST /api/list/put-away`) clears a list that still has unchecked items. A list that was finished already gets nothing when it's put away, so a trip sends one. Clear checked isn't the end of a trip | Automations say "the shopping list is done" once, whether the last thing was ticked in the store or the list was put away |
+| Imports that fail send nothing (November 11, 2026) | `import.finished` is sent when an import runs to its end. One that fails as a whole, or is stopped, shows on its page and in Jobs. Archive imports always report `failed: 0`, because any recipe that fails fails the whole import. A collection's import is a link batch marked with its kind, and sharing several links at once is a `links` batch | A failed import isn't news a flow can act on; the person sees it where they started it |
+| Tidy-ups send `tidy.ready` (November 11, 2026) | Automatic tidy-ups send it like the ones started by hand. A run that's stopped sends nothing | The suggestions are waiting in Review either way |
+| Background work says Merran did it (November 11, 2026) | A cooking note turned into an edit is `by: null`, `via: "merran"`, and so are link batches, app imports and tidy runs, which finish in jobs | The spec says so for background work; the person who started it isn't who finished it |
+| Walmart reports each stretch of filling (November 11, 2026) | The server hears from the extension one product at a time, so a new route, `POST /api/stores/walmart/filled`, takes what the extension did and records `list.sent`. The extension reports when it stops filling (done, stopped, failed, or a fill paused at Walmart's check being dismissed), with only what went in and was left out since its last report, which it keeps with the job; a report with nothing new isn't sent, and nothing waits for one. An extension too old to call it sends no `list.sent` for Walmart. For Kroger, the web passes how many basket lines had no product, which the server hasn't seen because the page leaves them out | The server can't tell when a Walmart fill ends any other way. Reporting totals each time double counted a fill that was stopped and carried on, and one stopped at Walmart's check never reported |
+| Housekeeping sends nothing (November 11, 2026) | Merging duplicate list lines (the food re-keying job, Same as), moving items when a list is removed, and the gathered rows themselves. Gathered rows aren't in the deliveries log, and the daily clean-up clears them with the rest after 30 days | None of it is something that happened in the kitchen |
 
 ## How events are made
 
@@ -91,7 +103,15 @@ Every event is declared once, in `packages/shared/src/webhooks/events.ts`: its n
 
 ### Gathering
 
-`plan.changed`, `list.changed` and `pantry.changed` are gathered. Each change still records a small event, marked as gathered, and the first one queues a keyed job 30 seconds later (`webhooks.gather:<household>:<type>`; the job runner's keys make sure there's one). That job merges the household's gathered events of that type into one, which is sent like any other. The counts are exact, because nothing is added up in place.
+`plan.changed`, `list.changed` and `pantry.changed` are gathered. Each change still records a small event, marked as gathered, and the first one queues a keyed job 30 seconds later (`webhooks.gather:<household>:<type>`), which the changes after it find by its key. The key has no unique index, so two transactions that both find no job each make one; the second finds nothing left to merge, or only what came since, so it's harmless. That job merges the household's gathered events of that type into one, which is sent like any other. The counts are exact, because nothing is added up in place. Each who (`by`, `via`, `key`) gets their own event, and since November 11, 2026 it's stamped with when that person's last change in it was made, not when it was merged, as `timestamp` is when it happened: a receiver ordering by it no longer sees the `list.changed` for a trip's checks 30 seconds after the `list.completed` the last check caused, but at the same moment.
+
+How it holds together:
+
+- **A change made while the merge job runs re-arms it.** The job goes back in the queue, 30 seconds on, so what arrives during a merge is sent in the next one and nothing is left behind.
+- **A change that finds a queued merge job writes to it,** holding that row until the change's transaction commits, so the runner can't take the job mid-change and miss a part that hasn't been committed yet. The trade-off: on Postgres, a gathered record inside a transaction holds the merge job's row lock until it commits. So features record gathered events as late in a transaction as they can, and the list's before the pantry's, as checking off does (since November 11, 2026, taking checked rows off the list that weren't put away yet records them in that order too). A deadlock is still possible: any transaction that holds a merge job's row, after a gathered record, and then writes rows another transaction locked before its own gathered record. Removing meals in bulk, or Undo on the plan, does that: `followPlan` records `list.changed`, then `followCooking` locks pantry rows, while a check-off locks pantry rows and then the list job's row. It's rare, and when it happens Postgres aborts one of the requests. Writing the job's row only as the transaction commits would end it; that's [a follow-up](#later).
+- **A household without webhooks pays nothing.** Payloads that cost queries (counting what's left on a list, finding a week's days) are built only after `wantsEvent` says a webhook wants the event.
+- **Counts follow the writes.** A plan edit that changes a meal's list lines is counted step by step: lines taken off, then added again, is `removed: 1, added: 1`, or `changed: 2` on a line shared with another meal.
+- **A known race:** two phones checking off a list's last two rows at the same moment may each see one left, and then no `list.completed` is sent.
 
 ## Events
 
@@ -106,14 +126,14 @@ Every event is declared once, in `packages/shared/src/webhooks/events.ts`: its n
 | `import.finished` | A batch of links, an import from Mealie or another app's files, a Merran archive, or a collection finishes | What kind; how many were added, skipped and failed; a link to the import |
 | `tidy.ready` | Tidy up finishes, for one recipe or a run of many, with suggestions waiting | How many recipes have suggestions; up to 10 of them; a link to Review |
 | `review.waiting` | Something new waits in Review that didn't come from your own chat: an AI app's proposal over MCP, or a cooking note turned into an edit | Where it came from (`mcp`, `cook_note`); how many; the recipe if there is one; a link to Review |
-| `plan.changed` | Meals added, moved or removed (gathered) | The days touched; how many added, moved and removed; who |
+| `plan.changed` | Meals added, moved, changed or removed (gathered) | The days touched and the weeks whose pool was touched; how many were added, moved, changed and removed; who |
 | `plan.autoplanned` | The weekly autoplan ran, on its schedule or by hand | The week; how many meals it planned |
 | `meal.cooked` | A meal is marked made anywhere: cook view, the plan, Today's "Did you make these?", or a recipe made off the plan | The day and meal; the recipe; servings; whether it was planned |
 | `meal.skipped` | A planned meal is marked Didn't | The day and meal; the recipe |
-| `list.changed` | Items added, checked off or removed (gathered) | Each list touched, with how many are left and checked; how many were added, checked off and removed; who |
-| `list.completed` | The last item on a list is checked off, or a list is cleared after shopping | The list; how many items were bought |
+| `list.changed` | Items added, checked off, unchecked, changed or removed (gathered) | Each list touched, with how many are left and checked; how many were added, checked off, unchecked, changed and removed; who |
+| `list.completed` | The last item on a list is checked off, or Put away clears a list that still has unchecked items | The list; how many items were bought and how many were left |
 | `list.sent` | A list goes to a store's cart (Kroger, or Walmart through the extension) | The store; how many items were sent and how many weren't found |
-| `pantry.changed` | Things put away, used up, moved or removed (gathered) | How many were added, used up, moved and removed; who |
+| `pantry.changed` | Things put away, used up, moved, changed or removed (gathered) | How many were added, used up, moved, changed and removed; who |
 | `webhook.test` | **Send a test** | The webhook's name; who sent it |
 
 ### Slice 2: cooking
@@ -257,10 +277,10 @@ The server admin's setting goes through `PATCH /api/settings/server`, like the o
 ## Data
 
 - **`webhooks`**, household-scoped: a name; the host in the clear; references to the sealed address, secret, previous secret (with when it stops being sent) and headers; the events it wants, or everything; its state (`active`, `paused`), why and when it paused; who made it (null if they're deleted); created and updated.
-- **`webhook_events`**, household-scoped: the id (`msg_…`), the type, the payload, whether it's gathered and been merged, an optional key unique in the household (so a scheduled event is sent once: `day.summary:2026-11-10`, `meal.time_to_start:2026-11-10:dinner`) and when it happened.
+- **`webhook_events`**, household-scoped: the id (`msg_…`), the type, the payload, whether it's gathered and whether it's been merged (`gathered` and `merged`, added with the second pull request), an optional key unique in the household (so a scheduled event is sent once: `day.summary:2026-11-10`, `meal.time_to_start:2026-11-10:dinner`) and when it happened.
 - **`webhook_deliveries`**, household-scoped like every table with household data (the schema test insists): the event, the webhook, its state (`waiting`, `delivered`, `failed`, `stopped`), tries, the last status code, the first 1 KB of the last answer, how long it took, the last error, and when it was delivered.
 
-One migration for SQLite and one for Postgres for each slice that adds tables.
+The `key` column arrives with slice 3, which is the first to need it. One migration for SQLite and one for Postgres for each slice that adds tables or columns.
 
 ## The module and its settings
 
@@ -343,4 +363,5 @@ The page is checked in the dev household. Real Home Assistant and n8n automation
 - **Each list item on its own** (`list.item.added`, `.checked`, `.removed`), for mirroring the list into another app.
 - **Prep reminders** as an event, with Notifications.
 - **Live updates driven by `record()`,** so the two can't disagree.
+- **Gathered records that queue their merge job as the transaction commits,** rather than writing the job's row part way through, so a gathered record never holds that row while its transaction goes on to lock others, and the rare deadlock in [Gathering](#gathering) can't happen.
 - Members joining and leaving; stars after cooking; nutrition and photo runs finishing.

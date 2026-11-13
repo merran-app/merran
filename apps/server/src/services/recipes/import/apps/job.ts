@@ -12,6 +12,8 @@ import {
   type JobDeps,
   type JobHandler,
 } from "../../../jobs/runner.ts"
+import { appLink } from "../../../webhooks/payloads.ts"
+import { record } from "../../../webhooks/record.ts"
 import { removePhoto, storePhoto } from "../../photos/photos.ts"
 import { importRecipe } from "../../recipes.ts"
 import type { Sealed } from "../../../secrets/secret-box.ts"
@@ -252,6 +254,20 @@ export const appImportJob: JobHandler = {
           progress,
           signal,
           logger,
+        })
+        // Before the upload goes, so if telling webhooks fails, the import
+        // fails with its file still there for Try again.
+        await record(em, householdId, {
+          type: "import.finished",
+          data: {
+            import: { id: jobId },
+            kind: "app",
+            app: source.app,
+            added: result.recipes,
+            skipped: result.skipped,
+            failed: result.failed,
+            url: appLink("/settings/import-export"),
+          },
         })
         if (job.from === "file") {
           // Done with: an upload that failed stays for Try again, a week at most.

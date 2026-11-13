@@ -31,8 +31,8 @@ const route = createRoute({
 
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em } = inHousehold(c)
+    const { em, householdId } = inHousehold(c)
     const { itemId } = c.req.valid("param")
-    return c.json(await removeItem(em, itemId), 200)
+    return c.json(await removeItem(em, householdId, itemId), 200)
   })
 }

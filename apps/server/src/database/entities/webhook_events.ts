@@ -16,9 +16,16 @@ export const WebhookEvent = defineEntity({
     /** "recipe.created" */
     type: p.string(),
     payload: p.json<Record<string, unknown>>(),
+    /** A small change waiting to be merged with others like it. */
+    gathered: p.boolean().default(false),
+    /** Merged into the event that was sent. */
+    merged: p.boolean().default(false),
     createdAt: createdAt(),
   },
-  indexes: [{ properties: ["household", "createdAt"] }],
+  indexes: [
+    { properties: ["household", "createdAt"] },
+    { properties: ["household", "gathered", "merged"] },
+  ],
   filters: householdFilter,
 })
 export type WebhookEvent = InferEntity<typeof WebhookEvent>

@@ -21,6 +21,11 @@ import { inHouseholdTransaction } from "../../../database/transactions.ts"
 import { toNumber } from "../../../database/numbers.ts"
 import { KROGER, krogerConnection } from "../../stores/kroger/connection.ts"
 import { householdToday } from "../../households/clock.ts"
+import {
+  recordListChange,
+  recordPutAwayFinished,
+} from "../../webhooks/events/list.ts"
+import { recordPantryChange } from "../../webhooks/events/pantry.ts"
 import { store } from "../pantry.ts"
 import { placeOf } from "../places.ts"
 
@@ -178,8 +183,17 @@ export async function putAway(
       const record = await putAwayItem(tx, householdId, item, context)
       if (record.pantryItem) stored++
     }
+    // Counted before the rows go: a list with things left unchecked ends
+    // its trip here.
+    await recordPutAwayFinished(tx, householdId, checked)
     for (const item of checked) tx.remove(item)
     await tx.flush()
+    // Each list it put away, told once with the total, and what went in
+    // the pantry.
+    await recordListChange(tx, householdId, checked, {
+      removed: checked.length,
+    })
+    await recordPantryChange(tx, householdId, { added: stored })
     return { stored, cleared: checked.length - stored }
   })
 }

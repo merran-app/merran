@@ -586,7 +586,10 @@
           "stopped": "Stopped"
         },
         "areas": {
-          "recipes": "Recipes"
+          "recipes": "Recipes",
+          "plan": "Plan",
+          "list": "Shopping list",
+          "pantry": "Pantry"
         },
         "events": {
           "recipe": {
@@ -594,6 +597,31 @@
             "updated": "A recipe is changed",
             "deleted": "A recipe is deleted",
             "restored": "A recipe is restored"
+          },
+          "import": {
+            "finished": "An import finishes"
+          },
+          "tidy": {
+            "ready": "Tidy up has suggestions"
+          },
+          "review": {
+            "waiting": "Something waits in Review"
+          },
+          "plan": {
+            "changed": "The plan changes",
+            "autoplanned": "The autoplan plans a week"
+          },
+          "meal": {
+            "cooked": "A meal is made",
+            "skipped": "A meal is skipped"
+          },
+          "list": {
+            "changed": "The list changes",
+            "completed": "A list is finished",
+            "sent": "A list goes to a store"
+          },
+          "pantry": {
+            "changed": "The pantry changes"
           },
           "webhook": {
             "test": "A test"
@@ -605,6 +633,31 @@
             "updated": "Edits, tidy-ups, swaps, restored versions, and photo or diet changes.",
             "deleted": "Moved to Recently deleted.",
             "restored": "Brought back from Recently deleted."
+          },
+          "import": {
+            "finished": "A batch of links, another app's recipes or a Merran archive is in."
+          },
+          "tidy": {
+            "ready": "Tidy up has finished, with suggestions to review."
+          },
+          "review": {
+            "waiting": "From an AI app, or a cooking note turned into an edit."
+          },
+          "plan": {
+            "changed": "Meals added, moved, changed or removed, gathered over 30 seconds.",
+            "autoplanned": "On its schedule, or when someone runs it."
+          },
+          "meal": {
+            "cooked": "Made it, on the plan or off it.",
+            "skipped": "A planned meal marked Didn't."
+          },
+          "list": {
+            "changed": "Things added, checked off, changed or removed, gathered over 30 seconds.",
+            "completed": "The last thing is checked off, or it's put away with things left.",
+            "sent": "Sent to the Kroger cart, or to Walmart's through the extension."
+          },
+          "pantry": {
+            "changed": "Things put away, used up, moved, changed or removed, gathered over 30 seconds."
           }
         }
       },

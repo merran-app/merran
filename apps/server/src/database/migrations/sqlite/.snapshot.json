@@ -15098,6 +15098,23 @@
           "enumItems": [],
           "mappedType": "datetime"
         },
+        "gathered": {
+          "name": "gathered",
+          "type": "integer",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "false",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
         "household_id": {
           "name": "household_id",
           "type": "text",
@@ -15131,6 +15148,23 @@
           "collation": null,
           "enumItems": [],
           "mappedType": "text"
+        },
+        "merged": {
+          "name": "merged",
+          "type": "integer",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "false",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "integer"
         },
         "payload": {
           "name": "payload",
@@ -15186,6 +15220,18 @@
           "composite": true,
           "constraint": false,
           "keyName": "webhook_events_household_id_created_at_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "household_id",
+            "gathered",
+            "merged"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "webhook_events_household_id_gathered_merged_index",
           "primary": false,
           "unique": false
         },

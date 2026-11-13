@@ -12,6 +12,7 @@ import { describeItems, typedItem } from "../list/list.ts"
 import { onHandOf } from "../list/meals.ts"
 import { findEntry } from "../plan/plan.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
+import { recordPantryChange } from "../webhooks/events/pantry.ts"
 import { itemSnapshot } from "./pantry.ts"
 
 // "Ran out of anything?", asked once cooking's done: what ran out is
@@ -130,6 +131,7 @@ export async function ranOut(
 
     const listed = input.list ? await listFoods(tx, householdId, foods) : []
     await tx.flush()
+    await recordPantryChange(tx, householdId, { usedUp: usedUp.length })
     return {
       usedUp: before,
       listed: await describeItems(tx, listed),

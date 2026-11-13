@@ -23,7 +23,7 @@ import type { Settings } from "../settings/settings.ts"
 import { actorOf, MERRAN, withActor, type Actor } from "./actor.ts"
 import { envelopeBody } from "./envelope.ts"
 import { recipeRef, webhookEnvelopeSchema } from "./payloads.ts"
-import { record, WEBHOOK_DELIVERY_JOB } from "./record.ts"
+import { record, WEBHOOK_DELIVERY_JOB, wantsEvent } from "./record.ts"
 import { newWebhookSecret } from "./signing.ts"
 import { configureWebhooks, linkBase } from "./state.ts"
 import { forgetWebhooks } from "./wanted.ts"
@@ -207,6 +207,23 @@ describe("record", () => {
     }
 
     expect(await inHome().count(WebhookEvent, {})).toBe(0)
+  })
+
+  test("wantsEvent says whether any webhook wants an event", async () => {
+    expect(await wantsEvent(inHome(), home, "recipe.deleted")).toBe(false)
+
+    await addWebhook({ events: ["recipe.created"] })
+    forgetWebhooks(home)
+    expect(await wantsEvent(inHome(), home, "recipe.deleted")).toBe(false)
+    expect(await wantsEvent(inHome(), home, "recipe.created")).toBe(true)
+
+    const publicUrl = linkBase()
+    configureWebhooks({ enabled: false, publicUrl: null })
+    try {
+      expect(await wantsEvent(inHome(), home, "recipe.created")).toBe(false)
+    } finally {
+      configureWebhooks({ enabled: true, publicUrl })
+    }
   })
 
   test("says who did it", async () => {

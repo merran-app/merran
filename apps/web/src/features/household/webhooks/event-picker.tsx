@@ -50,6 +50,50 @@ const EVENT_TEXT = {
     label: "settings.household.webhooks.events.recipe.restored",
     hint: "settings.household.webhooks.eventHints.recipe.restored",
   },
+  "import.finished": {
+    label: "settings.household.webhooks.events.import.finished",
+    hint: "settings.household.webhooks.eventHints.import.finished",
+  },
+  "tidy.ready": {
+    label: "settings.household.webhooks.events.tidy.ready",
+    hint: "settings.household.webhooks.eventHints.tidy.ready",
+  },
+  "review.waiting": {
+    label: "settings.household.webhooks.events.review.waiting",
+    hint: "settings.household.webhooks.eventHints.review.waiting",
+  },
+  "plan.changed": {
+    label: "settings.household.webhooks.events.plan.changed",
+    hint: "settings.household.webhooks.eventHints.plan.changed",
+  },
+  "plan.autoplanned": {
+    label: "settings.household.webhooks.events.plan.autoplanned",
+    hint: "settings.household.webhooks.eventHints.plan.autoplanned",
+  },
+  "meal.cooked": {
+    label: "settings.household.webhooks.events.meal.cooked",
+    hint: "settings.household.webhooks.eventHints.meal.cooked",
+  },
+  "meal.skipped": {
+    label: "settings.household.webhooks.events.meal.skipped",
+    hint: "settings.household.webhooks.eventHints.meal.skipped",
+  },
+  "list.changed": {
+    label: "settings.household.webhooks.events.list.changed",
+    hint: "settings.household.webhooks.eventHints.list.changed",
+  },
+  "list.completed": {
+    label: "settings.household.webhooks.events.list.completed",
+    hint: "settings.household.webhooks.eventHints.list.completed",
+  },
+  "list.sent": {
+    label: "settings.household.webhooks.events.list.sent",
+    hint: "settings.household.webhooks.eventHints.list.sent",
+  },
+  "pantry.changed": {
+    label: "settings.household.webhooks.events.pantry.changed",
+    hint: "settings.household.webhooks.eventHints.pantry.changed",
+  },
 } as const satisfies Record<PickableEvent, { label: string; hint: string }>
 
 /** The events a webhook is told about, as checkboxes under their areas. */

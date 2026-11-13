@@ -4,11 +4,14 @@ import type { EntityManager } from "@mikro-orm/sql"
 import type { AppDeps } from "../../core/context.ts"
 import { AppError } from "../../core/errors.ts"
 import { forHousehold } from "../../database/scope.ts"
+import { inHouseholdTransaction } from "../../database/transactions.ts"
 import type { ApiKeyPermissions } from "../../database/entities/index.ts"
 import { SHARED_TOOLS } from "../assistant/tools/catalog.ts"
 import type { ToolContext } from "../assistant/tools/context.ts"
 import { allows } from "../auth/api-keys.ts"
 import { createProposal } from "../proposals/proposals.ts"
+import { appLink, recipeRef } from "../webhooks/payloads.ts"
+import { record } from "../webhooks/record.ts"
 
 export type McpPrincipal = {
   householdId: string
@@ -36,12 +39,29 @@ export function createMerranMcp(
     householdId: principal.householdId,
     includeTastes: allows(principal.permissions, "plan", "read"),
     propose: async (options) => {
-      const proposal = await createProposal(fork(), {
-        ...options,
-        householdId: principal.householdId,
-        userId: principal.userId,
-        chat: null,
-      })
+      // The proposal and what tells webhooks of it are saved together.
+      const proposal = await inHouseholdTransaction(
+        fork(),
+        principal.householdId,
+        async (tx) => {
+          const created = await createProposal(tx, {
+            ...options,
+            householdId: principal.householdId,
+            userId: principal.userId,
+            chat: null,
+          })
+          await record(tx, principal.householdId, {
+            type: "review.waiting",
+            data: {
+              source: "mcp",
+              count: 1,
+              recipe: created.recipe ? recipeRef(created.recipe) : null,
+              url: appLink("/recipes/review"),
+            },
+          })
+          return created
+        }
+      )
       deps.events.changed(principal.householdId, {
         area: "recipes",
         by: { id: principal.userId, name: principal.keyName },

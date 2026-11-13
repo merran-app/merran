@@ -14,6 +14,8 @@ import { cleanLines } from "../../proposals/text.ts"
 import { detailsOf, reviewSnapshot } from "./snapshot.ts"
 import { sameList } from "../../proposals/comparison.ts"
 import { describeProposal, type ProposalView } from "../../proposals/views.ts"
+import { appLink, recipeRef } from "../../webhooks/payloads.ts"
+import { record } from "../../webhooks/record.ts"
 
 // A note left after cooking ("5 minutes less in the oven", "needed more
 // salt") turned into a suggested change to the recipe, waiting in Review.
@@ -152,6 +154,15 @@ export async function proposeNoteEdit(
         before,
         after,
         createdBy: options.userId,
+      })
+      await record(tx, options.householdId, {
+        type: "review.waiting",
+        data: {
+          source: "cook_note",
+          count: 1,
+          recipe: recipeRef(recipe),
+          url: appLink("/recipes/review"),
+        },
       })
       await tx.flush()
       return proposal.id

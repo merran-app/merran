@@ -29,6 +29,17 @@ const EVENT_LABELS = {
   "recipe.updated": "settings.household.webhooks.events.recipe.updated",
   "recipe.deleted": "settings.household.webhooks.events.recipe.deleted",
   "recipe.restored": "settings.household.webhooks.events.recipe.restored",
+  "import.finished": "settings.household.webhooks.events.import.finished",
+  "tidy.ready": "settings.household.webhooks.events.tidy.ready",
+  "review.waiting": "settings.household.webhooks.events.review.waiting",
+  "plan.changed": "settings.household.webhooks.events.plan.changed",
+  "plan.autoplanned": "settings.household.webhooks.events.plan.autoplanned",
+  "meal.cooked": "settings.household.webhooks.events.meal.cooked",
+  "meal.skipped": "settings.household.webhooks.events.meal.skipped",
+  "list.changed": "settings.household.webhooks.events.list.changed",
+  "list.completed": "settings.household.webhooks.events.list.completed",
+  "list.sent": "settings.household.webhooks.events.list.sent",
+  "pantry.changed": "settings.household.webhooks.events.pantry.changed",
   "webhook.test": "settings.household.webhooks.events.webhook.test",
 } as const satisfies Record<WebhookEventType, string>
 

@@ -24,11 +24,12 @@ import {
   itemSnapshot as pantrySnapshot,
   onTheList,
   pantryMeals,
-  removeItem,
   shortOf,
+  takeOutItem,
   type PantrySnapshotItem,
 } from "../pantry/pantry.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
+import { recordPantryChange } from "../webhooks/events/pantry.ts"
 import { aislesOf } from "./aisles.ts"
 import { itemSnapshot } from "./list.ts"
 import { listsOf } from "./lists.ts"
@@ -218,8 +219,11 @@ export async function notAtHome(
   id: string
 ) {
   return inHouseholdTransaction(em, householdId, async (tx) => {
-    const gone = await removeItem(tx, id)
+    const gone = await takeOutItem(tx, id)
+    await tx.flush()
     const result = await shortOnList(tx, householdId, { removed: [gone] })
+    // It wasn't there to use up: it's removed, not Used up.
+    await recordPantryChange(tx, householdId, { removed: 1 })
     return { ...result, pantry: [gone, ...result.pantry] }
   })
 }

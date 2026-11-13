@@ -10,6 +10,12 @@ import {
 } from "../../../database/entities/index.ts"
 import { householdKeys } from "../../foods/aliases.ts"
 import { putsAwayWhenChecked } from "../../households/households.ts"
+import { recordChecking } from "../../webhooks/events/list.ts"
+import {
+  putInAgain,
+  recordPantryChange,
+  type PantryCounts,
+} from "../../webhooks/events/pantry.ts"
 import { amountOf, measured } from "../pantry.ts"
 import {
   amountBought,
@@ -30,31 +36,53 @@ const NOTHING = 0.001
  * Checks rows off, or not. Each row's change is claimed in the database
  * first, so two phones checking the same row at once put it away once.
  * Checking puts a row away when the household says to; unchecking takes
- * back what it put away, whatever the household says now.
+ * back what it put away, whatever the household says now. Says which rows
+ * it changed. `undo` is for Undo, which restores rows rather than finishes
+ * a list.
  */
 export async function setChecked(
   tx: EntityManager,
   householdId: string,
   items: readonly ShoppingItem[],
-  checked: boolean
-): Promise<void> {
+  checked: boolean,
+  options: { undo?: boolean } = {}
+): Promise<ShoppingItem[]> {
   const putAway = puttingAway(tx, householdId)
+  const changed: ShoppingItem[] = []
+  // For webhooks: rows that went in the pantry, and rows taken back out.
+  let stored = 0
+  let takenBack = 0
   for (const item of items) {
     const claimed = await claim(tx, item, checked)
     if (!claimed) continue
+    changed.push(item)
     if (checked) {
-      await putAway(item)
+      const wentIn = await putAway(item)
+      if (wentIn) stored++
     } else {
-      await takeBack(tx, item)
+      const tookFrom = await takeBack(tx, item)
+      if (tookFrom) takenBack++
     }
   }
+  // Once, with the totals, after the rows' other writes.
+  await recordChecking(tx, householdId, changed, checked, {
+    undo: options.undo ?? false,
+  })
+  await recordPantryChange(tx, householdId, {
+    added: stored,
+    removed: takenBack,
+  })
+  return changed
 }
 
 /**
- * Turning the setting on: what's checked off already is put away too, the
- * same as if it were checked now. Rows that went in already are left alone.
- * `only` limits it to those rows, for some being taken off the list. Says
- * how many rows went in.
+ * What's checked off already is put away too, the same as if it were
+ * checked now. Rows that went in already are left alone. `only` limits it
+ * to those rows, for some being taken off the list. Says how many went in
+ * the pantry, for the caller to tell webhooks once it's recorded what it
+ * did to the list: list before pantry, as checking off records them, so it
+ * takes the merge jobs' rows in the same order (docs/webhooks.md,
+ * "Gathering").
  */
 export async function putAwayAlreadyChecked(
   tx: EntityManager,
@@ -70,10 +98,25 @@ export async function putAwayAlreadyChecked(
   const checked = checkedRows.filter((item) => !item.putAway)
   if (checked.length === 0) return 0
   const context = await putAwayContext(tx, householdId)
+  // Household things and what's always on hand are bought, not stored.
+  let stored = 0
   for (const item of checked) {
     item.putAway = await putAwayItem(tx, householdId, item, context)
+    if (item.putAway.pantryItem) stored++
   }
-  return checked.length
+  return stored
+}
+
+/**
+ * Turning the setting on: everything checked off already is put away, and
+ * webhooks are told what went in the pantry.
+ */
+export async function putAwayWhatsChecked(
+  tx: EntityManager,
+  householdId: string
+): Promise<void> {
+  const stored = await putAwayAlreadyChecked(tx, householdId)
+  await recordPantryChange(tx, householdId, { added: stored })
 }
 
 /**
@@ -96,21 +139,24 @@ async function claim(tx: EntityManager, item: ShoppingItem, checked: boolean) {
 
 /**
  * Puts checked rows away, when the household says to. The setting, and
- * what putting away needs to know, are read for the first row only.
+ * what putting away needs to know, are read for the first row only. Says
+ * whether the row went in the pantry: household things and what's always
+ * on hand are bought, not stored.
  */
 function puttingAway(tx: EntityManager, householdId: string) {
   let putsAway: boolean | undefined
   let context: PutAwayContext | undefined
-  return async (item: ShoppingItem) => {
+  return async (item: ShoppingItem): Promise<boolean> => {
     // Never twice.
-    if (item.putAway) return
+    if (item.putAway) return false
     if (putsAway === undefined) {
       const household = await tx.findOneOrFail(Household, { id: householdId })
       putsAway = putsAwayWhenChecked(household.settings)
     }
-    if (!putsAway) return
+    if (!putsAway) return false
     context ??= await putAwayContext(tx, householdId)
     item.putAway = await putAwayItem(tx, householdId, item, context)
+    return item.putAway.pantryItem !== null
   }
 }
 
@@ -120,27 +166,29 @@ function puttingAway(tx: EntityManager, householdId: string) {
  * added. Cooking or Used up may have taken some since, so it takes back
  * what's left and never goes below nothing. If the pantry item's gone,
  * there's nothing to take. Undo sends what a row put away back from the
- * page, so a purchase or pantry item of another food is left alone.
+ * page, so a purchase or pantry item of another food is left alone. Says
+ * which pantry item it took it back from, if there was one.
  */
 export async function takeBack(
   tx: EntityManager,
   row: ShoppingItem
-): Promise<void> {
+): Promise<string | null> {
   const record = row.putAway
-  if (!record) return
+  if (!record) return null
   row.putAway = null
   const isRowsFood = await foodTest(tx, row)
   const purchase = await tx.findOne(Purchase, { id: record.purchase })
   if (purchase && isRowsFood(purchase.foodKey)) tx.remove(purchase)
-  if (!record.pantryItem) return
+  if (!record.pantryItem) return null
   const item = await tx.findOne(PantryItem, { id: record.pantryItem })
-  if (!item || !isRowsFood(item.foodKey)) return
+  if (!item || !isRowsFood(item.foodKey)) return null
   item.forMeals = withoutShares(item, record.forMeals)
   if (record.quantity !== null) {
     takeBackAmount(tx, item, record)
   } else {
     takeBackWords(tx, item, record)
   }
+  return item.id
 }
 
 /**
@@ -153,15 +201,15 @@ export async function takeBack(
  * food doesn't come back, and what someone said is at home stays as they
  * said it. When the row's own amounts can't be compared (words, or units
  * that don't convert), what went in comes out and the row goes in again,
- * into the item's place.
+ * into the item's place. Says what it did to the pantry, for webhooks.
  */
 export async function recountPutAway(
   tx: EntityManager,
   householdId: string,
   row: ShoppingItem
-): Promise<void> {
+): Promise<PantryCounts> {
   const record = row.putAway
-  if (!record) return
+  if (!record) return {}
   const context = await putAwayContext(tx, householdId)
   const bought = amountBought(row, context)
   const isRowsFood = await foodTest(tx, row)
@@ -172,11 +220,20 @@ export async function recountPutAway(
     found && isRowsFood(found.foodKey) && holdsWhatWentIn(found, record)
       ? found
       : null
-  if (item && !changeItem(tx, item, record, bought)) {
-    const keep = { storedIn: item.storedIn ?? null, useBy: item.useBy ?? null }
-    await takeBack(tx, row)
-    row.putAway = await putAwayItem(tx, householdId, row, context, keep)
-    return
+  // With no item that still holds what went in, the pantry stays as it is.
+  let counts: PantryCounts = {}
+  if (item) {
+    const inPlace = changeItem(tx, item, record, bought)
+    if (inPlace === null) {
+      const keep = {
+        storedIn: item.storedIn ?? null,
+        useBy: item.useBy ?? null,
+      }
+      const tookFrom = await takeBack(tx, row)
+      row.putAway = await putAwayItem(tx, householdId, row, context, keep)
+      return putInAgain(tookFrom, row.putAway.pantryItem)
+    }
+    counts = inPlace
   }
   const purchase = await tx.findOne(Purchase, { id: record.purchase })
   if (purchase && isRowsFood(purchase.foodKey)) {
@@ -192,6 +249,7 @@ export async function recountPutAway(
     unit: bought.unit,
     amountText: row.amountText ?? null,
   }
+  return counts
 }
 
 /**
@@ -218,37 +276,39 @@ function holdsWhatWentIn(item: PantryItem, record: PutAwayRecord) {
 
 /**
  * Changes a pantry item by how much more (or less) was bought than the row
- * first put in. Says whether it could: not when either is in words, or the
- * units don't convert.
+ * first put in. Says what that did to it, for webhooks, or null when it
+ * couldn't: when either is in words, or the units don't convert.
  */
 function changeItem(
   tx: EntityManager,
   item: PantryItem,
   record: PutAwayRecord,
   bought: { quantity: number | null; unit: string | null }
-) {
-  if (bought.quantity === null || record.quantity === null) return false
-  if (!measured(item)) return false
+): PantryCounts | null {
+  if (bought.quantity === null || record.quantity === null) return null
+  if (!measured(item)) return null
   const difference = subtractAmounts(bought, record, item.foodKey)
-  if (!difference) return false
-  if (Math.abs(difference.quantity) <= NOTHING) return true
+  if (!difference) return null
+  if (Math.abs(difference.quantity) <= NOTHING) return {}
   if (difference.quantity > 0) {
     const sum = addAmounts(amountOf(item), difference, item.foodKey)
-    if (!sum) return false
+    if (!sum) return null
     tx.assign(item, { quantity: sum.quantity, unit: sum.unit })
-    return true
+    return { changed: 1 }
   }
   const less = { quantity: -difference.quantity, unit: difference.unit }
   const rest = subtractAmounts(amountOf(item), less, item.foodKey)
-  if (!rest) return false
+  if (!rest) return null
   if (rest.quantity > NOTHING) {
     tx.assign(item, { quantity: rest.quantity, unit: rest.unit })
-  } else if (record.filledEmpty) {
-    tx.assign(item, { quantity: null, unit: null })
-  } else {
-    tx.remove(item)
+    return { changed: 1 }
   }
-  return true
+  if (record.filledEmpty) {
+    tx.assign(item, { quantity: null, unit: null })
+    return { changed: 1 }
+  }
+  tx.remove(item)
+  return { removed: 1 }
 }
 
 /**

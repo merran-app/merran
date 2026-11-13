@@ -1,10 +1,17 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { z } from "zod"
 import { AppError } from "../../../core/errors.ts"
-import { Household, Job, Recipe } from "../../../database/entities/index.ts"
+import {
+  Household,
+  Job,
+  Proposal,
+  Recipe,
+} from "../../../database/entities/index.ts"
 import { forHousehold, HOUSEHOLD_FILTER } from "../../../database/scope.ts"
 import { ACTIVE, enqueue } from "../../jobs/jobs.ts"
 import { JobStopped, type JobHandler } from "../../jobs/runner.ts"
+import { appLink, recipeRef } from "../../webhooks/payloads.ts"
+import { record } from "../../webhooks/record.ts"
 import { proposeTidy } from "./tidy.ts"
 
 // Tidying many recipes in the background: the household's whole library
@@ -125,9 +132,43 @@ export const tidyRunJob: JobHandler = {
         by: null,
         client: null,
       })
+      await recordTidyReady(em, householdId, jobId)
     }
     return counts
   },
+}
+
+/** The most recipes an event names; `count` says how many there are. */
+const NAMED_IN_EVENT = 10
+
+/**
+ * Tells webhooks the run has suggestions waiting. It counts the run's own
+ * proposals still pending, not `suggested`: one dismissed or applied while
+ * the run goes on is no longer waiting.
+ */
+async function recordTidyReady(
+  em: EntityManager,
+  householdId: string,
+  jobId: string
+) {
+  const where = { job: jobId, status: "pending" } as const
+  const count = await em.count(Proposal, where)
+  if (count === 0) return
+  const proposals = await em.find(Proposal, where, {
+    populate: ["recipe"],
+    orderBy: { createdAt: "asc", id: "asc" },
+    limit: NAMED_IN_EVENT,
+  })
+  await record(em, householdId, {
+    type: "tidy.ready",
+    data: {
+      count,
+      recipes: proposals.flatMap((proposal) =>
+        proposal.recipe ? [recipeRef(proposal.recipe.getEntity())] : []
+      ),
+      url: appLink("/recipes/review"),
+    },
+  })
 }
 
 /**

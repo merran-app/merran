@@ -23,6 +23,8 @@ import {
   salesForSuggest,
   type PriceDeps,
 } from "../stores/prices.ts"
+import { appLink } from "../webhooks/payloads.ts"
+import { record } from "../webhooks/record.ts"
 import { addEntries } from "./plan.ts"
 import { suggestMeals } from "./suggest.ts"
 
@@ -201,6 +203,16 @@ async function noteRun(
       last: run,
     },
   }
+  // Saved with the run, so a week isn't noted without it being said, or
+  // the other way round. The meals it added said so as they were added.
+  await record(em, householdId, {
+    type: "plan.autoplanned",
+    data: {
+      week: run.week,
+      meals: run.planned,
+      url: appLink(`/plan?week=${run.week}`),
+    },
+  })
   await em.flush()
 }
 

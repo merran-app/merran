@@ -29,6 +29,12 @@ import {
   takeBack,
 } from "../pantry/put-away/checking.ts"
 import { putAwayContext, putAwayItem } from "../pantry/put-away/put-away.ts"
+import { asShown, recordListChange } from "../webhooks/events/list.ts"
+import {
+  putInAgain,
+  recordPantryChange,
+  type PantryCounts,
+} from "../webhooks/events/pantry.ts"
 import {
   aislesOf,
   describeAisle,
@@ -204,7 +210,9 @@ export async function addTyped(
 
 /**
  * A line typed in, read already: on the aisle and list given, else where
- * its food goes. It's saved with the next flush.
+ * its food goes. Telling webhooks saves it at once when one wants
+ * list.changed; otherwise it's saved with the caller's next flush, which
+ * every caller makes either way.
  */
 export async function typedItem(
   em: EntityManager,
@@ -225,7 +233,7 @@ export async function typedItem(
   const list = input.list
     ? await findList(em, input.list)
     : (await listsOf(em, householdId, [{ name, aisle }]))[0]!
-  return em.create(ShoppingItem, {
+  const item = em.create(ShoppingItem, {
     household: householdId,
     list,
     foodKey: keyOf(name),
@@ -235,6 +243,11 @@ export async function typedItem(
     aisle,
     source: "typed",
   })
+  // Always a line of its own, never added into one that's there. Told
+  // once for each: a proposal's lines, or what ran out, are gathered into
+  // one event with the rest.
+  await recordListChange(em, householdId, [item], { added: 1 })
+  return item
 }
 
 export type ItemChanges = Partial<{
@@ -269,6 +282,8 @@ export async function updateItem(
   return inHouseholdTransaction(em, householdId, async (tx) => {
     const keyOf = await householdKeys(tx)
     const item = await findItem(tx, id)
+    const shown = asShown(item)
+    const from = item.list.id
     // Only a name that's different is a new food. The same name sent again
     // keeps the row's food, which for a row from the plan can be one a
     // person chose rather than its name's.
@@ -285,7 +300,10 @@ export async function updateItem(
       !renamed &&
       changes.amount !== undefined &&
       amountDiffers(readAmount(changes.amount), item)
-    if (renamed) await takeBack(tx, item)
+    // What a rename or a new amount does to the pantry, told once at the
+    // end. Checking it off, or not, is setChecked's to tell.
+    let pantry: PantryCounts = {}
+    const tookFrom = renamed ? await takeBack(tx, item) : null
     if (nameChanged) {
       item.name = name
       item.foodKey = keyOf(name)
@@ -310,14 +328,31 @@ export async function updateItem(
       const context = await putAwayContext(tx, householdId)
       item.putAway = await putAwayItem(tx, householdId, item, context)
     }
+    if (renamed) {
+      // The old food out, and the new one in unless it's being unchecked.
+      // Then setChecked finds nothing left to take back, so it's all
+      // counted here.
+      pantry = putInAgain(tookFrom, item.putAway?.pantryItem ?? null)
+    }
     if (recounted && changes.checked !== false) {
-      await recountPutAway(tx, householdId, item)
+      pantry = await recountPutAway(tx, householdId, item)
     }
     // Last, so what goes in the pantry is the row as it's just been changed.
     if (changes.checked !== undefined) {
       await setChecked(tx, householdId, [item], changes.checked)
     }
     await tx.flush()
+    // Checking it off is setChecked's to tell; anything else is a change.
+    if (asShown(item) !== shown) {
+      await recordListChange(
+        tx,
+        householdId,
+        [item],
+        { changed: 1 },
+        { movedFrom: [from] }
+      )
+    }
+    await recordPantryChange(tx, householdId, pantry)
     return (await describeItems(tx, [item]))[0]!
   })
 }
@@ -327,17 +362,18 @@ export async function updateItem(
  * household says to: rows checked off before the setting was on, or before
  * put-away kept records, go in now, before what they were is taken for
  * Undo, so Undo brings them back with what they put away. `only` limits
- * it to the rows being taken off.
+ * it to the rows being taken off. Says how many went in the pantry, for the
+ * caller to tell webhooks after it tells them what came off the list.
  */
 async function putAwayBeforeTakingOff(
   tx: EntityManager,
   householdId: string,
   only?: readonly ShoppingItem[]
-) {
-  if (only && !only.some((item) => item.checked && !item.putAway)) return
+): Promise<number> {
+  if (only && !only.some((item) => item.checked && !item.putAway)) return 0
   const household = await tx.findOneOrFail(Household, { id: householdId })
-  if (!putsAwayWhenChecked(household.settings)) return
-  await putAwayAlreadyChecked(
+  if (!putsAwayWhenChecked(household.settings)) return 0
+  return putAwayAlreadyChecked(
     tx,
     householdId,
     only?.map((item) => item.id)
@@ -351,11 +387,14 @@ export async function removeItem(
 ) {
   return inHouseholdTransaction(em, householdId, async (tx) => {
     const item = await findItem(tx, id)
-    await putAwayBeforeTakingOff(tx, householdId, [item])
+    const stored = await putAwayBeforeTakingOff(tx, householdId, [item])
     const before = itemSnapshot(item)
     tx.remove(item)
     await tx.flush()
     await unlistRemoved(tx, [item])
+    // The list before the pantry, as checking off tells them.
+    await recordListChange(tx, householdId, [item], { removed: 1 })
+    await recordPantryChange(tx, householdId, { added: stored })
     return before
   })
 }
@@ -381,10 +420,15 @@ export async function bulkItems(
     const items = await tx.find(ShoppingItem, {
       id: { $in: ids.filter((id) => UUID.test(id)) },
     })
-    if (bulk.action === "remove") {
-      await putAwayBeforeTakingOff(tx, householdId, items)
-    }
+    const stored =
+      bulk.action === "remove"
+        ? await putAwayBeforeTakingOff(tx, householdId, items)
+        : 0
     const before = items.map(itemSnapshot)
+    const was = items.map((item) => ({
+      shown: asShown(item),
+      list: item.list.id,
+    }))
     switch (bulk.action) {
       case "remove":
         for (const item of items) tx.remove(item)
@@ -426,8 +470,47 @@ export async function bulkItems(
         break
     }
     await tx.flush()
+    // The list before the pantry, as checking off tells them.
+    await recordBulk(tx, householdId, bulk, items, was)
+    await recordPantryChange(tx, householdId, { added: stored })
     return { changed: items.length, before }
   })
+}
+
+/**
+ * Tells webhooks what a bulk change did to the list: rows taken off, or
+ * moved to another aisle or list. Checking is setChecked's to tell, and
+ * buying every week changes nothing people see on the list. `was` is each
+ * row as it was shown, and its list, in the order of `items`.
+ */
+async function recordBulk(
+  tx: EntityManager,
+  householdId: string,
+  bulk: ItemBulk,
+  items: readonly ShoppingItem[],
+  was: readonly { shown: string; list: string }[]
+) {
+  if (bulk.action === "remove") {
+    await recordListChange(tx, householdId, items, { removed: items.length })
+    return
+  }
+  if (bulk.action !== "aisle" && bulk.action !== "move") return
+
+  // Rows already in that aisle, or on that list, weren't moved.
+  const moved: ShoppingItem[] = []
+  const from: string[] = []
+  items.forEach((item, index) => {
+    if (asShown(item) === was[index]!.shown) return
+    moved.push(item)
+    from.push(was[index]!.list)
+  })
+  await recordListChange(
+    tx,
+    householdId,
+    moved,
+    { changed: moved.length },
+    { movedFrom: from }
+  )
 }
 
 /**
@@ -472,7 +555,7 @@ export async function clearList(
 ) {
   return inHouseholdTransaction(em, householdId, async (tx) => {
     // Clearing either way takes off everything that's checked.
-    await putAwayBeforeTakingOff(tx, householdId)
+    const stored = await putAwayBeforeTakingOff(tx, householdId)
     const items = await tx.find(
       ShoppingItem,
       which === "checked" ? { checked: true } : {}
@@ -481,6 +564,10 @@ export async function clearList(
     for (const item of items) tx.remove(item)
     await tx.flush()
     await unlistRemoved(tx, items)
+    // Every list it cleared, told once with the total, then the pantry, as
+    // checking off tells them.
+    await recordListChange(tx, householdId, items, { removed: items.length })
+    await recordPantryChange(tx, householdId, { added: stored })
     return { before }
   })
 }
@@ -500,10 +587,9 @@ export async function restoreItems(
   const keyOf = await householdKeys(em)
   return inHouseholdTransaction(em, householdId, async (tx) => {
     const ids = remove.filter((id) => UUID.test(id))
-    if (ids.length > 0) {
-      for (const item of await tx.find(ShoppingItem, { id: { $in: ids } }))
-        tx.remove(item)
-    }
+    const removed =
+      ids.length > 0 ? await tx.find(ShoppingItem, { id: { $in: ids } }) : []
+    for (const item of removed) tx.remove(item)
     const lists = await householdLists(tx, householdId)
     const listOf = (id: string) =>
       lists.find((list) => list.id === id) ?? lists[0]!
@@ -511,9 +597,15 @@ export async function restoreItems(
       (await householdAisles(tx, householdId)).map((aisle) => [aisle.id, aisle])
     )
     const restored: ShoppingItem[] = []
+    // For webhooks: rows back on the list, and rows there that were put
+    // back as they were, with the lists those were on.
+    const back: ShoppingItem[] = []
+    const changed: ShoppingItem[] = []
+    const movedFrom: string[] = []
     for (const snapshot of snapshots) {
       if (!UUID.test(snapshot.id)) continue
       let item = await tx.findOne(ShoppingItem, { id: snapshot.id })
+      const was = item ? { shown: asShown(item), list: item.list.id } : null
       if (!item) {
         const elsewhere = await tx.count(
           ShoppingItem,
@@ -548,12 +640,31 @@ export async function restoreItems(
         forMeals: snapshot.forMeals as MealShare[] | null,
       })
       if (item.checked !== snapshot.checked) {
-        await setChecked(tx, householdId, [item], snapshot.checked)
+        await setChecked(tx, householdId, [item], snapshot.checked, {
+          undo: true,
+        })
       }
       restored.push(item)
+      if (!was) {
+        back.push(item)
+      } else if (asShown(item) !== was.shown) {
+        changed.push(item)
+        movedFrom.push(was.list)
+      }
     }
     await tx.flush()
     await relistRestored(tx, restored)
+    await recordListChange(
+      tx,
+      householdId,
+      [...removed, ...back, ...changed],
+      {
+        added: back.length,
+        changed: changed.length,
+        removed: removed.length,
+      },
+      { movedFrom }
+    )
     return describeItems(tx, restored)
   })
 }
