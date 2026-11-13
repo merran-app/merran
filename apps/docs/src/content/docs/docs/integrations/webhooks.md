@@ -44,8 +44,8 @@ Cooking and timers, and a daily summary, are still to come. A webhook set to **E
 2. Choose **Add webhook**.
 3. Enter a **Name**, like `Home Assistant`, so you can tell it apart in the list.
 4. Enter the **Address** the other tool gave you. It must start with `http://` or `https://`, can't have a user name or password in it (use a header instead), and is sealed like the server's other secrets once saved.
-5. Under **Events**, tick the ones you want, or choose **Everything, including events added later**. Each event has a line saying what sends it.
-6. If the tool wants a token or password in a header, choose **Add a header** under **Extra headers** and fill in its name and value. Each value goes on one line, and headers that can't be sent with a request, like `Connection`, `Transfer-Encoding` or `Expect`, can't be added. Header values stay sealed: to change the headers later, fill in every value again, and Merran asks for any you leave empty.
+5. Under **Events**, open an area like **Recipes** or **Shopping list** and tap the events you want, which light up when chosen. The line under the chips says what sends the one you touched last. To choose a whole area at once, tick the checkbox on the area's row, which also shows how many are chosen, like "2 of 7". Or choose **Everything, including events added later**, which hides the areas.
+6. If the tool wants a token or password in a header, open **Extra headers** (it says **Optional** until you add one), choose **Add a header** and fill in its name and value. Each value goes on one line, and headers that can't be sent with a request, like `Connection`, `Transfer-Encoding` or `Expect`, can't be added. Header values stay sealed: to change the headers later, fill in every value again, and Merran asks for any you leave empty.
 7. Save it. Merran shows **Here's the secret**: copy it into the tool that checks signatures. You can show it again later with **Show secret**.
 8. Open the webhook and choose **Send a test**. Merran sends a `webhook.test` event once and shows the answer.
 
