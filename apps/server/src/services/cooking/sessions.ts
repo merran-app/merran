@@ -1,6 +1,7 @@
 import { LockMode } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
 import type { CookingOutcome } from "@merran/shared"
+import type { Logger } from "pino"
 import { AppError } from "../../core/errors.ts"
 import {
   CookingSession,
@@ -201,6 +202,34 @@ export async function endSession(
   }
   await em.flush()
   await recordCookingEnded(em, householdId, session, actor)
+}
+
+/**
+ * Made it, from cook view: the cook's session ends as `made`, even with
+ * timers running, which still go off. Called once the meal is marked made,
+ * so `meal.cooked` comes first. A session that's gone, has ended or is
+ * someone else's is left alone, and nothing here makes Made it fail: the
+ * meal is made either way.
+ */
+export async function madeInSession(
+  em: EntityManager,
+  householdId: string,
+  cookId: string,
+  sessionId: string,
+  logger: Logger
+): Promise<void> {
+  try {
+    await inHouseholdTransaction(em, householdId, async (tx) => {
+      const session = await tx.findOne(
+        CookingSession,
+        { id: sessionId, cook: cookId, endedAt: null },
+        { lockMode: LockMode.PESSIMISTIC_WRITE, ...WITH_DELETED_RECIPES }
+      )
+      if (session) await endSession(tx, householdId, session, "made")
+    })
+  } catch (err) {
+    logger.warn({ err, sessionId }, "Couldn't end the cooking session")
+  }
 }
 
 /** Who's cooking now, earliest first. */

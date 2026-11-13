@@ -141,3 +141,9 @@ export const CookingSessionSchema = z
 export const CookingSessionsSchema = z
   .object({ sessions: z.array(CookingSessionSchema) })
   .openapi("CookingSessions", { example: { sessions: [SESSION_EXAMPLE] } })
+
+/** Made it's own field, on both of its routes: the session it ends. */
+export const MadeInSessionField = z.uuid().optional().openapi({
+  description:
+    "The cooking session it was made in, from cook view. It ends, as `made`, sending `cooking.ended` after `meal.cooked`. A session that's ended, or someone else's, is left alone.",
+})
