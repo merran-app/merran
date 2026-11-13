@@ -18,6 +18,12 @@ Merran sends these events:
 | [`import.finished`](#importfinished)   | An import runs to its end                                                  |
 | [`tidy.ready`](#tidyready)             | Tidy up finishes with suggestions waiting                                  |
 | [`review.waiting`](#reviewwaiting)     | Something new waits in Review                                              |
+| [`cooking.started`](#cookingstarted)   | Someone starts cooking in cook view                                        |
+| [`cooking.ended`](#cookingended)       | Cooking ends: Done cooking, cook view left, or no word for 30 minutes      |
+| [`timer.started`](#timerstarted)       | A timer starts in cook view                                                |
+| [`timer.extended`](#timerextended)     | A timer gets **+1 min**                                                    |
+| [`timer.finished`](#timerfinished)     | A timer's time is up                                                       |
+| [`timer.cancelled`](#timercancelled)   | A timer is cancelled before it goes off                                    |
 | [`plan.changed`](#planchanged)         | Meals are added, moved, changed or removed (gathered)                      |
 | [`plan.autoplanned`](#planautoplanned) | The autoplan plans a week                                                  |
 | [`meal.cooked`](#mealcooked)           | A meal is marked made                                                      |
@@ -28,7 +34,7 @@ Merran sends these events:
 | [`pantry.changed`](#pantrychanged)     | Things are put away, used up, moved, changed or removed (gathered)         |
 | [`webhook.test`](#webhooktest)         | Someone chooses **Send a test**                                            |
 
-Cooking and timers, and a daily summary, are still to come. A webhook set to **Everything, including events added later** hears them when they arrive.
+A daily summary is still to come. A webhook set to **Everything, including events added later** hears it when it arrives.
 
 ## Before you start
 
@@ -123,6 +129,79 @@ actions:
 ```
 
 Home Assistant's webhook trigger checks no signature. The webhook id in the address is the secret: whoever has the address can start the automation, so choose a long random id and don't share it. Merran seals the address when it's saved.
+
+### The kitchen reacting to cooking
+
+To turn the hood fan on while someone cooks, tick **Cooking starts** and **Cooking ends** (`cooking.started`, `cooking.ended`) under **Cooking**, and use:
+
+```yaml
+alias: Hood fan while cooking
+triggers:
+  - trigger: webhook
+    webhook_id: merran-cooking-7b1e9c3a5d2f
+    allowed_methods:
+      - POST
+    local_only: true
+actions:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.json.type == 'cooking.started' }}"
+        sequence:
+          - action: fan.turn_on
+            target:
+              entity_id: fan.range_hood
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.json.type == 'cooking.ended' }}"
+        sequence:
+          - action: fan.turn_off
+            target:
+              entity_id: fan.range_hood
+```
+
+Cooking ends with **Done cooking**, when cook view is left (once its timers are done, if any are running), a minute after cook view's page is closed, or after 30 minutes with no word from cook view and no timer running. So the fan doesn't stay on all night if someone walks away. If two people cook at once, each has their own session: check `trigger.json.data.session.id`, or read who's cooking (below), before turning the fan off.
+
+To hear on the speakers when a timer is done, tick **A timer is done** (`timer.finished`). Merran keeps each timer itself and sends this on time, even if the phone or tablet that started it has gone to sleep:
+
+```yaml
+alias: Kitchen timer done
+triggers:
+  - trigger: webhook
+    webhook_id: merran-timers-2c8f4a6e1b9d
+    allowed_methods:
+      - POST
+    local_only: true
+conditions:
+  - condition: template
+    value_template: "{{ trigger.json.type == 'timer.finished' }}"
+actions:
+  - action: tts.speak
+    target:
+      entity_id: tts.home_assistant_cloud
+    data:
+      media_player_entity_id: media_player.kitchen
+      message: "{{ trigger.json.data.timer.label }} is done"
+```
+
+### Who's cooking now
+
+A sensor can read who's cooking, with their running timers, from `GET /api/cooking/sessions`, using an [API key](../../api/) with **Plan** read access. No webhook is needed. An empty `sessions` list means nobody's cooking:
+
+```yaml
+rest:
+  - resource: http://<merran-address>/api/cooking/sessions
+    headers:
+      Authorization: !secret merran_api_key
+    scan_interval: 60
+    sensor:
+      - name: Merran cooking
+        value_template: "{{ value_json.sessions | length }}"
+        json_attributes:
+          - sessions
+```
+
+Put `Bearer ` and the key in `merran_api_key` in your `secrets.yaml`.
 
 ## n8n
 
@@ -370,6 +449,154 @@ Sent when something new waits in Review that didn't come from your own chat: a p
   }
 }
 ```
+
+### Cooking sessions
+
+Cooking events are about a cooking session: one person cooking a recipe in cook view, on one device. It starts when they leave **Get ready**, and ends with **Done cooking**, when they leave cook view, or when cook view goes quiet. Two people cooking, or one person on two devices, are two sessions. Guests cooking from a shared link never send these.
+
+Every cooking event has `session` (its `id`), `recipe`, and `cook`: who's cooking, with their `id` and `name`. `cook` stays set when Merran ends the session or a timer goes off, when `by` is `null` and `via` is `merran`. It's `null` only if that person has since left Merran.
+
+### cooking.started
+
+Sent when someone leaves **Get ready** in cook view, or opens cook view on a recipe with nothing to get ready. `with` is the recipe cooked with it when cook view cooks two as a pairing, or `null`. `meal` is the planned meal it's cooked for, shaped like [`meal.cooked`](#mealcooked)'s, or `null`. `servings` is how many cook view shows, or `null` for a recipe that doesn't say. A reload carries on with the same session and sends nothing.
+
+```json
+{
+  "type": "cooking.started",
+  "timestamp": "2026-11-10T18:02:40.118Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "cook": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "session": { "id": "0199e8b0-5a10-7a01-8b00-000000000037" },
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "with": null,
+    "meal": {
+      "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+      "date": "2026-10-15",
+      "meal": "dinner",
+      "pool": false,
+      "title": "Lemon Chicken",
+      "recipe": {
+        "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+        "slug": "lemon-chicken",
+        "title": "Lemon Chicken",
+        "url": "https://merran.example.com/recipes/lemon-chicken"
+      },
+      "side": null
+    },
+    "servings": 4
+  }
+}
+```
+
+### cooking.ended
+
+Sent when a cooking session ends. `outcome` says how:
+
+- `made`: **Done cooking** in cook view, which ends it at once, even with timers running. It comes after the [`meal.cooked`](#mealcooked) it sends.
+- `stopped`: cook view was left without **Done cooking**. With no timer running it ends then; with timers running, when the last one is done or cancelled. Closing or reloading the page ends it a minute later, unless cook view comes back, as a reload does.
+- `timed_out`: cook view went quiet for 30 minutes with no timer running, or 12 hours went by since it started.
+
+`minutes` is how long cooking went on, in whole minutes, and `with` is as in `cooking.started`. **Done cooking**, leaving with no timer running, and cancelling the last timer are sent as the cook. When Merran ends the session itself (a timer going off, the minute after the page closed, or going quiet), `by` is `null` and `via` is `merran`.
+
+```json
+{
+  "type": "cooking.ended",
+  "timestamp": "2026-11-10T19:16:02.441Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": null,
+    "via": "merran",
+    "key": null,
+    "cook": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "session": { "id": "0199e8b0-5a10-7a01-8b00-000000000037" },
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "with": null,
+    "outcome": "timed_out",
+    "minutes": 74
+  }
+}
+```
+
+### timer.started
+
+Sent when a timer starts in cook view, from a time in a step or as a new timer. `timer` has the `id` cook view gave it, its `label` (like "Simmer the sauce" or "10 minutes"), `seconds` (its length, with each minute added) and `endsAt`, when it goes off by the server's clock.
+
+```json
+{
+  "type": "timer.started",
+  "timestamp": "2026-11-10T18:30:00.204Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "cook": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "session": { "id": "0199e8b0-5a10-7a01-8b00-000000000037" },
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "timer": {
+      "id": "6f1c2b9e-0d4a-4e57-9a3b-2c8e7f5d1a60",
+      "label": "Simmer the sauce",
+      "seconds": 600,
+      "endsAt": "2026-11-10T18:40:00.204Z"
+    }
+  }
+}
+```
+
+### timer.extended
+
+Sent when a timer gets **+1 min**, in cook view or on the message when it goes off, shaped like `timer.started`. `endsAt` is the new end, and `seconds` has the minute added. A timer that has gone off runs again, and sends `timer.finished` again when it's done.
+
+### timer.finished
+
+Sent by Merran when a timer's time is up, shaped like `timer.started`, with `by` `null` and `via` `merran`. Merran keeps each timer itself, so this goes out on time even if the device that started it is asleep or closed. If the cook left cook view while it ran and it was the last timer running, [`cooking.ended`](#cookingended) follows.
+
+### timer.cancelled
+
+Sent when a timer is cancelled before it goes off, shaped like `timer.started`. Dismissing a timer that has gone off sends nothing.
 
 ### plan.changed
 

@@ -1,5 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
+import { madeInSession } from "../../../../../services/cooking/sessions.ts"
 import { cookToday } from "../../../../../services/plan/plan.ts"
 import {
   findRecipe,
@@ -41,12 +42,16 @@ const route = createRoute({
   },
 })
 
-export default (router: Router, _deps: AppDeps) => {
+export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em, householdId } = inHousehold(c)
+    const { em, householdId, userId } = inHousehold(c)
     const { id } = await findRecipe(em, c.req.valid("param").recipe)
-    const { servings } = c.req.valid("json") ?? {}
+    const { servings, session } = c.req.valid("json") ?? {}
     const meal = await cookToday(em, householdId, id, servings)
+    // Made it from cook view ends its cooking session, after meal.cooked.
+    if (session) {
+      await madeInSession(em, householdId, userId, session, deps.logger)
+    }
     return c.json({ ...(await loadRecipe(em, id)), meal }, 200)
   })
 }

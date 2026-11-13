@@ -95,6 +95,7 @@ import {
 } from "./progress"
 import { AfterCookingDialog, type AfterCooking } from "./after-cooking"
 import { NewTimerButton, startTimer, TimerChips, type Cooking } from "./timers"
+import { useCookingSession } from "./reports/use-cooking-session"
 import { formatDuration, stepWords } from "./durations"
 import { handsFreeSupported, useHandsFree } from "./hands-free"
 import { useWakeLock } from "./use-wake-lock"
@@ -240,13 +241,28 @@ export function CookView({
   const stepLines = ingredients.filter((line) => highlighted.has(line.id))
   const stepIngredients = stepLines.filter((line) => !leftOut.has(line.id))
   const stepLeftOut = stepLines.filter((line) => leftOut.has(line.id))
-  // Where a timer leads back to. A guest's lead nowhere: the app's own
-  // cooking pages are for the household.
+  // Tells the server when cooking starts and ends, for webhooks like the
+  // kitchen's hood fan. A guest's cooking is theirs alone.
+  const session = useCookingSession({
+    enabled: household,
+    started: !onPrep,
+    progressId,
+    cooking: {
+      recipe: recipe.id,
+      with: paired?.id ?? null,
+      meal: mealId ?? null,
+    },
+    servings: baseServings ? amount : null,
+  })
+  // Where a timer leads back to, and the session it's reported in. A
+  // guest's lead nowhere: the app's own cooking pages are for the household.
   const cooking: Cooking | null = household
     ? {
         slug: recipe.slug,
         scale: currentScale,
         ...(paired ? { with: paired.slug } : {}),
+        ...(mealId ? { meal: mealId } : {}),
+        ...(session.sessionId ? { session: session.sessionId } : {}),
       }
     : null
   const showUnits = convertible(ingredients)
@@ -395,6 +411,7 @@ export function CookView({
             body: {
               status: "cooked",
               ...(servingsChanged && baseServings ? { servings: amount } : {}),
+              ...(session.sessionId ? { session: session.sessionId } : {}),
             },
           })
         )
@@ -407,11 +424,16 @@ export function CookView({
         const made = await unwrap(
           api.POST("/api/recipes/{recipe}/made", {
             params: { path: { recipe: recipe.id } },
-            body: baseServings ? { servings: amount } : {},
+            body: {
+              ...(baseServings ? { servings: amount } : {}),
+              ...(session.sessionId ? { session: session.sessionId } : {}),
+            },
           })
         )
         cooked = made.meal
       }
+      // Made it ended the cooking session, so leaving says nothing more.
+      session.made()
       saveProgress(progressId, null)
       // Swaps are for this time: next time starts as written.
       clearSwaps(recipe.id)

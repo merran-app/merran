@@ -486,6 +486,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cooking/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who's cooking now
+         * @description Everyone in the household cooking now, in cook view, earliest first, with what they're cooking and their running timers. Cook view never reads this: it's for a sensor in Home Assistant or a kitchen display. Sessions end when cooking does, so an empty list means nobody's cooking. With an API key, it needs the `plan: read` permission.
+         */
+        get: operations["listCookingSessions"];
+        put?: never;
+        /**
+         * Start cooking
+         * @description Cook view calls this when someone leaves Get ready, or opens it on a recipe with nothing to get ready. Sends `cooking.started`. Each device cooking is a session of its own, and only its cook can change or end it. With an API key, it needs the `plan: write` permission.
+         */
+        post: operations["startCooking"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cooking/sessions/{sessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Still cooking
+         * @description Cook view checks in every 5 minutes while it's open and on screen, when it's on screen again, and when servings change. A session with no word for 30 minutes and no timer running ends. Checking in calls off an ending that was coming: a reload's page going away, or leaving with a timer running. Sends nothing. With an API key, it needs the `plan: write` permission.
+         */
+        patch: operations["checkInCooking"];
+        trace?: never;
+    };
+    "/api/cooking/sessions/{sessionId}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Leave cooking
+         * @description Cook view was left without Made it. Cooking ends now, sending `cooking.ended` (`stopped`), or, with a timer still running, when the last one is done or cancelled. With `soon`, for a page that went away, it ends a minute from now unless cook view checks in first, as a reload does. Made it ends a session through its own routes instead. With an API key, it needs the `plan: write` permission.
+         */
+        post: operations["leaveCooking"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cooking/sessions/{sessionId}/timers/{timerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Start a timer, or give it more time
+         * @description Cook view calls this when a timer starts, sending `timer.started`, and when it gets +1 minute, sending `timer.extended`, even after it's gone off: it runs again. `seconds` is how many are left; the server works out when it ends and sends `timer.finished` then itself. A new timer needs the session to be open, but one it has can get more time after it ends, as timers keep ringing in the app after cook view is left. With an API key, it needs the `plan: write` permission.
+         */
+        put: operations["setCookingTimer"];
+        post?: never;
+        /**
+         * Cancel a timer
+         * @description Cook view calls this when a timer is cancelled before it goes off, sending `timer.cancelled`. Cancelling one that's gone off changes nothing and sends nothing. A session that was left with timers running ends when its last one is cancelled. With an API key, it needs the `plan: write` permission.
+         */
+        delete: operations["cancelCookingTimer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/discover": {
         parameters: {
             query?: never;
@@ -6323,6 +6411,1110 @@ export interface webhooks {
         patch?: never;
         trace?: never;
     };
+    "cooking.started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cooking started
+         * @description Sent when someone leaves Get ready in cook view, or opens cook view on a recipe with nothing to get ready. Each device cooking is a session of its own. A reload carries on with the same session and sends nothing, and guests cooking from a shared link never send it.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already. */
+                    "webhook-id": string;
+                    /** @description When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now. */
+                    "webhook-timestamp": string;
+                    /** @description `v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced. */
+                    "webhook-signature": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "cooking.started";
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
+                        timestamp: string;
+                        /**
+                         * @example {
+                         *       "household": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                         *         "name": "The Riveras"
+                         *       },
+                         *       "by": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "via": "app",
+                         *       "key": null,
+                         *       "cook": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "session": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000037"
+                         *       },
+                         *       "recipe": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                         *         "slug": "lemon-chicken",
+                         *         "title": "Lemon Chicken",
+                         *         "url": "https://merran.example.com/recipes/lemon-chicken"
+                         *       },
+                         *       "with": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                         *         "slug": "garlic-rice",
+                         *         "title": "Garlic Rice",
+                         *         "url": "https://merran.example.com/recipes/garlic-rice"
+                         *       },
+                         *       "meal": {
+                         *         "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                         *         "date": "2026-10-15",
+                         *         "meal": "dinner",
+                         *         "pool": false,
+                         *         "title": "Lemon Chicken",
+                         *         "recipe": {
+                         *           "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                         *           "slug": "lemon-chicken",
+                         *           "title": "Lemon Chicken",
+                         *           "url": "https://merran.example.com/recipes/lemon-chicken"
+                         *         },
+                         *         "side": {
+                         *           "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                         *           "slug": "garlic-rice",
+                         *           "title": "Garlic Rice",
+                         *           "url": "https://merran.example.com/recipes/garlic-rice"
+                         *         }
+                         *       },
+                         *       "servings": 4
+                         *     }
+                         */
+                        data: {
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                             *       "name": "The Riveras"
+                             *     }
+                             */
+                            household: {
+                                id: string;
+                                name: string;
+                            };
+                            /**
+                             * @description Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            by: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own.
+                             * @enum {string}
+                             */
+                            via: "app" | "api" | "mcp" | "merran";
+                            /**
+                             * @description The API key or OAuth connection used, for `api` and `mcp`. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                             *       "name": "Home Assistant"
+                             *     }
+                             */
+                            key: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description Who's cooking. It stays set when Merran ends the session or a timer goes off, when `by` is null. Null if they've since left Merran.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            cook: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /** @description The cooking session: one person cooking a recipe on one device, from leaving Get ready in cook view until cooking ends. */
+                            session: {
+                                id: string;
+                            };
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                             *       "slug": "lemon-chicken",
+                             *       "title": "Lemon Chicken",
+                             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                             *     }
+                             */
+                            recipe: {
+                                id: string;
+                                slug: string;
+                                title: string;
+                                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                url: string | null;
+                            };
+                            /**
+                             * @description The recipe cooked with it, when cook view cooks two as a pairing. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                             *       "slug": "lemon-chicken",
+                             *       "title": "Lemon Chicken",
+                             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                             *     }
+                             */
+                            with: {
+                                id: string;
+                                slug: string;
+                                title: string;
+                                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                url: string | null;
+                            } | null;
+                            /** @description The planned meal it's cooked for, if there is one. */
+                            meal: {
+                                /** @description The meal's entry in the plan. */
+                                entryId: string;
+                                /** @description Its day, as YYYY-MM-DD. For a meal in the week's pool, the first day of that week. */
+                                date: string;
+                                /** @enum {string} */
+                                meal: "breakfast" | "lunch" | "dinner" | "snack";
+                                /** @description Whether it's in the week's pool, waiting for a day, rather than planned for one. */
+                                pool: boolean;
+                                /** @description The recipe's name, or the note for a meal that's only a note. */
+                                title: string;
+                                /**
+                                 * @description The recipe. Null for a meal that's only a note, or one whose recipe is in Recently deleted.
+                                 * @example {
+                                 *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                                 *       "slug": "lemon-chicken",
+                                 *       "title": "Lemon Chicken",
+                                 *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                                 *     }
+                                 */
+                                recipe: {
+                                    id: string;
+                                    slug: string;
+                                    title: string;
+                                    /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                    url: string | null;
+                                } | null;
+                                /**
+                                 * @description The side dish, if it has one. Null while it's in Recently deleted, as the plan leaves it out.
+                                 * @example {
+                                 *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                                 *       "slug": "lemon-chicken",
+                                 *       "title": "Lemon Chicken",
+                                 *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                                 *     }
+                                 */
+                                side: {
+                                    id: string;
+                                    slug: string;
+                                    title: string;
+                                    /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                    url: string | null;
+                                } | null;
+                            } | null;
+                            /** @description How many servings it's making, as cook view shows them. Null for a recipe that doesn't say. */
+                            servings: number | null;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Any 2xx answer counts as delivered. 410 Gone pauses the webhook. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "cooking.ended": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cooking ended
+         * @description Sent when a cooking session ends: with Done cooking in cook view (`made`), even with timers running; when cook view is left (`stopped`), at once with no timer running, or when its last running timer is done or cancelled; a minute after cook view's page is closed, unless it comes back (`stopped`); or when cook view goes quiet for 30 minutes with no timer running, or 12 hours after it started (`timed_out`). Done cooking, leaving with nothing running, and cancelling the last timer are sent as the cook; the rest are Merran's own, with `cook` saying who was cooking.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already. */
+                    "webhook-id": string;
+                    /** @description When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now. */
+                    "webhook-timestamp": string;
+                    /** @description `v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced. */
+                    "webhook-signature": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "cooking.ended";
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
+                        timestamp: string;
+                        /**
+                         * @example {
+                         *       "household": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                         *         "name": "The Riveras"
+                         *       },
+                         *       "by": null,
+                         *       "via": "merran",
+                         *       "key": null,
+                         *       "cook": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "session": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000037"
+                         *       },
+                         *       "recipe": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                         *         "slug": "lemon-chicken",
+                         *         "title": "Lemon Chicken",
+                         *         "url": "https://merran.example.com/recipes/lemon-chicken"
+                         *       },
+                         *       "with": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                         *         "slug": "garlic-rice",
+                         *         "title": "Garlic Rice",
+                         *         "url": "https://merran.example.com/recipes/garlic-rice"
+                         *       },
+                         *       "outcome": "timed_out",
+                         *       "minutes": 74
+                         *     }
+                         */
+                        data: {
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                             *       "name": "The Riveras"
+                             *     }
+                             */
+                            household: {
+                                id: string;
+                                name: string;
+                            };
+                            /**
+                             * @description Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            by: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own.
+                             * @enum {string}
+                             */
+                            via: "app" | "api" | "mcp" | "merran";
+                            /**
+                             * @description The API key or OAuth connection used, for `api` and `mcp`. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                             *       "name": "Home Assistant"
+                             *     }
+                             */
+                            key: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description Who's cooking. It stays set when Merran ends the session or a timer goes off, when `by` is null. Null if they've since left Merran.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            cook: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /** @description The cooking session: one person cooking a recipe on one device, from leaving Get ready in cook view until cooking ends. */
+                            session: {
+                                id: string;
+                            };
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                             *       "slug": "lemon-chicken",
+                             *       "title": "Lemon Chicken",
+                             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                             *     }
+                             */
+                            recipe: {
+                                id: string;
+                                slug: string;
+                                title: string;
+                                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                url: string | null;
+                            };
+                            /**
+                             * @description The recipe cooked with it, when cook view cooks two as a pairing. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                             *       "slug": "lemon-chicken",
+                             *       "title": "Lemon Chicken",
+                             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                             *     }
+                             */
+                            with: {
+                                id: string;
+                                slug: string;
+                                title: string;
+                                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                url: string | null;
+                            } | null;
+                            /**
+                             * @description How it ended: `made` with Done cooking in cook view; `stopped` when cook view was left, once its timers were done; or `timed_out` when cook view went quiet for 30 minutes with no timer running, or 12 hours after it started.
+                             * @enum {string}
+                             */
+                            outcome: "made" | "stopped" | "timed_out";
+                            /** @description How long cooking went on, in whole minutes. */
+                            minutes: number;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Any 2xx answer counts as delivered. 410 Gone pauses the webhook. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "timer.started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A timer started
+         * @description Sent when a timer starts in cook view, from a time in a step or as a new timer. It says when it goes off, by the server's clock.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already. */
+                    "webhook-id": string;
+                    /** @description When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now. */
+                    "webhook-timestamp": string;
+                    /** @description `v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced. */
+                    "webhook-signature": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "timer.started";
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
+                        timestamp: string;
+                        /**
+                         * @example {
+                         *       "household": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                         *         "name": "The Riveras"
+                         *       },
+                         *       "by": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "via": "app",
+                         *       "key": null,
+                         *       "cook": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "session": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000037"
+                         *       },
+                         *       "recipe": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                         *         "slug": "lemon-chicken",
+                         *         "title": "Lemon Chicken",
+                         *         "url": "https://merran.example.com/recipes/lemon-chicken"
+                         *       },
+                         *       "timer": {
+                         *         "id": "t-4f2a",
+                         *         "label": "Simmer the sauce",
+                         *         "seconds": 600,
+                         *         "endsAt": "2026-10-15T18:40:00.000Z"
+                         *       }
+                         *     }
+                         */
+                        data: {
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                             *       "name": "The Riveras"
+                             *     }
+                             */
+                            household: {
+                                id: string;
+                                name: string;
+                            };
+                            /**
+                             * @description Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            by: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own.
+                             * @enum {string}
+                             */
+                            via: "app" | "api" | "mcp" | "merran";
+                            /**
+                             * @description The API key or OAuth connection used, for `api` and `mcp`. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                             *       "name": "Home Assistant"
+                             *     }
+                             */
+                            key: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description Who's cooking. It stays set when Merran ends the session or a timer goes off, when `by` is null. Null if they've since left Merran.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            cook: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /** @description The cooking session: one person cooking a recipe on one device, from leaving Get ready in cook view until cooking ends. */
+                            session: {
+                                id: string;
+                            };
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                             *       "slug": "lemon-chicken",
+                             *       "title": "Lemon Chicken",
+                             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                             *     }
+                             */
+                            recipe: {
+                                id: string;
+                                slug: string;
+                                title: string;
+                                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                url: string | null;
+                            };
+                            /**
+                             * @example {
+                             *       "id": "t-4f2a",
+                             *       "label": "Simmer the sauce",
+                             *       "seconds": 600,
+                             *       "endsAt": "2026-10-15T18:40:00.000Z"
+                             *     }
+                             */
+                            timer: {
+                                /** @description The timer's id, which cook view picked when it started. */
+                                id: string;
+                                /** @description What it's for, like "Simmer the sauce" or "10 minutes". */
+                                label: string;
+                                /** @description How long it runs, in seconds: its length when started, with each minute added. */
+                                seconds: number;
+                                /** @description When it goes off, by the server's clock: cook view says how many seconds are left, not when. */
+                                endsAt: string;
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Any 2xx answer counts as delivered. 410 Gone pauses the webhook. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "timer.extended": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A timer got more time
+         * @description Sent when a timer gets +1 minute, in cook view or on the message when it goes off. One that's gone off runs again, and is sent `timer.finished` again when it's done.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already. */
+                    "webhook-id": string;
+                    /** @description When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now. */
+                    "webhook-timestamp": string;
+                    /** @description `v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced. */
+                    "webhook-signature": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "timer.extended";
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
+                        timestamp: string;
+                        /**
+                         * @example {
+                         *       "household": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                         *         "name": "The Riveras"
+                         *       },
+                         *       "by": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "via": "app",
+                         *       "key": null,
+                         *       "cook": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "session": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000037"
+                         *       },
+                         *       "recipe": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                         *         "slug": "lemon-chicken",
+                         *         "title": "Lemon Chicken",
+                         *         "url": "https://merran.example.com/recipes/lemon-chicken"
+                         *       },
+                         *       "timer": {
+                         *         "id": "t-4f2a",
+                         *         "label": "Simmer the sauce",
+                         *         "seconds": 660,
+                         *         "endsAt": "2026-10-15T18:41:00.000Z"
+                         *       }
+                         *     }
+                         */
+                        data: {
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                             *       "name": "The Riveras"
+                             *     }
+                             */
+                            household: {
+                                id: string;
+                                name: string;
+                            };
+                            /**
+                             * @description Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            by: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own.
+                             * @enum {string}
+                             */
+                            via: "app" | "api" | "mcp" | "merran";
+                            /**
+                             * @description The API key or OAuth connection used, for `api` and `mcp`. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                             *       "name": "Home Assistant"
+                             *     }
+                             */
+                            key: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description Who's cooking. It stays set when Merran ends the session or a timer goes off, when `by` is null. Null if they've since left Merran.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            cook: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /** @description The cooking session: one person cooking a recipe on one device, from leaving Get ready in cook view until cooking ends. */
+                            session: {
+                                id: string;
+                            };
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                             *       "slug": "lemon-chicken",
+                             *       "title": "Lemon Chicken",
+                             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                             *     }
+                             */
+                            recipe: {
+                                id: string;
+                                slug: string;
+                                title: string;
+                                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                url: string | null;
+                            };
+                            /**
+                             * @example {
+                             *       "id": "t-4f2a",
+                             *       "label": "Simmer the sauce",
+                             *       "seconds": 600,
+                             *       "endsAt": "2026-10-15T18:40:00.000Z"
+                             *     }
+                             */
+                            timer: {
+                                /** @description The timer's id, which cook view picked when it started. */
+                                id: string;
+                                /** @description What it's for, like "Simmer the sauce" or "10 minutes". */
+                                label: string;
+                                /** @description How long it runs, in seconds: its length when started, with each minute added. */
+                                seconds: number;
+                                /** @description When it goes off, by the server's clock: cook view says how many seconds are left, not when. */
+                                endsAt: string;
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Any 2xx answer counts as delivered. 410 Gone pauses the webhook. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "timer.finished": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A timer is done
+         * @description Sent by the server when a timer's time is up, even if the device that started it is asleep or closed. It's Merran's own, with `cook` saying whose timer it was.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already. */
+                    "webhook-id": string;
+                    /** @description When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now. */
+                    "webhook-timestamp": string;
+                    /** @description `v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced. */
+                    "webhook-signature": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "timer.finished";
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
+                        timestamp: string;
+                        /**
+                         * @example {
+                         *       "household": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                         *         "name": "The Riveras"
+                         *       },
+                         *       "by": null,
+                         *       "via": "merran",
+                         *       "key": null,
+                         *       "cook": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "session": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000037"
+                         *       },
+                         *       "recipe": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                         *         "slug": "lemon-chicken",
+                         *         "title": "Lemon Chicken",
+                         *         "url": "https://merran.example.com/recipes/lemon-chicken"
+                         *       },
+                         *       "timer": {
+                         *         "id": "t-4f2a",
+                         *         "label": "Simmer the sauce",
+                         *         "seconds": 600,
+                         *         "endsAt": "2026-10-15T18:40:00.000Z"
+                         *       }
+                         *     }
+                         */
+                        data: {
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                             *       "name": "The Riveras"
+                             *     }
+                             */
+                            household: {
+                                id: string;
+                                name: string;
+                            };
+                            /**
+                             * @description Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            by: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own.
+                             * @enum {string}
+                             */
+                            via: "app" | "api" | "mcp" | "merran";
+                            /**
+                             * @description The API key or OAuth connection used, for `api` and `mcp`. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                             *       "name": "Home Assistant"
+                             *     }
+                             */
+                            key: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description Who's cooking. It stays set when Merran ends the session or a timer goes off, when `by` is null. Null if they've since left Merran.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            cook: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /** @description The cooking session: one person cooking a recipe on one device, from leaving Get ready in cook view until cooking ends. */
+                            session: {
+                                id: string;
+                            };
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                             *       "slug": "lemon-chicken",
+                             *       "title": "Lemon Chicken",
+                             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                             *     }
+                             */
+                            recipe: {
+                                id: string;
+                                slug: string;
+                                title: string;
+                                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                url: string | null;
+                            };
+                            /**
+                             * @example {
+                             *       "id": "t-4f2a",
+                             *       "label": "Simmer the sauce",
+                             *       "seconds": 600,
+                             *       "endsAt": "2026-10-15T18:40:00.000Z"
+                             *     }
+                             */
+                            timer: {
+                                /** @description The timer's id, which cook view picked when it started. */
+                                id: string;
+                                /** @description What it's for, like "Simmer the sauce" or "10 minutes". */
+                                label: string;
+                                /** @description How long it runs, in seconds: its length when started, with each minute added. */
+                                seconds: number;
+                                /** @description When it goes off, by the server's clock: cook view says how many seconds are left, not when. */
+                                endsAt: string;
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Any 2xx answer counts as delivered. 410 Gone pauses the webhook. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "timer.cancelled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A timer was cancelled
+         * @description Sent when a timer is cancelled before it goes off. Dismissing one that's gone off sends nothing.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already. */
+                    "webhook-id": string;
+                    /** @description When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now. */
+                    "webhook-timestamp": string;
+                    /** @description `v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced. */
+                    "webhook-signature": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "timer.cancelled";
+                        /** @description When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made. */
+                        timestamp: string;
+                        /**
+                         * @example {
+                         *       "household": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                         *         "name": "The Riveras"
+                         *       },
+                         *       "by": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "via": "app",
+                         *       "key": null,
+                         *       "cook": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                         *         "name": "Sam Rivera"
+                         *       },
+                         *       "session": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000037"
+                         *       },
+                         *       "recipe": {
+                         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                         *         "slug": "lemon-chicken",
+                         *         "title": "Lemon Chicken",
+                         *         "url": "https://merran.example.com/recipes/lemon-chicken"
+                         *       },
+                         *       "timer": {
+                         *         "id": "t-4f2a",
+                         *         "label": "Simmer the sauce",
+                         *         "seconds": 600,
+                         *         "endsAt": "2026-10-15T18:40:00.000Z"
+                         *       }
+                         *     }
+                         */
+                        data: {
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                             *       "name": "The Riveras"
+                             *     }
+                             */
+                            household: {
+                                id: string;
+                                name: string;
+                            };
+                            /**
+                             * @description Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            by: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own.
+                             * @enum {string}
+                             */
+                            via: "app" | "api" | "mcp" | "merran";
+                            /**
+                             * @description The API key or OAuth connection used, for `api` and `mcp`. Null otherwise.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                             *       "name": "Home Assistant"
+                             *     }
+                             */
+                            key: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /**
+                             * @description Who's cooking. It stays set when Merran ends the session or a timer goes off, when `by` is null. Null if they've since left Merran.
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                             *       "name": "Sam Rivera"
+                             *     }
+                             */
+                            cook: {
+                                id: string;
+                                name: string;
+                            } | null;
+                            /** @description The cooking session: one person cooking a recipe on one device, from leaving Get ready in cook view until cooking ends. */
+                            session: {
+                                id: string;
+                            };
+                            /**
+                             * @example {
+                             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                             *       "slug": "lemon-chicken",
+                             *       "title": "Lemon Chicken",
+                             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                             *     }
+                             */
+                            recipe: {
+                                id: string;
+                                slug: string;
+                                title: string;
+                                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                                url: string | null;
+                            };
+                            /**
+                             * @example {
+                             *       "id": "t-4f2a",
+                             *       "label": "Simmer the sauce",
+                             *       "seconds": 600,
+                             *       "endsAt": "2026-10-15T18:40:00.000Z"
+                             *     }
+                             */
+                            timer: {
+                                /** @description The timer's id, which cook view picked when it started. */
+                                id: string;
+                                /** @description What it's for, like "Simmer the sauce" or "10 minutes". */
+                                label: string;
+                                /** @description How long it runs, in seconds: its length when started, with each minute added. */
+                                seconds: number;
+                                /** @description When it goes off, by the server's clock: cook view says how many seconds are left, not when. */
+                                endsAt: string;
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Any 2xx answer counts as delivered. 410 Gone pauses the webhook. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "plan.changed": {
         parameters: {
             query?: never;
@@ -8331,6 +9523,225 @@ export interface components {
         };
         /**
          * @example {
+         *       "sessions": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000037",
+         *           "cook": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+         *             "name": "Sam Rivera"
+         *           },
+         *           "recipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *             "slug": "lemon-chicken",
+         *             "title": "Lemon Chicken",
+         *             "url": "https://merran.example.com/recipes/lemon-chicken"
+         *           },
+         *           "with": null,
+         *           "meal": null,
+         *           "servings": 4,
+         *           "startedAt": "2026-10-15T18:30:00.000Z",
+         *           "heardAt": "2026-10-15T18:30:00.000Z",
+         *           "leaving": false,
+         *           "endedAt": null,
+         *           "outcome": null,
+         *           "timers": [
+         *             {
+         *               "id": "t-4f2a",
+         *               "label": "Simmer the sauce",
+         *               "seconds": 600,
+         *               "endsAt": "2026-10-15T18:40:00.000Z"
+         *             }
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        CookingSessions: {
+            sessions: components["schemas"]["CookingSession"][];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000037",
+         *       "cook": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+         *         "name": "Sam Rivera"
+         *       },
+         *       "recipe": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *         "slug": "lemon-chicken",
+         *         "title": "Lemon Chicken",
+         *         "url": "https://merran.example.com/recipes/lemon-chicken"
+         *       },
+         *       "with": null,
+         *       "meal": null,
+         *       "servings": 4,
+         *       "startedAt": "2026-10-15T18:30:00.000Z",
+         *       "heardAt": "2026-10-15T18:30:00.000Z",
+         *       "leaving": false,
+         *       "endedAt": null,
+         *       "outcome": null,
+         *       "timers": [
+         *         {
+         *           "id": "t-4f2a",
+         *           "label": "Simmer the sauce",
+         *           "seconds": 600,
+         *           "endsAt": "2026-10-15T18:40:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        CookingSession: {
+            id: string;
+            /** @description Who's cooking. Null if they've left Merran. */
+            cook: {
+                id: string;
+                name: string;
+            } | null;
+            /**
+             * @example {
+             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+             *       "slug": "lemon-chicken",
+             *       "title": "Lemon Chicken",
+             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+             *     }
+             */
+            recipe: {
+                id: string;
+                slug: string;
+                title: string;
+                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                url: string | null;
+            };
+            /**
+             * @description The recipe cooked with it as a pairing, if any.
+             * @example {
+             *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+             *       "slug": "lemon-chicken",
+             *       "title": "Lemon Chicken",
+             *       "url": "https://merran.example.com/recipes/lemon-chicken"
+             *     }
+             */
+            with: {
+                id: string;
+                slug: string;
+                title: string;
+                /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                url: string | null;
+            } | null;
+            /** @description The planned meal it's cooked for, if any. */
+            meal: {
+                /** @description The meal's entry in the plan. */
+                entryId: string;
+                /** @description Its day, as YYYY-MM-DD. For a meal in the week's pool, the first day of that week. */
+                date: string;
+                /** @enum {string} */
+                meal: "breakfast" | "lunch" | "dinner" | "snack";
+                /** @description Whether it's in the week's pool, waiting for a day, rather than planned for one. */
+                pool: boolean;
+                /** @description The recipe's name, or the note for a meal that's only a note. */
+                title: string;
+                /**
+                 * @description The recipe. Null for a meal that's only a note, or one whose recipe is in Recently deleted.
+                 * @example {
+                 *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                 *       "slug": "lemon-chicken",
+                 *       "title": "Lemon Chicken",
+                 *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                 *     }
+                 */
+                recipe: {
+                    id: string;
+                    slug: string;
+                    title: string;
+                    /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                    url: string | null;
+                } | null;
+                /**
+                 * @description The side dish, if it has one. Null while it's in Recently deleted, as the plan leaves it out.
+                 * @example {
+                 *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                 *       "slug": "lemon-chicken",
+                 *       "title": "Lemon Chicken",
+                 *       "url": "https://merran.example.com/recipes/lemon-chicken"
+                 *     }
+                 */
+                side: {
+                    id: string;
+                    slug: string;
+                    title: string;
+                    /** @description Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL). */
+                    url: string | null;
+                } | null;
+            } | null;
+            servings: number | null;
+            startedAt: string;
+            /** @description When cook view last said it's still cooking. */
+            heardAt: string;
+            /** @description Cook view was left with a timer still running, or its page went away a moment ago: it ends when the timers are done, or in a minute. */
+            leaving: boolean;
+            endedAt: string | null;
+            /** @enum {string|null} */
+            outcome: "made" | "stopped" | "timed_out" | null;
+            /** @description Its running timers, the soonest first. */
+            timers: {
+                /** @description The timer's id, which cook view picked when it started. */
+                id: string;
+                /** @description What it's for, like "Simmer the sauce" or "10 minutes". */
+                label: string;
+                /** @description How long it runs, in seconds: its length when started, with each minute added. */
+                seconds: number;
+                /** @description When it goes off, by the server's clock: cook view says how many seconds are left, not when. */
+                endsAt: string;
+            }[];
+        };
+        /**
+         * @example {
+         *       "recipe": "lemon-chicken",
+         *       "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *       "servings": 4
+         *     }
+         */
+        NewCookingSession: {
+            /** @description The recipe being cooked, by its id or slug. */
+            recipe: string;
+            /** @description The recipe cooked with it as a pairing, by id or slug. */
+            with?: string | null;
+            /**
+             * Format: uuid
+             * @description The planned meal it's cooked for: its entry in the plan.
+             */
+            meal?: string | null;
+            /** @description How many servings it's making, as cook view shows them. Null for a recipe that doesn't say. */
+            servings?: number | null;
+        };
+        /**
+         * @example {
+         *       "servings": 6
+         *     }
+         */
+        CookingSessionChanges: {
+            /** @description How many servings it's making, as cook view shows them. Null for a recipe that doesn't say. */
+            servings?: number | null;
+        };
+        /** @example {} */
+        LeaveCooking: {
+            /** @description Cook view's page went away, which may be a reload: end it a minute from now, unless cook view checks in first. */
+            soon?: boolean;
+        };
+        /**
+         * @example {
+         *       "label": "Simmer the sauce",
+         *       "seconds": 600
+         *     }
+         */
+        TimerSetting: {
+            /** @description What it's for, like "Simmer the sauce". */
+            label: string;
+            /** @description How many seconds are left. The server works out when it ends, so a device whose clock is off doesn't move it. */
+            seconds: number;
+        };
+        /**
+         * @example {
          *       "searches": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-00000000002d",
@@ -9303,7 +10714,7 @@ export interface components {
             /** @description Where it sends. The rest of the address is kept sealed, since it's often the receiver's password. */
             host: string;
             /** @description The events it's sent, unless it's sent everything. */
-            events: ("recipe.created" | "recipe.updated" | "recipe.deleted" | "recipe.restored" | "import.finished" | "tidy.ready" | "review.waiting" | "plan.changed" | "plan.autoplanned" | "meal.cooked" | "meal.skipped" | "list.changed" | "list.completed" | "list.sent" | "pantry.changed")[];
+            events: ("recipe.created" | "recipe.updated" | "recipe.deleted" | "recipe.restored" | "import.finished" | "tidy.ready" | "review.waiting" | "cooking.started" | "cooking.ended" | "timer.started" | "timer.extended" | "timer.finished" | "timer.cancelled" | "plan.changed" | "plan.autoplanned" | "meal.cooked" | "meal.skipped" | "list.changed" | "list.completed" | "list.sent" | "pantry.changed")[];
             /** @description Whether it's sent every event, including ones added later. */
             everything: boolean;
             /** @description The names of its extra headers. Their values are kept sealed and never shown. */
@@ -9378,7 +10789,7 @@ export interface components {
              * @description The events to send. At least one, unless `everything`.
              * @default []
              */
-            events: ("recipe.created" | "recipe.updated" | "recipe.deleted" | "recipe.restored" | "import.finished" | "tidy.ready" | "review.waiting" | "plan.changed" | "plan.autoplanned" | "meal.cooked" | "meal.skipped" | "list.changed" | "list.completed" | "list.sent" | "pantry.changed")[];
+            events: ("recipe.created" | "recipe.updated" | "recipe.deleted" | "recipe.restored" | "import.finished" | "tidy.ready" | "review.waiting" | "cooking.started" | "cooking.ended" | "timer.started" | "timer.extended" | "timer.finished" | "timer.cancelled" | "plan.changed" | "plan.autoplanned" | "meal.cooked" | "meal.skipped" | "list.changed" | "list.completed" | "list.sent" | "pantry.changed")[];
             /**
              * @description Send every event, including ones added later.
              * @default false
@@ -9427,7 +10838,7 @@ export interface components {
             name?: string;
             /** @description Where to send, `http` or `https`, with no user name or password in it: put those in a header. An address on the home network needs the server admin's leave. */
             address?: string;
-            events?: ("recipe.created" | "recipe.updated" | "recipe.deleted" | "recipe.restored" | "import.finished" | "tidy.ready" | "review.waiting" | "plan.changed" | "plan.autoplanned" | "meal.cooked" | "meal.skipped" | "list.changed" | "list.completed" | "list.sent" | "pantry.changed")[];
+            events?: ("recipe.created" | "recipe.updated" | "recipe.deleted" | "recipe.restored" | "import.finished" | "tidy.ready" | "review.waiting" | "cooking.started" | "cooking.ended" | "timer.started" | "timer.extended" | "timer.finished" | "timer.cancelled" | "plan.changed" | "plan.autoplanned" | "meal.cooked" | "meal.skipped" | "list.changed" | "list.completed" | "list.sent" | "pantry.changed")[];
             everything?: boolean;
             /** @description Replaces its extra headers, so each needs its value again; `[]` removes them. */
             headers?: {
@@ -12107,6 +13518,11 @@ export interface components {
             status?: components["schemas"]["PlanStatus"];
             /** @description Why a new recipe was picked, as Something else said. */
             why?: components["schemas"]["Reason"][] | null;
+            /**
+             * Format: uuid
+             * @description With `status: cooked`, the cooking session it was made in, from cook view's Made it. It ends, as `made`, sending `cooking.ended` after `meal.cooked`. Left alone otherwise, as is one that's ended or someone else's.
+             */
+            session?: string;
         };
         /**
          * @example {
@@ -13810,6 +15226,11 @@ export interface components {
         Made: {
             /** @description How many servings were made, for the meal it cooks. Left out, it's as planned, or the recipe's own. */
             servings?: number;
+            /**
+             * Format: uuid
+             * @description The cooking session it was made in, from cook view. It ends, as `made`, sending `cooking.ended` after `meal.cooked`. A session that's ended, or someone else's, is left alone.
+             */
+            session?: string;
         };
         /**
          * @description For example, a stir fry that's nothing without its mushrooms: someone who doesn't like them can't just leave them out.
@@ -17505,6 +18926,323 @@ export interface operations {
             };
             /** @description A search is going already. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listCookingSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Who's cooking now. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CookingSessions"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startCooking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewCookingSession"];
+            };
+        };
+        responses: {
+            /** @description Cooking started. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CookingSession"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe, or no such meal on the plan. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    checkInCooking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CookingSessionChanges"];
+            };
+        };
+        responses: {
+            /** @description Still cooking. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CookingSession"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such cooking session of yours, or it's ended: start a new one. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    leaveCooking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["LeaveCooking"];
+            };
+        };
+        responses: {
+            /** @description Left: ended, or ending when its timers are done or in a minute. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CookingSession"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such cooking session of yours, or it's ended. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    setCookingTimer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+                /** @description The timer's id, which cook view picks when it starts one. */
+                timerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimerSetting"];
+            };
+        };
+        responses: {
+            /** @description The timer, with when it ends. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description The timer's id, which cook view picked when it started. */
+                        id: string;
+                        /** @description What it's for, like "Simmer the sauce" or "10 minutes". */
+                        label: string;
+                        /** @description How long it runs, in seconds: its length when started, with each minute added. */
+                        seconds: number;
+                        /** @description When it goes off, by the server's clock: cook view says how many seconds are left, not when. */
+                        endsAt: string;
+                    };
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such cooking session of yours, or, for a new timer, it's ended. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The session has 20 timers running already. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    cancelCookingTimer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+                /** @description The timer's id, which cook view picks when it starts one. */
+                timerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cancelled, or it had gone off already. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such cooking session of yours, or no such timer. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -27,6 +27,8 @@ import { Aisle } from "./aisles.ts"
 import { ChatMessage } from "./chat_messages.ts"
 import { Chat } from "./chats.ts"
 import { CookNote } from "./cook_notes.ts"
+import { CookingSession } from "./cooking_sessions.ts"
+import { CookingTimer } from "./cooking_timers.ts"
 import { Discovery } from "./discoveries.ts"
 import { FdcFood } from "./fdc_foods.ts"
 import { FoodMatch } from "./food_matches.ts"
@@ -82,6 +84,8 @@ export * from "./aisles.ts"
 export * from "./chat_messages.ts"
 export * from "./chats.ts"
 export * from "./cook_notes.ts"
+export * from "./cooking_sessions.ts"
+export * from "./cooking_timers.ts"
 export * from "./discoveries.ts"
 export * from "./email_invitations.ts"
 export * from "./fdc_foods.ts"
@@ -148,6 +152,8 @@ export const entities = [
   Chat,
   ChatMessage,
   CookNote,
+  CookingSession,
+  CookingTimer,
   Discovery,
   FdcFood,
   FoodMatch,

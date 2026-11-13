@@ -48,6 +48,16 @@ From alpha.6, choose **Hold this step** beside **Next** at the bottom when you n
 
 Not every written duration is recognized. Start a manual timer if a time is plain text rather than an interactive control.
 
+### What cook view tells Merran
+
+So [webhooks](../../integrations/webhooks/) can let your kitchen react, like turning on the hood fan or saying on a speaker that a timer is done, cook view tells Merran when you're cooking:
+
+- Cooking starts when you leave **Get ready**, or straight away for a recipe with nothing to get ready. A reload carries on with the same cooking.
+- Each timer you start, give **+1 min** or cancel is reported, from cook view or from the message when it goes off. Merran keeps its own copy and says when it's done, even if your phone has gone to sleep. It still rings on your device as before.
+- Cooking ends with **Done cooking**, when you leave cook view (once any running timers are done), a minute after you close the page, or after 30 minutes with no word from cook view and no timer running.
+
+If Merran can't be reached, cooking carries on as usual and nothing is sent later. Guests cooking from a shared link tell Merran nothing.
+
 ## Optional hands-free controls
 
 1. In cook view, turn on **Hands-free** and allow microphone access when the browser asks.

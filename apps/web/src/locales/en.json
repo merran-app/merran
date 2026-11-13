@@ -591,6 +591,7 @@
         },
         "areas": {
           "recipes": "Recipes",
+          "cooking": "Cooking",
           "plan": "Plan",
           "list": "Shopping list",
           "pantry": "Pantry"
@@ -610,6 +611,16 @@
           },
           "review": {
             "waiting": "Something waits in Review"
+          },
+          "cooking": {
+            "started": "Cooking starts",
+            "ended": "Cooking ends"
+          },
+          "timer": {
+            "started": "A timer starts",
+            "extended": "A timer gets more time",
+            "finished": "A timer is done",
+            "cancelled": "A timer is cancelled"
           },
           "plan": {
             "changed": "The plan changes",
@@ -647,6 +658,16 @@
           "review": {
             "waiting": "Waiting in Review"
           },
+          "cooking": {
+            "started": "Started",
+            "ended": "Ended"
+          },
+          "timer": {
+            "started": "Timer started",
+            "extended": "More time",
+            "finished": "Timer done",
+            "cancelled": "Timer cancelled"
+          },
           "plan": {
             "changed": "Changed",
             "autoplanned": "Autoplanned"
@@ -679,6 +700,16 @@
           },
           "review": {
             "waiting": "From an AI app, or a cooking note turned into an edit."
+          },
+          "cooking": {
+            "started": "Someone leaves Get ready in cook view.",
+            "ended": "Done cooking, leaving cook view once its timers are done, or no word for 30 minutes."
+          },
+          "timer": {
+            "started": "A step's time, or a new timer, in cook view.",
+            "extended": "+1 min, in cook view or on its message.",
+            "finished": "Time's up. Sent by the server, even if the screen is off.",
+            "cancelled": "Cancelled before it went off."
           },
           "plan": {
             "changed": "Meals added, moved, changed or removed, gathered over 30 seconds.",

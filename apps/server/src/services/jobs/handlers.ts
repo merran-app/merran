@@ -17,6 +17,9 @@ import { importJob } from "../transfer/import.ts"
 import { rekeyFoodsJob } from "../list/rekey.ts"
 import { webhookDeliveryJob } from "../webhooks/deliver.ts"
 import { gatherJob } from "../webhooks/gathering/gather-job.ts"
+import { closeSessionJob } from "../cooking/sessions.ts"
+import { endQuietSessionJob } from "../cooking/quiet.ts"
+import { timerDoneJob } from "../cooking/timers.ts"
 import { cleanUpJobsJob } from "./clean-up.ts"
 import type { JobHandler, JobSchedule } from "./runner.ts"
 
@@ -44,6 +47,9 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
   checkUpdatesJob,
   webhookDeliveryJob,
   gatherJob,
+  closeSessionJob,
+  timerDoneJob,
+  endQuietSessionJob,
 ]
 
 /** Jobs that come round again, in the server's time. */

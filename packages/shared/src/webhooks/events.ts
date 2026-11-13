@@ -4,6 +4,7 @@
 /** How the events are grouped when people pick them. */
 export const WEBHOOK_AREAS = [
   "recipes",
+  "cooking",
   "plan",
   "list",
   "pantry",
@@ -20,6 +21,12 @@ export const WEBHOOK_EVENTS = [
   { type: "import.finished", area: "recipes", pickable: true },
   { type: "tidy.ready", area: "recipes", pickable: true },
   { type: "review.waiting", area: "recipes", pickable: true },
+  { type: "cooking.started", area: "cooking", pickable: true },
+  { type: "cooking.ended", area: "cooking", pickable: true },
+  { type: "timer.started", area: "cooking", pickable: true },
+  { type: "timer.extended", area: "cooking", pickable: true },
+  { type: "timer.finished", area: "cooking", pickable: true },
+  { type: "timer.cancelled", area: "cooking", pickable: true },
   { type: "plan.changed", area: "plan", pickable: true },
   { type: "plan.autoplanned", area: "plan", pickable: true },
   { type: "meal.cooked", area: "plan", pickable: true },
@@ -33,6 +40,13 @@ export const WEBHOOK_EVENTS = [
 ] as const
 
 export type WebhookEventType = (typeof WEBHOOK_EVENTS)[number]["type"]
+
+/**
+ * How cooking ended: Made it, leaving cook view (once its timers were
+ * done), or no word from cook view for a while.
+ */
+export const COOKING_OUTCOMES = ["made", "stopped", "timed_out"] as const
+export type CookingOutcome = (typeof COOKING_OUTCOMES)[number]
 
 /** The events a webhook can be set to listen for. */
 export const PICKABLE_WEBHOOK_EVENTS = WEBHOOK_EVENTS.filter(
