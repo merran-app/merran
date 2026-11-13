@@ -18,7 +18,7 @@ import { rekeyFoodsJob } from "../list/rekey.ts"
 import { webhookDeliveryJob } from "../webhooks/deliver.ts"
 import { gatherJob } from "../webhooks/gathering/gather-job.ts"
 import { closeSessionJob } from "../cooking/sessions.ts"
-import { endQuietSessionsJob } from "../cooking/quiet.ts"
+import { endQuietSessionJob } from "../cooking/quiet.ts"
 import { timerDoneJob } from "../cooking/timers.ts"
 import { cleanUpJobsJob } from "./clean-up.ts"
 import type { JobHandler, JobSchedule } from "./runner.ts"
@@ -49,7 +49,7 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
   gatherJob,
   closeSessionJob,
   timerDoneJob,
-  endQuietSessionsJob,
+  endQuietSessionJob,
 ]
 
 /** Jobs that come round again, in the server's time. */
@@ -64,6 +64,4 @@ export const JOB_SCHEDULES: readonly JobSchedule[] = [
   { kind: readSitesJob.kind, cron: "*/30 * * * *" },
   // Each household's prices are checked each morning; this finds them.
   { kind: checkPricesJob.kind, cron: "7,37 * * * *" },
-  // Ends cooking that cook view went quiet on, or that has gone on too long.
-  { kind: endQuietSessionsJob.kind, cron: "*/5 * * * *" },
 ]

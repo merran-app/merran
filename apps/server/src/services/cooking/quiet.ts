@@ -4,91 +4,78 @@ import { CookingSession, CookingTimer } from "../../database/entities/index.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import type { JobHandler } from "../jobs/runner.ts"
 import { MERRAN } from "../webhooks/actor.ts"
+import {
+  END_QUIET_JOB,
+  longestEnd,
+  queueQuietCheck,
+  quietEnd,
+} from "./quiet-check.ts"
 import { endSession, WITH_DELETED_RECIPES } from "./sessions.ts"
 
 // Sessions end on their own, so the hood fan doesn't stay on all night:
 // cook view gone quiet with no timer running, or cooking going on for 12
-// hours, whatever's running (docs/webhooks.md).
-
-/** The sweep, every 5 minutes, that ends sessions nobody's cooking in. */
-export const END_QUIET_JOB = "cooking.endQuiet"
-
-/** How long cook view can say nothing, with no timer running. */
-export const QUIET_MINUTES = 30
-
-/** The longest a session stays open, timers or not. */
-export const LONGEST_HOURS = 12
+// hours, whatever's running (docs/webhooks.md). Each session's own quiet
+// check does this (quiet-check.ts).
 
 /**
- * Ends, as Merran, each open session gone quiet with no timer running, or
- * started 12 hours ago, as `timed_out`; and each left session whose timers
- * are all done, as `stopped`, in case its last timer's job didn't.
+ * Looks at one session when its quiet check comes round: ends it, as
+ * Merran, when it's been open 12 hours or quiet for 30 minutes with no
+ * timer running; ends a left one whose timers are done; and otherwise
+ * looks again when it next could end.
  */
-export const endQuietSessionsJob: JobHandler = {
+export const endQuietSessionJob: JobHandler = {
   kind: END_QUIET_JOB,
-  concurrency: 1,
-  async run({ em }) {
-    const now = Date.now()
-    const quietSince = new Date(now - QUIET_MINUTES * 60_000)
-    const startedBefore = new Date(now - LONGEST_HOURS * 3_600_000)
-    const candidates = await em.find(
-      CookingSession,
-      {
-        endedAt: null,
-        $or: [
-          { heardAt: { $lt: quietSince } },
-          { startedAt: { $lt: startedBefore } },
-          { leftAt: { $ne: null } },
-        ],
-      },
-      // Across households, and recipes in Recently deleted too.
-      { filters: false }
-    )
-
-    let ended = 0
-    for (const candidate of candidates) {
-      const householdId = candidate.household.id
-      const didEnd = await inHouseholdTransaction(em, householdId, (tx) =>
-        endIfDue(tx, householdId, candidate.id, { quietSince, startedBefore })
-      )
-      if (didEnd) ended++
+  async run({ em, payload, householdId }) {
+    const sessionId = String(payload.sessionId)
+    if (!householdId) {
+      throw new Error("A cooking session is checked in its household.")
     }
-    return { ended }
+    return inHouseholdTransaction(em, householdId, (tx) =>
+      checkQuiet(tx, householdId, sessionId)
+    )
   },
 }
 
-/** Ends one session if it's still due to end, once it's held. */
-async function endIfDue(
+async function checkQuiet(
   em: EntityManager,
   householdId: string,
-  sessionId: string,
-  limits: { quietSince: Date; startedBefore: Date }
-): Promise<boolean> {
+  sessionId: string
+): Promise<{ ended: boolean }> {
   const session = await em.findOne(
     CookingSession,
     { id: sessionId, endedAt: null },
     { lockMode: LockMode.PESSIMISTIC_WRITE, ...WITH_DELETED_RECIPES }
   )
-  if (!session) return false
+  if (!session) return { ended: false }
 
-  if (session.startedAt < limits.startedBefore) {
+  const now = new Date()
+  if (longestEnd(session) <= now) {
     await endSession(em, householdId, session, "timed_out", MERRAN)
-    return true
+    return { ended: true }
   }
 
-  const running = await em.count(CookingTimer, {
-    session: session.id,
-    state: "running",
-  })
-  if (running > 0) return false
-
-  if (session.leftAt) {
+  const lastTimer = await em.findOne(
+    CookingTimer,
+    { session: session.id, state: "running" },
+    { orderBy: { endsAt: "desc" } }
+  )
+  if (session.leftAt && !lastTimer) {
     await endSession(em, householdId, session, "stopped", MERRAN)
-    return true
+    return { ended: true }
   }
-  if (session.heardAt < limits.quietSince) {
-    await endSession(em, householdId, session, "timed_out", MERRAN)
-    return true
+
+  // Heard from since this check was put here: look when it next goes quiet.
+  if (quietEnd(session) > now) {
+    await queueQuietCheck(em, householdId, session)
+    return { ended: false }
   }
-  return false
+
+  // Quiet, but something's on the stove: look again when it's done.
+  if (lastTimer) {
+    await queueQuietCheck(em, householdId, session, lastTimer.endsAt)
+    return { ended: false }
+  }
+
+  await endSession(em, householdId, session, "timed_out", MERRAN)
+  return { ended: true }
 }

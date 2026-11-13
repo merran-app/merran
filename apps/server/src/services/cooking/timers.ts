@@ -1,17 +1,13 @@
 import { LockMode } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
-import {
-  CookingSession,
-  CookingTimer,
-  Job,
-} from "../../database/entities/index.ts"
+import { CookingSession, CookingTimer } from "../../database/entities/index.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
-import { createJob, wakeRunner } from "../jobs/jobs.ts"
 import type { JobHandler } from "../jobs/runner.ts"
 import { MERRAN } from "../webhooks/actor.ts"
 import type { TimerRef } from "../webhooks/payloads.ts"
 import { recordTimerEvent, timerRef } from "./events.ts"
+import { cancelKeyedJob, putKeyedJob } from "./keyed-jobs.ts"
 import {
   endIfIdle,
   lockOwnSession,
@@ -174,31 +170,17 @@ async function queueTimerJob(
   householdId: string,
   timer: CookingTimer
 ): Promise<void> {
-  const key = timerJobKey(timer.id)
-  const waiting = await em.findOne(Job, { key, status: "queued" })
-  if (waiting) {
-    waiting.runAt = timer.endsAt
-    await em.flush()
-    return
-  }
-  // None waiting, or one running now that will find the time isn't up.
-  createJob(em, {
+  await putKeyedJob(em, {
     kind: TIMER_DONE_JOB,
-    key,
+    key: timerJobKey(timer.id),
     householdId,
     payload: { timerId: timer.id },
     runAt: timer.endsAt,
   })
-  await em.flush()
-  wakeRunner()
 }
 
 async function cancelTimerJob(em: EntityManager, timer: CookingTimer) {
-  await em.nativeUpdate(
-    Job,
-    { key: timerJobKey(timer.id), status: "queued" },
-    { status: "cancelled", finishedAt: new Date() }
-  )
+  await cancelKeyedJob(em, timerJobKey(timer.id))
 }
 
 /**

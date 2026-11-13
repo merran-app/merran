@@ -6,13 +6,11 @@ import { AppError } from "../../core/errors.ts"
 import {
   CookingSession,
   CookingTimer,
-  Job,
   PlanEntry,
 } from "../../database/entities/index.ts"
 import { toNumber } from "../../database/numbers.ts"
 import { NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
-import { createJob, wakeRunner } from "../jobs/jobs.ts"
 import type { JobHandler } from "../jobs/runner.ts"
 import { findEntry } from "../plan/plan.ts"
 import { findRecipe } from "../recipes/recipes.ts"
@@ -26,6 +24,8 @@ import {
   recordCookingStarted,
   timerRef,
 } from "./events.ts"
+import { cancelKeyedJob, putKeyedJob } from "./keyed-jobs.ts"
+import { cancelQuietCheck, queueQuietCheck } from "./quiet-check.ts"
 
 // Cooking sessions: someone cooking a recipe in cook view, on one device.
 // Cook view says when cooking starts, checks in while it's open, and says
@@ -104,6 +104,7 @@ export function startSession(
       heardAt: new Date(),
     })
     await tx.flush()
+    await queueQuietCheck(tx, householdId, session)
 
     const view = await describeSession(tx, session)
     await recordCookingStarted(tx, householdId, session, view.meal)
@@ -132,6 +133,7 @@ export function checkIn(
     }
     if (changes.servings !== undefined) session.servings = changes.servings
     await tx.flush()
+    await queueQuietCheck(tx, householdId, session)
     return describeSession(tx, session)
   })
 }
@@ -200,6 +202,7 @@ export async function endSession(
     session.closingAt = null
     await cancelCloseJob(em, session.id)
   }
+  await cancelQuietCheck(em, session.id)
   await em.flush()
   await recordCookingEnded(em, householdId, session, actor)
 }
@@ -319,32 +322,17 @@ async function queueCloseJob(
   householdId: string,
   session: CookingSession
 ): Promise<void> {
-  const runAt = session.closingAt ?? new Date()
-  const key = closeJobKey(session.id)
-  // A close already waiting is moved to the new minute. One running now
-  // will find the minute isn't up, so this one gets a job of its own.
-  const waiting = await em.findOne(Job, { key, status: "queued" })
-  if (waiting) {
-    waiting.runAt = runAt
-    return
-  }
-  createJob(em, {
+  await putKeyedJob(em, {
     kind: CLOSE_SESSION_JOB,
-    key,
+    key: closeJobKey(session.id),
     householdId,
     payload: { sessionId: session.id },
-    runAt,
+    runAt: session.closingAt ?? new Date(),
   })
-  await em.flush()
-  wakeRunner()
 }
 
 async function cancelCloseJob(em: EntityManager, sessionId: string) {
-  await em.nativeUpdate(
-    Job,
-    { key: closeJobKey(sessionId), status: "queued" },
-    { status: "cancelled", finishedAt: new Date() }
-  )
+  await cancelKeyedJob(em, closeJobKey(sessionId))
 }
 
 /**

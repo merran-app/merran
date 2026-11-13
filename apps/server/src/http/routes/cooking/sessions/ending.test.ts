@@ -7,6 +7,7 @@ import {
   Job,
 } from "../../../../database/entities/index.ts"
 import type { Database } from "../../../../database/orm.ts"
+import { JOB_SCHEDULES } from "../../../../services/jobs/handlers.ts"
 import { enqueue } from "../../../../services/jobs/jobs.ts"
 import type { JobRunner } from "../../../../services/jobs/runner.ts"
 import {
@@ -106,10 +107,23 @@ async function backdate(
     })
 }
 
-/** Runs the sweep for quiet sessions now, as its schedule would. */
+/** Runs every session's quiet check now, as if its time had come. */
 async function sweepNow() {
-  await enqueue(database.em.fork(), { kind: "cooking.endQuiet" })
+  await database.em
+    .fork()
+    .nativeUpdate(
+      Job,
+      { kind: "cooking.endQuiet", status: "queued" },
+      { runAt: new Date() }
+    )
   await jobs.drain()
+}
+
+/** The session's quiet check waiting to run, if it has one. */
+async function quietCheck(session: string) {
+  return database.em
+    .fork()
+    .find(Job, { key: `cooking.quiet:${session}`, status: "queued" })
 }
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000)
@@ -127,6 +141,28 @@ async function stillCooking(session: string) {
 }
 
 describe("going quiet", () => {
+  test("each session has its own quiet check, not a schedule", async () => {
+    expect(JOB_SCHEDULES.map((schedule) => schedule.kind)).not.toContain(
+      "cooking.endQuiet"
+    )
+    const session = await startCooking()
+    const [first] = await quietCheck(session)
+    expect(first).toBeDefined()
+    expect(first!.runAt.getTime()).toBeGreaterThan(Date.now() + 29 * 60_000)
+
+    await backdate(session, { heardAt: minutesAgo(10) })
+    await kyle.patch(`/api/cooking/sessions/${session}`, {})
+
+    // Checking in moves the same check, rather than adding another.
+    const after = await quietCheck(session)
+    expect(after).toHaveLength(1)
+    expect(after[0]!.id).toBe(first!.id)
+    expect(after[0]!.runAt.getTime()).toBeGreaterThan(Date.now() + 29 * 60_000)
+
+    await kyle.post(`/api/cooking/sessions/${session}/end`)
+    expect(await quietCheck(session)).toEqual([])
+  })
+
   test("no word for 30 minutes ends it as timed_out", async () => {
     const session = await startCooking()
     await backdate(session, {
@@ -171,6 +207,9 @@ describe("going quiet", () => {
 
     expect(ofType(events, "cooking.ended")).toEqual([])
     expect(await stillCooking(session)).toBe(true)
+    // It looks again once the timer's done.
+    const [again] = await quietCheck(session)
+    expect(again!.runAt.getTime()).toBeGreaterThan(Date.now() + 59 * 60_000)
   })
 
   test("12 hours ends it, timers or not", async () => {
