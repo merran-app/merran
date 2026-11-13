@@ -458,7 +458,7 @@ export const WEBHOOK_PAYLOADS = {
       with: withRecipe,
       outcome: z.enum(COOKING_OUTCOMES).openapi({
         description:
-          "How it ended: `made` with Made it; `stopped` when cook view was left, once its timers were done; or `timed_out` when cook view went quiet for 30 minutes with no timer running, or 12 hours after it started.",
+          "How it ended: `made` with Done cooking in cook view; `stopped` when cook view was left, once its timers were done; or `timed_out` when cook view went quiet for 30 minutes with no timer running, or 12 hours after it started.",
       }),
       minutes: count("How long cooking went on, in whole minutes."),
     })
@@ -640,7 +640,7 @@ export const WEBHOOK_SUMMARIES: Record<
   "cooking.ended": {
     summary: "Cooking ended",
     description:
-      "Sent when a cooking session ends: with Made it (`made`), even with timers running; when cook view is left (`stopped`), at once with no timer running, or when its last running timer is done or cancelled; a minute after cook view's page is closed, unless it comes back (`stopped`); or when cook view goes quiet for 30 minutes with no timer running, or 12 hours after it started (`timed_out`). Made it, and leaving with nothing running, are sent as the cook; the rest are Merran's own, with `cook` saying who was cooking.",
+      "Sent when a cooking session ends: with Done cooking in cook view (`made`), even with timers running; when cook view is left (`stopped`), at once with no timer running, or when its last running timer is done or cancelled; a minute after cook view's page is closed, unless it comes back (`stopped`); or when cook view goes quiet for 30 minutes with no timer running, or 12 hours after it started (`timed_out`). Done cooking, leaving with nothing running, and cancelling the last timer are sent as the cook; the rest are Merran's own, with `cook` saying who was cooking.",
   },
   "timer.started": {
     summary: "A timer started",

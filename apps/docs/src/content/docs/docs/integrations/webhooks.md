@@ -19,7 +19,7 @@ Merran sends these events:
 | [`tidy.ready`](#tidyready)             | Tidy up finishes with suggestions waiting                                  |
 | [`review.waiting`](#reviewwaiting)     | Something new waits in Review                                              |
 | [`cooking.started`](#cookingstarted)   | Someone starts cooking in cook view                                        |
-| [`cooking.ended`](#cookingended)       | Cooking ends: Made it, cook view left, or no word for 30 minutes           |
+| [`cooking.ended`](#cookingended)       | Cooking ends: Done cooking, cook view left, or no word for 30 minutes      |
 | [`timer.started`](#timerstarted)       | A timer starts in cook view                                                |
 | [`timer.extended`](#timerextended)     | A timer gets **+1 min**                                                    |
 | [`timer.finished`](#timerfinished)     | A timer's time is up                                                       |
@@ -160,7 +160,7 @@ actions:
               entity_id: fan.range_hood
 ```
 
-Cooking ends with **Made it**, when cook view is left (once its timers are done, if any are running), a minute after cook view's page is closed, or after 30 minutes with no word from cook view and no timer running. So the fan doesn't stay on all night if someone walks away. If two people cook at once, each has their own session: check `trigger.json.data.session.id`, or read who's cooking (below), before turning the fan off.
+Cooking ends with **Done cooking**, when cook view is left (once its timers are done, if any are running), a minute after cook view's page is closed, or after 30 minutes with no word from cook view and no timer running. So the fan doesn't stay on all night if someone walks away. If two people cook at once, each has their own session: check `trigger.json.data.session.id`, or read who's cooking (below), before turning the fan off.
 
 To hear on the speakers when a timer is done, tick **A timer is done** (`timer.finished`). Merran keeps each timer itself and sends this on time, even if the phone or tablet that started it has gone to sleep:
 
@@ -452,7 +452,7 @@ Sent when something new waits in Review that didn't come from your own chat: a p
 
 ### Cooking sessions
 
-Cooking events are about a cooking session: one person cooking a recipe in cook view, on one device. It starts when they leave **Get ready**, and ends with **Made it**, when they leave cook view, or when cook view goes quiet. Two people cooking, or one person on two devices, are two sessions. Guests cooking from a shared link never send these.
+Cooking events are about a cooking session: one person cooking a recipe in cook view, on one device. It starts when they leave **Get ready**, and ends with **Done cooking**, when they leave cook view, or when cook view goes quiet. Two people cooking, or one person on two devices, are two sessions. Guests cooking from a shared link never send these.
 
 Every cooking event has `session` (its `id`), `recipe`, and `cook`: who's cooking, with their `id` and `name`. `cook` stays set when Merran ends the session or a timer goes off, when `by` is `null` and `via` is `merran`. It's `null` only if that person has since left Merran.
 
@@ -510,11 +510,11 @@ Sent when someone leaves **Get ready** in cook view, or opens cook view on a rec
 
 Sent when a cooking session ends. `outcome` says how:
 
-- `made`: **Made it**, which ends it at once, even with timers running. It comes after the [`meal.cooked`](#mealcooked) it sends.
-- `stopped`: cook view was left without **Made it**. With no timer running it ends then; with timers running, when the last one is done or cancelled. Closing or reloading the page ends it a minute later, unless cook view comes back, as a reload does.
+- `made`: **Done cooking** in cook view, which ends it at once, even with timers running. It comes after the [`meal.cooked`](#mealcooked) it sends.
+- `stopped`: cook view was left without **Done cooking**. With no timer running it ends then; with timers running, when the last one is done or cancelled. Closing or reloading the page ends it a minute later, unless cook view comes back, as a reload does.
 - `timed_out`: cook view went quiet for 30 minutes with no timer running, or 12 hours went by since it started.
 
-`minutes` is how long cooking went on, in whole minutes, and `with` is as in `cooking.started`. **Made it**, leaving with no timer running, and cancelling the last timer are sent as the cook. When Merran ends the session itself (a timer going off, the minute after the page closed, or going quiet), `by` is `null` and `via` is `merran`.
+`minutes` is how long cooking went on, in whole minutes, and `with` is as in `cooking.started`. **Done cooking**, leaving with no timer running, and cancelling the last timer are sent as the cook. When Merran ends the session itself (a timer going off, the minute after the page closed, or going quiet), `by` is `null` and `via` is `merran`.
 
 ```json
 {

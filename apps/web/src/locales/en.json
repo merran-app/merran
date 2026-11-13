@@ -703,7 +703,7 @@
           },
           "cooking": {
             "started": "Someone leaves Get ready in cook view.",
-            "ended": "Made it, leaving cook view once its timers are done, or no word for 30 minutes."
+            "ended": "Done cooking, leaving cook view once its timers are done, or no word for 30 minutes."
           },
           "timer": {
             "started": "A step's time, or a new timer, in cook view.",
