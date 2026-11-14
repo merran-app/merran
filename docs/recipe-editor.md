@@ -1,6 +1,6 @@
 # Editing steps
 
-Decided with the user, November 14, 2026. Not built yet.
+Decided with the user, November 14, 2026, and built the same day.
 
 ## Why
 

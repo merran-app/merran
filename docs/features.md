@@ -72,6 +72,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
 | A recipe library: photos, servings, times, sections, notes, source, rating | Headline | Built | |
+| Steps edited in a box each, or as text | Detail | Built | Enter starts the next step and Backspace joins; pasting lines adds a step for each; sections as heading rows; a menu to move, add a section or delete; Edit as text, remembered on the device; [plan](recipe-editor.md) (November 14, 2026) |
 | Scaling | Key | Built | |
 | Units as written, US or metric, both ways | Key | Built | Per device |
 | Versions, with restore | Detail | Built | |

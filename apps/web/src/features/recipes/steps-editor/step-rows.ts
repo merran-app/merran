@@ -125,7 +125,13 @@ export function setText(
       focus: { key, caret: section.text.length },
     }
   }
-  return { rows: replaceAt(rows, index, [{ ...row, text }]), focus: null }
+  // A heading starts at its first word, so the space typed after a "#" that
+  // made it one isn't kept in front of it.
+  const newText = row.kind === "section" ? text.trimStart() : text
+  return {
+    rows: replaceAt(rows, index, [{ ...row, text: newText }]),
+    focus: null,
+  }
 }
 
 /**

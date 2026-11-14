@@ -197,6 +197,12 @@ test("a step typed with a leading # becomes a section", () => {
   assert.equal(setText(rows("Stir."), "k1", "Stir well.").focus, null)
 })
 
+test("a heading never starts with spaces, so typing # and then a space leaves none", () => {
+  const heading = setText(rows("Stir."), "k1", "#").rows
+  assert.deepEqual(setText(heading, "k1", " ").rows[0]?.text, "")
+  assert.deepEqual(setText(heading, "k1", " Extra").rows[0]?.text, "Extra")
+})
+
 test("moving swaps with the neighbour, and does nothing at the ends", () => {
   assert.deepEqual(linesFromRows(moveRow(rows("a", "b", "c"), "k2", -1)), [
     "b",

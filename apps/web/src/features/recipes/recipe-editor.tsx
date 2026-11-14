@@ -33,6 +33,13 @@ import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { useRefreshRecipes, type Recipe, type RecipeInput } from "./queries"
 import { RatingInput } from "./rating-stars"
+import { StepsEditor } from "./steps-editor/steps-editor"
+import {
+  linesFromRows,
+  newRowKey,
+  rowsFromLines,
+  type StepRow,
+} from "./steps-editor/step-rows"
 import { TagsField } from "./tags-field"
 
 type Form = {
@@ -47,7 +54,7 @@ type Form = {
   rating: number | null
   tags: string[]
   ingredients: string
-  steps: string
+  steps: StepRow[]
   notes: string
 }
 
@@ -69,7 +76,7 @@ function startingValues(recipe?: Recipe): Form {
     rating: recipe?.rating ?? null,
     tags: recipe?.tags ?? [],
     ingredients: recipe ? joinSections(recipe.ingredients).join("\n") : "",
-    steps: recipe ? joinSections(recipe.steps).join("\n") : "",
+    steps: rowsFromLines(recipe ? joinSections(recipe.steps) : [], newRowKey),
     notes: recipe?.notes ?? "",
   }
 }
@@ -91,7 +98,7 @@ function toInput(form: Form): RecipeInput {
     rating: form.rating,
     tags: form.tags,
     ingredients: form.ingredients.split("\n"),
-    steps: form.steps.split("\n"),
+    steps: linesFromRows(form.steps),
     notes: orNull(form.notes),
   }
 }
@@ -139,9 +146,15 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       const fields = Object.entries(error.fields)
-      // "ingredients.12" is a problem with one line of the ingredients.
+      // "ingredients.12" is a problem with one line of the ingredients. A
+      // step has a box of its own, so "steps.12" goes under that box.
       for (const [field, message] of fields) {
-        form.setError(field.split(".")[0] as keyof Form, { message })
+        const [name, line] = field.split(".")
+        if (name === "steps" && line !== undefined) {
+          form.setError(`steps.${Number(line)}.text`, { message })
+        } else {
+          form.setError(name as keyof Form, { message })
+        }
       }
       if (fields.length === 0) form.setError("root", { message: error.message })
     }
@@ -324,22 +337,27 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("recipes.fields.steps")}</CardTitle>
-            <CardDescription>{t("recipes.editor.stepsHint")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TextareaField
-              label={t("recipes.fields.steps")}
-              hideLabel
-              className="min-h-48"
-              placeholder={t("recipes.editor.stepsPlaceholder")}
-              error={errors.steps?.message}
-              {...form.register("steps")}
+        <Controller
+          control={form.control}
+          name="steps"
+          render={({ field }) => (
+            <StepsEditor
+              value={field.value}
+              onChange={(rows) => {
+                // Only when there are some: clearing redraws the whole form,
+                // which on every key would slow typing in a long recipe.
+                if (form.formState.errors.steps) form.clearErrors("steps")
+                field.onChange(rows)
+              }}
+              errors={{
+                list: errors.steps?.message,
+                rows: field.value.map(
+                  (_, index) => errors.steps?.[index]?.text?.message
+                ),
+              }}
             />
-          </CardContent>
-        </Card>
+          )}
+        />
 
         <Card>
           <CardHeader>
