@@ -5,6 +5,9 @@
 // them. Plain functions, so they can be tested without a screen; none of them
 // changes the rows it's given.
 
+/** Which of a recipe's lists the lines are. */
+export type LineList = "steps" | "ingredients"
+
 /** A step or an ingredient, or the heading that starts a section. */
 export type LineRow = { key: string; kind: "line" | "section"; text: string }
 
@@ -337,7 +340,7 @@ export function insertSectionBefore(
 }
 
 /** An empty line at the end. */
-export function appendStep(
+export function appendLine(
   rows: readonly LineRow[],
   makeKey: () => string
 ): Change {

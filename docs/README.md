@@ -45,7 +45,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio, which thes
 | [pantry.md](pantry.md) | A pantry that keeps itself: checking off puts food away, it learns where things go, what ran out after cooking, cooking off the plan, and asking about meals nobody marked (planned November 5, 2026) |
 | [flaresolverr-imports.md](flaresolverr-imports.md) | Importing links from sites that turn Merran away, through the server admin's own FlareSolverr, and what stays honest (released in alpha.7) |
 | [mobile-gestures.md](mobile-gestures.md) | Swiping rows on the list and in the pantry, pull to refresh and swiping back in the installed app (built November 8, 2026) |
-| [recipe-editor.md](recipe-editor.md) | Editing steps in a box each: Enter, Backspace, pasting, sections, and Edit as text (November 14, 2026) |
+| [recipe-editor.md](recipe-editor.md) | Editing steps and ingredients in a box each: Enter, Backspace, pasting, sections, and Edit as text (November 14, 2026) |
 | [recipe-sharing.md](recipe-sharing.md) | Sharing one recipe by link through the phone's share sheet: what the recipient sees, what stays private, and no AI or editing (implemented November 8, 2026) |
 | [webhooks.md](webhooks.md) | Webhooks for Home Assistant and n8n: every event and its payload, signing and retries, the home network, cook view reporting cooking and timers, daily heads-ups, and the build order (planned November 10, 2026) |
 | [features.md](features.md) | Every feature with its importance and status, for the marketing and docs sites |

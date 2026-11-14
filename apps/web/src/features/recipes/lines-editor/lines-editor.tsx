@@ -18,10 +18,11 @@ import { Switch } from "@/components/ui/switch"
 
 import { LineRow, type RowActions } from "./line-row"
 import {
+  appendLine,
   appendSection,
-  appendStep,
-  insertSectionBefore,
   backspaceAtStart,
+  insertSectionBefore,
+  lineNumbers,
   moveRow,
   newRowKey,
   pasteLines,
@@ -29,13 +30,13 @@ import {
   rowsFromText,
   setText,
   splitAtLineBreaks,
-  lineNumbers,
   textFromRows,
   type Change,
   type Focus,
+  type LineList,
   type LineRow as Row,
 } from "./line-rows"
-import { useStepsAsText } from "./use-steps-as-text"
+import { useAsText } from "./use-as-text"
 
 /** What the server said was wrong: with the whole list, or a row by its index. */
 export type LineErrors = {
@@ -45,21 +46,44 @@ export type LineErrors = {
 
 type Box = HTMLTextAreaElement | HTMLInputElement
 
+/** The words each list's card uses. */
+const WORDS = {
+  steps: {
+    title: "recipes.fields.steps",
+    boxesHint: "recipes.editor.stepsBoxesHint",
+    textHint: "recipes.editor.stepsHint",
+    textPlaceholder: "recipes.editor.stepsPlaceholder",
+    firstPlaceholder: "recipes.editor.stepPlaceholder",
+    add: "recipes.editor.addStep",
+  },
+  ingredients: {
+    title: "recipes.fields.ingredients",
+    boxesHint: "recipes.editor.ingredientsBoxesHint",
+    textHint: "recipes.editor.ingredientsHint",
+    textPlaceholder: "recipes.editor.ingredientsPlaceholder",
+    firstPlaceholder: "recipes.editor.ingredientPlaceholder",
+    add: "recipes.editor.addIngredient",
+  },
+} as const
+
 /**
- * The recipe's steps, in a box each with sections as headings, or as text,
- * one per line, for whoever prefers that or is pasting a lot.
+ * A recipe's steps or ingredients, in a box each with sections as headings,
+ * or as text, one per line, for whoever prefers that or is pasting a lot.
  */
 export function LinesEditor({
+  list,
   value,
   onChange,
   errors,
 }: {
+  list: LineList
   value: Row[]
   onChange: (rows: Row[]) => void
   errors: LineErrors
 }) {
   const { t } = useTranslation()
-  const [asText, setAsText] = useStepsAsText()
+  const words = WORDS[list]
+  const [asText, setAsText] = useAsText(list)
   const [draft, setDraft] = React.useState(() =>
     asText ? textFromRows(value) : ""
   )
@@ -76,7 +100,7 @@ export function LinesEditor({
 
   const actions = React.useMemo<
     RowActions & {
-      addStep: () => void
+      addLine: () => void
       addSection: () => void
     }
   >(() => {
@@ -122,8 +146,8 @@ export function LinesEditor({
         if (box) boxes.current.set(key, box)
         else boxes.current.delete(key)
       },
-      addStep() {
-        apply(appendStep(rows(), newRowKey))
+      addLine() {
+        apply(appendLine(rows(), newRowKey))
       },
       addSection() {
         apply(appendSection(rows(), newRowKey))
@@ -160,11 +184,9 @@ export function LinesEditor({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("recipes.fields.steps")}</CardTitle>
+        <CardTitle>{t(words.title)}</CardTitle>
         <CardDescription>
-          {asText
-            ? t("recipes.editor.stepsHint")
-            : t("recipes.editor.stepsBoxesHint")}
+          {asText ? t(words.textHint) : t(words.boxesHint)}
         </CardDescription>
         <CardAction>
           <label className="flex items-center gap-2 text-sm">
@@ -176,10 +198,10 @@ export function LinesEditor({
       <CardContent>
         {asText ? (
           <TextareaField
-            label={t("recipes.fields.steps")}
+            label={t(words.title)}
             hideLabel
             className="min-h-48"
-            placeholder={t("recipes.editor.stepsPlaceholder")}
+            placeholder={t(words.textPlaceholder)}
             error={errors.list ?? errors.rows.find(Boolean)}
             value={draft}
             onChange={changeDraft}
@@ -190,6 +212,7 @@ export function LinesEditor({
               {value.map((row, index) => (
                 <LineRow
                   key={row.key}
+                  list={list}
                   row={row}
                   number={numbers.get(row.key)}
                   first={index === 0}
@@ -197,7 +220,7 @@ export function LinesEditor({
                   error={errors.rows[index]}
                   placeholder={
                     index === 0 && row.kind === "line"
-                      ? t("recipes.editor.stepPlaceholder")
+                      ? t(words.firstPlaceholder)
                       : undefined
                   }
                   actions={actions}
@@ -210,10 +233,10 @@ export function LinesEditor({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={actions.addStep}
+                onClick={actions.addLine}
               >
                 <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-                {t("recipes.editor.addStep")}
+                {t(words.add)}
               </Button>
               <Button
                 type="button"

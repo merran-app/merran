@@ -20,13 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FieldGroup, FieldLegend, FieldSet } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { api, ApiError, unwrap } from "@/lib/api/client"
@@ -38,6 +32,7 @@ import {
   linesFromRows,
   newRowKey,
   rowsFromLines,
+  type LineList,
   type LineRow,
 } from "./lines-editor/line-rows"
 import { TagsField } from "./tags-field"
@@ -53,7 +48,7 @@ type Form = {
   totalMinutes: string
   rating: number | null
   tags: string[]
-  ingredients: string
+  ingredients: LineRow[]
   steps: LineRow[]
   notes: string
 }
@@ -75,7 +70,10 @@ function startingValues(recipe?: Recipe): Form {
     totalMinutes: text(recipe?.totalMinutes),
     rating: recipe?.rating ?? null,
     tags: recipe?.tags ?? [],
-    ingredients: recipe ? joinSections(recipe.ingredients).join("\n") : "",
+    ingredients: rowsFromLines(
+      recipe ? joinSections(recipe.ingredients) : [],
+      newRowKey
+    ),
     steps: rowsFromLines(recipe ? joinSections(recipe.steps) : [], newRowKey),
     notes: recipe?.notes ?? "",
   }
@@ -97,7 +95,7 @@ function toInput(form: Form): RecipeInput {
     totalMinutes: numberOrNull(form.totalMinutes),
     rating: form.rating,
     tags: form.tags,
-    ingredients: form.ingredients.split("\n"),
+    ingredients: linesFromRows(form.ingredients),
     steps: linesFromRows(form.steps),
     notes: orNull(form.notes),
   }
@@ -146,12 +144,15 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       const fields = Object.entries(error.fields)
-      // "ingredients.12" is a problem with one line of the ingredients. A
-      // step has a box of its own, so "steps.12" goes under that box.
+      // "ingredients.12" is a problem with one line of the ingredients. Each
+      // line has a box of its own, so its message goes under that box.
       for (const [field, message] of fields) {
         const [name, line] = field.split(".")
-        if (name === "steps" && line !== undefined) {
-          form.setError(`steps.${Number(line)}.text`, { message })
+        if (
+          (name === "steps" || name === "ingredients") &&
+          line !== undefined
+        ) {
+          form.setError(`${name}.${Number(line)}.text`, { message })
         } else {
           form.setError(name as keyof Form, { message })
         }
@@ -159,6 +160,34 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
       if (fields.length === 0) form.setError("root", { message: error.message })
     }
   })
+
+  /** A list's card, in a box each: the form holds its rows, and the server's errors land on them. */
+  function linesCard(list: LineList) {
+    return (
+      <Controller
+        control={form.control}
+        name={list}
+        render={({ field }) => (
+          <LinesEditor
+            list={list}
+            value={field.value}
+            onChange={(rows) => {
+              // Only when there are some: clearing redraws the whole form,
+              // which on every key would slow typing in a long recipe.
+              if (form.formState.errors[list]) form.clearErrors(list)
+              field.onChange(rows)
+            }}
+            errors={{
+              list: errors[list]?.message,
+              rows: field.value.map(
+                (_, index) => errors[list]?.[index]?.text?.message
+              ),
+            }}
+          />
+        )}
+      />
+    )
+  }
 
   const cancel = () =>
     recipe
@@ -318,46 +347,9 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("recipes.fields.ingredients")}</CardTitle>
-            <CardDescription>
-              {t("recipes.editor.ingredientsHint")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TextareaField
-              label={t("recipes.fields.ingredients")}
-              hideLabel
-              className="min-h-48"
-              placeholder={t("recipes.editor.ingredientsPlaceholder")}
-              error={errors.ingredients?.message}
-              {...form.register("ingredients")}
-            />
-          </CardContent>
-        </Card>
+        {linesCard("ingredients")}
 
-        <Controller
-          control={form.control}
-          name="steps"
-          render={({ field }) => (
-            <LinesEditor
-              value={field.value}
-              onChange={(rows) => {
-                // Only when there are some: clearing redraws the whole form,
-                // which on every key would slow typing in a long recipe.
-                if (form.formState.errors.steps) form.clearErrors("steps")
-                field.onChange(rows)
-              }}
-              errors={{
-                list: errors.steps?.message,
-                rows: field.value.map(
-                  (_, index) => errors.steps?.[index]?.text?.message
-                ),
-              }}
-            />
-          )}
-        />
+        {linesCard("steps")}
 
         <Card>
           <CardHeader>

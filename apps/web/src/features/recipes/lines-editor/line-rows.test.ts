@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   appendSection,
-  appendStep,
+  appendLine,
   insertSectionBefore,
   backspaceAtStart,
   linesFromRows,
@@ -263,7 +263,7 @@ test("deleting a heading puts its steps in the section above", () => {
 })
 
 test("adding a step or a section puts the cursor in it", () => {
-  const step = appendStep(rows("a"), counter("n"))
+  const step = appendLine(rows("a"), counter("n"))
   assert.deepEqual(linesFromRows(step.rows), ["a", ""])
   assert.deepEqual(step.focus, { key: step.rows[1]?.key, caret: 0 })
 

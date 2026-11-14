@@ -49,7 +49,7 @@ Only the first 100 links are considered per batch. Existing recipes are skipped;
 
 1. Choose **Type one in instead** from **Add a recipe**.
 2. Enter a **Name**, numeric **Servings** where known, and optional **Makes** text such as “2 loaves.”
-3. Enter one ingredient per line, starting a line with `#` for a section, such as `# For the sauce`. Type each step in its own box: **Enter** starts the next one, and pasting several lines adds a step for each. **Add section** adds a heading, such as “For the sauce”, for the steps under it.
+3. Type each ingredient and each step in its own box: **Enter** starts the next one, and pasting several lines adds one for each. **Add section** adds a heading, such as “For the sauce”, for the lines under it; typing `#` at the start of a line does the same.
 4. Add times, tags, and notes, then choose **Add recipe**.
 
 **Expected result:** your new recipe opens. A numeric serving count makes later scaling clearer; descriptive **Makes** text does not replace it.
@@ -74,8 +74,8 @@ cards show **Planned this week** when the recipe is on the household's current w
 
 1. Open a recipe and choose **Edit**.
 2. Correct the name, original link, servings, times, ingredients, or steps. Use **Notes** for lasting tips and substitutions.
-   - Each step has a ⋮ menu with **Move up**, **Move down**, **Add a section above**, and **Delete**. **Backspace** at the start of a step joins it to the one above.
-   - **Edit as text** shows the steps one per line in a single box, for pasting or changing many at once. Your device remembers which way you used last.
+   - Each ingredient and step has a ⋮ menu with **Move up**, **Move down**, **Add a section above**, and **Delete**. **Backspace** at the start of one joins it to the one above.
+   - **Edit as text** shows the ingredients or the steps one per line in a single box, for pasting or changing many at once. Your device remembers which way you used last, for each of the two.
 3. Under **Tags**, type a tag and press Enter or type a comma. Add a rating if useful. From alpha.8, tap the left half of a star to give half of it.
 4. Choose **Save**. Leaving with unsaved edits prompts you before discarding them. In alpha.5, the confirmation opens as a bottom drawer on phones, with **Cancel** and **Leave without saving**.
 

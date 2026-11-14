@@ -21,10 +21,22 @@ import { Field, FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
-import type { LineRow as Row } from "./line-rows"
+import type { LineList, LineRow as Row } from "./line-rows"
 import { useGrowWithText } from "./use-grow-with-text"
 
 type Box = HTMLTextAreaElement | HTMLInputElement
+
+/** What a line is called for screen readers, and its menu, in each list. */
+const LABELS = {
+  steps: {
+    line: "recipes.editor.stepLabel",
+    options: "recipes.editor.stepOptions",
+  },
+  ingredients: {
+    line: "recipes.editor.ingredientLabel",
+    options: "recipes.editor.ingredientOptions",
+  },
+} as const
 
 /**
  * What a row can ask the list to do, by its key. The list keeps these the
@@ -45,6 +57,7 @@ export type RowActions = {
 }
 
 type LineRowProps = {
+  list: LineList
   row: Row
   /** A line's number, counted right through the sections. */
   number: number | undefined
@@ -62,6 +75,7 @@ type LineRowProps = {
  */
 function sameProps(before: LineRowProps, after: LineRowProps) {
   return (
+    before.list === after.list &&
     before.row.key === after.row.key &&
     before.row.kind === after.row.kind &&
     before.row.text === after.row.text &&
@@ -74,8 +88,12 @@ function sameProps(before: LineRowProps, after: LineRowProps) {
   )
 }
 
-/** One line, numbered, or one section's heading, with its menu. */
+/**
+ * One line, with its number for a step or a dot for an ingredient, or one
+ * section's heading, with its menu.
+ */
 export const LineRow = React.memo(function LineRow({
+  list,
   row,
   number,
   first,
@@ -148,7 +166,7 @@ export const LineRow = React.memo(function LineRow({
 
   return (
     <div className="flex items-start gap-3">
-      {line && (
+      {line && list === "steps" && (
         <span
           aria-hidden
           className="mt-2 flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground"
@@ -156,11 +174,20 @@ export const LineRow = React.memo(function LineRow({
           {number}
         </span>
       )}
+      {/* A dot, not a number, which beside "2 cups flour" would read as an amount. */}
+      {line && list === "ingredients" && (
+        <span
+          aria-hidden
+          className="mt-2 flex size-7 shrink-0 items-center justify-center"
+        >
+          <span className="size-1.5 rounded-full bg-muted-foreground" />
+        </span>
+      )}
       <Field data-invalid={error ? true : undefined} className="min-w-0 flex-1">
         {line ? (
           <Textarea
             {...boxProps}
-            aria-label={t("recipes.editor.stepLabel", { number })}
+            aria-label={t(LABELS[list].line, { number })}
             placeholder={placeholder}
             rows={1}
             className="min-h-11 py-2.5"
@@ -185,7 +212,7 @@ export const LineRow = React.memo(function LineRow({
               className="mt-1 shrink-0"
               aria-label={
                 line
-                  ? t("recipes.editor.stepOptions", { number })
+                  ? t(LABELS[list].options, { number })
                   : t("recipes.editor.sectionOptions")
               }
             />
