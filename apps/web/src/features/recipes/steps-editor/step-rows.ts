@@ -41,6 +41,11 @@ function withoutHashes(text: string) {
   return text.replace(/^#+/, "").trim()
 }
 
+/** Text typed into a box without the "#"s and spaces in front of it. */
+function withoutLeadingHashes(text: string) {
+  return text.trimStart().replace(/^#+/, "").trimStart()
+}
+
 function indexOf(rows: readonly StepRow[], key: string) {
   const index = rows.findIndex((row) => row.key === key)
   if (index === -1) throw new Error(`No row ${key}`)
@@ -118,16 +123,20 @@ export function setText(
     const section: StepRow = {
       key,
       kind: "section",
-      text: withoutHashes(text),
+      text: withoutLeadingHashes(text),
     }
     return {
       rows: replaceAt(rows, index, [section]),
       focus: { key, caret: section.text.length },
     }
   }
-  // A heading starts at its first word, so the space typed after a "#" that
-  // made it one isn't kept in front of it.
-  const newText = row.kind === "section" ? text.trimStart() : text
+  // Until a heading has a name, what's typed may still be the "#"s and the
+  // space that made it one ("## Sauce", key by key), which aren't part of
+  // it. Once it has one, it keeps whatever's typed, so the cursor stays put.
+  const newText =
+    row.kind === "section" && row.text === ""
+      ? withoutLeadingHashes(text)
+      : text
   return {
     rows: replaceAt(rows, index, [{ ...row, text: newText }]),
     focus: null,
@@ -233,18 +242,26 @@ export function pasteLines(
 }
 
 /**
- * Backspace at the very start of a step: joins it to the step above, with a
- * space between, and the cursor where it starts. Under a heading it only
- * removes an empty step. Anywhere else it does nothing (null).
+ * Backspace at the very start of a row. A heading goes back to being a step,
+ * undoing a "#" typed by mistake. A step joins the step above, with a space
+ * between, and the cursor where it starts; under a heading it only removes
+ * an empty step. Anywhere else it does nothing (null).
  */
-export function joinWithPrevious(
+export function backspaceAtStart(
   rows: readonly StepRow[],
   key: string
 ): Change | null {
   const index = indexOf(rows, key)
   const row = rows[index]!
+  if (row.kind === "section") {
+    return {
+      rows: replaceAt(rows, index, [{ ...row, kind: "step" }]),
+      focus: { key, caret: 0 },
+    }
+  }
+
   const previous = rows[index - 1]
-  if (!previous || row.kind !== "step") return null
+  if (!previous) return null
 
   const without = rows.filter((other) => other.key !== key)
   if (previous.kind === "section") {

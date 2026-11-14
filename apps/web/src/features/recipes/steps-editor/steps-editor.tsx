@@ -21,7 +21,7 @@ import {
   appendSection,
   appendStep,
   insertSectionBefore,
-  joinWithPrevious,
+  backspaceAtStart,
   moveRow,
   newRowKey,
   pasteLines,
@@ -104,7 +104,7 @@ export function StepsEditor({
         return true
       },
       backspaceAtStart(key) {
-        const change = joinWithPrevious(rows(), key)
+        const change = backspaceAtStart(rows(), key)
         if (!change) return false
         apply(change)
         return true

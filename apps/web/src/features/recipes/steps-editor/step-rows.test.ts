@@ -4,7 +4,7 @@ import {
   appendSection,
   appendStep,
   insertSectionBefore,
-  joinWithPrevious,
+  backspaceAtStart,
   linesFromRows,
   moveRow,
   pasteLines,
@@ -123,23 +123,36 @@ test("Enter in a section starts a step under it", () => {
 
 test("Backspace at the start joins a step to the one above", () => {
   const two = rows("Heat the oven.", "Toss.")
-  const joined = joinWithPrevious(two, "k2")
+  const joined = backspaceAtStart(two, "k2")
   assert.deepEqual(linesFromRows(joined?.rows ?? []), ["Heat the oven. Toss."])
   assert.deepEqual(joined?.focus, { key: "k1", caret: 15 })
 
-  const empty = joinWithPrevious(exactly("Stir.", ""), "k2")
+  const empty = backspaceAtStart(exactly("Stir.", ""), "k2")
   assert.deepEqual(linesFromRows(empty?.rows ?? []), ["Stir."])
   assert.deepEqual(empty?.focus, { key: "k1", caret: 5 })
 
-  const intoEmpty = joinWithPrevious(exactly("", "Stir."), "k2")
+  const intoEmpty = backspaceAtStart(exactly("", "Stir."), "k2")
   assert.deepEqual(linesFromRows(intoEmpty?.rows ?? []), ["Stir."])
   assert.deepEqual(intoEmpty?.focus, { key: "k1", caret: 0 })
 })
 
-test("Backspace leaves the first row and a heading alone, but removes an empty step", () => {
-  assert.equal(joinWithPrevious(rows("Stir."), "k1"), null)
-  assert.equal(joinWithPrevious(rows("# Sauce", "Whisk."), "k2"), null)
-  const removed = joinWithPrevious(exactly("# Sauce", ""), "k2")
+test("Backspace at the start of a heading turns it back into a step", () => {
+  const change = backspaceAtStart(rows("Stir.", "# Stir in the cream"), "k2")
+  assert.deepEqual(change?.rows[1], {
+    key: "k2",
+    kind: "step",
+    text: "Stir in the cream",
+  })
+  assert.deepEqual(change?.focus, { key: "k2", caret: 0 })
+
+  const first = backspaceAtStart(rows("# Sauce"), "k1")
+  assert.deepEqual(first?.rows, [{ key: "k1", kind: "step", text: "Sauce" }])
+})
+
+test("Backspace leaves the first step, and a step under a heading, alone, but removes an empty step", () => {
+  assert.equal(backspaceAtStart(rows("Stir."), "k1"), null)
+  assert.equal(backspaceAtStart(rows("# Sauce", "Whisk."), "k2"), null)
+  const removed = backspaceAtStart(exactly("# Sauce", ""), "k2")
   assert.deepEqual(linesFromRows(removed?.rows ?? []), ["# Sauce"])
   assert.deepEqual(removed?.focus, { key: "k1", caret: 5 })
 })
@@ -201,6 +214,21 @@ test("a heading never starts with spaces, so typing # and then a space leaves no
   const heading = setText(rows("Stir."), "k1", "#").rows
   assert.deepEqual(setText(heading, "k1", " ").rows[0]?.text, "")
   assert.deepEqual(setText(heading, "k1", " Extra").rows[0]?.text, "Extra")
+})
+
+test("a heading with a name keeps what's typed, spaces and all", () => {
+  // Backspacing over "For" leaves the space before "the" while it's edited.
+  const named = rows("# For the sauce")
+  assert.equal(setText(named, "k1", " the sauce").rows[0]?.text, " the sauce")
+  // A phrase typed at once into an empty heading keeps its last space.
+  const empty = setText(rows("Stir."), "k1", "#").rows
+  assert.equal(setText(empty, "k1", "For the ").rows[0]?.text, "For the ")
+})
+
+test("the #s typed into an empty heading aren't part of its name", () => {
+  const empty = setText(rows("Stir."), "k1", "#").rows
+  assert.equal(setText(empty, "k1", "#").rows[0]?.text, "")
+  assert.equal(setText(empty, "k1", "# Sauce").rows[0]?.text, "Sauce")
 })
 
 test("moving swaps with the neighbour, and does nothing at the ends", () => {

@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 import type { StepRow as Row } from "./step-rows"
+import { useGrowWithText } from "./use-grow-with-text"
 
 type Box = HTMLTextAreaElement | HTMLInputElement
 
@@ -87,8 +88,16 @@ export const StepRow = React.memo(function StepRow({
   const { key } = row
   const step = row.kind === "step"
 
+  const [textarea, setTextarea] = React.useState<HTMLTextAreaElement | null>(
+    null
+  )
+  useGrowWithText(textarea, row.text)
+
   const register = React.useCallback(
-    (box: Box | null) => actions.register(key, box),
+    (box: Box | null) => {
+      actions.register(key, box)
+      setTextarea(box instanceof HTMLTextAreaElement ? box : null)
+    },
     [actions, key]
   )
 
@@ -107,17 +116,19 @@ export const StepRow = React.memo(function StepRow({
 
   function handleKeyDown(event: React.KeyboardEvent<Box>) {
     // The Enter that finishes a word in an input method isn't a new step.
-    if (event.nativeEvent.isComposing) return
+    // Safari has already ended the word when that Enter comes, so it says
+    // so only with keyCode 229.
+    if (event.nativeEvent.isComposing || event.keyCode === 229) return
     const box = event.currentTarget
     const start = box.selectionStart ?? 0
     const end = box.selectionEnd ?? start
 
     // A heading's field is one line, so Enter would submit the recipe.
-    // Instead it starts a step under the heading, as Enter in a step does.
+    // Instead it starts a step under the heading, wherever the cursor is,
+    // and leaves the heading as it is.
     if (!step && event.key === "Enter") {
       event.preventDefault()
-      const value = `${box.value.slice(0, start)}\n${box.value.slice(end)}`
-      actions.type(key, value, start + 1)
+      actions.type(key, `${box.value}\n`, box.value.length + 1)
       return
     }
 

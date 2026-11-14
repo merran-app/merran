@@ -20,11 +20,11 @@ Steps                                  Edit as text
     + Add step    + Add section
 ```
 
-- **Each step has its own box,** which grows with its text (the app's `Textarea` already does). Screen readers hear it as "Step 3".
+- **Each step has its own box,** which grows with its text (the app's `Textarea` already does, through `field-sizing`; in a browser without it, the box is sized to its text by script). Screen readers hear it as "Step 3".
 - **Enter splits the step at the cursor:** what's after the cursor becomes a new step below, and the cursor goes with it. At the end of a step that's just a new, empty step, so typing a recipe stays type, Enter, type.
 - **Backspace at the very start of a step joins it to the one above,** with a space between and the cursor at the join. In an empty step, that removes it.
 - **Pasting several lines into a step makes a step of each,** from the cursor on, and a line starting with `#` becomes a section, as in the box today. Pasting one line works as usual.
-- **A section is a heading row** between steps, with its own field ("Section name"). The steps under it are in that section until the next heading. A heading with no name ends the section, which is a bare `#` line, as today. Typing `#` at the start of a step turns it into a heading, because a line starting with `#` is saved as a section anyway.
+- **A section is a heading row** between steps, with its own field ("Section name"). The steps under it are in that section until the next heading. A heading with no name ends the section, which is a bare `#` line, as today. Typing `#` at the start of a step turns it into a heading, because a line starting with `#` is saved as a section anyway, and Backspace at the start of a heading turns it back into a step. Enter in a heading starts a step under it, wherever the cursor is, and leaves the heading as it is.
 - **The ⋮ menu** on a step has Move up, Move down, Add a section above and Delete. On a heading it has Move up, Move down and Delete; deleting a heading puts its steps in the section above. Focus stays on what moved. Deleting asks nothing: Cancel and "Leave without saving" already guard the whole edit, and each save keeps a version.
 - **Add step and Add section** sit under the list.
 - **Empty steps are left out** when saving, as blank lines are now.
