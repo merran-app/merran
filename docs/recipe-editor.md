@@ -1,6 +1,6 @@
-# Editing steps
+# Editing steps and ingredients
 
-Decided with the user, November 14, 2026, and built the same day.
+Decided with the user, November 14, 2026, and built the same day: steps first, then ingredients the same way.
 
 ## Why
 
@@ -31,10 +31,34 @@ Steps                                  Edit as text
 - **Edit as text** switches the card to today's box, with the same lines, and back. Nothing can be lost either way, because both are the same lines. The device remembers which you used last.
 - **Errors land on the step:** the server names the line (`steps.12`), so the editor shows its message under that step's box.
 
+## Ingredients
+
+Ingredients are saved the same way as steps: one line each, with `# Name` lines for sections, and the server names a line's problem the same way (`ingredients.12`). So one editor serves both cards, and the Ingredients card gets everything above: a box each, Enter, Backspace, pasting, `#` for a heading, heading rows, the ⋮ menu, **Add ingredient** and **Add section**, **Edit as text**, and errors under their line.
+
+```
+Ingredients                            Edit as text
+ •  [ 2 cups flour                             ]  ⋮
+ •  [ 1 tsp salt                               ]  ⋮
+ ── For the glaze ──────────────────────────────  ⋮
+ •  [ 1 cup powdered sugar                     ]  ⋮
+    + Add ingredient    + Add section
+```
+
+Where they differ:
+
+- **No numbers:** a small dot instead, since "3" beside "2 cups flour" would read as an amount.
+- **A box starts one line high,** as most lines are short, and grows only when a line wraps.
+- **Each card remembers its own Edit as text,** since someone may paste ingredient lists as text but type steps in boxes.
+- **Their own words:** screen readers hear "Ingredient 3", and the hint says "Enter starts the next ingredient. Paste several lines to add one for each."
+- **The limits stay the server's:** 300 lines, 500 characters each.
+
+Saving still sends lines, so how Merran reads each line, the marks Tidy up gives them, the list and nutrition are as before.
+
+Not this round: showing in each box what Merran reads from the line (amount, unit, food), which would catch a typo before saving. It's a feature of its own.
+
 ## What stays the same
 
 - **Saving.** The editor still sends lines, with a `#` line for each section, to `POST /api/recipes` and `PUT /api/recipes/{recipe}`. Nothing changes in the API, the schema, the assistant, MCP or imports, and agents keep writing lines.
-- **Ingredients stay one box.** Their lines are short and rarely wrap, and a box is the quickest way to type a list. They could get the same treatment later.
 - **A step is one paragraph.** In the API a line is a step, so there are no paragraph breaks inside one.
 
 ## Not this round
@@ -64,6 +88,8 @@ Steps                                  Edit as text
 | Keep the one box, number its lines | Typing stays as it is, but a plain box can't number or indent wrapped lines, so it needs a code-editor component, heavy and fiddly on phones; editing inside a long step stays cramped | |
 | Read the steps, tap one to edit it in a drawer | Easiest to read; slow for typing a whole new recipe | |
 
+For ingredients, there was one sensible way: the same editor, since the lines, sections and errors are the same. A separate ingredient editor would only repeat it, and leaving ingredients as one box would have two ways of editing a list side by side.
+
 ## Left to the builder
 
 - How the form holds the steps (a react-hook-form field array or a list of its own). "Leave without saving" must still notice every change.
@@ -75,3 +101,4 @@ Steps                                  Edit as text
 
 - `docs/features.md`, and this doc in the table in `docs/README.md`.
 - The recipes guide, `apps/docs/src/content/docs/docs/use/recipes.md` ("Type one in" and "Edit and organize"), quoting the new labels exactly.
+- Any other guide that says to type ingredients or steps one per line.
