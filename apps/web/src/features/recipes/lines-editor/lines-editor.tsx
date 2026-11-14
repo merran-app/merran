@@ -83,6 +83,9 @@ export function LinesEditor({
 }) {
   const { t } = useTranslation()
   const words = WORDS[list]
+  // Both cards have an "Edit as text" and an "Add section", so each says
+  // which list it's for to a screen reader, by the card's title.
+  const titleId = React.useId()
   const [asText, setAsText] = useAsText(list)
   const [draft, setDraft] = React.useState(() =>
     asText ? textFromRows(value) : ""
@@ -184,13 +187,17 @@ export function LinesEditor({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t(words.title)}</CardTitle>
+        <CardTitle id={titleId}>{t(words.title)}</CardTitle>
         <CardDescription>
           {asText ? t(words.textHint) : t(words.boxesHint)}
         </CardDescription>
         <CardAction>
           <label className="flex items-center gap-2 text-sm">
-            <Switch checked={asText} onCheckedChange={switchToText} />
+            <Switch
+              checked={asText}
+              onCheckedChange={switchToText}
+              aria-describedby={titleId}
+            />
             {t("recipes.editor.editAsText")}
           </label>
         </CardAction>
@@ -243,6 +250,7 @@ export function LinesEditor({
                 variant="outline"
                 size="sm"
                 onClick={actions.addSection}
+                aria-describedby={titleId}
               >
                 <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
                 {t("recipes.editor.addSection")}
