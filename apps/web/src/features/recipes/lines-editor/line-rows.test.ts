@@ -13,10 +13,10 @@ import {
   rowsFromText,
   setText,
   splitAtLineBreaks,
-  stepNumbers,
+  lineNumbers,
   textFromRows,
-  type StepRow,
-} from "./step-rows.ts"
+  type LineRow,
+} from "./line-rows.ts"
 
 /**
  * Keys that are the same every run: k1, k2... for the rows a test starts
@@ -32,10 +32,10 @@ function rows(...lines: string[]) {
 }
 
 /** Rows for exactly these lines: rows() skips blank ones, this makes them empty steps. */
-function exactly(...lines: string[]): StepRow[] {
+function exactly(...lines: string[]): LineRow[] {
   const keys = counter()
-  return lines.map((line): StepRow => {
-    if (line === "") return { key: keys(), kind: "step", text: "" }
+  return lines.map((line): LineRow => {
+    if (line === "") return { key: keys(), kind: "line", text: "" }
     return rowsFromLines([line], keys)[0]!
   })
 }
@@ -45,7 +45,7 @@ test("rows and lines go both ways, with a bare # ending a section", () => {
   const result = rows(...lines)
   assert.deepEqual(
     result.map((row) => row.kind),
-    ["step", "section", "step", "section", "step"]
+    ["line", "section", "line", "section", "line"]
   )
   assert.equal(result[1]?.text, "For the sauce")
   assert.equal(result[3]?.text, "")
@@ -56,15 +56,15 @@ test("rows and lines go both ways, with a bare # ending a section", () => {
 test("blank lines are skipped, and there's always a row to type in", () => {
   assert.deepEqual(linesFromRows(rows("", "  Stir.  ", " ")), ["Stir."])
   assert.deepEqual(rowsFromLines([], counter()), [
-    { key: "k1", kind: "step", text: "" },
+    { key: "k1", kind: "line", text: "" },
   ])
 })
 
 test("empty steps stay as empty lines, so a server error's index is the row's", () => {
-  const list: StepRow[] = [
-    { key: "a", kind: "step", text: "Stir." },
-    { key: "b", kind: "step", text: "" },
-    { key: "c", kind: "step", text: "Serve." },
+  const list: LineRow[] = [
+    { key: "a", kind: "line", text: "Stir." },
+    { key: "b", kind: "line", text: "" },
+    { key: "c", kind: "line", text: "Serve." },
   ]
   assert.deepEqual(linesFromRows(list), ["Stir.", "", "Serve."])
 })
@@ -117,7 +117,7 @@ test("Enter in a section starts a step under it", () => {
     counter("n")
   )
   assert.deepEqual(linesFromRows(change.rows), ["# Sauce", ""])
-  assert.equal(change.rows[1]?.kind, "step")
+  assert.equal(change.rows[1]?.kind, "line")
   assert.deepEqual(change.focus, { key: change.rows[1]?.key, caret: 0 })
 })
 
@@ -140,13 +140,13 @@ test("Backspace at the start of a heading turns it back into a step", () => {
   const change = backspaceAtStart(rows("Stir.", "# Stir in the cream"), "k2")
   assert.deepEqual(change?.rows[1], {
     key: "k2",
-    kind: "step",
+    kind: "line",
     text: "Stir in the cream",
   })
   assert.deepEqual(change?.focus, { key: "k2", caret: 0 })
 
   const first = backspaceAtStart(rows("# Sauce"), "k1")
-  assert.deepEqual(first?.rows, [{ key: "k1", kind: "step", text: "Sauce" }])
+  assert.deepEqual(first?.rows, [{ key: "k1", kind: "line", text: "Sauce" }])
 })
 
 test("Backspace leaves the first step, and a step under a heading, alone, but removes an empty step", () => {
@@ -277,7 +277,7 @@ test("adding a step or a section puts the cursor in it", () => {
 })
 
 test("steps are numbered right through the sections", () => {
-  const numbers = stepNumbers(rows("a", "# S", "b", "c"))
+  const numbers = lineNumbers(rows("a", "# S", "b", "c"))
   assert.deepEqual(
     [...numbers],
     [
@@ -293,9 +293,9 @@ test("text and back keeps the keys, so nothing looks changed", () => {
   const text = textFromRows(start)
   assert.equal(text, "a\n# S\nb")
   assert.deepEqual(rowsFromText(text, start, counter("n")), start)
-  const withEmpty: StepRow[] = [
-    { key: "a", kind: "step", text: "Stir." },
-    { key: "b", kind: "step", text: "" },
+  const withEmpty: LineRow[] = [
+    { key: "a", kind: "line", text: "Stir." },
+    { key: "b", kind: "line", text: "" },
   ]
   assert.equal(textFromRows(withEmpty), "Stir.")
 })

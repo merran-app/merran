@@ -16,7 +16,7 @@ import {
 import { FieldError } from "@/components/ui/field"
 import { Switch } from "@/components/ui/switch"
 
-import { StepRow, type RowActions } from "./step-row"
+import { LineRow, type RowActions } from "./line-row"
 import {
   appendSection,
   appendStep,
@@ -29,16 +29,16 @@ import {
   rowsFromText,
   setText,
   splitAtLineBreaks,
-  stepNumbers,
+  lineNumbers,
   textFromRows,
   type Change,
   type Focus,
-  type StepRow as Row,
-} from "./step-rows"
+  type LineRow as Row,
+} from "./line-rows"
 import { useStepsAsText } from "./use-steps-as-text"
 
 /** What the server said was wrong: with the whole list, or a row by its index. */
-export type StepErrors = {
+export type LineErrors = {
   list?: string
   rows: readonly (string | undefined)[]
 }
@@ -49,14 +49,14 @@ type Box = HTMLTextAreaElement | HTMLInputElement
  * The recipe's steps, in a box each with sections as headings, or as text,
  * one per line, for whoever prefers that or is pasting a lot.
  */
-export function StepsEditor({
+export function LinesEditor({
   value,
   onChange,
   errors,
 }: {
   value: Row[]
   onChange: (rows: Row[]) => void
-  errors: StepErrors
+  errors: LineErrors
 }) {
   const { t } = useTranslation()
   const [asText, setAsText] = useStepsAsText()
@@ -155,7 +155,7 @@ export function StepsEditor({
     onChange(rowsFromText(event.target.value, value, newRowKey))
   }
 
-  const numbers = stepNumbers(value)
+  const numbers = lineNumbers(value)
 
   return (
     <Card>
@@ -188,7 +188,7 @@ export function StepsEditor({
           <div className="grid gap-4">
             <div className="grid gap-3">
               {value.map((row, index) => (
-                <StepRow
+                <LineRow
                   key={row.key}
                   row={row}
                   number={numbers.get(row.key)}
@@ -196,7 +196,7 @@ export function StepsEditor({
                   last={index === value.length - 1}
                   error={errors.rows[index]}
                   placeholder={
-                    index === 0 && row.kind === "step"
+                    index === 0 && row.kind === "line"
                       ? t("recipes.editor.stepPlaceholder")
                       : undefined
                   }

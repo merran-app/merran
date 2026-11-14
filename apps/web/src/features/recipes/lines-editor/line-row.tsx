@@ -21,7 +21,7 @@ import { Field, FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
-import type { StepRow as Row } from "./step-rows"
+import type { LineRow as Row } from "./line-rows"
 import { useGrowWithText } from "./use-grow-with-text"
 
 type Box = HTMLTextAreaElement | HTMLInputElement
@@ -44,9 +44,9 @@ export type RowActions = {
   register: (key: string, box: Box | null) => void
 }
 
-type StepRowProps = {
+type LineRowProps = {
   row: Row
-  /** A step's number, counted right through the sections. */
+  /** A line's number, counted right through the sections. */
   number: number | undefined
   first: boolean
   last: boolean
@@ -60,7 +60,7 @@ type StepRowProps = {
  * compared by what's in it. Otherwise each key typed would redraw every row,
  * which a long recipe can't keep up with.
  */
-function sameProps(before: StepRowProps, after: StepRowProps) {
+function sameProps(before: LineRowProps, after: LineRowProps) {
   return (
     before.row.key === after.row.key &&
     before.row.kind === after.row.kind &&
@@ -74,8 +74,8 @@ function sameProps(before: StepRowProps, after: StepRowProps) {
   )
 }
 
-/** One step, numbered, or one section's heading, with its menu. */
-export const StepRow = React.memo(function StepRow({
+/** One line, numbered, or one section's heading, with its menu. */
+export const LineRow = React.memo(function LineRow({
   row,
   number,
   first,
@@ -83,10 +83,10 @@ export const StepRow = React.memo(function StepRow({
   error,
   placeholder,
   actions,
-}: StepRowProps) {
+}: LineRowProps) {
   const { t } = useTranslation()
   const { key } = row
-  const step = row.kind === "step"
+  const line = row.kind === "line"
 
   const [textarea, setTextarea] = React.useState<HTMLTextAreaElement | null>(
     null
@@ -115,7 +115,7 @@ export const StepRow = React.memo(function StepRow({
   }
 
   function handleKeyDown(event: React.KeyboardEvent<Box>) {
-    // The Enter that finishes a word in an input method isn't a new step.
+    // The Enter that finishes a word in an input method isn't a new line.
     // Safari has already ended the word when that Enter comes, so it says
     // so only with keyCode 229.
     if (event.nativeEvent.isComposing || event.keyCode === 229) return
@@ -124,9 +124,9 @@ export const StepRow = React.memo(function StepRow({
     const end = box.selectionEnd ?? start
 
     // A heading's field is one line, so Enter would submit the recipe.
-    // Instead it starts a step under the heading, wherever the cursor is,
+    // Instead it starts a line under the heading, wherever the cursor is,
     // and leaves the heading as it is.
-    if (!step && event.key === "Enter") {
+    if (!line && event.key === "Enter") {
       event.preventDefault()
       actions.type(key, `${box.value}\n`, box.value.length + 1)
       return
@@ -148,7 +148,7 @@ export const StepRow = React.memo(function StepRow({
 
   return (
     <div className="flex items-start gap-3">
-      {step && (
+      {line && (
         <span
           aria-hidden
           className="mt-2 flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground"
@@ -157,7 +157,7 @@ export const StepRow = React.memo(function StepRow({
         </span>
       )}
       <Field data-invalid={error ? true : undefined} className="min-w-0 flex-1">
-        {step ? (
+        {line ? (
           <Textarea
             {...boxProps}
             aria-label={t("recipes.editor.stepLabel", { number })}
@@ -184,7 +184,7 @@ export const StepRow = React.memo(function StepRow({
               size="icon"
               className="mt-1 shrink-0"
               aria-label={
-                step
+                line
                   ? t("recipes.editor.stepOptions", { number })
                   : t("recipes.editor.sectionOptions")
               }
@@ -208,7 +208,7 @@ export const StepRow = React.memo(function StepRow({
             <HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} />
             {t("recipes.editor.moveDown")}
           </DropdownMenuItem>
-          {step && (
+          {line && (
             <DropdownMenuItem onClick={() => actions.addSectionAbove(key)}>
               <HugeiconsIcon icon={Heading01Icon} strokeWidth={2} />
               {t("recipes.editor.addSectionAbove")}

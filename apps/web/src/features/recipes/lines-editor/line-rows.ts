@@ -1,17 +1,18 @@
-// The steps as the editor shows them: a box for each step, and a heading row
-// for each section. The API takes them as lines, a "#" line starting a
+// A recipe's steps or ingredients as the editor shows them: a box for each
+// line, and a heading row for each section. The API takes them as lines, a
+// "#" line starting a
 // section, so these turn lines into rows and back, and make every edit on
 // them. Plain functions, so they can be tested without a screen; none of them
 // changes the rows it's given.
 
-/** A step, or the heading that starts a section. */
-export type StepRow = { key: string; kind: "step" | "section"; text: string }
+/** A step or an ingredient, or the heading that starts a section. */
+export type LineRow = { key: string; kind: "line" | "section"; text: string }
 
 /** Where the cursor goes after an edit: a row, and a place in its text. */
 export type Focus = { key: string; caret: number }
 
 /** Rows after an edit, and where the cursor goes, if anywhere. */
-export type Change = { rows: StepRow[]; focus: Focus | null }
+export type Change = { rows: LineRow[]; focus: Focus | null }
 
 let lastKey = 0
 
@@ -24,17 +25,17 @@ export function newRowKey() {
   return `row-${lastKey}`
 }
 
-function emptyStep(key: string): StepRow {
-  return { key, kind: "step", text: "" }
+function emptyLine(key: string): LineRow {
+  return { key, kind: "line", text: "" }
 }
 
-/** A line as a row: "# For the sauce" is a section, anything else a step. */
-function parseLine(line: string, key: string): StepRow {
+/** A line as a row: "# For the sauce" is a section, anything else a line. */
+function parseLine(line: string, key: string): LineRow {
   const text = line.trim()
   if (text.startsWith("#")) {
     return { key, kind: "section", text: withoutHashes(text) }
   }
-  return { key, kind: "step", text }
+  return { key, kind: "line", text }
 }
 
 function withoutHashes(text: string) {
@@ -46,7 +47,7 @@ function withoutLeadingHashes(text: string) {
   return text.trimStart().replace(/^#+/, "").trimStart()
 }
 
-function indexOf(rows: readonly StepRow[], key: string) {
+function indexOf(rows: readonly LineRow[], key: string) {
   const index = rows.findIndex((row) => row.key === key)
   if (index === -1) throw new Error(`No row ${key}`)
   return index
@@ -54,9 +55,9 @@ function indexOf(rows: readonly StepRow[], key: string) {
 
 /** The rows with the one at `index` swapped for `replacement`. */
 function replaceAt(
-  rows: readonly StepRow[],
+  rows: readonly LineRow[],
   index: number,
-  replacement: readonly StepRow[]
+  replacement: readonly LineRow[]
 ) {
   return [...rows.slice(0, index), ...replacement, ...rows.slice(index + 1)]
 }
@@ -70,10 +71,10 @@ function replaceAt(
 export function rowsFromLines(
   lines: readonly string[],
   makeKey: () => string,
-  previous: readonly StepRow[] = []
-): StepRow[] {
+  previous: readonly LineRow[] = []
+): LineRow[] {
   const filled = lines.filter((line) => line.trim() !== "")
-  if (filled.length === 0) return [emptyStep(previous[0]?.key ?? makeKey())]
+  if (filled.length === 0) return [emptyLine(previous[0]?.key ?? makeKey())]
   return filled.map((line, index) =>
     parseLine(line, previous[index]?.key ?? makeKey())
   )
@@ -81,19 +82,19 @@ export function rowsFromLines(
 
 /**
  * The rows as lines, one for each, as the API takes them. A section with no
- * name is a bare "#", which ends the section before it. Empty steps stay as
- * empty lines, which the server leaves out, so an error it names by index
- * ("steps.12") is about the row at that index.
+ * name is a bare "#", which ends the section before it. Empty lines stay,
+ * though the server leaves them out, so an error it names by index
+ * ("steps.12", "ingredients.12") is about the row at that index.
  */
-export function linesFromRows(rows: readonly StepRow[]): string[] {
+export function linesFromRows(rows: readonly LineRow[]): string[] {
   return rows.map((row) => {
-    if (row.kind === "step") return row.text
+    if (row.kind === "line") return row.text
     return row.text ? `# ${row.text}` : "#"
   })
 }
 
-/** The rows as the text box shows them, without the empty steps. */
-export function textFromRows(rows: readonly StepRow[]): string {
+/** The rows as the text box shows them, without the empty lines. */
+export function textFromRows(rows: readonly LineRow[]): string {
   const filled = rows.filter((row) => row.kind === "section" || row.text)
   return linesFromRows(filled).join("\n")
 }
@@ -101,26 +102,26 @@ export function textFromRows(rows: readonly StepRow[]): string {
 /** What's in the text box, back as rows, keeping their keys by position. */
 export function rowsFromText(
   text: string,
-  previous: readonly StepRow[],
+  previous: readonly LineRow[],
   makeKey: () => string
-): StepRow[] {
+): LineRow[] {
   return rowsFromLines(text.split(/\r?\n/), makeKey, previous)
 }
 
 /**
- * A row's new text. A step typed with a leading "#" becomes a section, as it
+ * A row's new text. A line typed with a leading "#" becomes a section, as it
  * would be once saved anyway. Its box becomes a heading's field then, so the
  * cursor has to be put back in it.
  */
 export function setText(
-  rows: readonly StepRow[],
+  rows: readonly LineRow[],
   key: string,
   text: string
 ): Change {
   const index = indexOf(rows, key)
   const row = rows[index]!
-  if (row.kind === "step" && text.trimStart().startsWith("#")) {
-    const section: StepRow = {
+  if (row.kind === "line" && text.trimStart().startsWith("#")) {
+    const section: LineRow = {
       key,
       kind: "section",
       text: withoutLeadingHashes(text),
@@ -146,12 +147,12 @@ export function setText(
 /**
  * What a line break typed into a box does: Enter, on any keyboard, since a
  * phone's may not say it's Enter. Each line of the box's new value becomes a
- * row, an empty one included, so Enter at the end of a step starts an empty
- * one. The first line keeps the row's key and kind; the others are steps,
+ * row, an empty one included, so Enter at the end of a line starts an empty
+ * one. The first line keeps the row's key and kind; the others are lines,
  * unless they start with "#". The cursor goes where it was, in its new row.
  */
 export function splitAtLineBreaks(
-  rows: readonly StepRow[],
+  rows: readonly LineRow[],
   key: string,
   value: string,
   caret: number,
@@ -174,7 +175,7 @@ export function splitAtLineBreaks(
     lineStart += line.length + 1
   }
 
-  const newRows = lines.map((line, lineIndex): StepRow => {
+  const newRows = lines.map((line, lineIndex): LineRow => {
     if (lineIndex === 0) {
       const text = line.trim()
       return row.kind === "section"
@@ -201,11 +202,11 @@ export function splitAtLineBreaks(
  * Pasting into a box. One line pastes as usual (null). Several make a row of
  * each, from the cursor on: the text before the cursor starts the first, and
  * the text after the selection ends the last. Blank lines are dropped, since
- * pasted steps are often a blank line apart. The cursor goes to the end of
+ * pasted lists are often a blank line apart. The cursor goes to the end of
  * what was pasted.
  */
 export function pasteLines(
-  rows: readonly StepRow[],
+  rows: readonly LineRow[],
   key: string,
   start: number,
   end: number,
@@ -224,7 +225,7 @@ export function pasteLines(
   const filled = lines.filter((line) => line.trim() !== "")
   if (filled.length === 0) {
     return {
-      rows: replaceAt(rows, index, [emptyStep(key)]),
+      rows: replaceAt(rows, index, [emptyLine(key)]),
       focus: { key, caret: 0 },
     }
   }
@@ -242,20 +243,20 @@ export function pasteLines(
 }
 
 /**
- * Backspace at the very start of a row. A heading goes back to being a step,
- * undoing a "#" typed by mistake. A step joins the step above, with a space
+ * Backspace at the very start of a row. A heading goes back to being a line,
+ * undoing a "#" typed by mistake. A line joins the line above, with a space
  * between, and the cursor where it starts; under a heading it only removes
- * an empty step. Anywhere else it does nothing (null).
+ * an empty line. Anywhere else it does nothing (null).
  */
 export function backspaceAtStart(
-  rows: readonly StepRow[],
+  rows: readonly LineRow[],
   key: string
 ): Change | null {
   const index = indexOf(rows, key)
   const row = rows[index]!
   if (row.kind === "section") {
     return {
-      rows: replaceAt(rows, index, [{ ...row, kind: "step" }]),
+      rows: replaceAt(rows, index, [{ ...row, kind: "line" }]),
       focus: { key, caret: 0 },
     }
   }
@@ -273,7 +274,7 @@ export function backspaceAtStart(
   }
 
   const space = previous.text && row.text ? " " : ""
-  const joined: StepRow = {
+  const joined: LineRow = {
     ...previous,
     text: previous.text + space + row.text,
   }
@@ -285,10 +286,10 @@ export function backspaceAtStart(
 
 /** Moves a row up (-1) or down (1). At the top or bottom, nothing moves. */
 export function moveRow(
-  rows: readonly StepRow[],
+  rows: readonly LineRow[],
   key: string,
   by: -1 | 1
-): StepRow[] {
+): LineRow[] {
   const index = indexOf(rows, key)
   const other = index + by
   if (other < 0 || other >= rows.length) return [...rows]
@@ -299,20 +300,20 @@ export function moveRow(
 }
 
 /**
- * Deletes a row. Deleting a heading leaves its steps in the section above.
+ * Deletes a row. Deleting a heading leaves its lines in the section above.
  * The cursor goes to the end of the row before, or the start of the next one
- * when it was first. With nothing left, there's an empty step to type in.
+ * when it was first. With nothing left, there's an empty line to type in.
  */
 export function removeRow(
-  rows: readonly StepRow[],
+  rows: readonly LineRow[],
   key: string,
   makeKey: () => string
 ): Change {
   const index = indexOf(rows, key)
   const rest = rows.filter((row) => row.key !== key)
   if (rest.length === 0) {
-    const step = emptyStep(makeKey())
-    return { rows: [step], focus: { key: step.key, caret: 0 } }
+    const line = emptyLine(makeKey())
+    return { rows: [line], focus: { key: line.key, caret: 0 } }
   }
   if (index > 0) {
     const before = rest[index - 1]!
@@ -323,41 +324,41 @@ export function removeRow(
 
 /** A heading, with no name yet, just above a row. */
 export function insertSectionBefore(
-  rows: readonly StepRow[],
+  rows: readonly LineRow[],
   key: string,
   makeKey: () => string
 ): Change {
   const index = indexOf(rows, key)
-  const section: StepRow = { key: makeKey(), kind: "section", text: "" }
+  const section: LineRow = { key: makeKey(), kind: "section", text: "" }
   return {
     rows: [...rows.slice(0, index), section, ...rows.slice(index)],
     focus: { key: section.key, caret: 0 },
   }
 }
 
-/** An empty step at the end. */
+/** An empty line at the end. */
 export function appendStep(
-  rows: readonly StepRow[],
+  rows: readonly LineRow[],
   makeKey: () => string
 ): Change {
-  const step = emptyStep(makeKey())
-  return { rows: [...rows, step], focus: { key: step.key, caret: 0 } }
+  const line = emptyLine(makeKey())
+  return { rows: [...rows, line], focus: { key: line.key, caret: 0 } }
 }
 
 /** A heading, with no name yet, at the end. */
 export function appendSection(
-  rows: readonly StepRow[],
+  rows: readonly LineRow[],
   makeKey: () => string
 ): Change {
-  const section: StepRow = { key: makeKey(), kind: "section", text: "" }
+  const section: LineRow = { key: makeKey(), kind: "section", text: "" }
   return { rows: [...rows, section], focus: { key: section.key, caret: 0 } }
 }
 
-/** Each step's number, counted right through the sections, by its key. */
-export function stepNumbers(rows: readonly StepRow[]): Map<string, number> {
+/** Each line's number, counted right through the sections, by its key. */
+export function lineNumbers(rows: readonly LineRow[]): Map<string, number> {
   const numbers = new Map<string, number>()
   for (const row of rows) {
-    if (row.kind === "step") numbers.set(row.key, numbers.size + 1)
+    if (row.kind === "line") numbers.set(row.key, numbers.size + 1)
   }
   return numbers
 }

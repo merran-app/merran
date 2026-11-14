@@ -33,13 +33,13 @@ import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { useRefreshRecipes, type Recipe, type RecipeInput } from "./queries"
 import { RatingInput } from "./rating-stars"
-import { StepsEditor } from "./steps-editor/steps-editor"
+import { LinesEditor } from "./lines-editor/lines-editor"
 import {
   linesFromRows,
   newRowKey,
   rowsFromLines,
-  type StepRow,
-} from "./steps-editor/step-rows"
+  type LineRow,
+} from "./lines-editor/line-rows"
 import { TagsField } from "./tags-field"
 
 type Form = {
@@ -54,7 +54,7 @@ type Form = {
   rating: number | null
   tags: string[]
   ingredients: string
-  steps: StepRow[]
+  steps: LineRow[]
   notes: string
 }
 
@@ -341,7 +341,7 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
           control={form.control}
           name="steps"
           render={({ field }) => (
-            <StepsEditor
+            <LinesEditor
               value={field.value}
               onChange={(rows) => {
                 // Only when there are some: clearing redraws the whole form,
