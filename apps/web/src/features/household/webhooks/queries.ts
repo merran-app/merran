@@ -48,3 +48,9 @@ export function webhookDeliveriesQuery(id: string, offset: number) {
       ),
   })
 }
+
+/** When the household's daily heads-ups go: Daily summary at. */
+export const webhookScheduleQuery = queryOptions({
+  queryKey: ["household", "webhooks", "schedule"],
+  queryFn: () => unwrap(api.GET("/api/households/current/webhooks/schedule")),
+})

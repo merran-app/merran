@@ -8,6 +8,7 @@ export const WEBHOOK_AREAS = [
   "plan",
   "list",
   "pantry",
+  "headsUps",
   "webhooks",
 ] as const
 export type WebhookArea = (typeof WEBHOOK_AREAS)[number]
@@ -35,6 +36,10 @@ export const WEBHOOK_EVENTS = [
   { type: "list.completed", area: "list", pickable: true },
   { type: "list.sent", area: "list", pickable: true },
   { type: "pantry.changed", area: "pantry", pickable: true },
+  // Sent on a schedule, in the household's time, rather than by a change.
+  { type: "day.summary", area: "headsUps", pickable: true },
+  { type: "meal.time_to_start", area: "headsUps", pickable: true },
+  { type: "pantry.use_soon", area: "headsUps", pickable: true },
   // Sent only by the Send test button, so it's never something to pick.
   { type: "webhook.test", area: "webhooks", pickable: false },
 ] as const
@@ -47,6 +52,14 @@ export type WebhookEventType = (typeof WEBHOOK_EVENTS)[number]["type"]
  */
 export const COOKING_OUTCOMES = ["made", "stopped", "timed_out"] as const
 export type CookingOutcome = (typeof COOKING_OUTCOMES)[number]
+
+/** The events Merran sends on a schedule: the daily heads-ups. */
+export const HEADS_UP_EVENTS = WEBHOOK_EVENTS.filter(
+  (event) => event.area === "headsUps"
+).map((event) => event.type)
+
+/** When the daily heads-ups go, in the household's time, until it picks another. */
+export const DEFAULT_SUMMARY_AT = "07:00"
 
 /** The events a webhook can be set to listen for. */
 export const PICKABLE_WEBHOOK_EVENTS = WEBHOOK_EVENTS.filter(

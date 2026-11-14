@@ -263,3 +263,16 @@ export const DeliveryParam = WebhookParam.extend({
     example: IDS.webhookDelivery,
   }),
 })
+
+/** When the household's daily heads-ups go. */
+export const HeadsUpScheduleSchema = z
+  .object({
+    summaryAt: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use a 24-hour time, like 07:00.")
+      .openapi({
+        description:
+          "When `day.summary` and `pantry.use_soon` are sent each day, as HH:mm on the household's clock. 07:00 unless it's changed.",
+      }),
+  })
+  .openapi("WebhookSchedule", { example: { summaryAt: "07:00" } })

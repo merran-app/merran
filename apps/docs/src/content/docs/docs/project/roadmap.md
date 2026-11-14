@@ -73,7 +73,6 @@ These are features we intend to build. Their order here does not indicate priori
 - **Swap planned meals:** exchange two meals directly while preserving their details and shopping-list state. Moving a meal to another day or the any-day pool already works.
 - **Offline recipes, plans, and shopping lists:** keep previously opened recipes, the week's plan, and shopping lists useful without a connection, with list check-offs syncing when you reconnect.
 - **Prep reminders:** help you remember to thaw ingredients, start a marinade, or begin cooking before dinner is due.
-- **More webhook events:** webhooks to tools such as Home Assistant and n8n already tell them about recipes, imports, tidy-up, Review, the plan, meals made or skipped, cooking and its timers, the shopping list and the pantry. Planned next is a daily summary.
 - **Translations:** make the interface available beyond English, including the planned option to translate recipes as they are imported. Measurement conversion already works.
 - **After-cooking pantry checks:** offer a checklist of ingredients that ran out, with an option to put them on the shopping list. Existing planned-meal deductions remain available.
 - **Server administration:** add automatic backups before migrations, a consolidated Problems page, an audit log, and a guided SQLite-to-Postgres transfer. Manual restore smoke tests and secret rotation already exist; they do not implement these additions.
@@ -92,6 +91,7 @@ These ideas need more feedback and design work before we choose whether or how t
 - **A limited role for children:** let younger household members take part with permissions suited to their needs.
 - **More recipe tools:** consider Tandoor migration, step photos, recipe translations beyond import, and AI-ranked meal suggestions.
 - **Larger deployments:** consider household-owned integration keys, OpenTelemetry, and a Helm chart.
+- **Server webhooks:** let the server admin's own tools hear when an update is available, a job keeps failing, someone signs up or a backup finishes. Household [webhooks](../../integrations/webhooks/) already tell Home Assistant and n8n about recipes, the plan, cooking, the shopping list and the pantry, with a daily summary and "time to start" heads-ups.
 
 ### More ideas from everyday kitchens
 

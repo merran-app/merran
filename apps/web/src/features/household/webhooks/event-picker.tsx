@@ -135,6 +135,21 @@ const EVENT_TEXT = {
     hint: "settings.household.webhooks.eventHints.pantry.changed",
     chip: "settings.household.webhooks.chips.pantry.changed",
   },
+  "day.summary": {
+    label: "settings.household.webhooks.events.day.summary",
+    hint: "settings.household.webhooks.eventHints.day.summary",
+    chip: "settings.household.webhooks.chips.day.summary",
+  },
+  "meal.time_to_start": {
+    label: "settings.household.webhooks.events.meal.time_to_start",
+    hint: "settings.household.webhooks.eventHints.meal.time_to_start",
+    chip: "settings.household.webhooks.chips.meal.time_to_start",
+  },
+  "pantry.use_soon": {
+    label: "settings.household.webhooks.events.pantry.use_soon",
+    hint: "settings.household.webhooks.eventHints.pantry.use_soon",
+    chip: "settings.household.webhooks.chips.pantry.use_soon",
+  },
 } as const satisfies Record<
   PickableEvent,
   { label: string; hint: string; chip: string }

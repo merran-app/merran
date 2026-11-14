@@ -4664,7 +4664,10 @@
                 "list.changed",
                 "list.completed",
                 "list.sent",
-                "pantry.changed"
+                "pantry.changed",
+                "day.summary",
+                "meal.time_to_start",
+                "pantry.use_soon"
               ]
             },
             "description": "The events it's sent, unless it's sent everything."
@@ -4843,10 +4846,13 @@
                 "list.changed",
                 "list.completed",
                 "list.sent",
-                "pantry.changed"
+                "pantry.changed",
+                "day.summary",
+                "meal.time_to_start",
+                "pantry.use_soon"
               ]
             },
-            "maxItems": 21,
+            "maxItems": 24,
             "default": [],
             "description": "The events to send. At least one, unless `everything`."
           },
@@ -4893,6 +4899,22 @@
           ],
           "everything": false,
           "headers": []
+        }
+      },
+      "WebhookSchedule": {
+        "type": "object",
+        "properties": {
+          "summaryAt": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "description": "When `day.summary` and `pantry.use_soon` are sent each day, as HH:mm on the household's clock. 07:00 unless it's changed."
+          }
+        },
+        "required": [
+          "summaryAt"
+        ],
+        "example": {
+          "summaryAt": "07:00"
         }
       },
       "WebhookDetail": {
@@ -4970,10 +4992,13 @@
                 "list.changed",
                 "list.completed",
                 "list.sent",
-                "pantry.changed"
+                "pantry.changed",
+                "day.summary",
+                "meal.time_to_start",
+                "pantry.use_soon"
               ]
             },
-            "maxItems": 21
+            "maxItems": 24
           },
           "everything": {
             "type": "boolean"
@@ -23252,6 +23277,118 @@
           },
           "409": {
             "description": "The household has 10 webhooks already.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/webhooks/schedule": {
+      "get": {
+        "operationId": "getWebhookSchedule",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "When the daily heads-ups go",
+        "description": "Household admins only. The time each day, on the household's clock, that webhooks wanting `day.summary` or `pantry.use_soon` are sent them.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The household's time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSchedule"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "setWebhookSchedule",
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Change when the daily heads-ups go",
+        "description": "Household admins only. A time that's already gone by today takes effect tomorrow; one still to come sends today's, unless it's been sent.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookSchedule"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSchedule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The time isn't a 24-hour time, like 07:00.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
             "content": {
               "application/json": {
                 "schema": {
@@ -51999,6 +52136,1259 @@
                     "moved": 0,
                     "changed": 1,
                     "removed": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Any 2xx answer counts as delivered. 410 Gone pauses the webhook."
+          }
+        }
+      }
+    },
+    "day.summary": {
+      "post": {
+        "summary": "The day ahead",
+        "description": "Sent once a day, at the time set as Daily summary at on the Webhooks page (07:00 unless it's changed), on the household's clock. It lists the day's meals with their times and dishes, what's waiting in the week's pool, what to use soon, and how many things are on the shopping lists. It's sent even on a day with nothing planned. When the server was off at that time, it's sent when it's back, the same day.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+              "example": "msg_2KWPBgLlAfxdpx2AI54pPJ85f4W"
+            },
+            "required": true,
+            "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+            "name": "webhook-id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+              "example": "1731268800"
+            },
+            "required": true,
+            "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+            "name": "webhook-timestamp",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+              "example": "v1,K5oZfzN95Z9UVu1EsfQmfVNQhnkZ2pj9o9NDN/H/pI4="
+            },
+            "required": true,
+            "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+            "name": "webhook-signature",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "day.summary"
+                    ]
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "household": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                          "name": "The Riveras"
+                        }
+                      },
+                      "by": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                          "name": "Sam Rivera"
+                        },
+                        "description": "Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links."
+                      },
+                      "via": {
+                        "type": "string",
+                        "enum": [
+                          "app",
+                          "api",
+                          "mcp",
+                          "merran"
+                        ],
+                        "description": "How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own."
+                      },
+                      "key": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                          "name": "Home Assistant"
+                        },
+                        "description": "The API key or OAuth connection used, for `api` and `mcp`. Null otherwise."
+                      },
+                      "date": {
+                        "type": "string",
+                        "description": "The day it's about, as YYYY-MM-DD: today, in the household."
+                      },
+                      "meals": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "meal": {
+                              "type": "string",
+                              "enum": [
+                                "breakfast",
+                                "lunch",
+                                "dinner",
+                                "snack"
+                              ]
+                            },
+                            "time": {
+                              "type": "string",
+                              "description": "When it's served, as HH:mm on the household's clock: the time set for that meal on that day, or the household's usual time for the meal."
+                            },
+                            "dishes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "entryId": {
+                                    "type": "string",
+                                    "description": "The dish's entry in the plan."
+                                  },
+                                  "title": {
+                                    "type": "string",
+                                    "description": "The recipe's name, or the note for a dish that's only a note."
+                                  },
+                                  "recipe": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "slug": {
+                                        "type": "string"
+                                      },
+                                      "title": {
+                                        "type": "string"
+                                      },
+                                      "url": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "slug",
+                                      "title",
+                                      "url"
+                                    ],
+                                    "example": {
+                                      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                                      "slug": "lemon-chicken",
+                                      "title": "Lemon Chicken",
+                                      "url": "https://merran.example.com/recipes/lemon-chicken"
+                                    },
+                                    "description": "The recipe. Null for a dish that's only a note."
+                                  },
+                                  "side": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "slug": {
+                                        "type": "string"
+                                      },
+                                      "title": {
+                                        "type": "string"
+                                      },
+                                      "url": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "slug",
+                                      "title",
+                                      "url"
+                                    ],
+                                    "example": {
+                                      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                                      "slug": "lemon-chicken",
+                                      "title": "Lemon Chicken",
+                                      "url": "https://merran.example.com/recipes/lemon-chicken"
+                                    },
+                                    "description": "The side dish, if it has one."
+                                  },
+                                  "totalMinutes": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ],
+                                    "minimum": 0,
+                                    "description": "How long it takes, in minutes: the recipe's total time, or its prep and cook times added up, or its side's when that's longer. Null when neither says."
+                                  }
+                                },
+                                "required": [
+                                  "entryId",
+                                  "title",
+                                  "recipe",
+                                  "side",
+                                  "totalMinutes"
+                                ],
+                                "example": {
+                                  "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                                  "title": "Lemon Chicken",
+                                  "recipe": {
+                                    "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                                    "slug": "lemon-chicken",
+                                    "title": "Lemon Chicken",
+                                    "url": "https://merran.example.com/recipes/lemon-chicken"
+                                  },
+                                  "side": {
+                                    "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                                    "slug": "garlic-rice",
+                                    "title": "Garlic Rice",
+                                    "url": "https://merran.example.com/recipes/garlic-rice"
+                                  },
+                                  "totalMinutes": 45
+                                }
+                              },
+                              "minItems": 1
+                            }
+                          },
+                          "required": [
+                            "meal",
+                            "time",
+                            "dishes"
+                          ]
+                        },
+                        "description": "Each meal planned for the day, in the day's order, with its dishes. Dishes marked Didn't are left out."
+                      },
+                      "pool": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "entryId": {
+                              "type": "string",
+                              "description": "The meal's entry in the plan."
+                            },
+                            "date": {
+                              "type": "string",
+                              "description": "Its day, as YYYY-MM-DD. For a meal in the week's pool, the first day of that week."
+                            },
+                            "meal": {
+                              "type": "string",
+                              "enum": [
+                                "breakfast",
+                                "lunch",
+                                "dinner",
+                                "snack"
+                              ]
+                            },
+                            "pool": {
+                              "type": "boolean",
+                              "description": "Whether it's in the week's pool, waiting for a day, rather than planned for one."
+                            },
+                            "title": {
+                              "type": "string",
+                              "description": "The recipe's name, or the note for a meal that's only a note."
+                            },
+                            "recipe": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "slug": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "slug",
+                                "title",
+                                "url"
+                              ],
+                              "example": {
+                                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                                "slug": "lemon-chicken",
+                                "title": "Lemon Chicken",
+                                "url": "https://merran.example.com/recipes/lemon-chicken"
+                              },
+                              "description": "The recipe. Null for a meal that's only a note, or one whose recipe is in Recently deleted."
+                            },
+                            "side": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "slug": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "slug",
+                                "title",
+                                "url"
+                              ],
+                              "example": {
+                                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                                "slug": "lemon-chicken",
+                                "title": "Lemon Chicken",
+                                "url": "https://merran.example.com/recipes/lemon-chicken"
+                              },
+                              "description": "The side dish, if it has one. Null while it's in Recently deleted, as the plan leaves it out."
+                            }
+                          },
+                          "required": [
+                            "entryId",
+                            "date",
+                            "meal",
+                            "pool",
+                            "title",
+                            "recipe",
+                            "side"
+                          ]
+                        },
+                        "description": "The meals waiting in this week's pool for a day, not yet made or skipped."
+                      },
+                      "useSoon": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "place": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "fridge",
+                                "freezer",
+                                "cupboard",
+                                null
+                              ],
+                              "description": "Where it's kept, if that's been said."
+                            },
+                            "useBy": {
+                              "type": "string",
+                              "description": "Its use-by day, as YYYY-MM-DD. It may have gone by already."
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "place",
+                            "useBy"
+                          ],
+                          "example": {
+                            "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+                            "name": "Spinach",
+                            "place": "fridge",
+                            "useBy": "2026-10-16"
+                          }
+                        },
+                        "description": "What's at home within 2 days of its use-by day, or past it, soonest first."
+                      },
+                      "list": {
+                        "type": "object",
+                        "properties": {
+                          "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "How many things on the shopping lists aren't checked off."
+                          }
+                        },
+                        "required": [
+                          "items"
+                        ],
+                        "description": "The shopping lists."
+                      }
+                    },
+                    "required": [
+                      "household",
+                      "by",
+                      "via",
+                      "key",
+                      "date",
+                      "meals",
+                      "pool",
+                      "useSoon",
+                      "list"
+                    ],
+                    "example": {
+                      "household": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                        "name": "The Riveras"
+                      },
+                      "by": null,
+                      "via": "merran",
+                      "key": null,
+                      "date": "2026-10-15",
+                      "meals": [
+                        {
+                          "meal": "dinner",
+                          "time": "18:00",
+                          "dishes": [
+                            {
+                              "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                              "title": "Lemon Chicken",
+                              "recipe": {
+                                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                                "slug": "lemon-chicken",
+                                "title": "Lemon Chicken",
+                                "url": "https://merran.example.com/recipes/lemon-chicken"
+                              },
+                              "side": {
+                                "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                                "slug": "garlic-rice",
+                                "title": "Garlic Rice",
+                                "url": "https://merran.example.com/recipes/garlic-rice"
+                              },
+                              "totalMinutes": 45
+                            }
+                          ]
+                        }
+                      ],
+                      "pool": [
+                        {
+                          "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                          "date": "2026-10-11",
+                          "meal": "dinner",
+                          "pool": true,
+                          "title": "Lemon Chicken",
+                          "recipe": {
+                            "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                            "slug": "lemon-chicken",
+                            "title": "Lemon Chicken",
+                            "url": "https://merran.example.com/recipes/lemon-chicken"
+                          },
+                          "side": null
+                        }
+                      ],
+                      "useSoon": [
+                        {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+                          "name": "Spinach",
+                          "place": "fridge",
+                          "useBy": "2026-10-16"
+                        }
+                      ],
+                      "list": {
+                        "items": 12
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "example": {
+                  "type": "day.summary",
+                  "timestamp": "2026-10-15T18:30:00.000Z",
+                  "data": {
+                    "household": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                      "name": "The Riveras"
+                    },
+                    "by": null,
+                    "via": "merran",
+                    "key": null,
+                    "date": "2026-10-15",
+                    "meals": [
+                      {
+                        "meal": "dinner",
+                        "time": "18:00",
+                        "dishes": [
+                          {
+                            "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                            "title": "Lemon Chicken",
+                            "recipe": {
+                              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                              "slug": "lemon-chicken",
+                              "title": "Lemon Chicken",
+                              "url": "https://merran.example.com/recipes/lemon-chicken"
+                            },
+                            "side": {
+                              "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                              "slug": "garlic-rice",
+                              "title": "Garlic Rice",
+                              "url": "https://merran.example.com/recipes/garlic-rice"
+                            },
+                            "totalMinutes": 45
+                          }
+                        ]
+                      }
+                    ],
+                    "pool": [
+                      {
+                        "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                        "date": "2026-10-11",
+                        "meal": "dinner",
+                        "pool": true,
+                        "title": "Lemon Chicken",
+                        "recipe": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                          "slug": "lemon-chicken",
+                          "title": "Lemon Chicken",
+                          "url": "https://merran.example.com/recipes/lemon-chicken"
+                        },
+                        "side": null
+                      }
+                    ],
+                    "useSoon": [
+                      {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+                        "name": "Spinach",
+                        "place": "fridge",
+                        "useBy": "2026-10-16"
+                      }
+                    ],
+                    "list": {
+                      "items": 12
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Any 2xx answer counts as delivered. 410 Gone pauses the webhook."
+          }
+        }
+      }
+    },
+    "meal.time_to_start": {
+      "post": {
+        "summary": "Time to start cooking",
+        "description": "Sent when it's time to start cooking a planned meal: when it's served, less its longest dish's total time (or prep and cook time added up). A meal whose dishes don't say how long they take sends nothing, nor does the pool. Each meal sends it once, up to 15 minutes late, so a meal planned after its start time has gone by sends nothing.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+              "example": "msg_2KWPBgLlAfxdpx2AI54pPJ85f4W"
+            },
+            "required": true,
+            "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+            "name": "webhook-id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+              "example": "1731268800"
+            },
+            "required": true,
+            "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+            "name": "webhook-timestamp",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+              "example": "v1,K5oZfzN95Z9UVu1EsfQmfVNQhnkZ2pj9o9NDN/H/pI4="
+            },
+            "required": true,
+            "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+            "name": "webhook-signature",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "meal.time_to_start"
+                    ]
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "household": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                          "name": "The Riveras"
+                        }
+                      },
+                      "by": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                          "name": "Sam Rivera"
+                        },
+                        "description": "Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links."
+                      },
+                      "via": {
+                        "type": "string",
+                        "enum": [
+                          "app",
+                          "api",
+                          "mcp",
+                          "merran"
+                        ],
+                        "description": "How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own."
+                      },
+                      "key": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                          "name": "Home Assistant"
+                        },
+                        "description": "The API key or OAuth connection used, for `api` and `mcp`. Null otherwise."
+                      },
+                      "date": {
+                        "type": "string",
+                        "description": "The meal's day, as YYYY-MM-DD."
+                      },
+                      "meal": {
+                        "type": "string",
+                        "enum": [
+                          "breakfast",
+                          "lunch",
+                          "dinner",
+                          "snack"
+                        ]
+                      },
+                      "time": {
+                        "type": "string",
+                        "description": "When it's served, as HH:mm on the household's clock: the time set for that meal on that day, or the household's usual time for the meal."
+                      },
+                      "serveAt": {
+                        "type": "string",
+                        "description": "When it's served, as an instant."
+                      },
+                      "startAt": {
+                        "type": "string",
+                        "description": "When to start cooking: when it's served, less its longest dish's time."
+                      },
+                      "minutes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "How long its longest dish takes, in minutes."
+                      },
+                      "dishes": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "entryId": {
+                              "type": "string",
+                              "description": "The dish's entry in the plan."
+                            },
+                            "title": {
+                              "type": "string",
+                              "description": "The recipe's name, or the note for a dish that's only a note."
+                            },
+                            "recipe": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "slug": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "slug",
+                                "title",
+                                "url"
+                              ],
+                              "example": {
+                                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                                "slug": "lemon-chicken",
+                                "title": "Lemon Chicken",
+                                "url": "https://merran.example.com/recipes/lemon-chicken"
+                              },
+                              "description": "The recipe. Null for a dish that's only a note."
+                            },
+                            "side": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "slug": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "description": "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL)."
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "slug",
+                                "title",
+                                "url"
+                              ],
+                              "example": {
+                                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                                "slug": "lemon-chicken",
+                                "title": "Lemon Chicken",
+                                "url": "https://merran.example.com/recipes/lemon-chicken"
+                              },
+                              "description": "The side dish, if it has one."
+                            },
+                            "totalMinutes": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 0,
+                              "description": "How long it takes, in minutes: the recipe's total time, or its prep and cook times added up, or its side's when that's longer. Null when neither says."
+                            }
+                          },
+                          "required": [
+                            "entryId",
+                            "title",
+                            "recipe",
+                            "side",
+                            "totalMinutes"
+                          ],
+                          "example": {
+                            "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                            "title": "Lemon Chicken",
+                            "recipe": {
+                              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                              "slug": "lemon-chicken",
+                              "title": "Lemon Chicken",
+                              "url": "https://merran.example.com/recipes/lemon-chicken"
+                            },
+                            "side": {
+                              "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                              "slug": "garlic-rice",
+                              "title": "Garlic Rice",
+                              "url": "https://merran.example.com/recipes/garlic-rice"
+                            },
+                            "totalMinutes": 45
+                          }
+                        },
+                        "minItems": 1,
+                        "description": "Each dish planned for the meal, in the plan's order."
+                      }
+                    },
+                    "required": [
+                      "household",
+                      "by",
+                      "via",
+                      "key",
+                      "date",
+                      "meal",
+                      "time",
+                      "serveAt",
+                      "startAt",
+                      "minutes",
+                      "dishes"
+                    ],
+                    "example": {
+                      "household": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                        "name": "The Riveras"
+                      },
+                      "by": null,
+                      "via": "merran",
+                      "key": null,
+                      "date": "2026-10-15",
+                      "meal": "dinner",
+                      "time": "18:00",
+                      "serveAt": "2026-10-16T01:00:00.000Z",
+                      "startAt": "2026-10-16T00:15:00.000Z",
+                      "minutes": 45,
+                      "dishes": [
+                        {
+                          "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                          "title": "Lemon Chicken",
+                          "recipe": {
+                            "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                            "slug": "lemon-chicken",
+                            "title": "Lemon Chicken",
+                            "url": "https://merran.example.com/recipes/lemon-chicken"
+                          },
+                          "side": {
+                            "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                            "slug": "garlic-rice",
+                            "title": "Garlic Rice",
+                            "url": "https://merran.example.com/recipes/garlic-rice"
+                          },
+                          "totalMinutes": 45
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "example": {
+                  "type": "meal.time_to_start",
+                  "timestamp": "2026-10-15T18:30:00.000Z",
+                  "data": {
+                    "household": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                      "name": "The Riveras"
+                    },
+                    "by": null,
+                    "via": "merran",
+                    "key": null,
+                    "date": "2026-10-15",
+                    "meal": "dinner",
+                    "time": "18:00",
+                    "serveAt": "2026-10-16T01:00:00.000Z",
+                    "startAt": "2026-10-16T00:15:00.000Z",
+                    "minutes": 45,
+                    "dishes": [
+                      {
+                        "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                        "title": "Lemon Chicken",
+                        "recipe": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                          "slug": "lemon-chicken",
+                          "title": "Lemon Chicken",
+                          "url": "https://merran.example.com/recipes/lemon-chicken"
+                        },
+                        "side": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                          "slug": "garlic-rice",
+                          "title": "Garlic Rice",
+                          "url": "https://merran.example.com/recipes/garlic-rice"
+                        },
+                        "totalMinutes": 45
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Any 2xx answer counts as delivered. 410 Gone pauses the webhook."
+          }
+        }
+      }
+    },
+    "pantry.use_soon": {
+      "post": {
+        "summary": "Things to use soon",
+        "description": "Sent with the daily summary, at the same time, when things at home have come within 2 days of their use-by day since it was last sent, listing only those. Nothing is sent when nothing has. The first one a webhook gets lists everything that's close.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+              "example": "msg_2KWPBgLlAfxdpx2AI54pPJ85f4W"
+            },
+            "required": true,
+            "description": "This delivery's id. It stays the same on every retry, so a receiver can use it to ignore one it has handled already.",
+            "name": "webhook-id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+              "example": "1731268800"
+            },
+            "required": true,
+            "description": "When this attempt was sent, in seconds since 1970. It changes on every retry. Receivers should refuse one that's far from now.",
+            "name": "webhook-timestamp",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+              "example": "v1,K5oZfzN95Z9UVu1EsfQmfVNQhnkZ2pj9o9NDN/H/pI4="
+            },
+            "required": true,
+            "description": "`v1,` and a base64 HMAC-SHA256 signature of `{webhook-id}.{webhook-timestamp}.{body}`, made with the webhook's secret. Several, separated by spaces, while a secret is being replaced.",
+            "name": "webhook-signature",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "pantry.use_soon"
+                    ]
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "description": "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made."
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "household": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                          "name": "The Riveras"
+                        }
+                      },
+                      "by": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                          "name": "Sam Rivera"
+                        },
+                        "description": "Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links."
+                      },
+                      "via": {
+                        "type": "string",
+                        "enum": [
+                          "app",
+                          "api",
+                          "mcp",
+                          "merran"
+                        ],
+                        "description": "How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own."
+                      },
+                      "key": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "example": {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+                          "name": "Home Assistant"
+                        },
+                        "description": "The API key or OAuth connection used, for `api` and `mcp`. Null otherwise."
+                      },
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "place": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "fridge",
+                                "freezer",
+                                "cupboard",
+                                null
+                              ],
+                              "description": "Where it's kept, if that's been said."
+                            },
+                            "useBy": {
+                              "type": "string",
+                              "description": "Its use-by day, as YYYY-MM-DD. It may have gone by already."
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "place",
+                            "useBy"
+                          ],
+                          "example": {
+                            "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+                            "name": "Spinach",
+                            "place": "fridge",
+                            "useBy": "2026-10-16"
+                          }
+                        },
+                        "minItems": 1,
+                        "description": "What came within 2 days of its use-by day since this was last sent, soonest first."
+                      }
+                    },
+                    "required": [
+                      "household",
+                      "by",
+                      "via",
+                      "key",
+                      "items"
+                    ],
+                    "example": {
+                      "household": {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                        "name": "The Riveras"
+                      },
+                      "by": null,
+                      "via": "merran",
+                      "key": null,
+                      "items": [
+                        {
+                          "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+                          "name": "Spinach",
+                          "place": "fridge",
+                          "useBy": "2026-10-16"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "example": {
+                  "type": "pantry.use_soon",
+                  "timestamp": "2026-10-15T18:30:00.000Z",
+                  "data": {
+                    "household": {
+                      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                      "name": "The Riveras"
+                    },
+                    "by": null,
+                    "via": "merran",
+                    "key": null,
+                    "items": [
+                      {
+                        "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+                        "name": "Spinach",
+                        "place": "fridge",
+                        "useBy": "2026-10-16"
+                      }
+                    ]
                   }
                 }
               }

@@ -430,6 +430,8 @@ describe("who can manage them", () => {
       forTheHousehold: [
         ["GET", WEBHOOKS, undefined],
         ["POST", WEBHOOKS, newWebhook()],
+        ["GET", `${WEBHOOKS}/schedule`, undefined],
+        ["PUT", `${WEBHOOKS}/schedule`, { summaryAt: "06:30" }],
       ],
       forOne: [
         ["GET", one, undefined],

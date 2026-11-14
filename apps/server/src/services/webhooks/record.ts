@@ -6,6 +6,7 @@ import {
   WebhookDelivery,
   WebhookEvent,
 } from "../../database/entities/index.ts"
+import { ACROSS_HOUSEHOLDS } from "../../database/scope.ts"
 import {
   ACTIVE,
   createJob,
@@ -101,16 +102,26 @@ export async function sendEvent<T extends WebhookEventType>(
      * the last change merged into it, not when it was merged.
      */
     createdAt?: Date
+    /**
+     * For an event that goes once, however often it's looked for, like a
+     * daily heads-up: unique in the household, so one already sent with
+     * it isn't sent again.
+     */
+    key?: string
   }
 ): Promise<WebhookEvent | null> {
   const webhookIds = await webhooksFor(em, householdId, event)
   if (webhookIds.length === 0) return null
+  if (event.key && (await sentWithKey(em, householdId, event.key))) {
+    return null
+  }
 
   const saved = em.create(WebhookEvent, {
     household: householdId,
     type: event.type,
     payload: await payloadOf(em, householdId, event),
     ...(event.createdAt ? { createdAt: event.createdAt } : {}),
+    ...(event.key ? { key: event.key } : {}),
   })
   const deliveries = webhookIds.map((webhookId) =>
     em.create(WebhookDelivery, {
@@ -164,6 +175,24 @@ async function gatherChange(
   await em.flush()
   await gatherAtCommit(em, householdId, change.type)
   return saved
+}
+
+/**
+ * Whether an event with this key has been sent in the household. The
+ * unique index makes sure of it, but a run that finds it here sends
+ * nothing rather than failing.
+ */
+export async function sentWithKey(
+  em: EntityManager,
+  householdId: string,
+  key: string
+): Promise<boolean> {
+  const found = await em.count(
+    WebhookEvent,
+    { household: householdId, key },
+    ACROSS_HOUSEHOLDS
+  )
+  return found > 0
 }
 
 /** Whether any webhook wants an event, for ones whose payload costs queries to build, so a household without webhooks pays nothing. */

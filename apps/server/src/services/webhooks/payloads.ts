@@ -1,5 +1,10 @@
 import { z } from "@hono/zod-openapi"
-import { COOKING_OUTCOMES, MEALS, type WebhookEventType } from "@merran/shared"
+import {
+  COOKING_OUTCOMES,
+  MEALS,
+  STORAGE_PLACES,
+  type WebhookEventType,
+} from "@merran/shared"
 import { IDS, TIMES } from "../../http/schemas/examples.ts"
 import { ACTOR_VIAS } from "./actor.ts"
 import { linkBase } from "./state.ts"
@@ -85,6 +90,22 @@ const TIMER_EXAMPLE = {
   endsAt: "2026-10-15T18:40:00.000Z",
 }
 
+/** A dish as the heads-ups carry it, in the examples. */
+const DISH_EXAMPLE = {
+  entryId: IDS.planEntry,
+  title: "Lemon Chicken",
+  recipe: RECIPE_EXAMPLE,
+  side: SIDE_EXAMPLE,
+  totalMinutes: 45,
+}
+
+const USE_SOON_EXAMPLE = {
+  id: IDS.pantryItems[0],
+  name: "Spinach",
+  place: "fridge" as const,
+  useBy: "2026-10-16",
+}
+
 /** What every event starts with, in the examples: Sam, in the app. */
 const CONTEXT_EXAMPLE = {
   household: { id: IDS.household, name: "The Riveras" },
@@ -113,6 +134,9 @@ function contextExample(type: WebhookEventType) {
     case "review.waiting":
     case "cooking.ended":
     case "timer.finished":
+    case "day.summary":
+    case "meal.time_to_start":
+    case "pantry.use_soon":
       return MERRAN_CONTEXT_EXAMPLE
     default:
       return CONTEXT_EXAMPLE
@@ -215,6 +239,23 @@ const EXAMPLES = {
     changed: 1,
     removed: 0,
   },
+  "day.summary": {
+    date: "2026-10-15",
+    meals: [{ meal: "dinner" as const, time: "18:00", dishes: [DISH_EXAMPLE] }],
+    pool: [{ ...MEAL_EXAMPLE, date: "2026-10-11", pool: true, side: null }],
+    useSoon: [USE_SOON_EXAMPLE],
+    list: { items: 12 },
+  },
+  "meal.time_to_start": {
+    date: "2026-10-15",
+    meal: "dinner" as const,
+    time: "18:00",
+    serveAt: "2026-10-16T01:00:00.000Z",
+    startAt: "2026-10-16T00:15:00.000Z",
+    minutes: 45,
+    dishes: [DISH_EXAMPLE],
+  },
+  "pantry.use_soon": { items: [USE_SOON_EXAMPLE] },
   "webhook.test": { webhook: { id: IDS.webhook, name: "Home Assistant" } },
 }
 
@@ -296,6 +337,52 @@ export const ListTallySchema = z.object({
   checked: count("How many things on it are checked off."),
 })
 export type ListTally = z.infer<typeof ListTallySchema>
+
+/** A dish on the plan as the heads-ups carry it, with how long it takes. */
+export const DishSchema = z
+  .object({
+    entryId: z
+      .string()
+      .openapi({ description: "The dish's entry in the plan." }),
+    title: z.string().openapi({
+      description:
+        "The recipe's name, or the note for a dish that's only a note.",
+    }),
+    recipe: RecipeRefSchema.nullable().openapi({
+      description: "The recipe. Null for a dish that's only a note.",
+    }),
+    side: RecipeRefSchema.nullable().openapi({
+      description: "The side dish, if it has one.",
+    }),
+    totalMinutes: z.number().int().min(0).nullable().openapi({
+      description:
+        "How long it takes, in minutes: the recipe's total time, or its prep and cook times added up, or its side's when that's longer. Null when neither says.",
+    }),
+  })
+  .openapi({ example: DISH_EXAMPLE })
+export type Dish = z.infer<typeof DishSchema>
+
+/** Something at home that's coming up to its use-by day. */
+export const UseSoonItemSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    place: z.enum(STORAGE_PLACES).nullable().openapi({
+      description: "Where it's kept, if that's been said.",
+    }),
+    useBy: z.string().openapi({
+      description:
+        "Its use-by day, as YYYY-MM-DD. It may have gone by already.",
+    }),
+  })
+  .openapi({ example: USE_SOON_EXAMPLE })
+export type UseSoonItem = z.infer<typeof UseSoonItemSchema>
+
+/** A meal's time of day on the household's clock. */
+const mealTime = z.string().openapi({
+  description:
+    "When it's served, as HH:mm on the household's clock: the time set for that meal on that day, or the household's usual time for the meal.",
+})
 
 /** A kitchen timer as events carry it. */
 export const TimerRefSchema = z
@@ -562,6 +649,69 @@ export const WEBHOOK_PAYLOADS = {
       removed: count("How many were removed."),
     })
     .openapi({ example: EXAMPLES["pantry.changed"] }),
+  "day.summary": z
+    .object({
+      date: z.string().openapi({
+        description:
+          "The day it's about, as YYYY-MM-DD: today, in the household.",
+      }),
+      meals: z
+        .array(
+          z.object({
+            meal: z.enum(MEALS),
+            time: mealTime,
+            dishes: z.array(DishSchema).min(1),
+          })
+        )
+        .openapi({
+          description:
+            "Each meal planned for the day, in the day's order, with its dishes. Dishes marked Didn't are left out.",
+        }),
+      pool: z.array(MealRefSchema).openapi({
+        description:
+          "The meals waiting in this week's pool for a day, not yet made or skipped.",
+      }),
+      useSoon: z.array(UseSoonItemSchema).openapi({
+        description:
+          "What's at home within 2 days of its use-by day, or past it, soonest first.",
+      }),
+      list: z
+        .object({
+          items: count(
+            "How many things on the shopping lists aren't checked off."
+          ),
+        })
+        .openapi({ description: "The shopping lists." }),
+    })
+    .openapi({ example: EXAMPLES["day.summary"] }),
+  "meal.time_to_start": z
+    .object({
+      date: z.string().openapi({
+        description: "The meal's day, as YYYY-MM-DD.",
+      }),
+      meal: z.enum(MEALS),
+      time: mealTime,
+      serveAt: z.string().openapi({
+        description: "When it's served, as an instant.",
+      }),
+      startAt: z.string().openapi({
+        description:
+          "When to start cooking: when it's served, less its longest dish's time.",
+      }),
+      minutes: count("How long its longest dish takes, in minutes."),
+      dishes: z.array(DishSchema).min(1).openapi({
+        description: "Each dish planned for the meal, in the plan's order.",
+      }),
+    })
+    .openapi({ example: EXAMPLES["meal.time_to_start"] }),
+  "pantry.use_soon": z
+    .object({
+      items: z.array(UseSoonItemSchema).min(1).openapi({
+        description:
+          "What came within 2 days of its use-by day since this was last sent, soonest first.",
+      }),
+    })
+    .openapi({ example: EXAMPLES["pantry.use_soon"] }),
   "webhook.test": z
     .object({ webhook: named(EXAMPLES["webhook.test"].webhook) })
     .openapi({ example: EXAMPLES["webhook.test"] }),
@@ -701,6 +851,21 @@ export const WEBHOOK_SUMMARIES: Record<
     summary: "The pantry changed",
     description:
       "Sent when things are put away, used up, moved, changed or removed. Changes are gathered for 30 seconds and sent as one event for each person.",
+  },
+  "day.summary": {
+    summary: "The day ahead",
+    description:
+      "Sent once a day, at the time set as Daily summary at on the Webhooks page (07:00 unless it's changed), on the household's clock. It lists the day's meals with their times and dishes, what's waiting in the week's pool, what to use soon, and how many things are on the shopping lists. It's sent even on a day with nothing planned. When the server was off at that time, it's sent when it's back, the same day.",
+  },
+  "meal.time_to_start": {
+    summary: "Time to start cooking",
+    description:
+      "Sent when it's time to start cooking a planned meal: when it's served, less its longest dish's total time (or prep and cook time added up). A meal whose dishes don't say how long they take sends nothing, nor does the pool. Each meal sends it once, up to 15 minutes late, so a meal planned after its start time has gone by sends nothing.",
+  },
+  "pantry.use_soon": {
+    summary: "Things to use soon",
+    description:
+      "Sent with the daily summary, at the same time, when things at home have come within 2 days of their use-by day since it was last sent, listing only those. Nothing is sent when nothing has. The first one a webhook gets lists everything that's close.",
   },
   "webhook.test": {
     summary: "A test was sent",

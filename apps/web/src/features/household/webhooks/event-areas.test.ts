@@ -74,3 +74,15 @@ test("the areas to open are those with something chosen, in order", () => {
     "pantry",
   ])
 })
+
+test("the heads-ups are an area of their own, after the pantry", () => {
+  assert.deepEqual(setArea([], "headsUps", true), [
+    "day.summary",
+    "meal.time_to_start",
+    "pantry.use_soon",
+  ])
+  assert.deepEqual(areasToOpen(["pantry.use_soon", "pantry.changed"]), [
+    "pantry",
+    "headsUps",
+  ])
+})

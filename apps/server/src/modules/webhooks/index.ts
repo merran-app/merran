@@ -1,3 +1,4 @@
+import { scheduleHeadsUps } from "../../services/webhooks/heads-ups/schedule.ts"
 import { configureWebhooks } from "../../services/webhooks/state.ts"
 import type { Module } from "../module.ts"
 import { WEBHOOKS } from "./settings.ts"
@@ -17,10 +18,13 @@ export const webhooks: Module = {
       : { on: false, needs: "switch" }
   },
 
-  async apply({ config, settings }) {
+  async apply({ config, settings, database }) {
     configureWebhooks({
       enabled: await settings.server(WEBHOOKS.enabled),
       publicUrl: config.publicUrl ?? null,
     })
+    // The daily heads-ups wait while webhooks are off; turned back on, or
+    // at start, they're queued again if a webhook wants one.
+    await scheduleHeadsUps(database.em.fork())
   },
 }

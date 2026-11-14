@@ -594,7 +594,8 @@
           "cooking": "Cooking",
           "plan": "Plan",
           "list": "Shopping list",
-          "pantry": "Pantry"
+          "pantry": "Pantry",
+          "headsUps": "Heads-ups"
         },
         "events": {
           "recipe": {
@@ -628,7 +629,8 @@
           },
           "meal": {
             "cooked": "A meal is made",
-            "skipped": "A meal is skipped"
+            "skipped": "A meal is skipped",
+            "time_to_start": "It's time to start a meal"
           },
           "list": {
             "changed": "The list changes",
@@ -636,10 +638,14 @@
             "sent": "A list goes to a store"
           },
           "pantry": {
-            "changed": "The pantry changes"
+            "changed": "The pantry changes",
+            "use_soon": "Something needs using soon"
           },
           "webhook": {
             "test": "A test"
+          },
+          "day": {
+            "summary": "The daily summary"
           }
         },
         "chips": {
@@ -674,7 +680,8 @@
           },
           "meal": {
             "cooked": "Cooked",
-            "skipped": "Skipped"
+            "skipped": "Skipped",
+            "time_to_start": "Time to start"
           },
           "list": {
             "changed": "Changed",
@@ -682,7 +689,11 @@
             "sent": "Sent to a store"
           },
           "pantry": {
-            "changed": "Changed"
+            "changed": "Changed",
+            "use_soon": "Use soon"
+          },
+          "day": {
+            "summary": "Daily summary"
           }
         },
         "eventHints": {
@@ -717,7 +728,8 @@
           },
           "meal": {
             "cooked": "Made it, on the plan or off it.",
-            "skipped": "A planned meal marked Didn't."
+            "skipped": "A planned meal marked Didn't.",
+            "time_to_start": "When a meal's longest dish needs starting, from its time on the plan."
           },
           "list": {
             "changed": "Things added, checked off, changed or removed, gathered over 30 seconds.",
@@ -725,8 +737,20 @@
             "sent": "Sent to the Kroger cart, or to Walmart's through the extension."
           },
           "pantry": {
-            "changed": "Things put away, used up, moved, changed or removed, gathered over 30 seconds."
+            "changed": "Things put away, used up, moved, changed or removed, gathered over 30 seconds.",
+            "use_soon": "With the daily summary, when things come within 2 days of their use-by date."
+          },
+          "day": {
+            "summary": "Each day at the Daily summary at time: the day's meals, the pool, what to use soon and the list."
           }
+        },
+        "schedule": {
+          "title": "Daily heads-ups",
+          "description": "When webhooks that want the daily summary or things to use soon hear about the day.",
+          "summaryAt": "Daily summary at",
+          "summaryAtHint": "In the household's time zone. A time that's gone by today starts tomorrow.",
+          "save": "Save",
+          "saved": "Saved."
         }
       },
       "new": {

@@ -1,6 +1,6 @@
 # Webhooks
 
-Planned November 10, 2026. This scopes "Webhooks for Home Assistant, n8n and others" in [features.md](features.md), and replaces the outline that was in [platform.md](platform.md#webhooks). The first pull request (the engine, the Webhooks page and server card, and the recipe events) was built on November 10, 2026. The second (the rest of slice 1: imports, tidy-up, Review, the plan, meals, the list and the pantry, and gathering) was built on November 11, 2026. The third (slice 2: cooking sessions and timers from cook view) was built on November 13, 2026; the daily heads-ups are still planned.
+Planned November 10, 2026. This scopes "Webhooks for Home Assistant, n8n and others" in [features.md](features.md), and replaces the outline that was in [platform.md](platform.md#webhooks). The first pull request (the engine, the Webhooks page and server card, and the recipe events) was built on November 10, 2026. The second (the rest of slice 1: imports, tidy-up, Review, the plan, meals, the list and the pantry, and gathering) was built on November 11, 2026. The third (slice 2: cooking sessions and timers from cook view) was built on November 13, 2026, and the fourth (slice 3: the daily heads-ups) the same day, which finishes the plan.
 
 ## Goal
 
@@ -58,6 +58,15 @@ Mirroring the shopping list item by item into another app was considered and lef
 | Pairings (November 12, 2026) | Cooked with a pairing, cooking events carry the main recipe as `recipe`, and the other as `with` | Cook view cooks them as one, and most automations only need to know cooking started |
 | Background work says Merran did it (November 11, 2026) | A cooking note turned into an edit is `by: null`, `via: "merran"`, and so are link batches, app imports and tidy runs, which finish in jobs | The spec says so for background work; the person who started it isn't who finished it |
 | Walmart reports each stretch of filling (November 11, 2026) | The server hears from the extension one product at a time, so a new route, `POST /api/stores/walmart/filled`, takes what the extension did and records `list.sent`. The extension reports when it stops filling (done, stopped, failed, or a fill paused at Walmart's check being dismissed), with only what went in and was left out since its last report, which it keeps with the job; a report with nothing new isn't sent, and nothing waits for one. An extension too old to call it sends no `list.sent` for Walmart. For Kroger, the web passes how many basket lines had no product, which the server hasn't seen because the page leaves them out | The server can't tell when a Walmart fill ends any other way. Reporting totals each time double counted a fill that was stopped and carried on, and one stopped at Walmart's check never reported |
+| Heads-ups have an area of their own (November 13, 2026) | `day.summary`, `meal.time_to_start` and `pantry.use_soon` sit under **Heads-ups** in the picker, after the pantry | They're the one kind that comes on a schedule rather than from a change, and "Daily heads-ups" is one of the three automations the plan was built for |
+| A meal's time is the plan's (November 13, 2026) | The time set for that day (`plan_slot_times`), or the household's usual time for the meal (Settings → Planning → Calendar subscriptions), as the Plan page shows it | Every dated meal on the Plan page shows a time. With only the one-off times, most households would never hear "time to start" |
+| The daily run passes the time (November 13, 2026) | `day.summary` and `pantry.use_soon` go on the schedule's run that passes the household's Daily summary at, on its clock. Each run remembers when the one before it was, so a server that was off sends them when it's back that day; back on a later day, it waits for that day's time. A time just before midnight, which no run falls between, goes with the first run after it, telling of the new day. A webhook added, or a time changed, after today's time waits for tomorrow | "Once the time has passed today" would send the morning summary at 9 in the evening to a webhook just added, and "use soon" needs one moment a day to compare with |
+| "Use soon" is the use-by window (November 13, 2026) | Both the summary's `useSoon` and `pantry.use_soon` count what's within `USE_SOON_DAYS` (2) of its use-by date, or past it. Leftovers from skipped meals, which the Pantry page also calls use soon, aren't in them | Each item then has a use-by day to say, and "came into the window" has one meaning |
+| What came into the window (November 13, 2026) | Told by the last `pantry.use_soon` sent: an item counts as new if it was put away since, or its use-by date was after that day's window. Nothing is kept for each item | Events are kept anyway, keyed by their day. An item whose use-by date is moved earlier, into a window already told, isn't told again; the summary still lists it |
+| The schedule runs only while wanted (November 13, 2026) | `webhooks.schedule` is queued at the next 5-minute mark only while an active webhook on the server wants a heads-up; each run queues the next. Starting the server, turning webhooks on and saving a webhook start it again. Tests never have it queued: only a server whose job runner has started keeps it | Like the cooking quiet checks, a sweep every 5 minutes on every server would fill the Jobs page whether anyone wanted a heads-up or not |
+| "Time to start" looks a day either side (November 13, 2026) | Each run looks at yesterday's, today's and tomorrow's meals, with only the dishes still planned: made ones and ones marked Didn't don't count | A 10-hour dish for breakfast starts the evening before, and a meal just after midnight was due just before it |
+| Heads-up payloads (November 13, 2026) | Each meal says its `time` as HH:mm, always set; dishes carry `totalMinutes`, the longer of the recipe's and its side's; things at home say their `place` as `fridge`, `freezer` or `cupboard`, not a translated name. `meal.time_to_start` also has `serveAt`, `startAt` and `minutes` | Ids rather than words, as for meals, so the server never translates; templates make their own sentences |
+| Daily summary at (November 13, 2026) | One time for the household, kept in its settings, on a **Daily heads-ups** card under the list, through `GET` and `PUT /api/households/current/webhooks/schedule` | It's when the household's day starts, not a property of one webhook |
 | Housekeeping sends nothing (November 11, 2026) | Merging duplicate list lines (the food re-keying job, Same as), moving items when a list is removed, and the gathered rows themselves. Gathered rows aren't in the deliveries log, and the daily clean-up clears them with the rest after 30 days | None of it is something that happened in the kitchen |
 
 ## How events are made
@@ -180,9 +189,9 @@ How it holds together:
 
 | Event | When | Carries |
 |---|---|---|
-| `day.summary` | Once a day, at the time on the Webhooks page (07:00 unless changed), in the household's time zone | The day; each meal planned with its time, if it has one, and its dishes; what's left in the week's pool; what to use soon; how many items are on the list |
-| `meal.time_to_start` | When it's time to start cooking a meal that has a time: the slot's time minus its longest dish's total time | The day and meal; when it's served; when to start; each dish with its recipe and total time |
-| `pantry.use_soon` | With the daily run, when things come into the use-soon window (within 2 days of their use-by, `USE_SOON_DAYS`) since the last one | Each item: its name, where it is, its use-by day |
+| `day.summary` | Once a day, at the time on the Webhooks page (07:00 unless changed), in the household's time zone | The day; each meal planned with its time and its dishes (Didn't left out), each with how long it takes; what's left in the week's pool; what to use soon; how many items are on the list |
+| `meal.time_to_start` | When it's time to start cooking a planned meal: its time minus its longest dish's total time | The day and meal; its time; when it's served and when to start, as instants; the longest dish's minutes; each dish still to make, with its recipe, side and total time |
+| `pantry.use_soon` | With the daily run, when things come into the use-soon window (within 2 days of their use-by, `USE_SOON_DAYS`) since the last one | Each item: its id, name, where it is (`place`) and its use-by day |
 
 ```json
 {
@@ -199,12 +208,12 @@ How it holds together:
         "meal": "dinner",
         "time": "18:00",
         "dishes": [
-          { "entryId": "0193…", "title": "Lemon Chicken", "recipe": { "id": "0193…", "slug": "lemon-chicken", "title": "Lemon Chicken", "url": "https://merran.example.com/recipes/lemon-chicken" }, "totalMinutes": 45 }
+          { "entryId": "0193…", "title": "Lemon Chicken", "recipe": { "id": "0193…", "slug": "lemon-chicken", "title": "Lemon Chicken", "url": "https://merran.example.com/recipes/lemon-chicken" }, "side": null, "totalMinutes": 45 }
         ]
       }
     ],
     "pool": [],
-    "useSoon": [{ "id": "0193…", "name": "Spinach", "place": "Fridge", "useBy": "2026-11-11" }],
+    "useSoon": [{ "id": "0193…", "name": "Spinach", "place": "fridge", "useBy": "2026-11-11" }],
     "list": { "items": 12 }
   }
 }
@@ -271,7 +280,7 @@ A **Webhooks** page in Settings, after Apps and devices. Moved there from the Ho
 - **Add webhook** and editing open in a dialog on larger screens and a drawer on mobile: a name, the address, the events, or **Everything, including events added later**, which hides them, and the extra headers under a row of their own that says **Optional** until one is added. The events are a row for each area, with how many are chosen ("2 of 7") and a checkbox for the whole area, partly ticked when some are. An area opens to a chip for each event with a short name (`chips` in `en.json`); editing starts with the areas that have something chosen open. The line under the chips says what sends the one touched last, like "Moved to Recently deleted." (`eventHints` in `en.json`), and each chip's line is its description for screen readers. After saving, the secret is shown with a copy button.
 - **Each webhook** opens to its deliveries log, **Send a test**, **Pause** or **Resume**, **Rotate secret**, **Show secret** and **Delete**, which asks first.
 - **Send a test** is sent at once, even to a paused webhook, tried once, and its answer shown. It's logged like any delivery, but it's never retried and never pauses the webhook.
-- **Daily summary at**, a time, arrives with slice 3, for every webhook that wants `day.summary`.
+- **Daily heads-ups**, a card under the list since slice 3: **Daily summary at**, a time (07:00 unless changed) and **Save**, for every webhook that wants `day.summary` or `pantry.use_soon`. It says the time is in the household's time zone, and that a time gone by today starts tomorrow.
 
 ## The API
 
@@ -283,6 +292,7 @@ Signed-in owners and admins only, never API keys, in `apps/server/src/http/route
 - `GET /api/households/current/webhooks/{webhookId}/secret`, `POST /api/households/current/webhooks/{webhookId}/secret/rotate`
 - `GET /api/households/current/webhooks/{webhookId}/deliveries`, paged with `limit` and `offset`, with the `total`, as other lists are
 - `POST /api/households/current/webhooks/{webhookId}/deliveries/{deliveryId}/resend`
+- `GET` and `PUT /api/households/current/webhooks/schedule`: Daily summary at, as `{ "summaryAt": "07:00" }`
 
 The server admin's setting goes through `PATCH /api/settings/server`, like the others. Every event and its payload is in the spec's `webhooks` section.
 
@@ -292,7 +302,9 @@ The server admin's setting goes through `PATCH /api/settings/server`, like the o
 - **`webhook_events`**, household-scoped: the id (`msg_…`), the type, the payload, whether it's gathered and whether it's been merged (`gathered` and `merged`, added with the second pull request), an optional key unique in the household (so a scheduled event is sent once: `day.summary:2026-11-10`, `meal.time_to_start:2026-11-10:dinner`) and when it happened.
 - **`webhook_deliveries`**, household-scoped like every table with household data (the schema test insists): the event, the webhook, its state (`waiting`, `delivered`, `failed`, `stopped`), tries, the last status code, the first 1 KB of the last answer, how long it took, the last error, and when it was delivered.
 
-The `key` column arrives with slice 3, which is the first to need it. One migration for SQLite and one for Postgres for each slice that adds tables or columns.
+The `key` column arrived with slice 3 (November 13, 2026), which is the first to need it: a nullable string with a unique index on the household and the key, so many events have none. `sendEvent` looks for one with its key before saving, and sends nothing if it finds one. One migration for SQLite and one for Postgres for each slice that adds tables or columns.
+
+- **Daily summary at** is kept in the household's settings (`settings.webhooks.summaryAt`), with no table of its own.
 
 ## The module and its settings
 
@@ -329,13 +341,14 @@ Slice 2. The routes, in `apps/server/src/http/routes/cooking/sessions/`:
 
 ## Scheduled heads-ups
 
-Slice 3. One job, `webhooks.schedule`, every 5 minutes, looks only at households with an active webhook that wants `day.summary`, `meal.time_to_start` or `pantry.use_soon`, and works in each household's time zone (`householdClock`):
+Slice 3, built November 13, 2026, in `apps/server/src/services/webhooks/heads-ups/`. One job, `webhooks.schedule`, every 5 minutes, looks only at households with an active webhook that wants `day.summary`, `meal.time_to_start` or `pantry.use_soon`, and works in each household's time zone:
 
-- **`day.summary`** once the household's time has passed today, once a day.
-- **`meal.time_to_start`** for each of today's slots with a time (`plan_slot_times`), at the slot's time minus its longest dish's `totalMinutes`, or prep and cook minutes added up when there's no total. Slots whose dishes have no times are skipped, as is the week's pool, which has none. Each slot sends once a day, and never more than 15 minutes late: a meal planned after its start time passed says nothing.
-- **`pantry.use_soon`** with the daily run, listing what came into the window since the last one sent; nothing when nothing did.
+- **The daily run** is the run that passes the household's Daily summary at on its own clock. Each run carries when the one before it was (`since` in its payload), so it notices a time passed that day while the server was off. Yesterday's time counts only within 15 minutes of it, for a time like 23:58 that the first run after it sees past midnight.
+- **`day.summary`** with the daily run, once a day (`day.summary:<day>`), even on a day with nothing planned.
+- **`meal.time_to_start`** for each dated meal (yesterday's, today's or tomorrow's) whose start came in the last 15 minutes: its time minus its longest dish's `totalMinutes`, or prep and cook minutes added up when there's no total, the side's when that's longer. A meal's time is the one set for that day (`plan_slot_times`), or the household's usual time for it. Meals whose dishes have no times are skipped, as is the week's pool, which has none, and dishes made or marked Didn't. Each meal sends once (`meal.time_to_start:<day>:<meal>`), and never more than 15 minutes late: a meal planned after its start time passed says nothing.
+- **`pantry.use_soon`** with the daily run, listing what came into the window since the last one sent (`pantry.use_soon:<day>`); nothing when nothing did.
 
-The event keys in `webhook_events` make sure each goes once, however the job's runs fall. Prep reminders ("take the chicken out") use the same scheduler once Notifications is built.
+The event keys in `webhook_events` make sure each goes once, however the job's runs fall. The job is queued only while a webhook wants a heads-up ([Decisions](#decisions)). Prep reminders ("take the chicken out") use the same scheduler once Notifications is built.
 
 ## Build order
 
@@ -344,7 +357,7 @@ Four pull requests. Each brings its own `en.json` strings, migrations, regenerat
 1. **`feat: webhooks`:** `record()`, the three tables, signing, delivery and the retry schedule in the runner, pausing, the deliveries log, the module and its home-network setting, the Webhooks page, `webhook.test` and the recipe events. The site guide, `integrations/webhooks.md`, with Home Assistant and n8n examples.
 2. **`feat: more webhook events`:** the rest of slice 1, and gathering.
 3. **`feat: cooking and timer webhooks`:** slice 2.
-4. **`feat: daily heads-ups by webhook`:** slice 3.
+4. **`feat: daily heads-ups by webhook`:** slice 3. Built November 13, 2026.
 
 ## Tests
 
