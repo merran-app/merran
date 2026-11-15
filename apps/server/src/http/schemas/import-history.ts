@@ -220,6 +220,15 @@ export const UndoImportRequestSchema = z
     example: { recipeIds: [RECIPE.id] },
   })
 
+export const RetryImportRequestSchema = z
+  .object({
+    token: z.string().trim().min(1).max(2000).optional().openapi({
+      description:
+        "Mealie's API token, for an import from Mealie through its API: it isn't kept once an import finishes.",
+    }),
+  })
+  .openapi("RetryImportRequest", { example: {} })
+
 const offset = (description: string) =>
   z.coerce.number().int().min(0).optional().openapi({ description })
 

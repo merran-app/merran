@@ -5832,6 +5832,18 @@
           }
         }
       },
+      "RetryImportRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "description": "Mealie's API token, for an import from Mealie through its API: it isn't kept once an import finishes."
+          }
+        },
+        "example": {}
+      },
       "UndoImportRequest": {
         "type": "object",
         "properties": {
@@ -25095,6 +25107,110 @@
           },
           "409": {
             "description": "It hasn't been undone.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/imports/{importId}/retry": {
+      "post": {
+        "operationId": "retryImport",
+        "tags": [
+          "Imports"
+        ],
+        "summary": "Try an import again",
+        "description": "Starts a new import of just what didn't come in: the links that failed or were never reached, or another app's recipes that failed. A file import needs its file still kept (a week) and a household admin; Mealie through its API needs its token again and the server admin; a Merran export starts again, skipping what's in. With an API key, it needs the `imports: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "imports:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "importId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryImportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The new import, started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Import"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nothing to try again, or the file it needs isn't kept any more.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Mealie's token is needed.",
             "content": {
               "application/json": {
                 "schema": {

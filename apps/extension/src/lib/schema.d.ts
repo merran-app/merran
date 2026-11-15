@@ -1494,6 +1494,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/imports/{importId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Try an import again
+         * @description Starts a new import of just what didn't come in: the links that failed or were never reached, or another app's recipes that failed. A file import needs its file still kept (a week) and a household admin; Mealie through its API needs its token again and the server admin; a Merran export starts again, skipping what's in. With an API key, it needs the `imports: write` permission.
+         */
+        post: operations["retryImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/imports/{importId}/stop": {
         parameters: {
             query?: never;
@@ -11995,6 +12015,11 @@ export interface components {
                 /** @description Whether there are more: ask again from further on. */
                 more: boolean;
             };
+        };
+        /** @example {} */
+        RetryImportRequest: {
+            /** @description Mealie's API token, for an import from Mealie through its API: it isn't kept once an import finishes. */
+            token?: string;
         };
         /**
          * @example {
@@ -23012,6 +23037,77 @@ export interface operations {
             };
             /** @description It hasn't been undone. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    retryImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RetryImportRequest"];
+            };
+        };
+        responses: {
+            /** @description The new import, started. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Nothing to try again, or the file it needs isn't kept any more. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Mealie's token is needed. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

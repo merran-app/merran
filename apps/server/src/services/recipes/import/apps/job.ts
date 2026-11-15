@@ -53,6 +53,8 @@ const Payload = z.discriminatedUnion("from", [
     /** A Mealie backup's group, or null for all of them. */
     group: z.string().nullable(),
     userId: z.string().nullable(),
+    /** Just these recipes, by their ref: Try again on what didn't come in. */
+    only: z.array(z.string()).nullable().default(null),
   }),
   z.object({
     from: z.literal("mealie"),
@@ -60,6 +62,7 @@ const Payload = z.discriminatedUnion("from", [
     /** Sealed while the import runs, and forgotten once it's finished. */
     token: SealedSchema.nullable(),
     userId: z.string().nullable(),
+    only: z.array(z.string()).nullable().default(null),
   }),
 ])
 type Payload = z.infer<typeof Payload>
@@ -94,6 +97,8 @@ export async function startAppImport(
     source: AppImport
     /** The same file started twice runs once. */
     key?: string
+    /** Just these recipes, by their ref: Try again on what didn't come in. */
+    only?: readonly string[] | null
   }
 ) {
   const { job } = await enqueueImport(
@@ -102,7 +107,11 @@ export async function startAppImport(
       kind: KIND,
       key: options.key,
       householdId: options.householdId,
-      payload: { ...options.source, userId: options.userId },
+      payload: {
+        ...options.source,
+        userId: options.userId,
+        only: options.only ? [...options.only] : null,
+      },
       createdBy: options.userId,
       // Never tried again by itself: Try again starts over, skipping what's in.
       maxAttempts: 1,
@@ -157,6 +166,7 @@ async function bringIn(
   householdId: string,
   importId: string,
   source: AppSource,
+  only: ReadonlySet<string> | null,
   {
     progress,
     signal,
@@ -164,6 +174,7 @@ async function bringIn(
   }: Pick<Parameters<JobHandler["run"]>[0], "progress" | "signal" | "logger">
 ) {
   const userOf = await membersByEmail(em, householdId)
+  const total = only?.size ?? source.total
   let done = 0
   let added = 0
   let skipped = 0
@@ -171,9 +182,11 @@ async function bringIn(
   const failed: { name: string; error: string }[] = []
   let failures = 0
 
-  await progress(0, source.total)
+  await progress(0, total)
   for await (const recipe of source.recipes()) {
     if (signal.aborted) throw new JobStopped()
+    // Trying again: just the ones that didn't come in before.
+    if (only && !only.has(recipe.ref)) continue
     done++
     const name = recipe.name.slice(0, 200) || recipe.ref
     const here = await em.findOne(
@@ -249,7 +262,7 @@ async function bringIn(
         })
       }
     }
-    await progress(done, Math.max(done, source.total))
+    await progress(done, Math.max(done, total))
   }
   return { recipes: added, photos, skipped, failed: failures, failures: failed }
 }
@@ -324,12 +337,17 @@ export const appImportJob: JobHandler = {
           // Now it's open, the record knows which app it's from.
           const found = await em.findOneOrFail(Import, { id: jobId })
           found.kind = source.app
-          await beginImport(em, jobId, source.total)
-          const result = await bringIn(em, deps, householdId, jobId, source, {
-            progress,
-            signal,
-            logger,
-          })
+          const only = job.only ? new Set(job.only) : null
+          await beginImport(em, jobId, only?.size ?? source.total)
+          const result = await bringIn(
+            em,
+            deps,
+            householdId,
+            jobId,
+            source,
+            only,
+            { progress, signal, logger }
+          )
           // Before the upload goes, so if telling webhooks fails, the import
           // fails with its file still there for Try again.
           await record(em, householdId, {
