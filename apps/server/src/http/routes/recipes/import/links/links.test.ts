@@ -2,8 +2,13 @@ import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../../app.ts"
 import { AppError } from "../../../../../core/errors.ts"
 import type { Fetcher } from "../../../../../services/fetch/public-fetch.ts"
-import { Job } from "../../../../../database/entities/index.ts"
+import { Import, ImportItem } from "../../../../../database/entities/index.ts"
 import type { Database } from "../../../../../database/orm.ts"
+import { forHousehold } from "../../../../../database/scope.ts"
+import {
+  settleItem,
+  beginImport,
+} from "../../../../../services/imports/imports.ts"
 import type { JobRunner } from "../../../../../services/jobs/runner.ts"
 import { stopSignal } from "../../../../../services/jobs/stop.ts"
 import {
@@ -33,6 +38,8 @@ const PAGES: Record<string, string> = {
   "https://example.com/blog": "<html><body>Ten kitchen tips</body></html>",
   "https://example.com/pasta": recipePage("Lemon Pasta", "200 g spaghetti"),
   "https://example.com/stew": recipePage("Bean Stew", "2 cans beans"),
+  "https://example.com/curry": recipePage("Green Curry", "1 can coconut milk"),
+  "https://example.com/tacos": recipePage("Fish Tacos", "8 tortillas"),
 }
 
 /** A site that never answers, until the job fetching it is stopped. */
@@ -75,11 +82,13 @@ let close: () => Promise<void>
 let database: Database
 let jobs: JobRunner
 let kyle: TestClient
+let home: string
 
 beforeAll(async () => {
   const test = await createTestApp({ fetcher })
   ;({ app, close, database, jobs } = test)
   kyle = await setUpServer(app, test.setupCode)
+  home = (await (await kyle.get("/api/households/current")).json()).id
 })
 
 afterAll(() => close())
@@ -203,30 +212,10 @@ describe("several links", () => {
     const started = await start({
       urls: ["https://example.com/pasta", "https://example.com/stew"],
     })
-    await database.em.fork().nativeUpdate(
-      Job,
-      { id: started.id },
-      {
-        progress: { done: 1, total: 2 },
-        result: {
-          tag: null,
-          items: [
-            {
-              url: "https://example.com/pasta",
-              state: "added",
-              recipe: pasta,
-              error: null,
-            },
-            {
-              url: "https://example.com/stew",
-              state: "waiting",
-              recipe: null,
-              error: null,
-            },
-          ],
-        },
-      }
-    )
+    // What its record says when a restart cuts it off after the first.
+    const em = forHousehold(database.em, home)
+    await settleItem(em, started.id, 0, { state: "added", recipeId: pasta.id })
+    await beginImport(em, started.id)
 
     await jobs.drain()
     expect(await status(started.id)).toMatchObject({
@@ -238,6 +227,53 @@ describe("several links", () => {
         { state: "added", recipe: { slug: "bean-stew" } },
       ],
     })
+  })
+
+  test("each link's outcome is in the import's record", async () => {
+    const started = await start({
+      urls: [
+        "https://example.com/curry",
+        "https://example.com/tacos",
+        "https://example.com/nowhere",
+      ],
+      tag: "weeknight",
+    })
+    await jobs.drain()
+
+    const em = forHousehold(database.em, home)
+    const record = await em.findOneOrFail(Import, { id: started.id })
+    expect(record).toMatchObject({
+      kind: "links",
+      source: null,
+      listed: true,
+      status: "done",
+      total: 3,
+      added: 2,
+      already: 0,
+      failed: 1,
+    })
+    const items = await em.find(
+      ImportItem,
+      { import: started.id },
+      { orderBy: { position: "asc" }, populate: ["recipe"] }
+    )
+    expect(
+      items.map((item) => [
+        item.label,
+        item.state,
+        item.recipe?.getEntity().slug ?? null,
+        item.error,
+      ])
+    ).toEqual([
+      ["https://example.com/curry", "added", "green-curry", null],
+      ["https://example.com/tacos", "added", "fish-tacos", null],
+      [
+        "https://example.com/nowhere",
+        "failed",
+        null,
+        "Couldn't reach that site.",
+      ],
+    ])
   })
 
   test("stopped while a link is fetched show it as stopped, not failed", async () => {

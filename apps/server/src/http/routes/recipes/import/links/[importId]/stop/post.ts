@@ -1,9 +1,8 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../../../core/context.ts"
-import {
-  describeLinkImport,
-  findLinkImport,
-} from "../../../../../../../services/recipes/import/import-links.ts"
+import { describeLinkImport } from "../../../../../../../services/recipes/import/import-links.ts"
+import { AppError } from "../../../../../../../core/errors.ts"
+import { findJob } from "../../../../../../../services/jobs/jobs.ts"
 import { inHousehold, openToKeys } from "../../../../../../middleware/auth.ts"
 import type { Router } from "../../../../../../router.ts"
 import {
@@ -37,12 +36,16 @@ const route = createRoute({
 export default (router: Router, { jobs }: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId } = inHousehold(c)
-    const job = await findLinkImport(
-      em,
-      c.req.valid("param").importId,
-      householdId
-    )
+    const { importId } = c.req.valid("param")
+    const job = await findJob(em, importId, householdId)
+    if (job.kind !== "recipes.importLinks") {
+      throw new AppError(
+        "not_found",
+        "import_not_found",
+        "There's no such import."
+      )
+    }
     await jobs.cancel(em, job)
-    return c.json(describeLinkImport(job), 200)
+    return c.json(await describeLinkImport(em, importId), 200)
   })
 }

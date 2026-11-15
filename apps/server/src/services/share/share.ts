@@ -195,7 +195,7 @@ export async function shareToMerran(
 
   try {
     if (links.length > 1) {
-      const job = await startLinkImport(em, {
+      const started = await startLinkImport(em, {
         householdId: options.householdId,
         userId: options.userId,
         urls: links,
@@ -206,9 +206,9 @@ export async function shareToMerran(
         code: null,
         message: `Adding ${count} recipes to Merran.`,
         recipe: null,
-        importId: job.id,
+        importId: started.id,
         receiptId: null,
-        url: `${options.baseUrl}/recipes/import/${job.id}`,
+        url: `${options.baseUrl}/recipes/import/${started.id}`,
       }
     }
 

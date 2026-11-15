@@ -205,12 +205,13 @@ describe("an import's record", () => {
     })
     await tx.flush()
 
-    const made = await ensureImport(em(), job, {
+    const ofJob = { id: job.id, householdId: home, createdBy: null }
+    const made = await ensureImport(em(), ofJob, {
       kind: "links",
       source: null,
       listed: true,
     })
-    const again = await ensureImport(em(), job, {
+    const again = await ensureImport(em(), ofJob, {
       kind: "links",
       source: null,
       listed: true,

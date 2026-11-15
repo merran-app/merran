@@ -2,11 +2,18 @@ import { rm } from "node:fs/promises"
 import type { EntityManager } from "@mikro-orm/sql"
 import { z, ZodError } from "zod"
 import { AppError } from "../../../../core/errors.ts"
-import { Job, Recipe } from "../../../../database/entities/index.ts"
+import { Import, Job, Recipe } from "../../../../database/entities/index.ts"
 import { NOT_DELETED_FILTER } from "../../../../database/scope.ts"
 import { RecipeInputSchema } from "../../../../http/schemas/recipes.ts"
 import { membersByEmail } from "../../../households/households.ts"
-import { enqueue } from "../../../jobs/jobs.ts"
+import {
+  addItem,
+  asImport,
+  beginImport,
+  cancelWaitingImport,
+  enqueueImport,
+  ensureImport,
+} from "../../../imports/imports.ts"
 import { throwIfStopped } from "../../../jobs/stop.ts"
 import {
   JobStopped,
@@ -61,8 +68,25 @@ export type AppImport =
   | { from: "file"; file: string; group: string | null }
   | { from: "mealie"; url: string; token: Sealed }
 
-/** Starts bringing recipes in from another app, in the background. */
-export function startAppImport(
+/**
+ * What Try again needs to start the same import: the file and its group,
+ * or Mealie's address. Never the token, which is asked for again.
+ */
+function retryOf(
+  source:
+    | { from: "file"; file: string; group: string | null }
+    | { from: "mealie"; url: string }
+) {
+  return source.from === "file"
+    ? { from: "file", file: source.file, group: source.group }
+    : { from: "mealie", url: source.url }
+}
+
+/**
+ * Starts bringing recipes in from another app, in the background, with its
+ * record. A file's record says Mealie until the job opens it and knows.
+ */
+export async function startAppImport(
   em: EntityManager,
   options: {
     householdId: string
@@ -72,15 +96,25 @@ export function startAppImport(
     key?: string
   }
 ) {
-  return enqueue(em, {
-    kind: KIND,
-    key: options.key,
-    householdId: options.householdId,
-    payload: { ...options.source, userId: options.userId },
-    createdBy: options.userId,
-    // Never tried again by itself: Try again starts over, skipping what's in.
-    maxAttempts: 1,
-  })
+  const { job } = await enqueueImport(
+    em,
+    {
+      kind: KIND,
+      key: options.key,
+      householdId: options.householdId,
+      payload: { ...options.source, userId: options.userId },
+      createdBy: options.userId,
+      // Never tried again by itself: Try again starts over, skipping what's in.
+      maxAttempts: 1,
+    },
+    {
+      kind: "mealie",
+      source: options.source.from === "mealie" ? options.source.url : null,
+      listed: true,
+      retry: retryOf(options.source),
+    }
+  )
+  return job
 }
 
 /** Which of these are here already, Recently deleted included. */
@@ -121,6 +155,7 @@ async function bringIn(
   em: EntityManager,
   deps: JobDeps,
   householdId: string,
+  importId: string,
   source: AppSource,
   {
     progress,
@@ -140,13 +175,20 @@ async function bringIn(
   for await (const recipe of source.recipes()) {
     if (signal.aborted) throw new JobStopped()
     done++
-    const here = await em.count(
+    const name = recipe.name.slice(0, 200) || recipe.ref
+    const here = await em.findOne(
       Recipe,
       { importedFrom: recipe.ref },
-      { filters: { [NOT_DELETED_FILTER]: false } }
+      { fields: ["id"], filters: { [NOT_DELETED_FILTER]: false } }
     )
-    if (here > 0) {
+    if (here) {
       skipped++
+      await addItem(em, importId, {
+        label: name,
+        ref: recipe.ref,
+        state: "already",
+        recipeId: here.id,
+      })
     } else {
       let photoId: string | null = null
       try {
@@ -161,7 +203,7 @@ async function bringIn(
           )
         }
         const createdAt = body.createdAt ?? new Date()
-        await importRecipe(em, {
+        const recipeId = await importRecipe(em, {
           householdId,
           id: null,
           slug: input.name,
@@ -185,17 +227,26 @@ async function bringIn(
         })
         added++
         if (photoId) photos++
+        await addItem(em, importId, {
+          label: name,
+          ref: recipe.ref,
+          state: "added",
+          recipeId,
+        })
       } catch (err) {
         await removePhoto(deps.files, householdId, photoId).catch(() => {})
         if (signal.aborted) throw err
         logger.warn({ err, ref: recipe.ref }, "A recipe didn't come in")
         failures++
         if (failed.length < NAMED_FAILURES) {
-          failed.push({
-            name: recipe.name.slice(0, 200) || recipe.ref,
-            error: whyNot(err),
-          })
+          failed.push({ name, error: whyNot(err) })
         }
+        await addItem(em, importId, {
+          label: name,
+          ref: recipe.ref,
+          state: "failed",
+          error: whyNot(err),
+        })
       }
     }
     await progress(done, Math.max(done, source.total))
@@ -229,6 +280,7 @@ export const appImportJob: JobHandler = {
   perHousehold: 1,
   concurrency: 2,
   changes: ["recipes"],
+  cancelledWaiting: (em, job) => cancelWaitingImport(em, job.id),
   async run({
     jobId,
     em,
@@ -241,50 +293,68 @@ export const appImportJob: JobHandler = {
   }) {
     if (!householdId) throw new Error("An import needs a household.")
     const job = Payload.parse(payload)
+    // One started before records were kept, cut off by the restart.
+    await ensureImport(
+      em,
+      { id: jobId, householdId, createdBy: job.userId },
+      {
+        kind: "mealie",
+        source: job.from === "mealie" ? job.url : null,
+        listed: true,
+        retry: retryOf(job),
+      }
+    )
     try {
-      let source: AppSource
-      if (job.from === "file") {
-        source = await openUpload(job.file, {
-          group: job.group,
-          fetcher: deps.fetcher,
-        })
-      } else {
-        if (!job.token) throw tokenGone()
-        source = await openMealieServer(
-          deps.fetcher,
-          job.url,
-          deps.settings.open(job.token)
-        )
-      }
-      try {
-        const result = await bringIn(em, deps, householdId, source, {
-          progress,
-          signal,
-          logger,
-        })
-        // Before the upload goes, so if telling webhooks fails, the import
-        // fails with its file still there for Try again.
-        await record(em, householdId, {
-          type: "import.finished",
-          data: {
-            import: { id: jobId },
-            kind: "app",
-            app: source.app,
-            added: result.recipes,
-            skipped: result.skipped,
-            failed: result.failed,
-            url: appLink("/settings/import-export"),
-          },
-        })
+      return await asImport(em, jobId, signal, async () => {
+        let source: AppSource
         if (job.from === "file") {
-          // Done with: an upload that failed stays for Try again, a week at most.
-          source.close()
-          await rm(job.file, { force: true })
+          source = await openUpload(job.file, {
+            group: job.group,
+            fetcher: deps.fetcher,
+          })
+        } else {
+          if (!job.token) throw tokenGone()
+          source = await openMealieServer(
+            deps.fetcher,
+            job.url,
+            deps.settings.open(job.token)
+          )
         }
-        return result
-      } finally {
-        source.close()
-      }
+        try {
+          // Now it's open, the record knows which app it's from.
+          const found = await em.findOneOrFail(Import, { id: jobId })
+          found.kind = source.app
+          await beginImport(em, jobId, source.total)
+          const result = await bringIn(em, deps, householdId, jobId, source, {
+            progress,
+            signal,
+            logger,
+          })
+          // Before the upload goes, so if telling webhooks fails, the import
+          // fails with its file still there for Try again.
+          await record(em, householdId, {
+            type: "import.finished",
+            data: {
+              import: { id: jobId },
+              kind: "app",
+              app: source.app,
+              added: result.recipes,
+              skipped: result.skipped,
+              failed: result.failed,
+              url: appLink(`/recipes/imports/${jobId}`),
+            },
+          })
+          // Done with, unless some didn't come in: then it stays for Try
+          // again, a week at most.
+          if (job.from === "file" && result.failed === 0) {
+            source.close()
+            await rm(job.file, { force: true })
+          }
+          return result
+        } finally {
+          source.close()
+        }
+      })
     } finally {
       if (job.from === "mealie" && job.token && !shuttingDown(signal)) {
         await forgetToken(deps, jobId, job)

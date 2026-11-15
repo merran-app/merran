@@ -21,6 +21,9 @@ import type { JobRunner } from "../../jobs/runner.ts"
 // import.finished: said once when an import runs to its end, with what it
 // brought in. One that's stopped says nothing.
 
+/** An import's page on the Imports page. */
+const IMPORT_PAGE = new RegExp(`^${TEST_ORIGIN}/recipes/imports/[0-9a-f-]{36}$`)
+
 const recipePage = (name: string, ingredient: string) =>
   `<!doctype html><html><head><title>${name}</title>
 <script type="application/ld+json">${JSON.stringify({
@@ -114,7 +117,7 @@ describe("a batch of links", () => {
       failed: 1,
       by: null,
       via: "merran",
-      url: `${TEST_ORIGIN}/recipes/import/${started!.id}`,
+      url: `${TEST_ORIGIN}/recipes/imports/${started!.id}`,
     })
   })
 
@@ -269,7 +272,7 @@ describe("another app's files", () => {
       failed: 0,
       by: null,
       via: "merran",
-      url: `${TEST_ORIGIN}/settings/import-export`,
+      url: expect.stringMatching(IMPORT_PAGE),
     })
   })
 })
@@ -309,7 +312,7 @@ describe("a Merran archive", () => {
         failed: 0,
         by: null,
         via: "merran",
-        url: `${TEST_ORIGIN}/settings/import-export`,
+        url: expect.stringMatching(IMPORT_PAGE),
       })
     } finally {
       await other.close()

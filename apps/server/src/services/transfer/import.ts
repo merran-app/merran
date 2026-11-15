@@ -12,8 +12,19 @@ import {
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { RecipeInputSchema } from "../../http/schemas/recipes.ts"
 import { membersByEmail } from "../households/households.ts"
-import { enqueue } from "../jobs/jobs.ts"
-import { JobStopped, type JobDeps, type JobHandler } from "../jobs/runner.ts"
+import {
+  addItem,
+  asImport,
+  cancelWaitingImport,
+  enqueueImport,
+  ensureImport,
+} from "../imports/imports.ts"
+import {
+  JobStopped,
+  type JobContext,
+  type JobDeps,
+  type JobHandler,
+} from "../jobs/runner.ts"
 import { storePhoto } from "../recipes/photos/photos.ts"
 import { appLink } from "../webhooks/payloads.ts"
 import { record } from "../webhooks/record.ts"
@@ -36,7 +47,7 @@ const Payload = z.object({
 })
 
 /** Starts importing an upload into a household, in the background. */
-export function startImport(
+export async function startImport(
   em: EntityManager,
   options: {
     householdId: string
@@ -45,19 +56,30 @@ export function startImport(
     userId: string
   }
 ) {
-  return enqueue(em, {
-    kind: KIND,
-    householdId: options.householdId,
-    payload: {
-      file: options.file,
-      newHousehold: options.newHousehold,
-      userId: options.userId,
+  const { job } = await enqueueImport(
+    em,
+    {
+      kind: KIND,
+      householdId: options.householdId,
+      payload: {
+        file: options.file,
+        newHousehold: options.newHousehold,
+        userId: options.userId,
+      },
+      createdBy: options.userId,
+      // Imports are never tried again by themselves; Try again starts over,
+      // skipping recipes already in.
+      maxAttempts: 1,
     },
-    createdBy: options.userId,
-    // Imports are never tried again by themselves; Try again starts over,
-    // skipping recipes already in.
-    maxAttempts: 1,
-  })
+    {
+      kind: "merran",
+      source: null,
+      listed: true,
+      // Try again brings the rest into this household, now it exists.
+      retry: { file: options.file },
+    }
+  )
+  return job
 }
 
 /** A recipe's content, checked as if typed into the editor. */
@@ -122,149 +144,203 @@ export const importJob: JobHandler = {
   concurrency: 2,
   // Recipes, and a new household's details and settings.
   changes: ["recipes", "household"],
+  cancelledWaiting: (em, job) => cancelWaitingImport(em, job.id),
   async run({ jobId, em, householdId, payload, progress, signal, deps }) {
     if (!householdId) throw new Error("An import needs a household.")
     const { file, newHousehold, userId } = Payload.parse(payload)
-    const data = await openExport(file)
-    try {
-      if (newHousehold) {
-        await takeDetails(em, deps, householdId, await data.household(), userId)
-      }
-      const recipes = await data.recipes()
+    // One started before records were kept, cut off by the restart.
+    await ensureImport(
+      em,
+      { id: jobId, householdId, createdBy: userId },
+      { kind: "merran", source: null, listed: true, retry: { file } }
+    )
+    return asImport(em, jobId, signal, () =>
+      bringInExport(em, deps, {
+        jobId,
+        householdId,
+        file,
+        newHousehold,
+        userId,
+        progress,
+        signal,
+      })
+    )
+  },
+}
 
-      // People are matched by email to who's in this household.
-      const userOf = await membersByEmail(em, householdId)
+/** Brings in every recipe in a Merran export, saying what came of each. */
+async function bringInExport(
+  em: EntityManager,
+  deps: JobDeps,
+  {
+    jobId,
+    householdId,
+    file,
+    newHousehold,
+    userId,
+    progress,
+    signal,
+  }: {
+    jobId: string
+    householdId: string
+    file: string
+    newHousehold: boolean
+    userId: string | null
+    progress: JobContext["progress"]
+    signal: AbortSignal
+  }
+) {
+  const data = await openExport(file)
+  try {
+    if (newHousehold) {
+      await takeDetails(em, deps, householdId, await data.household(), userId)
+    }
+    const recipes = await data.recipes()
 
-      /** Each recipe's id in the export, and its id here. */
-      const ids = new Map<string, string>()
-      const added = new Set<string>()
-      let photos = 0
-      for (const [index, recipe] of recipes.entries()) {
-        if (signal.aborted) throw new JobStopped()
-        const here = UUID.test(recipe.id)
-          ? await em.findOne(
-              Recipe,
-              { id: recipe.id },
-              { filters: { [NOT_DELETED_FILTER]: false } }
-            )
-          : null
-        if (here) {
-          ids.set(recipe.id, here.id)
-          await progress(index + 1, recipes.length)
-          continue
-        }
-        // Another household on this server has it, so it gets a new id.
-        const taken =
-          UUID.test(recipe.id) &&
-          (await em.count(
+    // People are matched by email to who's in this household.
+    const userOf = await membersByEmail(em, householdId)
+
+    /** Each recipe's id in the export, and its id here. */
+    const ids = new Map<string, string>()
+    const added = new Set<string>()
+    let photos = 0
+    for (const [index, recipe] of recipes.entries()) {
+      if (signal.aborted) throw new JobStopped()
+      const here = UUID.test(recipe.id)
+        ? await em.findOne(
             Recipe,
             { id: recipe.id },
-            {
-              filters: {
-                [HOUSEHOLD_FILTER]: false,
-                [NOT_DELETED_FILTER]: false,
-              },
-            }
-          )) > 0
-
-        let photoId: string | null = null
-        const photo = recipe.photo ? await data.read(recipe.photo) : null
-        if (photo) {
-          photoId = await storePhoto(deps.files, householdId, photo).catch(
-            () => null
+            { filters: { [NOT_DELETED_FILTER]: false } }
           )
-          if (photoId) photos++
-        }
-
-        const id = await importRecipe(em, {
-          householdId,
-          id: UUID.test(recipe.id) && !taken ? recipe.id : null,
-          slug: recipe.slug,
-          input: inputOf(recipe),
-          origin: (RECIPE_ORIGINS as readonly string[]).includes(recipe.origin)
-            ? (recipe.origin as RecipeOrigin)
-            : "merran",
-          importedFrom: recipe.importedFrom ?? null,
-          photoId,
-          createdBy: userOf(recipe.createdBy),
-          lastMadeAt: recipe.lastMadeAt ? new Date(recipe.lastMadeAt) : null,
-          nutrition: recipe.nutrition as Nutrition | null,
-          dietOverrides: recipe.dietOverrides,
-          needs: recipe.needs,
-          marks: recipe.ingredients.map((line) => ({
-            line: line.text,
-            mark: line.mark ?? null,
-          })),
-          createdAt: new Date(recipe.createdAt),
-          updatedAt: new Date(recipe.updatedAt),
-          versions: recipe.versions.map((version) => ({
-            source: version.source,
-            snapshot: version.snapshot,
-            createdAt: new Date(version.createdAt),
-            createdBy: userOf(version.createdBy),
-          })),
-          cookNotes: recipe.cookNotes.map((note) => ({
-            rating: note.rating,
-            note: note.note,
-            createdAt: new Date(note.createdAt),
-            user: userOf(note.by),
-          })),
+        : null
+      if (here) {
+        ids.set(recipe.id, here.id)
+        await addItem(em, jobId, {
+          label: recipe.name,
+          ref: recipe.id,
+          state: "already",
+          recipeId: here.id,
         })
-        ids.set(recipe.id, id)
-        added.add(id)
         await progress(index + 1, recipes.length)
+        continue
+      }
+      // Another household on this server has it, so it gets a new id.
+      const taken =
+        UUID.test(recipe.id) &&
+        (await em.count(
+          Recipe,
+          { id: recipe.id },
+          {
+            filters: {
+              [HOUSEHOLD_FILTER]: false,
+              [NOT_DELETED_FILTER]: false,
+            },
+          }
+        )) > 0
+
+      let photoId: string | null = null
+      const photo = recipe.photo ? await data.read(recipe.photo) : null
+      if (photo) {
+        photoId = await storePhoto(deps.files, householdId, photo).catch(
+          () => null
+        )
+        if (photoId) photos++
       }
 
-      // What goes with what, once every recipe is in: only for those just
-      // added, so a second import doesn't double them.
-      for (const recipe of recipes) {
-        const id = ids.get(recipe.id)
-        if (!id || !added.has(id)) continue
-        for (const pairing of recipe.pairings) {
-          if ("recipe" in pairing) {
-            const paired = ids.get(pairing.recipe)
-            if (paired && paired !== id) {
-              em.create(RecipePairing, {
-                household: householdId,
-                recipe: id,
-                pairedRecipe: paired,
-              })
-            }
-          } else if (tagKey(pairing.tag)) {
+      const id = await importRecipe(em, {
+        householdId,
+        id: UUID.test(recipe.id) && !taken ? recipe.id : null,
+        slug: recipe.slug,
+        input: inputOf(recipe),
+        origin: (RECIPE_ORIGINS as readonly string[]).includes(recipe.origin)
+          ? (recipe.origin as RecipeOrigin)
+          : "merran",
+        importedFrom: recipe.importedFrom ?? null,
+        photoId,
+        createdBy: userOf(recipe.createdBy),
+        lastMadeAt: recipe.lastMadeAt ? new Date(recipe.lastMadeAt) : null,
+        nutrition: recipe.nutrition as Nutrition | null,
+        dietOverrides: recipe.dietOverrides,
+        needs: recipe.needs,
+        marks: recipe.ingredients.map((line) => ({
+          line: line.text,
+          mark: line.mark ?? null,
+        })),
+        createdAt: new Date(recipe.createdAt),
+        updatedAt: new Date(recipe.updatedAt),
+        versions: recipe.versions.map((version) => ({
+          source: version.source,
+          snapshot: version.snapshot,
+          createdAt: new Date(version.createdAt),
+          createdBy: userOf(version.createdBy),
+        })),
+        cookNotes: recipe.cookNotes.map((note) => ({
+          rating: note.rating,
+          note: note.note,
+          createdAt: new Date(note.createdAt),
+          user: userOf(note.by),
+        })),
+      })
+      ids.set(recipe.id, id)
+      added.add(id)
+      await addItem(em, jobId, {
+        label: recipe.name,
+        ref: recipe.id,
+        state: "added",
+        recipeId: id,
+      })
+      await progress(index + 1, recipes.length)
+    }
+
+    // What goes with what, once every recipe is in: only for those just
+    // added, so a second import doesn't double them.
+    for (const recipe of recipes) {
+      const id = ids.get(recipe.id)
+      if (!id || !added.has(id)) continue
+      for (const pairing of recipe.pairings) {
+        if ("recipe" in pairing) {
+          const paired = ids.get(pairing.recipe)
+          if (paired && paired !== id) {
             em.create(RecipePairing, {
               household: householdId,
               recipe: id,
-              tagKey: tagKey(pairing.tag),
+              pairedRecipe: paired,
             })
           }
+        } else if (tagKey(pairing.tag)) {
+          em.create(RecipePairing, {
+            household: householdId,
+            recipe: id,
+            tagKey: tagKey(pairing.tag),
+          })
         }
       }
-      await em.flush()
-
-      const result = {
-        recipes: added.size,
-        photos,
-        skipped: recipes.length - added.size,
-      }
-      // Done with: an upload that failed stays for Try again, a week at most.
-      data.close()
-      await rm(file, { force: true })
-      // Any recipe that fails fails the whole import, so none are counted failed.
-      await record(em, householdId, {
-        type: "import.finished",
-        data: {
-          import: { id: jobId },
-          kind: "archive",
-          app: null,
-          added: result.recipes,
-          skipped: result.skipped,
-          failed: 0,
-          url: appLink("/settings/import-export"),
-        },
-      })
-      return result
-    } finally {
-      data.close()
     }
-  },
+    await em.flush()
+
+    const result = {
+      recipes: added.size,
+      photos,
+      skipped: recipes.length - added.size,
+    }
+    // Done with: an upload that failed stays for Try again, a week at most.
+    data.close()
+    await rm(file, { force: true })
+    // Any recipe that fails fails the whole import, so none are counted failed.
+    await record(em, householdId, {
+      type: "import.finished",
+      data: {
+        import: { id: jobId },
+        kind: "archive",
+        app: null,
+        added: result.recipes,
+        skipped: result.skipped,
+        failed: 0,
+        url: appLink(`/recipes/imports/${jobId}`),
+      },
+    })
+    return result
+  } finally {
+    data.close()
+  }
 }

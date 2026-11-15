@@ -5002,6 +5002,23 @@
           "enumItems": [],
           "mappedType": "integer"
         },
+        "retry": {
+          "name": "retry",
+          "type": "json",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
         "source": {
           "name": "source",
           "type": "text",
@@ -5041,6 +5058,23 @@
             "cancelled"
           ],
           "mappedType": "enum"
+        },
+        "tag": {
+          "name": "tag",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
         },
         "total": {
           "name": "total",

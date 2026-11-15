@@ -116,6 +116,11 @@ export type JobHandler = {
    * nobody follows.
    */
   area?: LiveArea
+  /**
+   * Called when a job of this kind is cancelled while it's still waiting,
+   * so never ran: for a kind that keeps a record of its own, like imports.
+   */
+  cancelledWaiting?(em: EntityManager, job: Job): Promise<void>
   run(ctx: JobContext): Promise<Record<string, unknown> | void>
 }
 
@@ -265,7 +270,14 @@ export class JobRunner {
     const waiting = job.status === "queued"
     await cancelJob(em, job, (id) => this.stopJob(id))
     const householdId = job.forHousehold?.id
-    const area = this.#handlers.get(job.kind)?.area
+    const handler = this.#handlers.get(job.kind)
+    if (waiting && householdId) {
+      await handler?.cancelledWaiting?.(
+        forHousehold(this.#deps.database.em, householdId),
+        job
+      )
+    }
+    const area = handler?.area
     if (waiting && householdId && area) {
       this.#deps.events.job(householdId, area, {
         id: job.id,

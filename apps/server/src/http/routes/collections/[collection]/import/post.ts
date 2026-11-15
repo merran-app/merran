@@ -54,12 +54,13 @@ export default (router: Router, _deps: AppDeps) => {
         "Every recipe in it is in your library already."
       )
     }
-    const job = await startLinkImport(em, {
+    const started = await startLinkImport(em, {
       householdId,
       userId,
       urls,
       kind: "collection",
+      source: collection.title,
     })
-    return c.json(describeLinkImport(job), 202)
+    return c.json(await describeLinkImport(em, started.id), 202)
   })
 }

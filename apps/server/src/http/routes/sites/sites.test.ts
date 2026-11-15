@@ -2,7 +2,11 @@ import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../app.ts"
 import { AppError } from "../../../core/errors.ts"
-import { RecipeSite, SiteRecipe } from "../../../database/entities/index.ts"
+import {
+  Import,
+  RecipeSite,
+  SiteRecipe,
+} from "../../../database/entities/index.ts"
 import type { Database } from "../../../database/orm.ts"
 import type { Fetcher } from "../../../services/fetch/public-fetch.ts"
 import { enqueue } from "../../../services/jobs/jobs.ts"
@@ -436,6 +440,14 @@ describe("starter collections", () => {
     expect(res.status).toBe(202)
     const started = await res.json()
     expect(started.items).toHaveLength(4)
+    // Its record says which collection it was.
+    const record = await database.em
+      .fork()
+      .findOneOrFail(Import, { id: started.id }, { filters: false })
+    expect(record).toMatchObject({
+      kind: "collection",
+      source: "Soups & stews",
+    })
   })
 
   test("need AI to find more", async () => {

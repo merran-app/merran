@@ -1,10 +1,13 @@
 import type { EntityManager } from "@mikro-orm/sql"
+import { AppError } from "../../core/errors.ts"
 import {
   Import,
   ImportItem,
+  Job,
   type ImportKind,
-  type Job,
 } from "../../database/entities/index.ts"
+import { ACTIVE, createJob, wakeRunner, type NewJob } from "../jobs/jobs.ts"
+import { JobStopped } from "../jobs/runner.ts"
 
 // Each import's record, for the Imports page: what it was, who started it,
 // how it went, and what came of each link or recipe. The import's job keeps
@@ -27,6 +30,10 @@ export type NewImport = {
   source: string | null
   createdBy: string | null
   listed: boolean
+  /** Added to every recipe it makes. */
+  tag?: string | null
+  /** What Try again needs besides the items (never a token). */
+  retry?: Record<string, unknown> | null
   /** Its links, each waiting, for an import that knows them from the start. */
   items?: readonly { label: string; ref: string | null }[]
 }
@@ -52,6 +59,8 @@ export function createImport(em: EntityManager, input: NewImport) {
     source: input.source,
     createdBy: input.createdBy,
     listed: input.listed,
+    tag: input.tag ?? null,
+    retry: input.retry ?? null,
     total: input.items?.length ?? 0,
   })
   for (const [position, item] of (input.items ?? []).entries()) {
@@ -122,7 +131,7 @@ export async function addItem(
 }
 
 /** The import's job has started, and how many it has, once it knows. */
-export async function startImport(
+export async function beginImport(
   em: EntityManager,
   importId: string,
   total?: number
@@ -152,20 +161,98 @@ export async function finishImport(
  */
 export async function ensureImport(
   em: EntityManager,
-  job: Job,
+  job: { id: string; householdId: string; createdBy: string | null },
   input: Omit<NewImport, "id" | "householdId" | "createdBy">
 ) {
   const found = await em.findOne(Import, { id: job.id })
   if (found) return found
-  if (!job.forHousehold) throw new Error("An import needs a household.")
-  const record = createImport(em, {
-    ...input,
-    id: job.id,
-    householdId: job.forHousehold.id,
-    createdBy: job.createdBy?.id ?? null,
-  })
+  const record = createImport(em, { ...input, ...job })
   await em.flush()
   return record
+}
+
+/**
+ * Adds an import's job and its record together, the record under the job's
+ * id. With a key, one already waiting or running is returned instead, as
+ * `enqueue` does.
+ */
+export async function enqueueImport(
+  em: EntityManager,
+  job: NewJob & { householdId: string },
+  input: Omit<NewImport, "id" | "householdId" | "createdBy">
+) {
+  if (job.key) {
+    const existing = await em.findOne(Job, {
+      key: job.key,
+      status: { $in: [...ACTIVE] },
+    })
+    if (existing) {
+      const record = await ensureImport(
+        em,
+        {
+          id: existing.id,
+          householdId: job.householdId,
+          createdBy: existing.createdBy?.id ?? null,
+        },
+        input
+      )
+      return { job: existing, record }
+    }
+  }
+  const created = createJob(em, job)
+  const record = createImport(em, {
+    ...input,
+    id: created.id,
+    householdId: job.householdId,
+    createdBy: job.createdBy ?? null,
+  })
+  await em.flush()
+  wakeRunner()
+  return { job: created, record }
+}
+
+/**
+ * Runs an import's work, keeping its record's status in step: running, then
+ * done, failed or cancelled. Cut off by a shutdown, it stays running, since
+ * the job runs again at the next start.
+ */
+export async function asImport<T>(
+  em: EntityManager,
+  importId: string,
+  signal: AbortSignal,
+  work: () => Promise<T>,
+  total?: number
+): Promise<T> {
+  await beginImport(em, importId, total)
+  try {
+    const result = await work()
+    await finishImport(em, importId, { status: "done" })
+    return result
+  } catch (err) {
+    const why = signal.reason instanceof JobStopped ? signal.reason.why : null
+    if (signal.aborted && why === "shutdown") throw err
+    await finishImport(
+      em,
+      importId,
+      signal.aborted
+        ? { status: "cancelled" }
+        : {
+            status: "failed",
+            error:
+              err instanceof AppError
+                ? err.message
+                : "Something went wrong. Try again in a moment.",
+          }
+    )
+    throw err
+  }
+}
+
+/** A waiting import's job was cancelled before it started: so is the import. */
+export async function cancelWaitingImport(em: EntityManager, importId: string) {
+  const record = await em.findOne(Import, { id: importId })
+  if (!record || record.status !== "queued") return
+  await finishImport(em, importId, { status: "cancelled" })
 }
 
 /** Clears records past their 90 days, and unlisted ones after a day. */

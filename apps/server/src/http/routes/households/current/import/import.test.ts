@@ -1,7 +1,11 @@
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import yauzl from "yauzl"
-import { RecipeIngredient } from "../../../../../database/entities/index.ts"
+import {
+  Import,
+  ImportItem,
+  RecipeIngredient,
+} from "../../../../../database/entities/index.ts"
 import { HOUSEHOLD_FILTER } from "../../../../../database/scope.ts"
 import type { JobRunner } from "../../../../../services/jobs/runner.ts"
 import {
@@ -207,6 +211,37 @@ describe("importing an export", () => {
       await kyleThere.get("/api/recipes/tomato-soup/pairings")
     ).json()
     expect(pairings.pairings).toHaveLength(2)
+  })
+
+  test("keeps a record of the recipes each import brought in", async () => {
+    const em = second.database.em.fork()
+    const records = await em.find(
+      Import,
+      { kind: "merran" },
+      { filters: false, orderBy: { createdAt: "asc" } }
+    )
+    expect(
+      records.map((record) => [
+        record.status,
+        record.added,
+        record.already,
+        record.failed,
+      ])
+    ).toEqual([
+      ["done", 2, 0, 0],
+      ["done", 0, 2, 0],
+    ])
+    const items = await em.find(
+      ImportItem,
+      { import: records[0]!.id },
+      { filters: false, orderBy: { position: "asc" }, populate: ["recipe"] }
+    )
+    expect(
+      items.map((item) => [item.state, item.recipe?.getEntity().slug])
+    ).toEqual([
+      ["added", "tomato-soup"],
+      ["added", "pesto"],
+    ])
   })
 
   test("as a new household, with new ids where another has them", async () => {

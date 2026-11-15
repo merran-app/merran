@@ -63,6 +63,14 @@ export const Import = defineEntity({
     added: p.integer().default(0),
     already: p.integer().default(0),
     failed: p.integer().default(0),
+    /** Added to every recipe it made, like "to try". */
+    tag: p.string().nullable(),
+    /**
+     * What Try again needs besides the items that didn't come in, kept here
+     * since the job is cleared after 30 days: the file and Mealie group, or
+     * Mealie's address. Never a token.
+     */
+    retry: p.json<Record<string, unknown>>().nullable(),
     /** Why it stopped, when the whole import failed. */
     error: p.text().nullable(),
     createdBy: () =>

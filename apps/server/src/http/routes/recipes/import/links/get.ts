@@ -25,7 +25,7 @@ const route = createRoute({
 
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em, householdId } = inHousehold(c)
-    return c.json({ imports: await activeLinkImports(em, householdId) }, 200)
+    const { em } = inHousehold(c)
+    return c.json({ imports: await activeLinkImports(em) }, 200)
   })
 }

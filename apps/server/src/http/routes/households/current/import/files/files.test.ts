@@ -1,6 +1,11 @@
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import yazl from "yazl"
+import {
+  Import,
+  ImportItem,
+} from "../../../../../../database/entities/index.ts"
+import type { Database } from "../../../../../../database/orm.ts"
 import type { JobRunner } from "../../../../../../services/jobs/runner.ts"
 import {
   account,
@@ -15,6 +20,8 @@ import {
 // made here the way Mealie writes them.
 
 let close: () => Promise<void>
+/** Merran's database, not Mealie's. */
+let db: Database
 let jobs: JobRunner
 let kyle: TestClient
 let jamie: TestClient
@@ -236,7 +243,7 @@ async function importFile(
 
 beforeAll(async () => {
   const test = await createTestApp()
-  ;({ close, jobs } = test)
+  ;({ close, jobs, database: db } = test)
   kyle = await setUpServer(test.app, test.setupCode)
   jamie = await join(
     test.app,
@@ -343,6 +350,28 @@ describe("a Mealie backup", () => {
     const { file, job } = await importFile(kyle, await backup(extra))
     expect(file).toMatchObject({ recipes: 3, alreadyHere: 2 })
     expect(job.result).toMatchObject({ recipes: 1, skipped: 2, failed: 0 })
+  })
+
+  test("keeps a record of each recipe and what came of it", async () => {
+    const { job } = await importFile(kyle, await backup())
+    const em = db.em.fork()
+    const record = await em.findOneOrFail(
+      Import,
+      { id: job.id },
+      { filters: false }
+    )
+    expect(record).toMatchObject({ kind: "mealie", status: "done", failed: 0 })
+    // The backup's two came in earlier, or now.
+    expect(record.added + record.already).toBe(2)
+    const items = await em.find(
+      ImportItem,
+      { import: job.id },
+      { filters: false, orderBy: { position: "asc" }, populate: ["recipe"] }
+    )
+    expect(items.map((item) => item.recipe?.getEntity().name).sort()).toEqual(
+      expect.arrayContaining([expect.any(String), expect.any(String)])
+    )
+    expect(items.every((item) => item.ref?.startsWith("mealie:"))).toBe(true)
   })
 
   test("with more than one group, imports the one chosen", async () => {

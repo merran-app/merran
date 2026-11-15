@@ -42,7 +42,12 @@ export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
     const { urls, tag } = c.req.valid("json")
-    const job = await startLinkImport(em, { householdId, userId, urls, tag })
-    return c.json(describeLinkImport(job), 202)
+    const started = await startLinkImport(em, {
+      householdId,
+      userId,
+      urls,
+      tag,
+    })
+    return c.json(await describeLinkImport(em, started.id), 202)
   })
 }

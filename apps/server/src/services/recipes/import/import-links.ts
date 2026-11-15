@@ -1,27 +1,42 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { z } from "zod"
 import { AppError } from "../../../core/errors.ts"
-import { Job, Recipe } from "../../../database/entities/index.ts"
-import { ACTIVE, enqueue, findJob } from "../../jobs/jobs.ts"
+import {
+  Import,
+  ImportItem,
+  Recipe,
+  type ImportStatus,
+} from "../../../database/entities/index.ts"
+import { inHouseholdTransaction } from "../../../database/transactions.ts"
+import {
+  asImport,
+  cancelWaitingImport,
+  enqueueImport,
+  ensureImport,
+  settleItem,
+} from "../../imports/imports.ts"
 import { JobStopped, type JobHandler } from "../../jobs/runner.ts"
 import { findLinks } from "../../share/links.ts"
-import { inHouseholdTransaction } from "../../../database/transactions.ts"
 import { appLink } from "../../webhooks/payloads.ts"
 import { record } from "../../webhooks/record.ts"
+import { photoUrls } from "../photos/photos.ts"
 import { addTagsTo } from "../tags.ts"
 import { importLink } from "./import-link.ts"
 import { findBySourceUrls, isVideoLink, normalizeLink } from "./links.ts"
 
 // Several links at once, pasted from a note or shared together: checked
 // against the library, then imported one at a time as a job, which says how
-// each link went as it goes.
+// each link went in the import's record as it goes.
 
 const KIND = "recipes.importLinks"
 
 /** The most links one import takes. */
 export const MAX_LINKS = 100
 
-/** Where each link has got to. "stopped" is only ever shown, never kept. */
+/**
+ * Where each link has got to. "adding" and "stopped" are only ever shown:
+ * the first waiting link while it runs, and any waiting once it's finished.
+ */
 export type LinkState =
   "waiting" | "adding" | "added" | "already" | "failed" | "stopped"
 
@@ -46,55 +61,6 @@ const Payload = z.object({
   // What webhooks are told it was; imports started before this have no kind.
   kind: z.enum(["links", "collection"]).default("links"),
 })
-
-const SoFar = z.object({
-  tag: z.string().nullable(),
-  items: z.array(
-    z.object({
-      url: z.string(),
-      state: z.enum(["waiting", "adding", "added", "already", "failed"]),
-      recipe: z
-        .object({
-          id: z.string(),
-          slug: z.string(),
-          name: z.string(),
-          photo: z.string().nullable(),
-        })
-        .nullable(),
-      error: z.string().nullable(),
-    })
-  ),
-})
-
-const waiting = (url: string): LinkItem => ({
-  url,
-  state: "waiting",
-  recipe: null,
-  error: null,
-})
-
-/** Whether a link has been dealt with: added, already there, or failed. */
-const isDone = (item: LinkItem) =>
-  item.state === "added" || item.state === "already" || item.state === "failed"
-
-/**
- * Each link, as far as the import got before a restart cut it off, when
- * what it saved is for these links; otherwise each waiting. A link it was
- * adding is tried again: one it finished just before the restart shows as
- * already there, which is rare and harmless.
- */
-function carriedOn(urls: readonly string[], saved: unknown): LinkItem[] {
-  const kept = SoFar.safeParse(saved)
-  const items = kept.data?.items
-  const same =
-    items !== undefined &&
-    items.length === urls.length &&
-    items.every((item, index) => item.url === urls[index])
-  if (!same) return urls.map(waiting)
-  return items.map((item) =>
-    item.state === "adding" ? waiting(item.url) : { ...item }
-  )
-}
 
 /** A link as Merran keeps it, or null if it isn't one it can fetch. */
 function tidy(raw: string) {
@@ -132,7 +98,7 @@ export async function checkLinks(em: EntityManager, text: string) {
   return { links, more: Math.max(0, found.length - MAX_LINKS) }
 }
 
-/** Starts importing several links, in the background. */
+/** Starts importing several links, in the background, and keeps its record. */
 export async function startLinkImport(
   em: EntityManager,
   options: {
@@ -143,6 +109,8 @@ export async function startLinkImport(
     tag?: string | null
     /** A collection's import is a batch of links that says what it is. */
     kind?: "links" | "collection"
+    /** What it was, for the Imports page: the collection's name. */
+    source?: string | null
   }
 ) {
   const urls = [
@@ -156,86 +124,101 @@ export async function startLinkImport(
     })
   }
   const tag = options.tag?.trim() || null
-  return enqueue(em, {
-    kind: KIND,
-    householdId: options.householdId,
-    payload: {
-      urls,
-      tag,
-      userId: options.userId,
-      kind: options.kind ?? "links",
+  const kind = options.kind ?? "links"
+  const { record } = await enqueueImport(
+    em,
+    {
+      kind: KIND,
+      householdId: options.householdId,
+      payload: { urls, tag, userId: options.userId, kind },
+      createdBy: options.userId,
+      // Never tried again by itself: Try again starts another with the ones left.
+      maxAttempts: 1,
     },
-    createdBy: options.userId,
-    // Never tried again by itself: Try again starts another with the ones left.
-    maxAttempts: 1,
-    // Each link shows at once, waiting.
-    result: { tag, items: urls.map(waiting) },
-  })
-}
-
-/** An import as the API shows it. */
-export function describeLinkImport(job: Job) {
-  const kept = SoFar.safeParse(job.result)
-  const payload = Payload.safeParse(job.payload)
-  const tag = kept.data?.tag ?? payload.data?.tag ?? null
-  const finished = !(ACTIVE as readonly string[]).includes(job.status)
-  const items: LinkItem[] = (
-    kept.data?.items ?? (payload.data?.urls ?? []).map(waiting)
-  ).map((item) =>
-    // Ones it never got to, when it's stopped.
-    finished && (item.state === "waiting" || item.state === "adding")
-      ? { ...item, state: "stopped" as const }
-      : item
+    {
+      kind,
+      source: options.source ?? null,
+      listed: true,
+      tag,
+      items: urls.map((url) => ({ label: url, ref: url })),
+    }
   )
-  const count = (state: LinkState) =>
-    items.filter((item) => item.state === state).length
-  return {
-    id: job.id,
-    status: job.status,
-    tag,
-    total: items.length,
-    done: items.length - count("waiting") - count("adding"),
-    added: count("added"),
-    already: count("already"),
-    failed: count("failed"),
-    stopped: count("stopped"),
-    items,
-    createdAt: job.createdAt.toISOString(),
-    finishedAt: job.finishedAt?.toISOString() ?? null,
-  }
+  return record
 }
 
-/** One of the household's link imports. */
-export async function findLinkImport(
-  em: EntityManager,
-  importId: string,
-  householdId: string
-) {
-  const job = await findJob(em, importId, householdId).catch((err) => {
-    if (err instanceof AppError) return null
-    throw err
-  })
-  if (!job || job.kind !== KIND) {
+/** Whether an import has finished, one way or another. */
+const finished = (status: ImportStatus) =>
+  status === "done" || status === "failed" || status === "cancelled"
+
+/** A link import's record, as its page shows it. */
+export async function describeLinkImport(em: EntityManager, importId: string) {
+  const found = await em.findOne(Import, { id: importId })
+  if (!found || (found.kind !== "links" && found.kind !== "collection")) {
     throw new AppError(
       "not_found",
       "import_not_found",
       "There's no such import."
     )
   }
-  return job
+  const rows = await em.find(
+    ImportItem,
+    { import: importId },
+    { orderBy: { position: "asc" }, populate: ["recipe"] }
+  )
+  const over = finished(found.status)
+  // The first waiting link is the one it's on, while it runs.
+  const current =
+    found.status === "running"
+      ? rows.find((row) => row.state === "waiting")
+      : undefined
+  const items: LinkItem[] = rows.map((row) => {
+    const recipe = row.recipe?.getEntity()
+    let state: LinkState = row.state
+    if (row.state === "waiting" && over) state = "stopped"
+    if (row === current) state = "adding"
+    return {
+      url: row.label,
+      state,
+      recipe: recipe
+        ? {
+            id: recipe.id,
+            slug: recipe.slug,
+            name: recipe.name,
+            photo: photoUrls(recipe)?.card ?? null,
+          }
+        : null,
+      error: row.error ?? null,
+    }
+  })
+  const count = (state: LinkState) =>
+    items.filter((item) => item.state === state).length
+  return {
+    id: found.id,
+    status: found.status,
+    tag: found.tag ?? null,
+    total: items.length,
+    done: items.length - count("waiting") - count("adding") - count("stopped"),
+    added: count("added"),
+    already: count("already"),
+    failed: count("failed"),
+    stopped: count("stopped"),
+    items,
+    createdAt: found.createdAt.toISOString(),
+    finishedAt: found.finishedAt?.toISOString() ?? null,
+  }
 }
 
 /** The household's link imports still going, newest first. */
-export async function activeLinkImports(
-  em: EntityManager,
-  householdId: string
-) {
-  const jobs = await em.find(
-    Job,
-    { kind: KIND, forHousehold: householdId, status: { $in: [...ACTIVE] } },
+export async function activeLinkImports(em: EntityManager) {
+  const going = await em.find(
+    Import,
+    {
+      kind: { $in: ["links", "collection"] },
+      status: { $in: ["queued", "running"] },
+    },
     { orderBy: { createdAt: "desc" } }
   )
-  return jobs.map(describeLinkImport)
+  return Promise.all(going.map((found) => describeLinkImport(em, found.id)))
 }
 
 /** Tags a recipe the import made. */
@@ -252,32 +235,31 @@ function tagRecipe(
 }
 
 /** Says the batch ran to its end, and how many links went each way. */
-function tellWebhooks(
+async function tellWebhooks(
   em: EntityManager,
   householdId: string,
-  jobId: string,
-  kind: "links" | "collection",
-  items: readonly LinkItem[]
+  importId: string,
+  kind: "links" | "collection"
 ) {
-  const count = (state: LinkState) =>
-    items.filter((item) => item.state === state).length
-  return record(em, householdId, {
+  const found = await em.findOneOrFail(Import, { id: importId })
+  await record(em, householdId, {
     type: "import.finished",
     data: {
-      import: { id: jobId },
+      import: { id: importId },
       kind,
       app: null,
-      added: count("added"),
-      skipped: count("already"),
-      failed: count("failed"),
-      url: appLink(`/recipes/import/${jobId}`),
+      added: found.added,
+      skipped: found.already,
+      failed: found.failed,
+      url: appLink(`/recipes/imports/${importId}`),
     },
   })
 }
 
 /**
  * The import job: each link in turn, so what's in stays in if it's
- * stopped. A link the library has already is noted, not added again.
+ * stopped. A link the library has already is noted, not added again. Cut
+ * off by a restart, it carries on from the first link still waiting.
  */
 export const linkImportJob: JobHandler = {
   kind: KIND,
@@ -286,12 +268,12 @@ export const linkImportJob: JobHandler = {
   perHousehold: 1,
   concurrency: 2,
   changes: ["recipes"],
+  cancelledWaiting: (em, job) => cancelWaitingImport(em, job.id),
   async run({
     jobId,
     em,
     householdId,
     payload,
-    saved,
     progress,
     signal,
     logger,
@@ -299,63 +281,60 @@ export const linkImportJob: JobHandler = {
   }) {
     if (!householdId) throw new Error("An import needs a household.")
     const { urls, tag, userId, kind } = Payload.parse(payload)
-    const items = carriedOn(urls, saved)
-    const soFar = () => ({ tag, items })
-    let done = items.filter(isDone).length
+    // One started before records were kept, cut off by the restart.
+    const ofJob = { id: jobId, householdId, createdBy: userId }
+    await ensureImport(em, ofJob, {
+      kind,
+      source: null,
+      listed: true,
+      tag,
+      items: urls.map((url) => ({ label: url, ref: url })),
+    })
 
-    try {
+    return asImport(em, jobId, signal, async () => {
+      const items = await em.find(
+        ImportItem,
+        { import: jobId },
+        { orderBy: { position: "asc" } }
+      )
+      let done = items.filter((item) => item.state !== "waiting").length
       for (const item of items) {
         if (signal.aborted) throw new JobStopped()
         // Done before a restart cut it off.
-        if (isDone(item)) continue
-        item.state = "adding"
-        await progress(done, items.length, soFar())
+        if (item.state !== "waiting") continue
+        await progress(done, items.length)
         try {
           const { recipe, duplicate } = await importLink(em, deps, {
             householdId,
             userId,
-            url: item.url,
+            url: item.label,
           })
           if (!duplicate && tag) {
             await tagRecipe(em, householdId, recipe.id, tag)
           }
-          item.state = duplicate ? "already" : "added"
-          item.recipe = {
-            id: recipe.id,
-            slug: recipe.slug,
-            name: recipe.name,
-            photo: recipe.photo?.card ?? null,
-          }
+          await settleItem(em, jobId, item.position, {
+            state: duplicate ? "already" : "added",
+            recipeId: recipe.id,
+          })
         } catch (err) {
           // Stopped while it was on this link, which didn't fail.
           if (err instanceof JobStopped || signal.aborted) throw err
-          item.state = "failed"
-          item.error =
-            err instanceof AppError
-              ? err.message
-              : "Something went wrong with it."
+          await settleItem(em, jobId, item.position, {
+            state: "failed",
+            error:
+              err instanceof AppError
+                ? err.message
+                : "Something went wrong with it.",
+          })
           if (!(err instanceof AppError)) {
-            logger.warn({ err, url: item.url }, "A link didn't come in")
+            logger.warn({ err, url: item.label }, "A link didn't come in")
           }
         }
         done++
-        await progress(done, items.length, soFar())
+        await progress(done, items.length)
       }
-      await tellWebhooks(em, householdId, jobId, kind, items)
-      return soFar()
-    } catch (err) {
-      // Stopped: what it got through is kept, and the rest stay waiting.
-      for (const item of items) {
-        if (item.state === "adding") item.state = "waiting"
-      }
-      await deps.database.em
-        .fork()
-        .nativeUpdate(
-          Job,
-          { id: jobId },
-          { progress: { done, total: items.length }, result: soFar() }
-        )
-      throw err
-    }
+      await tellWebhooks(em, householdId, jobId, kind)
+      return { done }
+    })
   },
 }
