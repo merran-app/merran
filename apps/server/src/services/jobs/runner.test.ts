@@ -17,6 +17,7 @@ import {
   type JobDeps,
   type JobHandler,
 } from "./runner.ts"
+import { stopSignal } from "./stop.ts"
 
 let database: Database
 let close: () => Promise<void>
@@ -519,6 +520,25 @@ describe("the job runner", () => {
       letThemGo()
       await draining
     }
+  })
+
+  test("everything a job calls sees its stop signal", async () => {
+    let seen: AbortSignal | undefined
+    let own: AbortSignal | undefined
+    const jobs = runner([
+      {
+        kind: "look",
+        run: async ({ signal }) => {
+          own = signal
+          await Promise.resolve()
+          seen = stopSignal()
+        },
+      },
+    ])
+    await enqueue(em(), { kind: "look" })
+    await jobs.drain()
+    expect(seen).toBeDefined()
+    expect(seen).toBe(own)
   })
 
   test("adds one job per key while it's waiting or running", async () => {

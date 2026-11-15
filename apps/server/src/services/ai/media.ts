@@ -5,6 +5,7 @@ import {
   generateImage,
 } from "ai"
 import { AppError } from "../../core/errors.ts"
+import { timeLimit } from "../jobs/stop.ts"
 import type { AiTarget } from "./providers.ts"
 
 // Pictures and speech from AI providers, for recipe photos and the server
@@ -39,6 +40,12 @@ export const SPEECH_PER_CHARACTER = 0.015 / 900
 const READING =
   "Read this recipe step warmly and clearly, at an easy pace, like a friend reading it aloud in the kitchen."
 
+/**
+ * How long a picture or a reading may take; each ends sooner if the job
+ * making it is stopped.
+ */
+const MEDIA_TIME_LIMIT_MS = 3 * 60_000
+
 const cant = () =>
   new AppError(
     "unprocessable",
@@ -56,6 +63,7 @@ export function createMediaMakers(): MediaMakers {
           prompt,
           size: "1536x1024",
           providerOptions: { openai: { quality: "medium" } },
+          abortSignal: timeLimit(MEDIA_TIME_LIMIT_MS),
         })
         return Buffer.from(image.uint8Array)
       }
@@ -64,6 +72,7 @@ export function createMediaMakers(): MediaMakers {
           model: createGoogleGenerativeAI({ apiKey }).image(target.model),
           prompt,
           aspectRatio: "3:2",
+          abortSignal: timeLimit(MEDIA_TIME_LIMIT_MS),
         })
         return Buffer.from(image.uint8Array)
       }
@@ -86,6 +95,7 @@ export function createMediaMakers(): MediaMakers {
         voice,
         outputFormat: "mp3",
         instructions: READING,
+        abortSignal: timeLimit(MEDIA_TIME_LIMIT_MS),
       })
       return Buffer.from(audio.uint8Array)
     },

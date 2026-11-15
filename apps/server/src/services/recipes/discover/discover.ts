@@ -173,6 +173,8 @@ async function askForPicks(
       userId: options.userId,
       task: "discover",
       needs: ["tools", "webSearch"],
+      // Searching the web as it goes takes longer than reading a page.
+      timeLimitMs: 5 * 60_000,
     },
     async (model, { webSearch }) => {
       if (!webSearch || Object.keys(webSearch).length === 0) {

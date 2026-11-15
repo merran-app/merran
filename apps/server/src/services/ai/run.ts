@@ -12,12 +12,14 @@ import {
   NoObjectGeneratedError,
   NoOutputGeneratedError,
   RetryError,
+  wrapLanguageModel,
   type LanguageModel,
   type LanguageModelUsage,
   type ToolSet,
 } from "ai"
 import type { AppDeps } from "../../core/context.ts"
 import { AppError } from "../../core/errors.ts"
+import { throwIfStopped, timeLimit } from "../jobs/stop.ts"
 import {
   clearOutOfCredit,
   isOutOfCredit,
@@ -223,6 +225,44 @@ export async function prepareAi(
 }
 
 /**
+ * How long an AI call may take, so a provider that hangs doesn't keep a
+ * job's place, or a request waiting, until Merran restarts.
+ */
+const AI_TIME_LIMIT_MS = 3 * 60_000
+
+function aiTimedOut() {
+  return new AppError(
+    "upstream",
+    "ai_timeout",
+    "The AI took too long to answer. Try again in a moment."
+  )
+}
+
+/**
+ * The model, ending its calls when `signal` aborts: every call through
+ * `useAi` has the time limit and the job's Stop, without each feature
+ * passing them.
+ */
+function withTimeLimit(
+  model: LanguageModel,
+  signal: AbortSignal
+): LanguageModel {
+  if (typeof model === "string") return model
+  return wrapLanguageModel({
+    model,
+    middleware: {
+      specificationVersion: "v4",
+      transformParams: async ({ params }) => ({
+        ...params,
+        abortSignal: params.abortSignal
+          ? AbortSignal.any([params.abortSignal, signal])
+          : signal,
+      }),
+    },
+  })
+}
+
+/**
  * Runs an AI call for a household's task. `call` gets the model to use and
  * returns what AI SDK did, its usage included.
  */
@@ -241,9 +281,13 @@ export async function useAi<T extends { usage: LanguageModelUsage }>(
      * models Merran knows; an address's are tried as they are.
      */
     needs?: readonly ModelAbility[]
+    /** How long it may take: 3 minutes unless it's known to take longer. */
+    timeLimitMs?: number
   },
   call: (model: LanguageModel, extras: AiExtras) => Promise<T>
 ): Promise<T> {
+  // Ends at the time limit, or as soon as the job calling it is stopped.
+  const limit = timeLimit(options.timeLimitMs ?? AI_TIME_LIMIT_MS)
   // A key that turns out to be out of credit is noted, and the next tried:
   // a few at most.
   const outOfCredit: string[] = []
@@ -275,8 +319,13 @@ export async function useAi<T extends { usage: LanguageModelUsage }>(
     const target = await targetOf(deps, em, key.id, model)
     let result: T
     try {
-      result = await call(deps.ai(target), extrasFor(target, model))
+      result = await call(
+        withTimeLimit(deps.ai(target), limit),
+        extrasFor(target, model)
+      )
     } catch (error) {
+      throwIfStopped()
+      if (limit.aborted) throw aiTimedOut()
       if (!isOutOfCredit(error)) throw callFailed(error, key.provider)
       await markOutOfCredit(deps, em, key.id)
       outOfCredit.push(PROVIDER_NAMES[key.provider])

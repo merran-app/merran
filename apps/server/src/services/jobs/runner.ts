@@ -15,6 +15,7 @@ import type { FileStore } from "../storage/files.ts"
 import type { VideoTools } from "../recipes/import/video/tools.ts"
 import { MERRAN, withActor } from "../webhooks/actor.ts"
 import { enqueue, onJobAdded } from "./jobs.ts"
+import { withStopSignal } from "./stop.ts"
 
 // Merran's job runner (docs/stack.md, "A job runner of our own"): one
 // process, on SQLite or Postgres, working through the `jobs` table. A job is
@@ -464,7 +465,9 @@ export class JobRunner {
       try {
         // A job is Merran's own work, though adding it wakes the runner
         // from inside whichever request added it.
-        const result = await withActor(MERRAN, () => handler.run(ctx))
+        const result = await withActor(MERRAN, () =>
+          withStopSignal(controller.signal, () => handler.run(ctx))
+        )
         await this.#endTry(job.id, attempt, {
           status: "done",
           result: result ?? null,
