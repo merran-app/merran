@@ -4,7 +4,6 @@ import {
   describePhotoRun,
   findPhotoRun,
 } from "../../../../../../services/recipes/photos/runs.ts"
-import { cancelJob } from "../../../../../../services/jobs/jobs.ts"
 import { inHousehold, openToKeys } from "../../../../../middleware/auth.ts"
 import type { Router } from "../../../../../router.ts"
 import { PhotoRunParam, PhotoRunSchema } from "../../../../../schemas/photos.ts"
@@ -36,7 +35,7 @@ export default (router: Router, { jobs }: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId } = inHousehold(c)
     const job = await findPhotoRun(em, c.req.valid("param").runId, householdId)
-    await cancelJob(em, job, (id) => jobs.stopJob(id))
+    await jobs.cancel(em, job)
     return c.json(describePhotoRun(job), 200)
   })
 }

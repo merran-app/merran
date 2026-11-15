@@ -68,6 +68,7 @@ const stopsTheRun = (err: unknown) =>
 export const aiPhotoRunJob: JobHandler = {
   kind: KIND,
   lane: "long",
+  area: "recipes",
   perHousehold: 1,
   concurrency: 2,
   async run({ em, householdId, payload, progress, signal, logger, deps }) {

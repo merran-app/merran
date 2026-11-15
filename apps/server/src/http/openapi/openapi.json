@@ -20931,7 +20931,7 @@
           "Live"
         ],
         "summary": "What changes, as it happens",
-        "description": "Server-sent events for the household, for as long as the connection stays open:\n\n- `ready` when it's open, with the areas it hears about.\n- `plan`, `list`, `pantry`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.\n- `presence` with who has `page` open, when someone opens or leaves it.\n- `ping` now and then, to keep the connection open.\n\nA device that sends the same `client` with its own changes (in the `X-Merran-Client` header) isn't told about them; your other devices are. An API key hears about the areas it can read. With an API key, it needs the `any: read` permission.",
+        "description": "Server-sent events for the household, for as long as the connection stays open:\n\n- `ready` when it's open, with the areas it hears about.\n- `plan`, `list`, `pantry`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.\n- `presence` with who has `page` open, when someone opens or leaves it.\n- `job` when one of the household's jobs, like an import, starts, moves on or ends, with its `id`, `kind`, `status` and `progress`. Only about jobs in areas it hears about. Fetch the job to see more.\n- `ping` now and then, to keep the connection open.\n\nA device that sends the same `client` with its own changes (in the `X-Merran-Client` header) isn't told about them; your other devices are. An API key hears about the areas it can read. With an API key, it needs the `any: read` permission.",
         "security": [
           {
             "session": []

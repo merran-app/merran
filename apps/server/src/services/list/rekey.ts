@@ -151,6 +151,7 @@ export async function rekeyHousehold(em: EntityManager) {
 export const rekeyFoodsJob: JobHandler = {
   kind: REKEY_FOODS,
   lane: "long",
+  area: "list",
   async run({ em, logger }) {
     let renamed = 0
     let joined = 0

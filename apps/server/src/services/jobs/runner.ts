@@ -2,7 +2,7 @@ import type { EntityManager } from "@mikro-orm/sql"
 import { Cron } from "croner"
 import type { Logger } from "pino"
 import type { Config } from "../../core/config.ts"
-import { Job } from "../../database/entities/index.ts"
+import { Job, type JobStatus } from "../../database/entities/index.ts"
 import type { Database } from "../../database/orm.ts"
 import { forHousehold } from "../../database/scope.ts"
 import type { Module } from "../../modules/module.ts"
@@ -14,7 +14,7 @@ import type { Settings } from "../settings/settings.ts"
 import type { FileStore } from "../storage/files.ts"
 import type { VideoTools } from "../recipes/import/video/tools.ts"
 import { MERRAN, withActor } from "../webhooks/actor.ts"
-import { enqueue, onJobAdded } from "./jobs.ts"
+import { cancelJob, enqueue, onJobAdded } from "./jobs.ts"
 import { withStopSignal } from "./stop.ts"
 
 // Merran's job runner (docs/stack.md, "A job runner of our own"): one
@@ -105,6 +105,12 @@ export type JobHandler = {
    * hear about it as the job moves on and when it ends.
    */
   changes?: readonly LiveArea[]
+  /**
+   * Who hears how a household's job of this kind is going, as it starts,
+   * moves on and ends: everyone who may read this area. None for kinds
+   * nobody follows.
+   */
+  area?: LiveArea
   run(ctx: JobContext): Promise<Record<string, unknown> | void>
 }
 
@@ -244,6 +250,26 @@ export class JobRunner {
         this.#ticking = null
       })
     await this.#ticking
+  }
+
+  /**
+   * Stops a job, as `cancelJob` does. One waiting is cancelled at once, so
+   * its household is told here; one running says so itself as it ends.
+   */
+  async cancel(em: EntityManager, job: Job) {
+    const waiting = job.status === "queued"
+    await cancelJob(em, job, (id) => this.stopJob(id))
+    const householdId = job.forHousehold?.id
+    const area = this.#handlers.get(job.kind)?.area
+    if (waiting && householdId && area) {
+      this.#deps.events.job(householdId, area, {
+        id: job.id,
+        kind: job.kind,
+        status: job.status,
+        progress: job.progress ?? null,
+      })
+    }
+    return job
   }
 
   /** Asks a running job to stop. */
@@ -430,12 +456,24 @@ export class JobRunner {
     this.#running.set(job.id, running)
 
     let lastProgress = 0
+    let progressNow = job.progress ?? null
     const announce = () => {
       if (!householdId) return
       for (const area of handler.changes ?? []) {
         this.#deps.events.changed(householdId, { area, by: null, client: null })
       }
     }
+    /** Tells the household how its job is going, for kinds it follows. */
+    const tell = (status: JobStatus) => {
+      if (!householdId || !handler.area) return
+      this.#deps.events.job(householdId, handler.area, {
+        id: job.id,
+        kind: job.kind,
+        status,
+        progress: progressNow,
+      })
+    }
+    tell("running")
     const ctx: JobContext = {
       jobId: job.id,
       payload: job.payload,
@@ -454,7 +492,9 @@ export class JobRunner {
           { id: job.id },
           { progress: { done, total }, ...(soFar ? { result: soFar } : {}) }
         )
+        progressNow = { done, total }
         announce()
+        tell("running")
       },
       signal: controller.signal,
       logger,
@@ -468,19 +508,24 @@ export class JobRunner {
         const result = await withActor(MERRAN, () =>
           withStopSignal(controller.signal, () => handler.run(ctx))
         )
-        await this.#endTry(job.id, attempt, {
-          status: "done",
-          result: result ?? null,
-          error: null,
-          finishedAt: new Date(),
-        })
-      } catch (err) {
-        if (running.stopped === "cancelled") {
+        tell(
           await this.#endTry(job.id, attempt, {
-            status: "cancelled",
+            status: "done",
+            result: result ?? null,
+            error: null,
             finishedAt: new Date(),
           })
+        )
+      } catch (err) {
+        if (running.stopped === "cancelled") {
+          tell(
+            await this.#endTry(job.id, attempt, {
+              status: "cancelled",
+              finishedAt: new Date(),
+            })
+          )
         } else if (running.stopped === "shutdown") {
+          // Says nothing: it runs again next start, as if it hadn't stopped.
           // Runs again at the next start, without counting as a try.
           await this.#endTry(job.id, attempt, {
             status: "queued",
@@ -494,19 +539,23 @@ export class JobRunner {
             const wait =
               handler.retryDelays?.[attempt - 1] ??
               Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** (attempt - 1))
-            await this.#endTry(job.id, attempt, {
-              status: "queued",
-              runAt: new Date(Date.now() + wait),
-              error: message,
-              startedAt: null,
-            })
+            tell(
+              await this.#endTry(job.id, attempt, {
+                status: "queued",
+                runAt: new Date(Date.now() + wait),
+                error: message,
+                startedAt: null,
+              })
+            )
           } else {
             logger.error({ err }, "Job failed")
-            await this.#endTry(job.id, attempt, {
-              status: "failed",
-              error: message,
-              finishedAt: new Date(),
-            })
+            tell(
+              await this.#endTry(job.id, attempt, {
+                status: "failed",
+                error: message,
+                finishedAt: new Date(),
+              })
+            )
           }
         }
       } finally {
@@ -540,7 +589,7 @@ export class JobRunner {
    * Saves how a try ended, if the job is still on the try it was taken for.
    * One started over while it ran (`restartJob`) isn't: it goes back in the
    * queue with the fresh start it was given, to run again from its first
-   * try, whatever this one came to.
+   * try, whatever this one came to. Says which status the job has now.
    */
   async #endTry(
     jobId: string,
@@ -557,7 +606,7 @@ export class JobRunner {
         | "finishedAt"
       >
     >
-  ) {
+  ): Promise<JobStatus> {
     const em = this.#em()
     const saved = await em.nativeUpdate(
       Job,
@@ -570,7 +619,9 @@ export class JobRunner {
         { id: jobId },
         { status: "queued", startedAt: null }
       )
+      return "queued"
     }
+    return changes.status ?? "queued"
   }
 
   /** Makes sure a scheduled kind has its next run waiting. */

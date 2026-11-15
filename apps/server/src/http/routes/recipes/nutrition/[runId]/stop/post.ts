@@ -1,6 +1,5 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../../core/context.ts"
-import { cancelJob } from "../../../../../../services/jobs/jobs.ts"
 import {
   describeNutritionRun,
   findNutritionRun,
@@ -43,7 +42,7 @@ export default (router: Router, { jobs }: AppDeps) => {
       c.req.valid("param").runId,
       householdId
     )
-    await cancelJob(em, job, (id) => jobs.stopJob(id))
+    await jobs.cancel(em, job)
     return c.json(describeNutritionRun(job), 200)
   })
 }

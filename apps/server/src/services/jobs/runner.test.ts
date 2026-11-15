@@ -240,6 +240,105 @@ describe("the job runner", () => {
     ).toEqual(["recipes", "recipes"])
   })
 
+  describe("how a household's job is going", () => {
+    /** A runner whose household events are kept, and the job events heard. */
+    function following(handlers: JobHandler[]) {
+      const events = createEventBus()
+      const heard: Extract<LiveEvent, { type: "job" }>[] = []
+      events.subscribe(home, {
+        person: null,
+        client: null,
+        page: null,
+        areas: new Set(LIVE_AREAS),
+        send: (event) => {
+          if (event.type === "job") heard.push(event)
+        },
+        close: () => {},
+      })
+      const deps = {
+        logger: pino({ level: "silent" }),
+        database,
+        events,
+      } as unknown as JobDeps
+      return { jobs: new JobRunner({ deps, handlers }), heard }
+    }
+    const said = (heard: Extract<LiveEvent, { type: "job" }>[]) =>
+      heard.map((event) => [event.job.status, event.job.progress])
+
+    test("is told as it starts, moves on and ends", async () => {
+      const { jobs, heard } = following([
+        {
+          kind: "import",
+          area: "recipes",
+          run: async ({ progress }) => {
+            await progress(1, 2)
+            await progress(2, 2)
+          },
+        },
+      ])
+      const job = await enqueue(em(), { kind: "import", householdId: home })
+      await jobs.drain()
+
+      expect(said(heard)).toEqual([
+        ["running", null],
+        ["running", { done: 1, total: 2 }],
+        ["running", { done: 2, total: 2 }],
+        ["done", { done: 2, total: 2 }],
+      ])
+      expect(heard[0]).toMatchObject({
+        area: "recipes",
+        job: { id: job.id, kind: "import" },
+      })
+    })
+
+    test("says it's queued when it'll be tried again, and nothing when Merran shuts down", async () => {
+      let letItGo!: () => void
+      const held = new Promise<void>((resolve) => (letItGo = resolve))
+      const { jobs, heard } = following([
+        {
+          kind: "flaky",
+          area: "recipes",
+          run: async () => {
+            throw new Error("Broke")
+          },
+        },
+        {
+          kind: "long",
+          area: "recipes",
+          run: async ({ signal }) => {
+            letItGo()
+            await new Promise((resolve) =>
+              signal.addEventListener("abort", resolve)
+            )
+            throw new JobStopped()
+          },
+        },
+      ])
+      await enqueue(em(), { kind: "flaky", householdId: home, maxAttempts: 2 })
+      await jobs.drain()
+      expect(said(heard)).toEqual([
+        ["running", null],
+        ["queued", null],
+      ])
+
+      heard.length = 0
+      await enqueue(em(), { kind: "long", householdId: home })
+      jobs.wake()
+      await held
+      await jobs.stop()
+      expect(said(heard)).toEqual([["running", null]])
+    })
+
+    test("is told when a waiting job is cancelled", async () => {
+      const { jobs, heard } = following([
+        { kind: "import", area: "recipes", run: async () => {} },
+      ])
+      const job = await enqueue(em(), { kind: "import", householdId: home })
+      await jobs.cancel(em(), await load(job.id))
+      expect(said(heard)).toEqual([["cancelled", null]])
+    })
+  })
+
   test("runs one of a kind at a time, unless it says more", async () => {
     let now = 0
     let most = 0

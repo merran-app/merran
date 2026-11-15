@@ -428,6 +428,7 @@ export async function checkPricesSoon(em: EntityManager, householdId: string) {
 export const checkPricesJob: JobHandler = {
   kind: CHECK_PRICES,
   lane: "long",
+  area: "list",
   perHousehold: 1,
   concurrency: 2,
   async run({ em, householdId, deps, logger }) {

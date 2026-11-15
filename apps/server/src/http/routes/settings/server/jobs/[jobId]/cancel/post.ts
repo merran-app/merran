@@ -1,7 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../../../core/context.ts"
 import {
-  cancelJob,
   describeJob,
   findJob,
 } from "../../../../../../../services/jobs/jobs.ts"
@@ -37,7 +36,7 @@ export default (router: Router, { jobs }: AppDeps) => {
   router.openapi(route, async (c) => {
     serverAdmin(c)
     const job = await findJob(c.var.em, c.req.valid("param").jobId, null)
-    await cancelJob(c.var.em, job, (id) => jobs.stopJob(id))
+    await jobs.cancel(c.var.em, job)
     return c.json(describeJob(job), 200)
   })
 }

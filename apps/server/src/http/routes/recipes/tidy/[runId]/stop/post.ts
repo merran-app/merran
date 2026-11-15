@@ -1,6 +1,5 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../../core/context.ts"
-import { cancelJob } from "../../../../../../services/jobs/jobs.ts"
 import {
   describeTidyRun,
   findTidyRun,
@@ -36,7 +35,7 @@ export default (router: Router, { jobs }: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId } = inHousehold(c)
     const job = await findTidyRun(em, c.req.valid("param").runId, householdId)
-    await cancelJob(em, job, (id) => jobs.stopJob(id))
+    await jobs.cancel(em, job)
     return c.json(describeTidyRun(job), 200)
   })
 }

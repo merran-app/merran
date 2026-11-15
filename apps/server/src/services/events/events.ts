@@ -1,3 +1,5 @@
+import type { JobStatus } from "../../database/entities/index.ts"
+
 // Merran's one stream of what changed in each household. It feeds live
 // updates now, and webhooks and notifications later, so they all agree.
 // It's in memory, for this server process.
@@ -18,6 +20,14 @@ export type LivePage = (typeof LIVE_PAGES)[number]
 
 export type Person = { id: string; name: string }
 
+/** How one of the household's jobs is going: started, moving on or ended. */
+export type JobMoved = {
+  id: string
+  kind: string
+  status: JobStatus
+  progress: { done: number; total: number } | null
+}
+
 export type LiveEvent =
   /** Something in an area changed, by someone, from one of their devices. */
   | {
@@ -29,6 +39,8 @@ export type LiveEvent =
     }
   /** Who has a page open now. */
   | { type: "presence"; page: LivePage; people: Person[] }
+  /** One of the household's jobs moved, told to those who may read its area. */
+  | { type: "job"; area: LiveArea; job: JobMoved }
 
 export type Listener = {
   /** Who's listening; null for an API key, which isn't a person on a page. */
@@ -92,6 +104,17 @@ export function createEventBus() {
       for (const listener of households.get(householdId) ?? []) {
         if (change.client && listener.client === change.client) continue
         if (listener.areas.has(change.area)) listener.send(event)
+      }
+    },
+
+    /**
+     * Tells the household how one of its jobs is going: everyone who may
+     * hear about the job's area, on every device, since Merran did it.
+     */
+    job(householdId: string, area: LiveArea, job: JobMoved) {
+      const event: LiveEvent = { type: "job", area, job }
+      for (const listener of households.get(householdId) ?? []) {
+        if (listener.areas.has(area)) listener.send(event)
       }
     },
 

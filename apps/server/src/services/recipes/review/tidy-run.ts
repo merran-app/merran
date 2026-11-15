@@ -70,6 +70,7 @@ const stopsTheRun = (err: unknown) =>
 export const tidyRunJob: JobHandler = {
   kind: KIND,
   lane: "long",
+  area: "recipes",
   perHousehold: 1,
   concurrency: 2,
   async run({
