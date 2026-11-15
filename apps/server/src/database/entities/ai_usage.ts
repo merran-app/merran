@@ -19,7 +19,8 @@ export const AiUsage = defineEntity({
     id: id(),
     household: () => householdRef(),
     /** Who asked; none for background work. */
-    user: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    user: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     task: p.string(),
     provider: p.enum(AI_PROVIDERS),
     model: p.string(),

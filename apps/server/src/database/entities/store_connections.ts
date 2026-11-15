@@ -53,9 +53,11 @@ export const StoreConnection = defineEntity({
     location: p.json<StoreLocation>().nullable(),
     modality: p.enum(STORE_MODALITIES).default("PICKUP"),
     /** The linked account's tokens, sealed. */
-    account: () => p.manyToOne(Secret).ref().nullable().deleteRule("set null"),
+    account: () =>
+      p.manyToOne(Secret).ref().nullable().deleteRule("set null").index(),
     accessExpiresAt: p.datetime().nullable(),
-    linkedBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    linkedBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     linkedAt: p.datetime().nullable(),
     /** The store stopped taking the account's tokens: link it again. */
     broken: p.boolean().default(false),
@@ -63,7 +65,7 @@ export const StoreConnection = defineEntity({
     pendingState: p.string().nullable().index(),
     pendingVerifier: p.text().nullable(),
     pendingUser: () =>
-      p.manyToOne(User).ref().nullable().deleteRule("set null"),
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     pendingUntil: p.datetime().nullable(),
     lastSent: p.json<LastSent>().nullable(),
     /** When its prices and sales were last checked. */

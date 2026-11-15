@@ -16,7 +16,7 @@ export const WeeklyItem = defineEntity({
     amountText: p.string().nullable(),
     aisle: () => aisleRef(),
     list: () =>
-      p.manyToOne(ShoppingList).ref().nullable().deleteRule("set null"),
+      p.manyToOne(ShoppingList).ref().nullable().deleteRule("set null").index(),
     position: p.integer().default(0),
   },
   filters: householdFilter,

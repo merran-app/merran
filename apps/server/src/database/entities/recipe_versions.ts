@@ -24,7 +24,8 @@ export const RecipeVersion = defineEntity({
     recipe: () => recipeRef(),
     snapshot: p.json<Record<string, unknown>>(),
     source: p.enum(VERSION_SOURCES),
-    createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    createdBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     createdAt: createdAt(),
   },
   filters: householdFilter,

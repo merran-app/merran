@@ -19,9 +19,11 @@ export const HouseholdSetting = defineEntity({
     key: p.string(),
     value: p.json<unknown>().nullable(),
     /** Where a secret setting's value is kept instead. */
-    secret: () => p.manyToOne(Secret).ref().nullable().deleteRule("set null"),
+    secret: () =>
+      p.manyToOne(Secret).ref().nullable().deleteRule("set null").index(),
     updatedAt: updatedAt(),
-    updatedBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    updatedBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
   },
   uniques: [{ properties: ["household", "key"] }],
   filters: householdFilter,

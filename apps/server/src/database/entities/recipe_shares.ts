@@ -18,7 +18,8 @@ export const RecipeShare = defineEntity({
     recipe: () => p.manyToOne(Recipe).ref().deleteRule("cascade").unique(),
     token: p.string().unique(),
     /** Who shared it. The link outlives them. */
-    createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    createdBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     createdAt: createdAt(),
     openedAt: p.datetime().nullable(),
   },

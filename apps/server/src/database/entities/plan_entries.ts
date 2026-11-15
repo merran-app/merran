@@ -48,10 +48,11 @@ export const PlanEntry = defineEntity({
     anyDay: p.boolean().default(false),
     meal: p.enum(MEALS),
     position: p.integer().default(0),
-    recipe: () => p.manyToOne(Recipe).ref().nullable().deleteRule("cascade"),
+    recipe: () =>
+      p.manyToOne(Recipe).ref().nullable().deleteRule("cascade").index(),
     /** What it's made with ("with peanut sauce"). */
     withRecipe: () =>
-      p.manyToOne(Recipe).ref().nullable().deleteRule("set null"),
+      p.manyToOne(Recipe).ref().nullable().deleteRule("set null").index(),
     note: p.text().nullable(),
     /** None means the recipe's own servings. */
     servings: p.double().nullable(),

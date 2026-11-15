@@ -538,6 +538,16 @@
       "indexes": [
         {
           "columnNames": [
+            "created_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "ai_keys_created_by_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "household_id"
           ],
           "composite": false,
@@ -555,6 +565,16 @@
           "keyName": "ai_keys_pkey",
           "primary": true,
           "unique": true
+        },
+        {
+          "columnNames": [
+            "secret_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "ai_keys_secret_id_index",
+          "primary": false,
+          "unique": false
         }
       ],
       "checks": [
@@ -891,6 +911,16 @@
           "keyName": "ai_usage_pkey",
           "primary": true,
           "unique": true
+        },
+        {
+          "columnNames": [
+            "user_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "ai_usage_user_id_index",
+          "primary": false,
+          "unique": false
         }
       ],
       "checks": [
@@ -1996,6 +2026,16 @@
           "keyName": "cook_notes_recipe_id_index",
           "primary": false,
           "unique": false
+        },
+        {
+          "columnNames": [
+            "user_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "cook_notes_user_id_index",
+          "primary": false,
+          "unique": false
         }
       ],
       "checks": [],
@@ -2288,6 +2328,16 @@
         }
       },
       "indexes": [
+        {
+          "columnNames": [
+            "cook_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "cooking_sessions_cook_id_index",
+          "primary": false,
+          "unique": false
+        },
         {
           "columnNames": [
             "entry_id"
@@ -2892,6 +2942,16 @@
           "keyName": "discoveries_pkey",
           "primary": true,
           "unique": true
+        },
+        {
+          "columnNames": [
+            "user_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "discoveries_user_id_index",
+          "primary": false,
+          "unique": false
         }
       ],
       "checks": [
@@ -3090,6 +3150,16 @@
           "composite": false,
           "constraint": false,
           "keyName": "email_invitations_household_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "inviter_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "email_invitations_inviter_id_index",
           "primary": false,
           "unique": false
         },
@@ -3362,6 +3432,16 @@
           "keyName": "followed_sites_pkey",
           "primary": true,
           "unique": true
+        },
+        {
+          "columnNames": [
+            "site_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "followed_sites_site_id_index",
+          "primary": false,
+          "unique": false
         }
       ],
       "checks": [],
@@ -3756,6 +3836,16 @@
       "indexes": [
         {
           "columnNames": [
+            "aisle_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "food_placements_aisle_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "household_id",
             "food_key"
           ],
@@ -3772,6 +3862,16 @@
           "composite": false,
           "constraint": false,
           "keyName": "food_placements_household_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "list_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "food_placements_list_id_index",
           "primary": false,
           "unique": false
         },
@@ -4164,6 +4264,26 @@
           "keyName": "household_settings_pkey",
           "primary": true,
           "unique": true
+        },
+        {
+          "columnNames": [
+            "secret_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "household_settings_secret_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "updated_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "household_settings_updated_by_id_index",
+          "primary": false,
+          "unique": false
         }
       ],
       "checks": [],
@@ -4676,6 +4796,36 @@
       "indexes": [
         {
           "columnNames": [
+            "created_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "invite_links_created_by_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "delivery_job_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "invite_links_delivery_job_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "delivery_token_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "invite_links_delivery_token_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "household_id"
           ],
           "composite": false,
@@ -4703,6 +4853,16 @@
           "keyName": "invite_links_token_hash_unique",
           "primary": false,
           "unique": true
+        },
+        {
+          "columnNames": [
+            "used_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "invite_links_used_by_id_index",
+          "primary": false,
+          "unique": false
         }
       ],
       "checks": [
@@ -5081,11 +5241,33 @@
       "indexes": [
         {
           "columnNames": [
+            "created_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "jobs_created_by_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "for_household_id"
           ],
           "composite": false,
           "constraint": false,
           "keyName": "jobs_for_household_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "for_household_id",
+            "kind",
+            "status"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "jobs_for_household_id_kind_status_index",
           "primary": false,
           "unique": false
         },
@@ -5131,11 +5313,13 @@
         },
         {
           "columnNames": [
-            "status"
+            "status",
+            "run_at",
+            "created_at"
           ],
-          "composite": false,
+          "composite": true,
           "constraint": false,
-          "keyName": "jobs_status_index",
+          "keyName": "jobs_status_run_at_created_at_index",
           "primary": false,
           "unique": false
         }
@@ -7621,6 +7805,16 @@
       "indexes": [
         {
           "columnNames": [
+            "aisle_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "pantry_items_aisle_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "household_id",
             "food_key"
           ],
@@ -8108,11 +8302,31 @@
       "indexes": [
         {
           "columnNames": [
+            "delivery_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "password_resets_delivery_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "expires_at"
           ],
           "composite": false,
           "constraint": false,
           "keyName": "password_resets_expires_at_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "job_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "password_resets_job_id_index",
           "primary": false,
           "unique": false
         },
@@ -8540,6 +8754,26 @@
           "keyName": "plan_entries_pkey",
           "primary": true,
           "unique": true
+        },
+        {
+          "columnNames": [
+            "recipe_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "plan_entries_recipe_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "with_recipe_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "plan_entries_with_recipe_id_index",
+          "primary": false,
+          "unique": false
         }
       ],
       "checks": [
@@ -9089,6 +9323,16 @@
         },
         {
           "columnNames": [
+            "created_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "proposals_created_by_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "household_id"
           ],
           "composite": false,
@@ -9125,6 +9369,16 @@
           "composite": false,
           "constraint": false,
           "keyName": "proposals_recipe_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "resolved_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "proposals_resolved_by_id_index",
           "primary": false,
           "unique": false
         }
@@ -9694,6 +9948,16 @@
           "keyName": "receipts_pkey",
           "primary": true,
           "unique": true
+        },
+        {
+          "columnNames": [
+            "user_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "receipts_user_id_index",
+          "primary": false,
+          "unique": false
         }
       ],
       "checks": [],
@@ -10152,6 +10416,16 @@
       "indexes": [
         {
           "columnNames": [
+            "created_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "recipe_not_duplicates_created_by_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "first_id"
           ],
           "composite": false,
@@ -10376,6 +10650,16 @@
         },
         {
           "columnNames": [
+            "paired_recipe_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "recipe_pairings_paired_recipe_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "id"
           ],
           "composite": false,
@@ -10562,6 +10846,16 @@
         }
       },
       "indexes": [
+        {
+          "columnNames": [
+            "created_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "recipe_shares_created_by_id_index",
+          "primary": false,
+          "unique": false
+        },
         {
           "columnNames": [
             "household_id"
@@ -11310,6 +11604,16 @@
       "indexes": [
         {
           "columnNames": [
+            "created_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "recipe_versions_created_by_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "household_id"
           ],
           "composite": false,
@@ -11882,13 +12186,36 @@
       "indexes": [
         {
           "columnNames": [
+            "created_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "recipes_created_by_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "deleted_at"
           ],
           "composite": false,
           "constraint": false,
           "keyName": "recipes_deleted_at_index",
           "primary": false,
-          "unique": false
+          "unique": false,
+          "where": "\"deleted_at\" is not null"
+        },
+        {
+          "columnNames": [
+            "household_id",
+            "created_at"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "recipes_household_id_created_at_index",
+          "primary": false,
+          "unique": false,
+          "where": "\"deleted_at\" is null"
         },
         {
           "columnNames": [
@@ -12215,6 +12542,26 @@
           "keyName": "server_settings_pkey",
           "primary": true,
           "unique": true
+        },
+        {
+          "columnNames": [
+            "secret_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "server_settings_secret_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "updated_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "server_settings_updated_by_id_index",
+          "primary": false,
+          "unique": false
         }
       ],
       "checks": [],
@@ -12440,6 +12787,16 @@
         }
       },
       "indexes": [
+        {
+          "columnNames": [
+            "active_household_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "sessions_active_household_id_index",
+          "primary": false,
+          "unique": false
+        },
         {
           "columnNames": [
             "id"
@@ -12785,6 +13142,16 @@
         }
       },
       "indexes": [
+        {
+          "columnNames": [
+            "aisle_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "shopping_items_aisle_id_index",
+          "primary": false,
+          "unique": false
+        },
         {
           "columnNames": [
             "household_id"
@@ -13365,6 +13732,17 @@
       "indexes": [
         {
           "columnNames": [
+            "classic",
+            "opened_at"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "site_recipes_classic_opened_at_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "id"
           ],
           "composite": false,
@@ -13765,6 +14143,16 @@
       "indexes": [
         {
           "columnNames": [
+            "account_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "store_connections_account_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "household_id"
           ],
           "composite": false,
@@ -13786,11 +14174,31 @@
         },
         {
           "columnNames": [
+            "linked_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "store_connections_linked_by_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "pending_state"
           ],
           "composite": false,
           "constraint": false,
           "keyName": "store_connections_pending_state_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "pending_user_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "store_connections_pending_user_id_index",
           "primary": false,
           "unique": false
         },
@@ -15970,6 +16378,36 @@
       "indexes": [
         {
           "columnNames": [
+            "address_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "webhooks_address_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "created_by_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "webhooks_created_by_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "headers_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "webhooks_headers_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "household_id"
           ],
           "composite": false,
@@ -15987,6 +16425,26 @@
           "keyName": "webhooks_pkey",
           "primary": true,
           "unique": true
+        },
+        {
+          "columnNames": [
+            "previous_secret_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "webhooks_previous_secret_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "secret_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "webhooks_secret_id_index",
+          "primary": false,
+          "unique": false
         }
       ],
       "checks": [
@@ -16207,11 +16665,31 @@
       "indexes": [
         {
           "columnNames": [
+            "aisle_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "weekly_items_aisle_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "household_id"
           ],
           "composite": false,
           "constraint": false,
           "keyName": "weekly_items_household_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "list_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "weekly_items_list_id_index",
           "primary": false,
           "unique": false
         },

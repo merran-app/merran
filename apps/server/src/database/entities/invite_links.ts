@@ -23,15 +23,18 @@ export const InviteLink = defineEntity({
     email: p.string().nullable(),
     /** Kept sealed for delivery and resend, never returned by the API. */
     deliveryToken: () =>
-      p.manyToOne(Secret).ref().nullable().deleteRule("set null"),
-    deliveryJob: () => p.manyToOne(Job).ref().nullable().deleteRule("set null"),
+      p.manyToOne(Secret).ref().nullable().deleteRule("set null").index(),
+    deliveryJob: () =>
+      p.manyToOne(Job).ref().nullable().deleteRule("set null").index(),
     queuedAt: p.datetime().nullable(),
     sentAt: p.datetime().nullable(),
     role: p.enum(INVITE_ROLES).default("member"),
-    createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    createdBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     expiresAt: p.datetime(),
     usedAt: p.datetime().nullable(),
-    usedBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    usedBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     createdAt: createdAt(),
   },
   filters: householdFilter,

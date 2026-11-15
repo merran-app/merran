@@ -5235,6 +5235,18 @@
         },
         {
           "columnNames": [
+            "for_household_id",
+            "kind",
+            "status"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "jobs_for_household_id_kind_status_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
             "key"
           ],
           "composite": false,
@@ -5265,11 +5277,13 @@
         },
         {
           "columnNames": [
-            "status"
+            "status",
+            "run_at",
+            "created_at"
           ],
-          "composite": false,
+          "composite": true,
           "constraint": false,
-          "keyName": "jobs_status_index",
+          "keyName": "jobs_status_run_at_created_at_index",
           "primary": false,
           "unique": false
         },
@@ -12167,7 +12181,20 @@
           "constraint": false,
           "keyName": "recipes_deleted_at_index",
           "primary": false,
-          "unique": false
+          "unique": false,
+          "where": "`deleted_at` is not null"
+        },
+        {
+          "columnNames": [
+            "household_id",
+            "created_at"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "recipes_household_id_created_at_index",
+          "primary": false,
+          "unique": false,
+          "where": "`deleted_at` is null"
         },
         {
           "columnNames": [
@@ -13675,6 +13702,17 @@
           "keyName": "primary",
           "primary": true,
           "unique": true
+        },
+        {
+          "columnNames": [
+            "classic",
+            "opened_at"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "site_recipes_classic_opened_at_index",
+          "primary": false,
+          "unique": false
         },
         {
           "columnNames": [

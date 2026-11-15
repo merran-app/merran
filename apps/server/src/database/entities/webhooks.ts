@@ -30,14 +30,17 @@ export const Webhook = defineEntity({
     name: p.string(),
     /** The address's host, for lists: the rest of the address is sealed. */
     host: p.string(),
-    address: () => p.manyToOne(Secret).ref().nullable().deleteRule("set null"),
-    secret: () => p.manyToOne(Secret).ref().nullable().deleteRule("set null"),
+    address: () =>
+      p.manyToOne(Secret).ref().nullable().deleteRule("set null").index(),
+    secret: () =>
+      p.manyToOne(Secret).ref().nullable().deleteRule("set null").index(),
     /** The signing secret before the last rotation, still signed with. */
     previousSecret: () =>
-      p.manyToOne(Secret).ref().nullable().deleteRule("set null"),
+      p.manyToOne(Secret).ref().nullable().deleteRule("set null").index(),
     previousSecretUntil: p.datetime().nullable(),
     /** The extra headers as sealed JSON; their names are kept below to show. */
-    headers: () => p.manyToOne(Secret).ref().nullable().deleteRule("set null"),
+    headers: () =>
+      p.manyToOne(Secret).ref().nullable().deleteRule("set null").index(),
     headerNames: p.json<string[]>(),
     /** The event types it's sent, unless it's sent everything. */
     events: p.json<string[]>(),
@@ -49,7 +52,8 @@ export const Webhook = defineEntity({
     failingSince: p.datetime().nullable(),
     lastDeliveredAt: p.datetime().nullable(),
     lastError: p.text().nullable(),
-    createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    createdBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

@@ -34,7 +34,7 @@ export const Job = defineEntity({
     /** Only one queued or running job has a key at a time: "schedule:telemetry.send". */
     key: p.string().nullable().index(),
     payload: p.json<Record<string, unknown>>(),
-    status: p.enum(JOB_STATUSES).default("queued").index(),
+    status: p.enum(JOB_STATUSES).default("queued"),
     attempts: p.smallint().default(0),
     maxAttempts: p.smallint().default(3),
     /** Not before then: for schedules and retries. */
@@ -46,9 +46,17 @@ export const Job = defineEntity({
     result: p.json<Record<string, unknown>>().nullable(),
     /** Why it last failed, for the Jobs page. */
     error: p.text().nullable(),
-    createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    createdBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
+  indexes: [
+    // The runner's next jobs: queued and due, oldest first.
+    { properties: ["status", "runAt", "createdAt"] },
+    // A household's jobs of a kind, and whether one's going: its Jobs page,
+    // and the limits on how many run at once.
+    { properties: ["forHousehold", "kind", "status"] },
+  ],
 })
 export type Job = InferEntity<typeof Job>

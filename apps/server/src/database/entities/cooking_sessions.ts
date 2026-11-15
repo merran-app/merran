@@ -19,7 +19,8 @@ export const CookingSession = defineEntity({
     id: id(),
     household: () => householdRef(),
     /** Who's cooking: the only one who can change the session. */
-    cook: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    cook: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     recipe: () => recipeRef(),
     /** The recipe cooked with it, as a pairing. */
     paired: () =>

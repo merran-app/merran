@@ -25,7 +25,8 @@ export const AiKey = defineEntity({
     /** An address: "http://192.168.1.20:11434/v1". */
     baseUrl: p.text().nullable(),
     /** The key, sealed; an address may not need one. */
-    secret: () => p.manyToOne(Secret).ref().nullable().deleteRule("set null"),
+    secret: () =>
+      p.manyToOne(Secret).ref().nullable().deleteRule("set null").index(),
     /** The key's last four characters. */
     hint: p.string().nullable(),
     /** An address's models, from its last test. */
@@ -39,7 +40,8 @@ export const AiKey = defineEntity({
     creditSince: p.datetime().nullable(),
     /** When the provider last said the key is out of credit. */
     outOfCreditAt: p.datetime().nullable(),
-    createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    createdBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

@@ -16,7 +16,7 @@ export const RecipePairing = defineEntity({
     household: () => householdRef(),
     recipe: () => recipeRef(),
     pairedRecipe: () =>
-      p.manyToOne(Recipe).ref().nullable().deleteRule("cascade"),
+      p.manyToOne(Recipe).ref().nullable().deleteRule("cascade").index(),
     /** A tag's name key, when the pairing is with a whole tag. */
     tagKey: p.string().nullable(),
     createdAt: createdAt(),
