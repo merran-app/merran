@@ -11,7 +11,7 @@ export const FollowedSite = defineEntity({
   properties: {
     id: id(),
     household: () => householdRef(),
-    site: () => p.manyToOne(RecipeSite).ref().deleteRule("cascade"),
+    site: () => p.manyToOne(RecipeSite).ref().deleteRule("cascade").index(),
     createdAt: createdAt(),
   },
   uniques: [{ properties: ["household", "site"] }],

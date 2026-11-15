@@ -37,11 +37,19 @@ const CHANGES: [RegExp, LiveArea[]][] = [
   [/^\/api\/pantry(\/|$)/, ["pantry"]],
   // Made it cooks the meal; Recently deleted takes meals off the plan.
   [/^\/api\/recipes(\/|$)/, ["recipes", "plan", "list", "pantry"]],
+  // Shared to Merran, sites followed, a collection imported, a search for
+  // more: recipes, and the shelf and searches kept with them.
+  [/^\/api\/(share|sites|collections|discover)(\/|$)/, ["recipes"]],
+  // Applying a suggestion can add a recipe, meals, things for the list or
+  // tastes; applying or dismissing one changes Review.
+  [/^\/api\/proposals(\/|$)/, ["recipes", "plan", "list", "household"]],
   [/^\/api\/households\/current\/(tastes|themes|on-hand)$/, ["household"]],
   // A household's AI keys and models.
   [/^\/api\/households\/current\/ai(\/|$)/, ["household"]],
   // Turning put-away on puts away what's checked off already.
   [/^\/api\/households\/current$/, ["household", "list", "pantry"]],
+  // Its people, invites, shares, webhooks and imports.
+  [/^\/api\/households\/current\//, ["household"]],
 ]
 
 /**

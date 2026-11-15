@@ -17,7 +17,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Add a recipe from a link",
   description:
-    "Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. Video links can't be imported yet.",
+    "Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. A TikTok, YouTube, Instagram or Facebook link is imported from its video (its captions, or what's said in it, read by AI), when the server has video import on.",
   ...openToKeys("recipes", "write"),
   request: {
     body: {
@@ -45,7 +45,7 @@ const route = createRoute({
     200: jsonResponse(ImportResultSchema, "Already in the library."),
     400: errorResponse("Not a link Merran can fetch."),
     422: errorResponse(
-      "The page has no recipe data and no AI to read it, AI found no recipe on it, or it's a video."
+      "The page has no recipe data and no AI to read it, AI found no recipe on it, or it's a video and this server can't import videos."
     ),
     429: errorResponse("This month's AI limit is reached."),
     502: errorResponse("The site couldn't be reached, or turned Merran away."),

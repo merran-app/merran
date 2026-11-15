@@ -35,6 +35,7 @@ import {
 } from "../../database/entities/index.ts"
 
 import type { FileStore } from "../storage/files.ts"
+import type { AppDeps } from "../../core/context.ts"
 import { containing } from "../../database/text.ts"
 import { AppError } from "../../core/errors.ts"
 import type { RecipeInput } from "../../http/schemas/recipes.ts"
@@ -339,9 +340,19 @@ async function fill(
   return { ingredientsChanged }
 }
 
+/**
+ * What saving a recipe needs to tell whether its nutrition and a photo can
+ * be made, so it doesn't queue jobs that would do nothing.
+ */
+export type AfterSaveDeps = Pick<
+  AppDeps,
+  "settings" | "fetcher" | "ai" | "media" | "files"
+>
+
 export async function createRecipe(
   em: EntityManager,
   options: {
+    deps: AfterSaveDeps
     householdId: string
     userId: string | null
     input: RecipeInput
@@ -378,14 +389,14 @@ export async function createRecipe(
     }
   )
   if (!options.nutrition && options.input.servings) {
-    await nutritionAfterSave(em, {
+    await nutritionAfterSave(options.deps, em, {
       householdId: options.householdId,
       userId: options.userId,
       recipeId: id,
     })
   }
   if (!options.photoId) {
-    await photoAfterCreate(em, {
+    await photoAfterCreate(options.deps, em, {
       householdId: options.householdId,
       userId: options.userId,
       recipeId: id,
@@ -490,6 +501,7 @@ export async function importRecipe(
 export async function updateRecipe(
   em: EntityManager,
   options: {
+    deps: AfterSaveDeps
     householdId: string
     userId: string | null
     recipe: string
@@ -540,7 +552,7 @@ export async function updateRecipe(
     }
   )
   if (id.workOut) {
-    await nutritionAfterSave(em, {
+    await nutritionAfterSave(options.deps, em, {
       householdId: options.householdId,
       userId: options.userId,
       recipeId: id.id,

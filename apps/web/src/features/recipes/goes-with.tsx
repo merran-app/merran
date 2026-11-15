@@ -7,7 +7,11 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { pairedRecipeLines } from "@merran/shared"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
 import * as React from "react"
 import { Trans, useTranslation } from "react-i18next"
@@ -357,6 +361,8 @@ function PickRecipes({ recipe }: { recipe: Recipe }) {
           },
         })
       ),
+    // The last results stay, dimmed, while the next search loads.
+    placeholderData: keepPreviousData,
   })
 
   const already = new Set(
@@ -428,7 +434,13 @@ function PickRecipes({ recipe }: { recipe: Recipe }) {
           {t("recipes.pairing.noMatches")}
         </p>
       ) : (
-        <ul className="grid max-h-64 grid-cols-1 divide-y overflow-x-hidden overflow-y-auto rounded-xl border">
+        <ul
+          aria-busy={found.isPlaceholderData}
+          className={cn(
+            "grid max-h-64 grid-cols-1 divide-y overflow-x-hidden overflow-y-auto rounded-xl border transition-opacity",
+            found.isPlaceholderData && "opacity-60"
+          )}
+        >
           {shown.map((option) => {
             const on = picked.has(option.id)
             return (

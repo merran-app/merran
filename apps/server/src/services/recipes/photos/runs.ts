@@ -7,7 +7,7 @@ import { PHOTOS } from "../../../modules/photos/settings.ts"
 import { ACTIVE, enqueue } from "../../jobs/jobs.ts"
 import { JobStopped, type JobHandler } from "../../jobs/runner.ts"
 import type { RecipeOrigin } from "../recipes.ts"
-import { aiPhotosFor, makePhoto } from "./generate.ts"
+import { aiPhotosFor, makePhoto, type PhotoDeps } from "./generate.ts"
 
 // Making AI photos in the background: one for a recipe just added without
 // a photo, or for every recipe in the library without one.
@@ -128,6 +128,7 @@ export const aiPhotoRunJob: JobHandler = {
  * the server makes them by itself and the household has a key for it.
  */
 export async function photoAfterCreate(
+  deps: PhotoDeps,
   em: EntityManager,
   options: {
     householdId: string
@@ -138,6 +139,9 @@ export async function photoAfterCreate(
 ) {
   if (!ONE_AT_A_TIME.includes(options.origin)) return
   try {
+    // The job looks again, for a setting or key changed while it waits.
+    if (!(await deps.settings.server(PHOTOS.auto))) return
+    if (!(await aiPhotosFor(deps, em, options.householdId)).ok) return
     await enqueue(em, {
       kind: KIND,
       householdId: options.householdId,

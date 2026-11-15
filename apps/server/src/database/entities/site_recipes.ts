@@ -58,6 +58,8 @@ export const SiteRecipe = defineEntity({
   indexes: [
     { properties: ["site", "state"] },
     { properties: ["state", "publishedAt"] },
+    // The classics due to be opened again.
+    { properties: ["classic", "openedAt"] },
   ],
 })
 export type SiteRecipe = InferEntity<typeof SiteRecipe>

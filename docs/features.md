@@ -78,7 +78,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Versions, with restore | Detail | Built | |
 | Tags: rename, merge, delete | Detail | Built | |
 | Possible duplicate recipes | Detail | Built | No AI: the same link under any address, or the same name by its words; noted on new recipes, listed under Recipes → Possible duplicates, and in Tidy up's Review; "Not the same" is kept for the household |
-| Fast search, filters and sorting, even in big libraries | Key | Built | On the server; tags picked from a searchable list (a bottom sheet on a phone), filters on one row |
+| Fast search, filters and sorting, even in big libraries | Key | Built | On the server; tags picked from a searchable list (a bottom sheet on a phone), filters on one row; the last results stay on screen, dimmed, while a new search loads, in the library and the recipe pickers |
 | Diet labels worked out from the ingredients, with corrections | Key | Built | |
 | Goes with: pair recipes, like chicken with any of your sauces | Key | Built | |
 | "I made this", and a New badge for ones you haven't cooked | Detail | Built | |

@@ -55,10 +55,12 @@ export const Proposal = defineEntity({
     after: p.json<TidyValues>(),
     /** The library run that made it, if one did. */
     job: p.string().nullable(),
-    createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    createdBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     createdAt: createdAt(),
     /** Who applied or dismissed it, and when. */
-    resolvedBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    resolvedBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     resolvedAt: p.datetime().nullable(),
   },
   indexes: [{ properties: ["household", "status"] }],

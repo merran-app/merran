@@ -26,7 +26,8 @@ export const Discovery = defineEntity({
   properties: {
     id: id(),
     household: () => householdRef(),
-    user: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    user: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     theme: p.string(),
     /** The starter collection it found more for, by its id, if one. */
     collection: p.string().nullable(),

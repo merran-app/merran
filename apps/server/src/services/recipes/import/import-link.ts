@@ -4,9 +4,8 @@ import { AppError } from "../../../core/errors.ts"
 import { FLARESOLVERR } from "../../../modules/flaresolverr/settings.ts"
 import { solvePage } from "../../fetch/flaresolverr.ts"
 import type { Fetcher } from "../../fetch/public-fetch.ts"
-import type { FileStore } from "../../storage/files.ts"
 import { MAX_PHOTO_BYTES, removePhoto, storePhoto } from "../photos/photos.ts"
-import { createRecipe, loadRecipe } from "../recipes.ts"
+import { createRecipe, loadRecipe, type AfterSaveDeps } from "../recipes.ts"
 import { tidyAfterImport } from "../review/tidy-run.ts"
 import { readPage, type AiDeps } from "./ai-reader.ts"
 import { findBySourceUrl, isVideoLink, normalizeLink } from "./links.ts"
@@ -93,7 +92,7 @@ async function fetchPage(
  */
 export async function importLink(
   em: EntityManager,
-  deps: AiDeps & VideoDeps & { files: FileStore },
+  deps: AfterSaveDeps & VideoDeps,
   options: {
     householdId: string
     userId: string | null
@@ -142,7 +141,7 @@ export async function importLink(
  */
 async function importHtml(
   em: EntityManager,
-  deps: AiDeps & { files: FileStore },
+  deps: AfterSaveDeps,
   options: {
     householdId: string
     userId: string | null
@@ -167,6 +166,7 @@ async function importHtml(
     : null
   try {
     const recipe = await createRecipe(em, {
+      deps,
       householdId: options.householdId,
       userId: options.userId,
       input: data.input,
@@ -217,7 +217,7 @@ const escapeHtml = (text: string) =>
  */
 export async function importReadPage(
   em: EntityManager,
-  deps: AiDeps & VideoDeps & { files: FileStore },
+  deps: AfterSaveDeps & VideoDeps,
   options: { householdId: string; userId: string | null; page: ReadPage }
 ): Promise<ImportResult> {
   const pageUrl = normalizeLink(options.page.url)

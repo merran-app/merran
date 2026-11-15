@@ -4,12 +4,15 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
+import { precompressPlugin } from "./build/precompress.ts"
+
 export default defineConfig({
   plugins: [
     // Must come before React: it writes src/routeTree.gen.ts from src/routes.
     tanstackRouter({ target: "react", autoCodeSplitting: true }),
     react(),
     tailwindcss(),
+    precompressPlugin(),
   ],
   resolve: {
     alias: { "@": resolve(import.meta.dirname, "./src") },

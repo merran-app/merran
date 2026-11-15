@@ -18,7 +18,7 @@ export const Session = defineEntity({
     user: () => p.manyToOne(User).ref().deleteRule("cascade").index(),
     /** Better Auth's activeOrganizationId: the household in use on this device. */
     activeHousehold: () =>
-      p.manyToOne(Household).ref().nullable().deleteRule("set null"),
+      p.manyToOne(Household).ref().nullable().deleteRule("set null").index(),
     impersonatedBy: p.string().nullable(),
     /** Set only after a verified second factor or user-verified passkey ceremony. */
     strongAuthAt: p.datetime().nullable(),

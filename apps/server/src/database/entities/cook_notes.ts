@@ -13,7 +13,8 @@ export const CookNote = defineEntity({
     id: id(),
     household: () => householdRef(),
     recipe: () => recipeRef(),
-    user: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    user: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     rating: p.double().nullable(),
     note: p.text().nullable(),
     createdAt: createdAt(),

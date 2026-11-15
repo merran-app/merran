@@ -9,10 +9,9 @@ import { VIDEO } from "../../../../modules/video/settings.ts"
 import { aiUnavailable } from "../../../ai/run.ts"
 import { resolveTask } from "../../../ai/status.ts"
 import { transcribeFor, transcriptionFor } from "../../../ai/transcribe.ts"
-import type { FileStore } from "../../../storage/files.ts"
 import { captionsToText } from "./tools.ts"
 import { removePhoto, storePhoto } from "../../photos/photos.ts"
-import { createRecipe } from "../../recipes.ts"
+import { createRecipe, type AfterSaveDeps } from "../../recipes.ts"
 import { tidyAfterImport } from "../../review/tidy-run.ts"
 import { readRecipe, type AiDeps } from "../ai-reader.ts"
 import { downloadPhoto, type ImportResult } from "../import-link.ts"
@@ -71,7 +70,7 @@ export async function videoImportReady(
 
 export async function importVideo(
   em: EntityManager,
-  deps: AiDeps & VideoDeps & { files: FileStore },
+  deps: AfterSaveDeps & VideoDeps,
   options: {
     householdId: string
     userId: string | null
@@ -182,6 +181,7 @@ export async function importVideo(
     : null
   try {
     const recipe = await createRecipe(em, {
+      deps,
       householdId,
       userId,
       input,

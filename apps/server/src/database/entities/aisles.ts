@@ -22,6 +22,9 @@ export const Aisle = defineEntity({
 })
 export type Aisle = InferEntity<typeof Aisle>
 
-/** An optional `aisle` property; the item stays if its aisle is removed. */
+/**
+ * An optional `aisle` property; the item stays if its aisle is removed.
+ * Indexed, so removing an aisle finds its items without reading them all.
+ */
 export const aisleRef = () =>
-  p.manyToOne(Aisle).ref().nullable().deleteRule("set null")
+  p.manyToOne(Aisle).ref().nullable().deleteRule("set null").index()

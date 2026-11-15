@@ -286,6 +286,34 @@ describe("following a site", () => {
     expect((await kyle.delete(`/api/sites/${followed.id}`)).status).toBe(404)
   })
 
+  test("suggestions say how many sites are followed, without reading them", async () => {
+    type Suggestions = { following: number; suggestions: { name: string }[] }
+    const suggestions = async () => {
+      const res = await kyle.get("/api/sites/suggestions")
+      expect(res.status).toBe(200)
+      return (await res.json()) as Suggestions
+    }
+    const names = (list: Suggestions) =>
+      list.suggestions.map((site) => site.name)
+
+    const none = await suggestions()
+    expect(none).not.toHaveProperty("sites")
+    expect(none.following).toBe(0)
+    expect(names(none)).toContain("RecipeTin Eats")
+
+    const res = await kyle.post("/api/sites", {
+      url: "https://www.recipetineats.com/",
+    })
+    const { id } = (await res.json()) as { id: string }
+    const one = await suggestions()
+    expect(one.following).toBe(1)
+    expect(names(one)).not.toContain("RecipeTin Eats")
+    expect(one.suggestions).toHaveLength(none.suggestions.length - 1)
+
+    // As it was, for the tests after.
+    expect((await kyle.delete(`/api/sites/${id}`)).status).toBe(204)
+  })
+
   test("follows a suggestion as it's listed", async () => {
     const res = await kyle.post("/api/sites", {
       url: "https://www.recipetineats.com/",
