@@ -328,24 +328,30 @@ SQLite or Postgres, with one schema defined in TypeScript (see [stack.md](stack.
 
 Merran's own job runner does everything in the background, from a `jobs` table in the database, on SQLite or Postgres (see [stack.md](stack.md#a-job-runner-of-our-own-instead-of-hand-rolled-schedules)).
 
-| Job | When |
-|---|---|
-| Weekly autoplan | Each household's chosen day and time, in its time zone |
-| Price check | Daily, early morning in the household's time zone, and before the autoplan |
-| Reading recipe sites, followed and suggested | Every 6 hours per site, checked every half hour |
-| Checking starter collections' classics | Weekly |
-| Bulk imports | When started; three pages or one video at a time per household |
-| Library runs: tidy up, nutrition, photos | When started; two at a time |
-| Nutrition and photo for a saved recipe | After saving |
-| Discover searches | When started |
-| Purging Recently deleted | Daily |
-| Prep reminders | Every few minutes |
-| Webhook deliveries | When events happen, with retries for about a day |
-| Telemetry, if opted in | Daily |
-| Update check | Every 6 hours, unless turned off |
+| Job | When | Lane |
+|---|---|---|
+| Weekly autoplan | Each household's chosen day and time, in its time zone | Long |
+| Price check | Daily, early morning in the household's time zone, and before the autoplan | Long |
+| Reading recipe sites, followed and suggested | Every 6 hours per site, checked every half hour | Long |
+| Checking starter collections' classics | Weekly (not a job yet) | |
+| Bulk imports: several links, other apps, a Merran export | When started; two of each kind at a time, one per household | Long |
+| Library runs: tidy up, nutrition, photos | When started; two at a time, one per household | Long |
+| Nutrition and photo for a saved recipe | After saving, when they can be made | Long |
+| Discover searches | When started; two at a time, one per household | Long |
+| Purging Recently deleted | Daily | Long |
+| Prep reminders | Every few minutes (not a job yet) | |
+| Emails: invitations and password resets | When sent | Quick |
+| Webhook deliveries, gathering and heads-ups | When events happen, with retries for about a day | Quick |
+| Cook view's timers and quiet checks | When due | Quick |
+| Clearing old jobs and records | Daily | Quick |
+| Telemetry, if opted in | Daily | Quick |
+| Update check | Every 6 hours, unless turned off | Quick |
 
-- Work in progress survives restarts. Nothing important is kept only in memory: receipt drafts, the share inbox and pending Kroger sign-ins move to the database, with an expiry, or become jobs.
-- Each household gets a fair share, so one household's 500-recipe tidy-up doesn't hold up another's import.
+- **Two lanes** (decided November 10, built November 15, 2026). The quick lane, 4 at a time, is for jobs that call no AI, open no pages and finish in seconds, so an invitation or a webhook never waits behind an import. The long lane, 4 at a time unless `MERRAN_JOBS_LONG` says otherwise, is for the rest.
+- **Limits per household.** One household runs one import, library run or Discover search of each kind at a time, so two big imports from one household don't keep another's waiting. Each household also gets a fair share: those with the least running go first.
+- **Stop and time limits.** Stop reaches every fetch, AI call and video tool a job makes, so it takes effect at once, not between items. AI calls give up after 3 minutes (5 for Discover's web search), fetches after 15 seconds unless known to be slow, and yt-dlp and ffmpeg have limits of their own.
+- **Following a job.** The live stream sends a `job` event when one of a household's jobs starts, moves on or ends, to everyone who may read its area (an import's is recipes), and the app follows imports, library runs and Discover searches by it rather than polling. Household admins can list the household's jobs (`GET /households/current/jobs`) and follow or stop one.
+- Work in progress survives restarts. Nothing important is kept only in memory: receipt drafts, the share inbox and pending Kroger sign-ins move to the database, with an expiry, or become jobs. A job cut off by a restart sees what it saved so far; a link import carries on from the link it was on.
 - Settings → Server → **Jobs** shows what's running, what failed and why, with Retry and Cancel.
 
 ## Files
