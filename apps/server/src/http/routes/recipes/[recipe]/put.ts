@@ -38,10 +38,11 @@ const route = createRoute({
   },
 })
 
-export default (router: Router, _deps: AppDeps) => {
+export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
     const recipe = await updateRecipe(em, {
+      deps,
       householdId,
       userId,
       recipe: c.req.valid("param").recipe,

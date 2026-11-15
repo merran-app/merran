@@ -33,11 +33,17 @@ const route = createRoute({
     ...SIGNED_IN_ERRORS,
   },
 })
-export default (router: Router, _deps: AppDeps) => {
+export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
     return c.json(
-      await undoShoppingSwap(em, householdId, userId, c.req.valid("json")),
+      await undoShoppingSwap(
+        deps,
+        em,
+        householdId,
+        userId,
+        c.req.valid("json")
+      ),
       200
     )
   })

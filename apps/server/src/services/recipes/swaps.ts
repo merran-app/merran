@@ -14,7 +14,13 @@ import { AppError } from "../../core/errors.ts"
 import { PantryItem, RecipeVersion } from "../../database/entities/index.ts"
 import { useAi, type AiDeps } from "../ai/run.ts"
 import { getTastes } from "../households/tastes.ts"
-import { findRecipe, markedLines, snapshotOf, updateRecipe } from "./recipes.ts"
+import {
+  findRecipe,
+  markedLines,
+  snapshotOf,
+  updateRecipe,
+  type AfterSaveDeps,
+} from "./recipes.ts"
 import { toNumber } from "../../database/numbers.ts"
 import { tagsOf } from "./tags.ts"
 import { findEntry } from "../plan/plan.ts"
@@ -333,6 +339,7 @@ function changedSteps(
 export async function saveSwap(
   em: EntityManager,
   options: {
+    deps: AfterSaveDeps
     householdId: string
     userId: string | null
     recipe: string
@@ -380,6 +387,7 @@ export async function saveSwap(
   ]
 
   const updated = await updateRecipe(em, {
+    deps: options.deps,
     householdId: options.householdId,
     userId: options.userId,
     recipe: recipe.id,

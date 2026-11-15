@@ -1,12 +1,12 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
-import { MAX_PHOTOS, type AiDeps } from "../recipes/import/ai-reader.ts"
+import { MAX_PHOTOS } from "../recipes/import/ai-reader.ts"
 import { importLink } from "../recipes/import/import-link.ts"
 import { MAX_LINKS, startLinkImport } from "../recipes/import/import-links.ts"
 import { importPhotos, importText } from "../recipes/import/import-with-ai.ts"
 import { MAX_RECEIPT_FILES, readReceipt } from "../pantry/receipts/receipts.ts"
-import type { FileStore } from "../storage/files.ts"
 import type { VideoDeps } from "../recipes/import/video/import.ts"
+import type { AfterSaveDeps } from "../recipes/recipes.ts"
 import { sharedLinks, sharedPhotos, sharedText, type Shared } from "./links.ts"
 
 // Something shared to Merran, from Android's share sheet or an iPhone
@@ -100,7 +100,7 @@ function added(
  */
 async function readShared(
   em: EntityManager,
-  deps: AiDeps & VideoDeps & { files: FileStore },
+  deps: AfterSaveDeps & VideoDeps,
   options: {
     householdId: string
     userId: string
@@ -177,7 +177,7 @@ async function readShared(
 /** Works out what was shared, and adds it. */
 export async function shareToMerran(
   em: EntityManager,
-  deps: AiDeps & VideoDeps & { files: FileStore },
+  deps: AfterSaveDeps & VideoDeps,
   options: {
     householdId: string
     userId: string

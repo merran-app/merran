@@ -1,7 +1,7 @@
 import { foodFacts } from "@merran/shared"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../app.ts"
-import { FoodMatch, Recipe } from "../../../../database/entities/index.ts"
+import { FoodMatch, Job, Recipe } from "../../../../database/entities/index.ts"
 import type { Database } from "../../../../database/orm.ts"
 import type {
   FetchOptions,
@@ -411,6 +411,29 @@ describe("the library", () => {
       missing: 0,
       run: { status: "done", total: 2, workedOut: 2, failed: 0 },
     })
+  })
+})
+
+describe("on a server that can't work it out", () => {
+  test("saving a recipe queues no nutrition job", async () => {
+    // No AI key and no USDA key: a job could only end with nothing done.
+    const bare = await createTestApp()
+    try {
+      const owner = await setUpServer(bare.app, bare.setupCode)
+      const res = await owner.post("/api/recipes", {
+        name: "Lemon Chicken",
+        servings: 4,
+        ingredients: LINES,
+        steps: ["Roast it all."],
+      })
+      expect(res.status, await res.clone().text()).toBe(201)
+      const em = bare.database.em.fork()
+      expect(
+        await em.count(Job, { kind: "recipes.nutrition" }, { filters: false })
+      ).toBe(0)
+    } finally {
+      await bare.close()
+    }
   })
 })
 
