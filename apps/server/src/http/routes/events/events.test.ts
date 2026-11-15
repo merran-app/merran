@@ -312,12 +312,14 @@ describe("live updates", () => {
       kind: "household.import",
       status: "running",
       progress: { done: 1, total: 4 },
+      startedBy: "user-1",
     })
     events.job(home, "list", {
       id: "job-2",
       kind: "stores.checkPrices",
       status: "done",
       progress: null,
+      startedBy: null,
     })
     expect(await stream.next()).toEqual({
       event: "job",
@@ -326,6 +328,7 @@ describe("live updates", () => {
         kind: "household.import",
         status: "running",
         progress: { done: 1, total: 4 },
+        startedBy: "user-1",
       },
     })
     expect(await stream.next()).toMatchObject({

@@ -56,6 +56,7 @@ export function importSummary(record: Import) {
     kind: record.kind,
     source: record.source ?? null,
     tag: record.tag ?? null,
+    listed: record.listed,
     status: record.undoneAt ? ("undone" as const) : record.status,
     total: record.total,
     done,

@@ -12,6 +12,7 @@ const IMPORT = {
   kind: "links" as const,
   source: null,
   tag: "to try",
+  listed: true,
   status: "done" as const,
   total: 3,
   done: 3,
@@ -51,6 +52,10 @@ export const ImportSchema = z
     }),
     tag: z.string().nullable().openapi({
       description: 'Added to every recipe it brought in, like "to try".',
+    }),
+    listed: z.boolean().openapi({
+      description:
+        "Whether the Imports page lists it. A single link is listed only once it goes on in the background; one that came in while someone waited isn't.",
     }),
     status: z.enum([...IMPORT_STATUSES, "undone"]).openapi({
       description:

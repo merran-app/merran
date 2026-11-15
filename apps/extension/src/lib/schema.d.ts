@@ -632,7 +632,7 @@ export interface paths {
          *     - `ready` when it's open, with the areas it hears about.
          *     - `plan`, `list`, `pantry`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.
          *     - `presence` with who has `page` open, when someone opens or leaves it.
-         *     - `job` when one of the household's jobs, like an import, starts, moves on or ends, with its `id`, `kind`, `status` and `progress`. Only about jobs in areas it hears about. Fetch what shows the job to see more, like the import or the run.
+         *     - `job` when one of the household's jobs, like an import, starts, moves on or ends, with its `id`, `kind`, `status`, `progress` and `startedBy` (the user who started it, or null). Only about jobs in areas it hears about. Fetch what shows the job to see more, like the import or the run.
          *     - `ping` now and then, to keep the connection open.
          *
          *     A device that sends the same `client` with its own changes (in the `X-Merran-Client` header) isn't told about them; your other devices are. An API key hears about the areas it can read. With an API key, it needs the `any: read` permission.
@@ -10196,6 +10196,7 @@ export interface components {
          *       "kind": "links",
          *       "source": null,
          *       "tag": "to try",
+         *       "listed": true,
          *       "status": "done",
          *       "total": 3,
          *       "done": 3,
@@ -10225,6 +10226,8 @@ export interface components {
             source: string | null;
             /** @description Added to every recipe it brought in, like "to try". */
             tag: string | null;
+            /** @description Whether the Imports page lists it. A single link is listed only once it goes on in the background; one that came in while someone waited isn't. */
+            listed: boolean;
             /**
              * @description How it's going or went. Undone once Undo moved what it brought in to Recently deleted.
              * @enum {string}
@@ -11783,6 +11786,7 @@ export interface components {
          *           "kind": "links",
          *           "source": null,
          *           "tag": "to try",
+         *           "listed": true,
          *           "status": "done",
          *           "total": 3,
          *           "done": 3,
@@ -11812,6 +11816,7 @@ export interface components {
          *       "kind": "links",
          *       "source": null,
          *       "tag": "to try",
+         *       "listed": true,
          *       "status": "done",
          *       "total": 3,
          *       "done": 3,
@@ -15672,6 +15677,7 @@ export interface components {
          *         "kind": "link",
          *         "source": "https://example.com/lemon-chicken",
          *         "tag": null,
+         *         "listed": true,
          *         "status": "running",
          *         "total": 1,
          *         "done": 0,

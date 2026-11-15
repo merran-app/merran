@@ -102,8 +102,9 @@ describe("the Imports page", () => {
     await jobs.drain()
     // A single link that came in while someone waited isn't listed.
     const tx = forHousehold(database.em, home)
+    const unlisted = randomUUID()
     createImport(tx, {
-      id: randomUUID(),
+      id: unlisted,
       householdId: home,
       kind: "link",
       source: "https://example.com/rice",
@@ -111,6 +112,10 @@ describe("the Imports page", () => {
       listed: false,
     })
     await tx.flush()
+    // Its own page still opens, and says it isn't listed: the app tells
+    // no one it's in, since whoever started it watched it open.
+    expect(await getImport(unlisted)).toMatchObject({ listed: false })
+    expect(await getImport(first)).toMatchObject({ listed: true })
 
     const res = await jamie.get("/api/imports")
     expect(res.status).toBe(200)

@@ -291,6 +291,7 @@ export class JobRunner {
         kind: job.kind,
         status: job.status,
         progress: job.progress ?? null,
+        startedBy: job.createdBy?.id ?? null,
       })
     }
     return job
@@ -531,6 +532,7 @@ export class JobRunner {
         kind: job.kind,
         status,
         progress: progressNow,
+        startedBy: job.createdBy?.id ?? null,
       })
     }
     tell("running")

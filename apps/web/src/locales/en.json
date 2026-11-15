@@ -1526,6 +1526,13 @@
   "imports": {
     "started": "Still importing. It'll be in your recipes soon.",
     "view": "View",
+    "notice": {
+      "done_one": "{{count}} recipe imported.",
+      "done_other": "{{count}} recipes imported.",
+      "one": "{{name}} is in your recipes.",
+      "nothingNew": "Nothing new came in: it was all in your recipes already.",
+      "failed": "An import didn't work."
+    },
     "title": "Imports",
     "description": "Everything that brought recipes in, kept for 90 days: what came in, what was already here and what didn't.",
     "empty": "No imports yet",
