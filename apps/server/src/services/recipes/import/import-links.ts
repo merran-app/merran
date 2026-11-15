@@ -1,13 +1,9 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { z } from "zod"
 import { AppError } from "../../../core/errors.ts"
-import {
-  Import,
-  ImportItem,
-  Recipe,
-  type ImportStatus,
-} from "../../../database/entities/index.ts"
+import { Import, ImportItem, Recipe } from "../../../database/entities/index.ts"
 import { inHouseholdTransaction } from "../../../database/transactions.ts"
+import { linkItems } from "../../imports/describe.ts"
 import {
   asImport,
   cancelWaitingImport,
@@ -19,7 +15,6 @@ import { JobStopped, type JobHandler } from "../../jobs/runner.ts"
 import { findLinks } from "../../share/links.ts"
 import { appLink } from "../../webhooks/payloads.ts"
 import { record } from "../../webhooks/record.ts"
-import { photoUrls } from "../photos/photos.ts"
 import { addTagsTo } from "../tags.ts"
 import { importLink } from "./import-link.ts"
 import { findBySourceUrls, isVideoLink, normalizeLink } from "./links.ts"
@@ -147,9 +142,6 @@ export async function startLinkImport(
 }
 
 /** Whether an import has finished, one way or another. */
-const finished = (status: ImportStatus) =>
-  status === "done" || status === "failed" || status === "cancelled"
-
 /** A link import's record, as its page shows it. */
 export async function describeLinkImport(em: EntityManager, importId: string) {
   const found = await em.findOne(Import, { id: importId })
@@ -160,36 +152,12 @@ export async function describeLinkImport(em: EntityManager, importId: string) {
       "There's no such import."
     )
   }
-  const rows = await em.find(
-    ImportItem,
-    { import: importId },
-    { orderBy: { position: "asc" }, populate: ["recipe"] }
-  )
-  const over = finished(found.status)
-  // The first waiting link is the one it's on, while it runs.
-  const current =
-    found.status === "running"
-      ? rows.find((row) => row.state === "waiting")
-      : undefined
-  const items: LinkItem[] = rows.map((row) => {
-    const recipe = row.recipe?.getEntity()
-    let state: LinkState = row.state
-    if (row.state === "waiting" && over) state = "stopped"
-    if (row === current) state = "adding"
-    return {
-      url: row.label,
-      state,
-      recipe: recipe
-        ? {
-            id: recipe.id,
-            slug: recipe.slug,
-            name: recipe.name,
-            photo: photoUrls(recipe)?.card ?? null,
-          }
-        : null,
-      error: row.error ?? null,
-    }
-  })
+  const items: LinkItem[] = (await linkItems(em, found)).map((item) => ({
+    url: item.label,
+    state: item.state,
+    recipe: item.recipe,
+    error: item.error,
+  }))
   const count = (state: LinkState) =>
     items.filter((item) => item.state === state).length
   return {

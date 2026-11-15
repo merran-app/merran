@@ -35,6 +35,11 @@ const TAGS = [
       "The household's recipes, their tags and versions, and Recently deleted. Ingredients and steps are written as lines, as in the editor, and each ingredient line is read into its amount, unit, food and note.",
   },
   {
+    name: "Imports",
+    description:
+      "Every import a household made in the last 90 days: several links, starter collections, other apps, Merran exports, and a single link or video that went on in the background. Each says what came in, what was already there and what didn't, and why.",
+  },
+  {
     name: "Review",
     description:
       "What AI suggests, waiting to be applied or dismissed: tidy ups of recipes, for now. AI never changes a recipe by itself. Each section of a suggestion is applied or skipped on its own, and applying keeps a version.",

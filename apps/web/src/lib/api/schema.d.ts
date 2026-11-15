@@ -1430,6 +1430,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The household's imports
+         * @description Every import the household made in the last 90 days, newest first: several links, starter collections, other apps, Merran exports, and a single link or video that went on in the background. Everyone who can add recipes sees them all. With an API key, it needs the `imports: read` permission.
+         */
+        get: operations["listImports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{importId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One of the household's imports
+         * @description How it's going or went: its links in order, for several links or a collection, and the recipes it brought in, what was already there and what didn't come in and why, 100 of each at a time. With an API key, it needs the `imports: read` permission.
+         */
+        get: operations["getImport"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an import's record
+         * @description Only the record goes: the recipes it brought in stay. To delete those, use Undo, or delete them as any other recipe. With an API key, it needs the `recipes: write` permission.
+         */
+        delete: operations["deleteImport"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{importId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop an import
+         * @description What it brought in stays. The link or recipe it's on is cut off and shows as stopped; it takes a moment, so the answer may still say it's running. With an API key, it needs the `imports: write` permission.
+         */
+        post: operations["stopImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/list": {
         parameters: {
             query?: never;
@@ -11650,6 +11714,247 @@ export interface components {
         HouseholdImport: {
             household: components["schemas"]["Household"];
             job: components["schemas"]["Job"];
+        };
+        /**
+         * @example {
+         *       "imports": [
+         *         {
+         *           "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff15",
+         *           "kind": "links",
+         *           "source": null,
+         *           "tag": "to try",
+         *           "status": "done",
+         *           "total": 3,
+         *           "done": 3,
+         *           "added": 2,
+         *           "already": 0,
+         *           "failed": 1,
+         *           "stopped": 0,
+         *           "startedBy": {
+         *             "id": "01a1e0f0-e730-7501-bbce-f5e6ead7106d",
+         *             "name": "Kyle"
+         *           },
+         *           "createdAt": "2026-11-15T18:02:11.000Z",
+         *           "finishedAt": "2026-11-15T18:02:40.000Z",
+         *           "undoneAt": null
+         *         }
+         *       ]
+         *     }
+         */
+        ImportList: {
+            imports: components["schemas"]["Import"][];
+        };
+        /**
+         * @example {
+         *       "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff15",
+         *       "kind": "links",
+         *       "source": null,
+         *       "tag": "to try",
+         *       "status": "done",
+         *       "total": 3,
+         *       "done": 3,
+         *       "added": 2,
+         *       "already": 0,
+         *       "failed": 1,
+         *       "stopped": 0,
+         *       "startedBy": {
+         *         "id": "01a1e0f0-e730-7501-bbce-f5e6ead7106d",
+         *         "name": "Kyle"
+         *       },
+         *       "createdAt": "2026-11-15T18:02:11.000Z",
+         *       "finishedAt": "2026-11-15T18:02:40.000Z",
+         *       "undoneAt": null
+         *     }
+         */
+        Import: {
+            id: string;
+            /**
+             * @description What brought recipes in: one link or a video that went on in the background, several links, a starter collection, Mealie, Paprika or a Merran export.
+             * @enum {string}
+             */
+            kind: "link" | "video" | "links" | "collection" | "mealie" | "paprika" | "merran";
+            /** @description What it was: the link, Mealie's address or the collection's name. None for several links or a file. */
+            source: string | null;
+            /** @description Added to every recipe it brought in, like "to try". */
+            tag: string | null;
+            /**
+             * @description How it's going or went. Undone once Undo moved what it brought in to Recently deleted.
+             * @enum {string}
+             */
+            status: "queued" | "running" | "done" | "failed" | "cancelled" | "undone";
+            /** @description How many links or recipes it has, once it knows. */
+            total: number;
+            /** @description How many it's dealt with: "Importing 12 of 52". */
+            done: number;
+            added: number;
+            /** @description Already in the household's recipes, so not added again. */
+            already: number;
+            /** @description Didn't come in. */
+            failed: number;
+            /** @description Never got to, once it was stopped or failed. */
+            stopped: number;
+            /** @description Who started it; none for Merran. */
+            startedBy: {
+                id: string;
+                name: string;
+            } | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            finishedAt: string | null;
+            /** Format: date-time */
+            undoneAt: string | null;
+        };
+        /**
+         * @example {
+         *       "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff15",
+         *       "kind": "links",
+         *       "source": null,
+         *       "tag": "to try",
+         *       "status": "done",
+         *       "total": 3,
+         *       "done": 3,
+         *       "added": 2,
+         *       "already": 0,
+         *       "failed": 1,
+         *       "stopped": 0,
+         *       "startedBy": {
+         *         "id": "01a1e0f0-e730-7501-bbce-f5e6ead7106d",
+         *         "name": "Kyle"
+         *       },
+         *       "createdAt": "2026-11-15T18:02:11.000Z",
+         *       "finishedAt": "2026-11-15T18:02:40.000Z",
+         *       "undoneAt": null,
+         *       "items": [
+         *         {
+         *           "position": 0,
+         *           "label": "https://example.com/lemon-chicken",
+         *           "state": "added",
+         *           "recipe": {
+         *             "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff16",
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken",
+         *             "photo": null
+         *           },
+         *           "error": null
+         *         },
+         *         {
+         *           "position": 1,
+         *           "label": "https://example.com/broken",
+         *           "state": "failed",
+         *           "recipe": null,
+         *           "error": "Couldn't reach that site."
+         *         }
+         *       ],
+         *       "cameIn": {
+         *         "items": [
+         *           {
+         *             "position": 0,
+         *             "recipe": {
+         *               "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff16",
+         *               "slug": "lemon-chicken",
+         *               "name": "Lemon Chicken",
+         *               "photo": null,
+         *               "deleted": false,
+         *               "changed": false,
+         *               "planned": true,
+         *               "cooked": false,
+         *               "undone": false
+         *             }
+         *           }
+         *         ],
+         *         "more": false
+         *       },
+         *       "alreadyHere": {
+         *         "items": [],
+         *         "more": false
+         *       },
+         *       "didntComeIn": {
+         *         "items": [
+         *           {
+         *             "position": 1,
+         *             "label": "https://example.com/broken",
+         *             "error": "Couldn't reach that site."
+         *           }
+         *         ],
+         *         "more": false
+         *       }
+         *     }
+         */
+        ImportDetail: components["schemas"]["Import"] & {
+            /** @description Several links' or a collection's links, in order, as it goes. Empty for other imports. */
+            items: {
+                position: number;
+                /** @description The link. */
+                label: string;
+                /**
+                 * @description Where the link has got to: waiting, being added, added, already in the recipes, failed (see error), or stopped before it was reached.
+                 * @enum {string}
+                 */
+                state: "waiting" | "adding" | "added" | "already" | "failed" | "stopped";
+                recipe: {
+                    id: string;
+                    slug: string;
+                    name: string;
+                    /** @description Its card photo. */
+                    photo: string | null;
+                } | null;
+                error: string | null;
+            }[];
+            /** @description The recipes it brought in, 100 at a time. */
+            cameIn: {
+                items: {
+                    position: number;
+                    recipe: {
+                        id: string;
+                        slug: string;
+                        name: string;
+                        /** @description Its card photo. */
+                        photo: string | null;
+                        /** @description In Recently deleted. */
+                        deleted: boolean;
+                        /** @description Changed since it came in. */
+                        changed: boolean;
+                        /** @description On the plan. */
+                        planned: boolean;
+                        /** @description Cooked since it came in. */
+                        cooked: boolean;
+                        /** @description Moved to Recently deleted by Undo. */
+                        undone: boolean;
+                    };
+                }[];
+                /** @description Whether there are more: ask again from further on. */
+                more: boolean;
+            };
+            /** @description What was already in the household's recipes, 100 at a time. */
+            alreadyHere: {
+                items: {
+                    position: number;
+                    label: string;
+                    /** @description The recipe that's there. */
+                    recipe: {
+                        id: string;
+                        slug: string;
+                        name: string;
+                        /** @description Its card photo. */
+                        photo: string | null;
+                    } | null;
+                }[];
+                /** @description Whether there are more: ask again from further on. */
+                more: boolean;
+            };
+            /** @description What didn't come in and why, 100 at a time. */
+            didntComeIn: {
+                items: {
+                    position: number;
+                    /** @description The link, or the recipe's name. */
+                    label: string;
+                    /** @description Why it didn't come in. */
+                    error: string;
+                }[];
+                /** @description Whether there are more: ask again from further on. */
+                more: boolean;
+            };
         };
         /**
          * @example {
@@ -22448,6 +22753,214 @@ export interface operations {
             };
             /** @description The file is too big. */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listImports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The imports. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getImport: {
+        parameters: {
+            query?: {
+                /** @description Where the recipes it brought in start: 100 for the next page. */
+                cameIn?: number | null;
+                /** @description Where what was already here starts. */
+                alreadyHere?: number | null;
+                /** @description Where what didn't come in starts. */
+                didntComeIn?: number | null;
+            };
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The import. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportDetail"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It's still going: stop it first. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    stopImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stopped, or stopping. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It has already finished. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

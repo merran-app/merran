@@ -39,6 +39,10 @@
       "description": "The household's recipes, their tags and versions, and Recently deleted. Ingredients and steps are written as lines, as in the editor, and each ingredient line is read into its amount, unit, food and note."
     },
     {
+      "name": "Imports",
+      "description": "Every import a household made in the last 90 days: several links, starter collections, other apps, Merran exports, and a single link or video that went on in the background. Each says what came in, what was already there and what didn't, and why."
+    },
+    {
       "name": "Review",
       "description": "What AI suggests, waiting to be applied or dismissed: tidy ups of recipes, for now. AI never changes a recipe by itself. Each section of a suggestion is applied or skipped on its own, and applying keeps a version."
     },
@@ -5297,6 +5301,534 @@
             "startedAt": null,
             "finishedAt": null,
             "createdAt": "2026-10-15T18:30:00.000Z"
+          }
+        }
+      },
+      "ImportList": {
+        "type": "object",
+        "properties": {
+          "imports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Import"
+            }
+          }
+        },
+        "required": [
+          "imports"
+        ],
+        "example": {
+          "imports": [
+            {
+              "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff15",
+              "kind": "links",
+              "source": null,
+              "tag": "to try",
+              "status": "done",
+              "total": 3,
+              "done": 3,
+              "added": 2,
+              "already": 0,
+              "failed": 1,
+              "stopped": 0,
+              "startedBy": {
+                "id": "01a1e0f0-e730-7501-bbce-f5e6ead7106d",
+                "name": "Kyle"
+              },
+              "createdAt": "2026-11-15T18:02:11.000Z",
+              "finishedAt": "2026-11-15T18:02:40.000Z",
+              "undoneAt": null
+            }
+          ]
+        }
+      },
+      "Import": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "link",
+              "video",
+              "links",
+              "collection",
+              "mealie",
+              "paprika",
+              "merran"
+            ],
+            "description": "What brought recipes in: one link or a video that went on in the background, several links, a starter collection, Mealie, Paprika or a Merran export."
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What it was: the link, Mealie's address or the collection's name. None for several links or a file."
+          },
+          "tag": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Added to every recipe it brought in, like \"to try\"."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed",
+              "cancelled",
+              "undone"
+            ],
+            "description": "How it's going or went. Undone once Undo moved what it brought in to Recently deleted."
+          },
+          "total": {
+            "type": "integer",
+            "description": "How many links or recipes it has, once it knows."
+          },
+          "done": {
+            "type": "integer",
+            "description": "How many it's dealt with: \"Importing 12 of 52\"."
+          },
+          "added": {
+            "type": "integer"
+          },
+          "already": {
+            "type": "integer",
+            "description": "Already in the household's recipes, so not added again."
+          },
+          "failed": {
+            "type": "integer",
+            "description": "Didn't come in."
+          },
+          "stopped": {
+            "type": "integer",
+            "description": "Never got to, once it was stopped or failed."
+          },
+          "startedBy": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "description": "Who started it; none for Merran."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "undoneAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "source",
+          "tag",
+          "status",
+          "total",
+          "done",
+          "added",
+          "already",
+          "failed",
+          "stopped",
+          "startedBy",
+          "createdAt",
+          "finishedAt",
+          "undoneAt"
+        ],
+        "example": {
+          "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff15",
+          "kind": "links",
+          "source": null,
+          "tag": "to try",
+          "status": "done",
+          "total": 3,
+          "done": 3,
+          "added": 2,
+          "already": 0,
+          "failed": 1,
+          "stopped": 0,
+          "startedBy": {
+            "id": "01a1e0f0-e730-7501-bbce-f5e6ead7106d",
+            "name": "Kyle"
+          },
+          "createdAt": "2026-11-15T18:02:11.000Z",
+          "finishedAt": "2026-11-15T18:02:40.000Z",
+          "undoneAt": null
+        }
+      },
+      "ImportDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Import"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "position": {
+                      "type": "integer"
+                    },
+                    "label": {
+                      "type": "string",
+                      "description": "The link."
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "waiting",
+                        "adding",
+                        "added",
+                        "already",
+                        "failed",
+                        "stopped"
+                      ],
+                      "description": "Where the link has got to: waiting, being added, added, already in the recipes, failed (see error), or stopped before it was reached."
+                    },
+                    "recipe": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "photo": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Its card photo."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "slug",
+                        "name",
+                        "photo"
+                      ]
+                    },
+                    "error": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "position",
+                    "label",
+                    "state",
+                    "recipe",
+                    "error"
+                  ]
+                },
+                "description": "Several links' or a collection's links, in order, as it goes. Empty for other imports."
+              },
+              "cameIn": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "position": {
+                          "type": "integer"
+                        },
+                        "recipe": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "slug": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "photo": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "Its card photo."
+                            },
+                            "deleted": {
+                              "type": "boolean",
+                              "description": "In Recently deleted."
+                            },
+                            "changed": {
+                              "type": "boolean",
+                              "description": "Changed since it came in."
+                            },
+                            "planned": {
+                              "type": "boolean",
+                              "description": "On the plan."
+                            },
+                            "cooked": {
+                              "type": "boolean",
+                              "description": "Cooked since it came in."
+                            },
+                            "undone": {
+                              "type": "boolean",
+                              "description": "Moved to Recently deleted by Undo."
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "slug",
+                            "name",
+                            "photo",
+                            "deleted",
+                            "changed",
+                            "planned",
+                            "cooked",
+                            "undone"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "position",
+                        "recipe"
+                      ]
+                    }
+                  },
+                  "more": {
+                    "type": "boolean",
+                    "description": "Whether there are more: ask again from further on."
+                  }
+                },
+                "required": [
+                  "items",
+                  "more"
+                ],
+                "description": "The recipes it brought in, 100 at a time."
+              },
+              "alreadyHere": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "position": {
+                          "type": "integer"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "recipe": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "slug": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "photo": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "Its card photo."
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "slug",
+                            "name",
+                            "photo"
+                          ],
+                          "description": "The recipe that's there."
+                        }
+                      },
+                      "required": [
+                        "position",
+                        "label",
+                        "recipe"
+                      ]
+                    }
+                  },
+                  "more": {
+                    "type": "boolean",
+                    "description": "Whether there are more: ask again from further on."
+                  }
+                },
+                "required": [
+                  "items",
+                  "more"
+                ],
+                "description": "What was already in the household's recipes, 100 at a time."
+              },
+              "didntComeIn": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "position": {
+                          "type": "integer"
+                        },
+                        "label": {
+                          "type": "string",
+                          "description": "The link, or the recipe's name."
+                        },
+                        "error": {
+                          "type": "string",
+                          "description": "Why it didn't come in."
+                        }
+                      },
+                      "required": [
+                        "position",
+                        "label",
+                        "error"
+                      ]
+                    }
+                  },
+                  "more": {
+                    "type": "boolean",
+                    "description": "Whether there are more: ask again from further on."
+                  }
+                },
+                "required": [
+                  "items",
+                  "more"
+                ],
+                "description": "What didn't come in and why, 100 at a time."
+              }
+            },
+            "required": [
+              "items",
+              "cameIn",
+              "alreadyHere",
+              "didntComeIn"
+            ]
+          }
+        ],
+        "example": {
+          "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff15",
+          "kind": "links",
+          "source": null,
+          "tag": "to try",
+          "status": "done",
+          "total": 3,
+          "done": 3,
+          "added": 2,
+          "already": 0,
+          "failed": 1,
+          "stopped": 0,
+          "startedBy": {
+            "id": "01a1e0f0-e730-7501-bbce-f5e6ead7106d",
+            "name": "Kyle"
+          },
+          "createdAt": "2026-11-15T18:02:11.000Z",
+          "finishedAt": "2026-11-15T18:02:40.000Z",
+          "undoneAt": null,
+          "items": [
+            {
+              "position": 0,
+              "label": "https://example.com/lemon-chicken",
+              "state": "added",
+              "recipe": {
+                "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff16",
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken",
+                "photo": null
+              },
+              "error": null
+            },
+            {
+              "position": 1,
+              "label": "https://example.com/broken",
+              "state": "failed",
+              "recipe": null,
+              "error": "Couldn't reach that site."
+            }
+          ],
+          "cameIn": {
+            "items": [
+              {
+                "position": 0,
+                "recipe": {
+                  "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff16",
+                  "slug": "lemon-chicken",
+                  "name": "Lemon Chicken",
+                  "photo": null,
+                  "deleted": false,
+                  "changed": false,
+                  "planned": true,
+                  "cooked": false,
+                  "undone": false
+                }
+              }
+            ],
+            "more": false
+          },
+          "alreadyHere": {
+            "items": [],
+            "more": false
+          },
+          "didntComeIn": {
+            "items": [
+              {
+                "position": 1,
+                "label": "https://example.com/broken",
+                "error": "Couldn't reach that site."
+              }
+            ],
+            "more": false
           }
         }
       },
@@ -24213,6 +24745,335 @@
           },
           "413": {
             "description": "The file is too big.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/imports": {
+      "get": {
+        "operationId": "listImports",
+        "tags": [
+          "Imports"
+        ],
+        "summary": "The household's imports",
+        "description": "Every import the household made in the last 90 days, newest first: several links, starter collections, other apps, Merran exports, and a single link or video that went on in the background. Everyone who can add recipes sees them all. With an API key, it needs the `imports: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "imports:read",
+        "responses": {
+          "200": {
+            "description": "The imports.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/imports/{importId}": {
+      "get": {
+        "operationId": "getImport",
+        "tags": [
+          "Imports"
+        ],
+        "summary": "One of the household's imports",
+        "description": "How it's going or went: its links in order, for several links or a collection, and the recipes it brought in, what was already there and what didn't come in and why, 100 of each at a time. With an API key, it needs the `imports: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "imports:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "importId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "description": "Where the recipes it brought in start: 100 for the next page."
+            },
+            "required": false,
+            "description": "Where the recipes it brought in start: 100 for the next page.",
+            "name": "cameIn",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "description": "Where what was already here starts."
+            },
+            "required": false,
+            "description": "Where what was already here starts.",
+            "name": "alreadyHere",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "description": "Where what didn't come in starts."
+            },
+            "required": false,
+            "description": "Where what didn't come in starts.",
+            "name": "didntComeIn",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The import.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteImport",
+        "tags": [
+          "Imports"
+        ],
+        "summary": "Delete an import's record",
+        "description": "Only the record goes: the recipes it brought in stay. To delete those, use Undo, or delete them as any other recipe. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "importId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It's still going: stop it first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/imports/{importId}/stop": {
+      "post": {
+        "operationId": "stopImport",
+        "tags": [
+          "Imports"
+        ],
+        "summary": "Stop an import",
+        "description": "What it brought in stays. The link or recipe it's on is cut off and shows as stopped; it takes a moment, so the answer may still say it's running. With an API key, it needs the `imports: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "imports:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "importId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stopped, or stopping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Import"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It has already finished.",
             "content": {
               "application/json": {
                 "schema": {

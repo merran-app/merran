@@ -9,6 +9,7 @@ import discoverRoutes from "./discover/index.ts"
 import eventsRoutes from "./events/index.ts"
 import healthRoutes from "./health/index.ts"
 import householdsRoutes from "./households/index.ts"
+import importsRoutes from "./imports/index.ts"
 import listRoutes from "./list/index.ts"
 import pantryRoutes from "./pantry/index.ts"
 import planRoutes from "./plan/index.ts"
@@ -37,6 +38,7 @@ export default (router: Router, deps: AppDeps) => {
   eventsRoutes(router, deps)
   healthRoutes(router, deps)
   householdsRoutes(router, deps)
+  importsRoutes(router, deps)
   listRoutes(router, deps)
   pantryRoutes(router, deps)
   planRoutes(router, deps)
