@@ -39,6 +39,7 @@ type Sent = { summaries: number; useSoon: number; starts: number }
 
 export const headsUpJob: JobHandler = {
   kind: HEADS_UP_JOB,
+  lane: "quick",
   async run({ em, payload, deps, logger }) {
     const now = new Date()
     // When the run before it was, so a daily time passed while the server

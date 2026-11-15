@@ -221,6 +221,7 @@ async function forgetToken(deps: JobDeps, jobId: string, payload: Payload) {
 
 export const appImportJob: JobHandler = {
   kind: KIND,
+  lane: "long",
   concurrency: 2,
   changes: ["recipes"],
   async run({

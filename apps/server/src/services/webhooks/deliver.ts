@@ -358,6 +358,7 @@ function noteTry(delivery: WebhookDelivery, result: TryResult) {
  */
 export const webhookDeliveryJob: JobHandler = {
   kind: WEBHOOK_DELIVERY_JOB,
+  lane: "quick",
   concurrency: 2,
   retryDelays: WEBHOOK_RETRY_DELAYS,
   async run({ em, payload, attempt, maxAttempts, deps }) {

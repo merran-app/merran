@@ -13,6 +13,7 @@ import { TELEMETRY, type LastResult } from "./settings.ts"
  */
 export const sendTelemetryJob: JobHandler = {
   kind: "telemetry.send",
+  lane: "quick",
   async run({ em, deps }) {
     if (!RECEIVER_LIVE) return { sent: false }
     const enabled = await deps.settings.server(TELEMETRY.enabled)

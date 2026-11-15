@@ -74,6 +74,7 @@ const MISSING = {
 
 export const nutritionRunJob: JobHandler = {
   kind: KIND,
+  lane: "long",
   concurrency: 2,
   async run({ em, householdId, payload, progress, signal, logger, deps }) {
     if (!householdId) throw new Error("Nutrition needs a household.")

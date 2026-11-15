@@ -116,6 +116,7 @@ async function takeDetails(
  */
 export const importJob: JobHandler = {
   kind: KIND,
+  lane: "long",
   concurrency: 2,
   // Recipes, and a new household's details and settings.
   changes: ["recipes", "household"],

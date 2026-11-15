@@ -118,6 +118,7 @@ export async function describeUpdates(deps: UpdateDeps) {
 
 export const checkUpdatesJob: JobHandler = {
   kind: "updates.check",
+  lane: "quick",
   async run({ em, deps }) {
     await checkForUpdates(deps, em)
     return {}

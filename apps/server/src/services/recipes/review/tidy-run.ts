@@ -69,6 +69,7 @@ const stopsTheRun = (err: unknown) =>
 
 export const tidyRunJob: JobHandler = {
   kind: KIND,
+  lane: "long",
   concurrency: 2,
   async run({
     jobId,

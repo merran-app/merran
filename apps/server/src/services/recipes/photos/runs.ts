@@ -67,6 +67,7 @@ const stopsTheRun = (err: unknown) =>
 
 export const aiPhotoRunJob: JobHandler = {
   kind: KIND,
+  lane: "long",
   concurrency: 2,
   async run({ em, householdId, payload, progress, signal, logger, deps }) {
     if (!householdId) throw new Error("Photos need a household.")

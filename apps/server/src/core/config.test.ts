@@ -80,6 +80,17 @@ describe("settings", () => {
     ).toThrow(/PORT[\s\S]*MERRAN_SENTRY_SAMPLE_RATE: Use a number from 0 to 1/)
   })
 
+  test("the long lane holds 4 jobs unless set, from 1 to 32", () => {
+    expect(loadConfig({}).jobsLong).toBe(4)
+    expect(loadConfig({ MERRAN_JOBS_LONG: "8" }).jobsLong).toBe(8)
+    expect(() => loadConfig({ MERRAN_JOBS_LONG: "0" })).toThrow(
+      /MERRAN_JOBS_LONG/
+    )
+    expect(() => loadConfig({ MERRAN_JOBS_LONG: "100" })).toThrow(
+      /MERRAN_JOBS_LONG/
+    )
+  })
+
   test("trusted proxies are a list of addresses and ranges", () => {
     expect(
       loadConfig({ MERRAN_TRUSTED_PROXIES: "172.16.0.0/12, 127.0.0.1" })

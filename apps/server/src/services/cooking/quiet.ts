@@ -25,6 +25,7 @@ import { endSession, WITH_DELETED_RECIPES } from "./sessions.ts"
  */
 export const endQuietSessionJob: JobHandler = {
   kind: END_QUIET_JOB,
+  lane: "quick",
   async run({ em, payload, householdId }) {
     const sessionId = String(payload.sessionId)
     if (!householdId) {

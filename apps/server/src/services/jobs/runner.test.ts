@@ -290,7 +290,7 @@ describe("the job runner", () => {
           },
         },
       ],
-      { maxRunning: 2 }
+      { lanes: { long: 2 } }
     )
     for (const name of ["home 1", "home 2", "home 3"]) {
       await enqueue(em(), {
@@ -341,6 +341,105 @@ describe("the job runner", () => {
       // The next look for work, as the runner makes every few seconds.
       jobs.wake()
       await expect.poll(() => otherRan).toBe(true)
+    } finally {
+      letThemGo()
+      await draining
+    }
+  })
+
+  test("a quick job doesn't wait while long ones fill their lane", async () => {
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    const jobs = runner(
+      [
+        { kind: "import", lane: "long", concurrency: 2, run: () => held },
+        { kind: "email", lane: "quick", run: async () => {} },
+      ],
+      { lanes: { long: 1 } }
+    )
+    const first = await enqueue(em(), { kind: "import" })
+    const second = await enqueue(em(), { kind: "import" })
+    const email = await enqueue(em(), { kind: "email" })
+
+    const draining = jobs.drain()
+    try {
+      await expect.poll(async () => (await load(email.id)).status).toBe("done")
+      expect((await load(first.id)).status).toBe("running")
+      expect((await load(second.id)).status).toBe("queued")
+    } finally {
+      letThemGo()
+      await draining
+    }
+  })
+
+  test("each lane runs as many as its size", async () => {
+    let now = 0
+    let most = 0
+    // Each waits for another to start, rather than for a time that a busy
+    // database can outlast. Not for long, if none does.
+    let started!: () => void
+    const twoStarted = new Promise<void>((resolve) => (started = resolve))
+    const longKind = (kind: string): JobHandler => ({
+      kind,
+      lane: "long",
+      concurrency: 3,
+      run: async () => {
+        most = Math.max(most, ++now)
+        if (now === 2) started()
+        await Promise.race([
+          twoStarted,
+          new Promise((resolve) => setTimeout(resolve, 1000)),
+        ])
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        now--
+      },
+    })
+    const jobs = runner([longKind("a"), longKind("b"), longKind("c")], {
+      lanes: { quick: 1, long: 2 },
+    })
+    for (const kind of ["a", "b", "c"]) {
+      await enqueue(em(), { kind })
+      await enqueue(em(), { kind })
+    }
+    await jobs.drain()
+    expect(most).toBe(2)
+  })
+
+  test("a full lane's kinds are left out of the look for due work", async () => {
+    // Long jobs that could still start by their kind's limit, more than the
+    // runner looks at in one go and older, while their lane is full.
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    let quickRan = false
+    const jobs = runner(
+      [
+        { kind: "hog", lane: "long", concurrency: 5, run: () => held },
+        {
+          kind: "email",
+          lane: "quick",
+          run: async () => {
+            quickRan = true
+          },
+        },
+      ],
+      { lanes: { long: 1 } }
+    )
+    const tx = em()
+    const longAgo = new Date(Date.now() - 60 * 60_000)
+    for (let i = 0; i < 60; i++) {
+      tx.create(Job, { kind: "hog", payload: {}, runAt: longAgo })
+    }
+    await tx.flush()
+    await enqueue(em(), { kind: "email" })
+
+    const draining = jobs.drain()
+    try {
+      await expect
+        .poll(() => em().count(Job, { kind: "hog", status: "running" }))
+        .toBe(1)
+      // The next look for work, as the runner makes every few seconds.
+      jobs.wake()
+      await expect.poll(() => quickRan).toBe(true)
     } finally {
       letThemGo()
       await draining

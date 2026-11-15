@@ -121,6 +121,17 @@ Proxies in front of Merran whose X-Forwarded-For is believed: addresses or range
 
 [Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/core/config.ts)
 
+## server.jobsLong
+
+How many long jobs run at once: imports, library runs, Discover, reading sites, prices. Quick jobs like emails and webhook deliveries have 4 places of their own.
+
+- **Scope:** server (environment only)
+- **Type:** number
+- **Default:** `4`
+- **Environment:** `MERRAN_JOBS_LONG`
+
+[Source definition](https://github.com/merran-app/merran/blob/main/apps/server/src/core/config.ts)
+
 ## server.version
 
 The release this is: the Docker image sets it. From source, it's the server package's version.
