@@ -76,3 +76,25 @@ test("it gathers again after stopping", () => {
   mock.timers.tick(1_000)
   assert.deepEqual(refreshes, [LIVE_REFRESH.list])
 })
+
+test("a job's moves refresh its queries after a second, once however often it moves", () => {
+  gather.addJob({ id: "j1", kind: "recipes.importLinks" })
+  mock.timers.tick(400)
+  gather.addJob({ id: "j1", kind: "recipes.importLinks" })
+  mock.timers.tick(599)
+  assert.equal(refreshes.length, 0)
+  mock.timers.tick(1)
+  assert.deepEqual(refreshes, [[["jobs", "j1"], ["link-imports"]]])
+})
+
+test("a job's move takes Merran's waiting changes with it, sooner", () => {
+  gather.add("recipes", true)
+  gather.addJob({ id: "j1", kind: "recipes.tidy" })
+  mock.timers.tick(1_000)
+  assert.equal(refreshes.length, 1)
+  assert.deepEqual(refreshes[0], [
+    ...(LIVE_REFRESH.recipes ?? []),
+    ["jobs", "j1"],
+    ["review", "runs"],
+  ])
+})

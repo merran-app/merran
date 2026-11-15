@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 
+import { followEvery } from "@/features/live/state"
 import { api, unwrap, type Schemas } from "@/lib/api/client"
 
 export type Job = Schemas["Job"]
@@ -18,6 +19,9 @@ export const householdJobQuery = (jobId: string) =>
           params: { path: { jobId } },
         })
       ),
+    // The live stream says when it moves; asking is for when it can't.
     refetchInterval: (query) =>
-      query.state.data && !isActive(query.state.data) ? false : 1000,
+      query.state.data && !isActive(query.state.data)
+        ? false
+        : followEvery(1000),
   })

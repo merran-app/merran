@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 
+import { followEvery } from "@/features/live/state"
 import { api, unwrap, type Schemas } from "@/lib/api/client"
 
 export type LinkImport = Schemas["LinkImport"]
@@ -19,15 +20,19 @@ export const linkImportQuery = (importId: string) =>
           params: { path: { importId } },
         })
       ),
+    // The live stream says when it moves; asking is for when it can't.
     refetchInterval: (query) =>
-      query.state.data && !isGoing(query.state.data) ? false : 1000,
+      query.state.data && !isGoing(query.state.data)
+        ? false
+        : followEvery(1000),
   })
 
 /** The household's imports still going, checked while there are any. */
 export const activeLinkImportsQuery = queryOptions({
   queryKey: ["link-imports", "active"],
   queryFn: () => unwrap(api.GET("/api/recipes/import/links")),
-  refetchInterval: (query) => (query.state.data?.imports.length ? 2000 : false),
+  refetchInterval: (query) =>
+    query.state.data?.imports.length ? followEvery(2000) : false,
 })
 
 /** A link to show: its site and path, without the https://www. */

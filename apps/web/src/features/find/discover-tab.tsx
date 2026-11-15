@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { NeedsAi, useAiFor } from "@/features/ai/needs-ai"
+import { followEvery } from "@/features/live/state"
 import { useRefreshRecipes } from "@/features/recipes/queries"
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
 import { formatRelativeDate } from "@/lib/format"
@@ -25,7 +26,7 @@ export const searchesQuery = queryOptions({
   queryFn: () => unwrap(api.GET("/api/discover")),
   refetchInterval: (query) =>
     query.state.data?.searches.some((search) => search.status === "searching")
-      ? 2000
+      ? followEvery(2000)
       : false,
 })
 
