@@ -1,8 +1,13 @@
 import { createRoute, z } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
-import { importLink } from "../../../../services/recipes/import/import-link.ts"
+import {
+  findImport,
+  importSummary,
+} from "../../../../services/imports/describe.ts"
+import { importOne } from "../../../../services/recipes/import/import-one.ts"
 import { inHousehold, openToKeys } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
+import { ImportStartedSchema } from "../../../schemas/import-history.ts"
 import { ImportResultSchema } from "../../../schemas/recipes.ts"
 import {
   errorResponse,
@@ -17,7 +22,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Add a recipe from a link",
   description:
-    "Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. A TikTok, YouTube, Instagram or Facebook link is imported from its video (its captions, or what's said in it, read by AI), when the server has video import on.",
+    "Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. A TikTok, YouTube, Instagram or Facebook link is imported from its video (its captions, or what's said in it, read by AI), when the server has video import on. It waits about 10 seconds for the recipe; a link that takes longer, and any video, goes on in the background and answers 202 with its import, on the Imports page.",
   ...openToKeys("recipes", "write"),
   request: {
     body: {
@@ -42,6 +47,7 @@ const route = createRoute({
   },
   responses: {
     201: jsonResponse(ImportResultSchema, "Added."),
+    202: jsonResponse(ImportStartedSchema, "Going on in the background."),
     200: jsonResponse(ImportResultSchema, "Already in the library."),
     400: errorResponse("Not a link Merran can fetch."),
     422: errorResponse(
@@ -57,12 +63,16 @@ export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
     const { url, force } = c.req.valid("json")
-    const result = await importLink(em, deps, {
+    const result = await importOne(em, deps, {
       householdId,
       userId,
       url,
       force,
     })
-    return c.json(result, result.duplicate ? 200 : 201)
+    if ("started" in result) {
+      const started = await findImport(em, result.started.id)
+      return c.json({ import: importSummary(started) }, 202)
+    }
+    return c.json(result.done, result.done.duplicate ? 200 : 201)
   })
 }

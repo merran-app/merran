@@ -68,6 +68,21 @@ export async function videoImportReady(
   }
 }
 
+/**
+ * Whether this household can import a video now: the server's video import
+ * and AI for importing. Checked before a video goes on in the background,
+ * so a server that can't says so at once.
+ */
+export async function videoImportPossible(
+  em: EntityManager,
+  deps: Pick<AppDeps, "settings" | "video" | "fetcher" | "ai">,
+  householdId: string
+) {
+  await videoImportReady(deps)
+  const importing = await resolveTask(deps, em, householdId, "import")
+  if (!importing.ok) throw aiUnavailable(importing.why)
+}
+
 export async function importVideo(
   em: EntityManager,
   deps: AfterSaveDeps & VideoDeps,
@@ -80,10 +95,8 @@ export async function importVideo(
   }
 ): Promise<ImportResult> {
   const { householdId, userId } = options
-  await videoImportReady(deps)
   // AI reads it, so without AI there's no point downloading anything.
-  const importing = await resolveTask(deps, em, householdId, "import")
-  if (!importing.ok) throw aiUnavailable(importing.why)
+  await videoImportPossible(em, deps, householdId)
 
   const info = await deps.video.probe(options.url)
   const sourceUrl = normalizeLink(info.url)

@@ -1521,6 +1521,10 @@
     "addRecipe": "Add a recipe",
     "toRecipes": "Go to recipes"
   },
+  "imports": {
+    "started": "Still importing. It'll be in your recipes soon.",
+    "view": "View"
+  },
   "recipes": {
     "duplicates": {
       "title": "Possible duplicates",
@@ -1765,8 +1769,8 @@
       "nothingNew": "Nothing new.",
       "have_one": "{{count}} you have already is skipped.",
       "have_other": "{{count}} you have already are skipped.",
-      "videos_one": "{{count}} video can't be imported yet, so it's left out.",
-      "videos_other": "{{count}} videos can't be imported yet, so they're left out.",
+      "videosOff_one": "{{count}} video is left out: video import is off on this server.",
+      "videosOff_other": "{{count}} videos are left out: video import is off on this server.",
       "more": "Only the first 100 links: add the rest after.",
       "haveIt": "Have it",
       "video": "Video",

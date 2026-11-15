@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
+import { useCapability } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
 
@@ -53,6 +54,7 @@ export function SeveralLinks({
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const videoOn = useCapability("video")
   const { data: tags = [] } = useQuery(tagsQuery)
   const [text, setText] = React.useState("")
   const [tag, setTag] = React.useState("")
@@ -73,9 +75,11 @@ export function SeveralLinks({
     placeholderData: keepPreviousData,
   })
   const links = text.trim() ? (check.data?.links ?? []) : []
-  const fresh = links.filter((link) => !link.existing && !link.video)
+  // Videos come in with the rest, unless this server can't import them.
+  const leftOut = (link: { video: boolean }) => link.video && !videoOn
+  const fresh = links.filter((link) => !link.existing && !leftOut(link))
   const have = links.filter((link) => link.existing).length
-  const videos = links.filter((link) => !link.existing && link.video).length
+  const videos = links.filter((link) => !link.existing && leftOut(link)).length
   const more = text.trim() ? (check.data?.more ?? 0) : 0
 
   const canPaste =
@@ -117,7 +121,7 @@ export function SeveralLinks({
       ? t("recipes.links.new", { count: fresh.length })
       : t("recipes.links.nothingNew"),
     have > 0 && t("recipes.links.have", { count: have }),
-    videos > 0 && t("recipes.links.videos", { count: videos }),
+    videos > 0 && t("recipes.links.videosOff", { count: videos }),
     more > 0 && t("recipes.links.more"),
   ]
     .filter(Boolean)
@@ -177,7 +181,7 @@ export function SeveralLinks({
         {links.length > 0 && (
           <ul className="grid max-h-44 gap-0.5 overflow-y-auto rounded-2xl border p-1.5">
             {links.map((link) => {
-              const skipped = Boolean(link.existing) || link.video
+              const skipped = Boolean(link.existing) || leftOut(link)
               return (
                 <li
                   key={link.url}

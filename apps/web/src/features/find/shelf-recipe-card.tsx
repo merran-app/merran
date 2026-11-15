@@ -5,6 +5,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { importStarted, useStartedNotice } from "@/features/imports/started"
 import { useRefreshRecipes } from "@/features/recipes/queries"
 import { formatMinutes } from "@/features/recipes/format"
 import { api, ApiError, unwrap } from "@/lib/api/client"
@@ -12,15 +13,23 @@ import { cn } from "@/lib/utils"
 
 import type { ShelfRecipe } from "./queries"
 
-/** Imports a recipe from its page, saying so; the new recipe's slug, or null. */
+/**
+ * Imports a recipe from its page, saying so; the new recipe, or null when
+ * it didn't come in or is still coming in the background.
+ */
 export function useImportRecipe() {
   const { t } = useTranslation()
   const refresh = useRefreshRecipes()
+  const startedNotice = useStartedNotice()
   return async (url: string) => {
     try {
       const result = await unwrap(
         api.POST("/api/recipes/import", { body: { url } })
       )
+      if (importStarted(result)) {
+        startedNotice(result)
+        return null
+      }
       await refresh()
       toast.success(t("recipes.import.added", { name: result.recipe.name }))
       return result.recipe

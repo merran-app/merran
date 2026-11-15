@@ -11,6 +11,9 @@ import { readPage, type PageRead } from "./page"
 // What the popup and the right-click menu do, in one place.
 
 export type ImportResult = Schemas["ImportResult"]
+/** An import going on in the background: a link that took a while, or a video. */
+export type ImportStarted = Schemas["ImportStarted"]
+export type ImportAnswer = ImportResult | ImportStarted
 
 /** How adding a tab's recipe went, as the background tells the popup. */
 export type Added =
@@ -68,7 +71,7 @@ export async function importRead(page: PageRead) {
     }),
     connection.origin
   )
-  return { result, link: recipeLink(connection, result.recipe.slug) }
+  return { result, link: answerLink(connection, result) }
 }
 
 /** Imports a link, which Merran's server opens itself. */
@@ -78,7 +81,14 @@ export async function importLink(url: string) {
     apiFor(connection).POST("/api/recipes/import", { body: { url } }),
     connection.origin
   )
-  return { result, link: recipeLink(connection, result.recipe.slug) }
+  return { result, link: answerLink(connection, result) }
+}
+
+/** Where an import's answer leads: its recipe, or the import still going. */
+function answerLink(connection: Connection, result: ImportAnswer) {
+  return "import" in result
+    ? `${connection.origin}/recipes/import/${result.import.id}`
+    : recipeLink(connection, result.recipe.slug)
 }
 
 /** Adds things to the shopping list, one for each line or comma. */
@@ -103,8 +113,9 @@ export function recipeLink(connection: Connection, slug: string) {
   return `${connection.origin}/recipes/${slug}`
 }
 
-/** What an import says: added, or there already. */
-export function importedMessage(result: ImportResult) {
+/** What an import says: added, there already, or still going. */
+export function importedMessage(result: ImportAnswer) {
+  if ("import" in result) return "Still importing. Merran will finish it."
   return result.duplicate
     ? `${result.recipe.name} is in your recipes already.`
     : `Added ${result.recipe.name} to your recipes.`

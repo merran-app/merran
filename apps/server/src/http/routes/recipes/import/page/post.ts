@@ -2,9 +2,14 @@ import { createRoute, z } from "@hono/zod-openapi"
 import { bodyLimit } from "hono/body-limit"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { AppError } from "../../../../../core/errors.ts"
-import { importReadPage } from "../../../../../services/recipes/import/import-link.ts"
+import {
+  findImport,
+  importSummary,
+} from "../../../../../services/imports/describe.ts"
+import { importOne } from "../../../../../services/recipes/import/import-one.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
+import { ImportStartedSchema } from "../../../../schemas/import-history.ts"
 import { ImportResultSchema } from "../../../../schemas/recipes.ts"
 import {
   errorResponse,
@@ -59,7 +64,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Add a recipe from a page already open",
   description:
-    "For the browser extension: a page as the person's own browser shows it, for sites that turn Merran's server away or only show a recipe to someone signed in. Its recipe data and photo, or its text read by AI when the household has AI for importing. A video's page (YouTube, TikTok, Instagram, Facebook) is imported as the video, as `POST /recipes/import` does. A page imported before gives back that recipe.",
+    "For the browser extension: a page as the person's own browser shows it, for sites that turn Merran's server away or only show a recipe to someone signed in. Its recipe data and photo, or its text read by AI when the household has AI for importing. A video's page (YouTube, TikTok, Instagram, Facebook) is imported as the video, as `POST /recipes/import` does. A page imported before gives back that recipe. As there, it waits about 10 seconds; one that takes longer, and any video, goes on in the background and answers 202 with its import.",
   ...keys,
   middleware: [
     ...keys.middleware,
@@ -82,6 +87,7 @@ const route = createRoute({
   },
   responses: {
     201: jsonResponse(ImportResultSchema, "Added."),
+    202: jsonResponse(ImportStartedSchema, "Going on in the background."),
     200: jsonResponse(ImportResultSchema, "Already in the library."),
     400: errorResponse("Not a link Merran can keep."),
     413: errorResponse("The page is over 2 MB."),
@@ -95,11 +101,15 @@ const route = createRoute({
 export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
-    const result = await importReadPage(em, deps, {
+    const result = await importOne(em, deps, {
       householdId,
       userId,
       page: c.req.valid("json"),
     })
-    return c.json(result, result.duplicate ? 200 : 201)
+    if ("started" in result) {
+      const started = await findImport(em, result.started.id)
+      return c.json({ import: importSummary(started) }, 202)
+    }
+    return c.json(result.done, result.done.duplicate ? 200 : 201)
   })
 }

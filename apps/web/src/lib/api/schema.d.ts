@@ -3004,7 +3004,7 @@ export interface paths {
         put?: never;
         /**
          * Add a recipe from a link
-         * @description Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. A TikTok, YouTube, Instagram or Facebook link is imported from its video (its captions, or what's said in it, read by AI), when the server has video import on. With an API key, it needs the `recipes: write` permission.
+         * @description Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. A TikTok, YouTube, Instagram or Facebook link is imported from its video (its captions, or what's said in it, read by AI), when the server has video import on. It waits about 10 seconds for the recipe; a link that takes longer, and any video, goes on in the background and answers 202 with its import, on the Imports page. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["importRecipe"];
         delete?: never;
@@ -3048,7 +3048,7 @@ export interface paths {
         put?: never;
         /**
          * Find the links in some text
-         * @description The links in pasted text, up to 100, tidied, with which are in the library already and which are videos. Nothing is imported. The app leaves videos out of importing several links at once: each is imported on its own (POST /api/recipes/import). With an API key, it needs the `recipes: read` permission.
+         * @description The links in pasted text, up to 100, tidied, with which are in the library already and which are videos. Nothing is imported. Videos come in with the rest when the server has video import on; the app leaves them out when it doesn't. With an API key, it needs the `recipes: read` permission.
          */
         post: operations["checkLinks"];
         delete?: never;
@@ -3108,7 +3108,7 @@ export interface paths {
         put?: never;
         /**
          * Add a recipe from a page already open
-         * @description For the browser extension: a page as the person's own browser shows it, for sites that turn Merran's server away or only show a recipe to someone signed in. Its recipe data and photo, or its text read by AI when the household has AI for importing. A video's page (YouTube, TikTok, Instagram, Facebook) is imported as the video, as `POST /recipes/import` does. A page imported before gives back that recipe. With an API key, it needs the `imports: write` permission.
+         * @description For the browser extension: a page as the person's own browser shows it, for sites that turn Merran's server away or only show a recipe to someone signed in. Its recipe data and photo, or its text read by AI when the household has AI for importing. A video's page (YouTube, TikTok, Instagram, Facebook) is imported as the video, as `POST /recipes/import` does. A page imported before gives back that recipe. As there, it waits about 10 seconds; one that takes longer, and any video, goes on in the background and answers 202 with its import. With an API key, it needs the `imports: write` permission.
          */
         post: operations["importReadPage"];
         delete?: never;
@@ -15057,13 +15057,15 @@ export interface components {
          *             "text": "Roast skin side up for 40 minutes, until crisp."
          *           }
          *         ]
-         *       }
+         *       },
+         *       "import": null
          *     }
          */
         ApplyResult: {
             proposal: components["schemas"]["Proposal"];
             /** @description The recipe it changed or made, if it did. */
             recipe: components["schemas"]["Recipe"] | null;
+            import: components["schemas"]["Import"] & (Record<string, never> | null);
         };
         /**
          * @example {
@@ -15716,6 +15718,33 @@ export interface components {
             recipe: components["schemas"]["Recipe"];
             /** @description True when the link was imported before: this is that recipe, unchanged. */
             duplicate: boolean;
+        };
+        /**
+         * @example {
+         *       "import": {
+         *         "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff15",
+         *         "kind": "link",
+         *         "source": "https://example.com/lemon-chicken",
+         *         "tag": null,
+         *         "status": "running",
+         *         "total": 1,
+         *         "done": 0,
+         *         "added": 0,
+         *         "already": 0,
+         *         "failed": 0,
+         *         "stopped": 0,
+         *         "startedBy": {
+         *           "id": "01a1e0f0-e730-7501-bbce-f5e6ead7106d",
+         *           "name": "Kyle"
+         *         },
+         *         "createdAt": "2026-11-15T18:02:11.000Z",
+         *         "finishedAt": null,
+         *         "undoneAt": null
+         *       }
+         *     }
+         */
+        ImportStarted: {
+            import: components["schemas"]["Import"] & unknown;
         };
         /**
          * @example {
@@ -27380,6 +27409,15 @@ export interface operations {
                     "application/json": components["schemas"]["ImportResult"];
                 };
             };
+            /** @description Going on in the background. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportStarted"];
+                };
+            };
             /** @description Not a link Merran can fetch. */
             400: {
                 headers: {
@@ -27703,6 +27741,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+            /** @description Going on in the background. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportStarted"];
                 };
             };
             /** @description Not a link Merran can keep. */

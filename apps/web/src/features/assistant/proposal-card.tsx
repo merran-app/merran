@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Spinner } from "@/components/ui/spinner"
+import { useStartedNotice } from "@/features/imports/started"
 import { useRefreshRecipes } from "@/features/recipes/queries"
 import {
   useSwapsThisTime,
@@ -87,6 +88,7 @@ export function ProposalCard({
   const [made, setMade] = React.useState<Ref | null>(null)
   const payload = (proposal.payload ?? {}) as Record<string, unknown>
   const thisTime = useSwapsThisTime(proposal.recipe?.id ?? "")
+  const startedNotice = useStartedNotice()
   const swap = proposal.kind === "swap" ? (payload as SwapPayload) : null
   const using =
     swap !== null &&
@@ -136,7 +138,12 @@ export function ProposalCard({
         if (result.recipe) setMade(result.recipe)
         // Saved, it's in the recipe: no need for it this time too.
         if (swap) thisTime.undo(swap.ingredientId)
-        toast.success(t(`assistant.cards.applied.${proposal.kind}`))
+        if (result.import) {
+          // An import taking a while goes on in the background.
+          startedNotice({ import: result.import })
+        } else {
+          toast.success(t(`assistant.cards.applied.${proposal.kind}`))
+        }
       } else {
         await unwrap(
           api.POST("/api/proposals/{proposalId}/dismiss", {

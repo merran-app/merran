@@ -19,7 +19,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Find the links in some text",
   description:
-    "The links in pasted text, up to 100, tidied, with which are in the library already and which are videos. Nothing is imported. The app leaves videos out of importing several links at once: each is imported on its own (POST /api/recipes/import).",
+    "The links in pasted text, up to 100, tidied, with which are in the library already and which are videos. Nothing is imported. Videos come in with the rest when the server has video import on; the app leaves them out when it doesn't.",
   ...openToKeys("recipes", "read"),
   request: {
     body: {

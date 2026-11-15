@@ -78,6 +78,30 @@ export const ImportSchema = z
   })
   .openapi("Import", { example: IMPORT })
 
+export const ImportStartedSchema = z
+  .object({
+    import: ImportSchema.openapi({
+      description:
+        "Going on in the background, on the Imports page: it says when the recipe's in.",
+    }),
+  })
+  .openapi("ImportStarted", {
+    example: {
+      import: {
+        ...IMPORT,
+        kind: "link" as const,
+        source: "https://example.com/lemon-chicken",
+        tag: null,
+        status: "running" as const,
+        total: 1,
+        done: 0,
+        added: 0,
+        failed: 0,
+        finishedAt: null,
+      },
+    },
+  })
+
 export const ImportListSchema = z
   .object({ imports: z.array(ImportSchema) })
   .openapi("ImportList", { example: { imports: [IMPORT] } })

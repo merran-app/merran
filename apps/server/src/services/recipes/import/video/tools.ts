@@ -55,9 +55,6 @@ export type VideoTools = {
   update(): Promise<string | null>
 }
 
-/** Downloads at once, server-wide: they're the heavy part. */
-const MAX_DOWNLOADS = 2
-
 /** How long a check is believed, so Settings isn't running them each time. */
 const CHECK_MS = 60_000
 
@@ -260,22 +257,6 @@ export function createVideoTools(options: {
     return args
   }
 
-  // A few downloads at once, the rest waiting their turn.
-  let downloading = 0
-  const queue: (() => void)[] = []
-  async function turn<T>(work: () => Promise<T>) {
-    if (downloading >= MAX_DOWNLOADS) {
-      await new Promise<void>((resolve) => queue.push(resolve))
-    }
-    downloading++
-    try {
-      return await work()
-    } finally {
-      downloading--
-      queue.shift()?.()
-    }
-  }
-
   let checked: {
     at: number
     result: Promise<{ ytDlp: string | null; ffmpeg: string | null }>
@@ -342,48 +323,47 @@ export function createVideoTools(options: {
       }
     },
 
-    download(url, dir, { audioOnly }) {
-      return turn(async () => {
-        const format = audioOnly
-          ? "ba/b[height<=360]/w"
-          : "b[height<=480]/bv*[height<=480]+ba/w"
-        let stdout: string
-        try {
-          ;({ stdout } = await run(
-            await ytDlp(),
-            [
-              ...(await commonArgs()),
-              "--ffmpeg-location",
-              await ffmpeg(),
-              "-f",
-              format,
-              "--merge-output-format",
-              "mp4",
-              "--max-filesize",
-              "200M",
-              "-o",
-              join(dir, "video.%(ext)s"),
-              "--no-simulate",
-              "--print",
-              "after_move:filepath",
-              "--",
-              url,
-            ],
-            240_000
-          ))
-        } catch (error) {
-          throw ytDlpError(error, logger)
-        }
-        const file = stdout.trim().split("\n").at(-1)?.trim()
-        if (!file) {
-          throw new AppError(
-            "upstream",
-            "video_failed",
-            "Merran couldn't download that video."
-          )
-        }
-        return file
-      })
+    // How many download at once is up to the video import job.
+    async download(url, dir, { audioOnly }) {
+      const format = audioOnly
+        ? "ba/b[height<=360]/w"
+        : "b[height<=480]/bv*[height<=480]+ba/w"
+      let stdout: string
+      try {
+        ;({ stdout } = await run(
+          await ytDlp(),
+          [
+            ...(await commonArgs()),
+            "--ffmpeg-location",
+            await ffmpeg(),
+            "-f",
+            format,
+            "--merge-output-format",
+            "mp4",
+            "--max-filesize",
+            "200M",
+            "-o",
+            join(dir, "video.%(ext)s"),
+            "--no-simulate",
+            "--print",
+            "after_move:filepath",
+            "--",
+            url,
+          ],
+          240_000
+        ))
+      } catch (error) {
+        throw ytDlpError(error, logger)
+      }
+      const file = stdout.trim().split("\n").at(-1)?.trim()
+      if (!file) {
+        throw new AppError(
+          "upstream",
+          "video_failed",
+          "Merran couldn't download that video."
+        )
+      }
+      return file
     },
 
     async extractAudio(file, dir) {
