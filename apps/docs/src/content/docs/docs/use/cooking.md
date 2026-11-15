@@ -101,7 +101,7 @@ Progress is remembered in this browser for up to 12 hours, including the step an
 
 | What you see                     | What to try                                                                                                                                                |
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No steps                         | Return to the recipe's **Edit** screen and add one step per line.                                                                                          |
+| No steps                         | Return to the recipe's **Edit** screen and type each step in its own box, or choose **Add step**.                                                          |
 | Hands-free is unavailable        | Use touch controls. The browser must expose both speech recognition and speech synthesis.                                                                  |
 | Microphone denied                | Allow microphone access in this site's browser settings, then try again.                                                                                   |
 | No read-aloud voice              | Check device voices and volume; use **Text size and voice** / **Test voice** where offered. Ask the admin to check an optional server voice if configured. |
