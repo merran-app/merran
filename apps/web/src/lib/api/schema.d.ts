@@ -1474,6 +1474,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/imports/{importId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put back an undone import
+         * @description Puts back the recipes Undo moved to Recently deleted, those still there. One deleted for good since is gone. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["restoreImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/imports/{importId}/stop": {
         parameters: {
             query?: never;
@@ -1488,6 +1508,26 @@ export interface paths {
          * @description What it brought in stays. The link or recipe it's on is cut off and shows as stopped; it takes a moment, so the answer may still say it's running. With an API key, it needs the `imports: write` permission.
          */
         post: operations["stopImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{importId}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo an import
+         * @description Moves the recipes it brought in to Recently deleted, where they stay for 30 days, keeping any left out of `recipeIds`. A running import is stopped first. For a Merran export, only its recipes: the household settings it brought stay. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["undoImport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11955,6 +11995,17 @@ export interface components {
                 /** @description Whether there are more: ask again from further on. */
                 more: boolean;
             };
+        };
+        /**
+         * @example {
+         *       "recipeIds": [
+         *         "01a1e0f0-e739-758e-85c2-c9e3cd06ff16"
+         *       ]
+         *     }
+         */
+        UndoImportRequest: {
+            /** @description The recipes it brought in to move to Recently deleted: every one, unless someone unticked some to keep them. Any it didn't bring in are left alone. */
+            recipeIds: string[];
         };
         /**
          * @example {
@@ -22912,6 +22963,64 @@ export interface operations {
             };
         };
     };
+    restoreImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Put back. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It hasn't been undone. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     stopImport: {
         parameters: {
             query?: never;
@@ -22961,6 +23070,59 @@ export interface operations {
             };
             /** @description It has already finished. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    undoImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UndoImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Undone. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

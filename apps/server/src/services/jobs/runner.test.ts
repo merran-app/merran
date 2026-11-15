@@ -684,6 +684,25 @@ describe("the job runner", () => {
     })
   })
 
+  test("waitFor says how a job ended, or nothing if it takes too long", async () => {
+    let letItGo!: () => void
+    const held = new Promise<void>((resolve) => (letItGo = resolve))
+    const jobs = runner([
+      { kind: "quick", run: async () => {} },
+      { kind: "held", run: () => held },
+    ])
+    const quick = await enqueue(em(), { kind: "quick" })
+    const slow = await enqueue(em(), { kind: "held" })
+    const quickEnds = jobs.waitFor(quick.id, 5_000)
+    const draining = jobs.drain()
+    expect(await quickEnds).toBe("done")
+    expect(await jobs.waitFor(slow.id, 50)).toBeNull()
+    letItGo()
+    await draining
+    // One already over says how it ended at once.
+    expect(await jobs.waitFor(quick.id, 50)).toBe("done")
+  })
+
   test("everything a job calls sees its stop signal", async () => {
     let seen: AbortSignal | undefined
     let own: AbortSignal | undefined

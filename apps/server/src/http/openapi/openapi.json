@@ -5832,6 +5832,27 @@
           }
         }
       },
+      "UndoImportRequest": {
+        "type": "object",
+        "properties": {
+          "recipeIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10000,
+            "description": "The recipes it brought in to move to Recently deleted: every one, unless someone unticked some to keep them. Any it didn't bring in are left alone."
+          }
+        },
+        "required": [
+          "recipeIds"
+        ],
+        "example": {
+          "recipeIds": [
+            "01a1e0f0-e739-758e-85c2-c9e3cd06ff16"
+          ]
+        }
+      },
       "ShoppingList": {
         "type": "object",
         "properties": {
@@ -25001,6 +25022,90 @@
         }
       }
     },
+    "/api/imports/{importId}/restore": {
+      "post": {
+        "operationId": "restoreImport",
+        "tags": [
+          "Imports"
+        ],
+        "summary": "Put back an undone import",
+        "description": "Puts back the recipes Undo moved to Recently deleted, those still there. One deleted for good since is gone. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "importId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Put back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Import"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It hasn't been undone.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/imports/{importId}/stop": {
       "post": {
         "operationId": "stopImport",
@@ -25074,6 +25179,90 @@
           },
           "409": {
             "description": "It has already finished.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/imports/{importId}/undo": {
+      "post": {
+        "operationId": "undoImport",
+        "tags": [
+          "Imports"
+        ],
+        "summary": "Undo an import",
+        "description": "Moves the recipes it brought in to Recently deleted, where they stay for 30 days, keeping any left out of `recipeIds`. A running import is stopped first. For a Merran export, only its recipes: the household settings it brought stay. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "importId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UndoImportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Undone.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Import"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import in this household.",
             "content": {
               "application/json": {
                 "schema": {

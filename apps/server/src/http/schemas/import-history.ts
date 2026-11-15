@@ -209,6 +209,17 @@ export const ImportDetailSchema = ImportSchema.extend({
   },
 })
 
+export const UndoImportRequestSchema = z
+  .object({
+    recipeIds: z.array(z.string()).max(10_000).openapi({
+      description:
+        "The recipes it brought in to move to Recently deleted: every one, unless someone unticked some to keep them. Any it didn't bring in are left alone.",
+    }),
+  })
+  .openapi("UndoImportRequest", {
+    example: { recipeIds: [RECIPE.id] },
+  })
+
 const offset = (description: string) =>
   z.coerce.number().int().min(0).optional().openapi({ description })
 
