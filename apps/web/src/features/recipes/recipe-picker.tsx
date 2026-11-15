@@ -1,6 +1,6 @@
 import { Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/input-group"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api, unwrap, type Schemas } from "@/lib/api/client"
+import { cn } from "@/lib/utils"
 
 import { formatMinutes } from "./format"
 
@@ -56,6 +57,8 @@ export function RecipePicker({
           },
         })
       ),
+    // The last results stay, dimmed, while the next search loads.
+    placeholderData: keepPreviousData,
   })
   const shown = (found.data?.recipes ?? []).filter(
     (recipe) => !exclude.includes(recipe.id)
@@ -82,7 +85,13 @@ export function RecipePicker({
           {t("plan.pick.none")}
         </p>
       ) : (
-        <ul className="grid max-h-72 divide-y overflow-x-hidden overflow-y-auto rounded-xl border">
+        <ul
+          aria-busy={found.isPlaceholderData}
+          className={cn(
+            "grid max-h-72 divide-y overflow-x-hidden overflow-y-auto rounded-xl border transition-opacity",
+            found.isPlaceholderData && "opacity-60"
+          )}
+        >
           {shown.map((recipe) => (
             <li key={recipe.id}>
               <button
