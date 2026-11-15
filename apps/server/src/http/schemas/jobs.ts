@@ -46,6 +46,10 @@ export const JobListSchema = z
   .object({ jobs: z.array(JobListItemSchema) })
   .openapi("JobList", { example: { jobs: [JOB_LIST_ITEM] } })
 
+export const HouseholdJobListSchema = z
+  .object({ jobs: z.array(JobSchema) })
+  .openapi("HouseholdJobList", { example: { jobs: [JOB] } })
+
 export const JobListQuerySchema = z.object({
   status: z.enum(JOB_STATUSES).optional().openapi({
     description:

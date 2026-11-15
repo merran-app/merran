@@ -4295,6 +4295,43 @@
           "link": "https://merran.example.com/join/sample-invite-token"
         }
       },
+      "HouseholdJobList": {
+        "type": "object",
+        "properties": {
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Job"
+            }
+          }
+        },
+        "required": [
+          "jobs"
+        ],
+        "example": {
+          "jobs": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+              "kind": "household.import",
+              "status": "running",
+              "scheduled": false,
+              "householdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+              "progress": {
+                "done": 42,
+                "total": 128
+              },
+              "result": null,
+              "error": null,
+              "attempts": 1,
+              "maxAttempts": 3,
+              "runAt": "2026-10-15T18:30:00.000Z",
+              "startedAt": "2026-10-15T18:30:00.000Z",
+              "finishedAt": null,
+              "createdAt": "2026-10-15T18:30:00.000Z"
+            }
+          ]
+        }
+      },
       "Member": {
         "type": "object",
         "properties": {
@@ -22439,6 +22476,72 @@
           },
           "429": {
             "description": "This household has reached its hourly invitation limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/jobs": {
+      "get": {
+        "operationId": "listHouseholdJobs",
+        "tags": [
+          "Households"
+        ],
+        "summary": "The household's jobs",
+        "description": "Household admins only. The household's jobs, newest first, up to 100: imports, library runs, Discover searches and the rest, with how each is going.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "queued",
+                "running",
+                "done",
+                "failed",
+                "cancelled"
+              ],
+              "description": "Only jobs that are queued, running, done, failed or cancelled."
+            },
+            "required": false,
+            "description": "Only jobs that are queued, running, done, failed or cancelled.",
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The jobs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseholdJobList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
             "content": {
               "application/json": {
                 "schema": {

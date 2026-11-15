@@ -1038,6 +1038,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/households/current/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The household's jobs
+         * @description Household admins only. The household's jobs, newest first, up to 100: imports, library runs, Discover searches and the rest, with how each is going.
+         */
+        get: operations["listHouseholdJobs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/households/current/jobs/{jobId}": {
         parameters: {
             query?: never;
@@ -11154,6 +11174,34 @@ export interface components {
         };
         /**
          * @example {
+         *       "jobs": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+         *           "kind": "household.import",
+         *           "status": "running",
+         *           "scheduled": false,
+         *           "householdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *           "progress": {
+         *             "done": 42,
+         *             "total": 128
+         *           },
+         *           "result": null,
+         *           "error": null,
+         *           "attempts": 1,
+         *           "maxAttempts": 3,
+         *           "runAt": "2026-10-15T18:30:00.000Z",
+         *           "startedAt": "2026-10-15T18:30:00.000Z",
+         *           "finishedAt": null,
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        HouseholdJobList: {
+            jobs: components["schemas"]["Job"][];
+        };
+        /**
+         * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-000000000005",
          *       "userId": "0199e8b0-5a10-7a01-8b00-000000000002",
          *       "name": "Jamie Rivera",
@@ -21152,6 +21200,47 @@ export interface operations {
             };
             /** @description This household has reached its hourly invitation limit. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listHouseholdJobs: {
+        parameters: {
+            query?: {
+                /** @description Only jobs that are queued, running, done, failed or cancelled. */
+                status?: "queued" | "running" | "done" | "failed" | "cancelled";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The jobs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdJobList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

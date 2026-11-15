@@ -132,6 +132,19 @@ export async function listJobs(
   }))
 }
 
+/** A household's jobs, newest first: for its admins. */
+export function listHouseholdJobs(
+  em: EntityManager,
+  householdId: string,
+  { status, limit = 100 }: { status?: JobStatus; limit?: number } = {}
+) {
+  return em.find(
+    Job,
+    { forHousehold: householdId, ...(status ? { status } : {}) },
+    { orderBy: { createdAt: "desc", id: "desc" }, limit }
+  )
+}
+
 /**
  * Stops a job: one waiting is cancelled at once; one running is asked to
  * stop, through `stopRunning`, and the runner marks it cancelled.
