@@ -2,7 +2,7 @@
 
 Audited November 10, 2026. This is what's slow or feels slow, what still runs inside a request that should be a job, what search and Discover need, and which indexes are missing, split into slices to plan in detail and build one at a time. The order, the job lanes, imports and the Imports page were decided the same day ([Decisions](#decisions)); how search matches was left to a revamp of its own.
 
-Checked again November 14, 2026, after webhooks were built (#95 to #100) ahead of slice 2: they built two of its pieces, leaving full kinds out of the check and a retry schedule per kind ([What webhooks built](#what-webhooks-built)). Nothing else here is built yet.
+Checked again November 14, 2026, after webhooks were built (#95 to #100) ahead of slice 2: they built two of its pieces, leaving full kinds out of the check and a retry schedule per kind ([What webhooks built](#what-webhooks-built)). Slice 1, the quick wins, was built the same day ([What slice 1 built](#what-slice-1-built)). Slices 2 to 8 aren't built yet.
 
 ## Goal
 
@@ -37,6 +37,33 @@ The webhooks pull requests changed the job runner (`services/jobs/runner.ts`, `j
 
 What's still to do from slice 2: the two lanes and their setting, limits per household, time limits and Stop passed on, the household `job` event, a household's list of its jobs, and a link import that remembers its progress across a restart.
 
+### What slice 1 built
+
+Built November 14, 2026, in one pull request, from [its plan](superpowers/plans/2026-11-14-quick-wins.md):
+
+- **Compression.** API answers are gzipped (`hono/compress`), leaving streams as they are: the live stream and the assistant's replies arrive as they're written. The build writes a Brotli and a gzip copy of each text file of 1 kB or more (`apps/web/build/precompress.ts`), and the server sends whichever the browser takes. The built files are served before the database and sign-in.
+- **A lighter first load.** The assistant's chat (the AI SDK and markdown) loads when it opens, driver.js when a tour starts, the release notes with the This server page, and the sign-in routes check their return address without the sign-in client (`features/auth/return-to.ts`). Measured with a manifest of the production build, counting what a signed-in first load downloads (the entry, its imports, and the signed-in layout's):
+
+  | | Chunks | Raw | Gzip | Brotli |
+  |---|---|---|---|---|
+  | Before | 126 | 1,589 KB | 537 KB | 477 KB |
+  | After | 110 | 1,125 KB | 394 KB | 350 KB |
+
+  None of driver.js, react-markdown, the AI SDK or the better-auth client is in it now. Before, the signed-in layout alone added 628 KB raw; now 216 KB.
+- **Searches that don't flash.** The library, the plan's Add a meal picker and a recipe's Goes with picker keep the last results, dimmed and marked busy, while the next ones load.
+- **Fewer refetches.** Changes over the live stream are gathered before refetching (`features/live/gather.ts`), and while the stream works, the queries it covers stay fresh longer and aren't fetched again on coming back to the app (`features/live/state.ts`).
+- **Fewer polls on Find.** `GET /api/sites/suggestions` says how many sites are followed and which to suggest, without their recipes, for the library's starter sites. A collection's Find more polls its own search (`GET /api/discover/{id}`), then fetches the collection once. Followed sites poll only while Merran is opening their posts.
+- **No jobs that do nothing.** Saving a recipe queues nutrition only with a USDA key or AI for nutrition, and a photo only when photos are made by themselves and the household has a key for them. The jobs check again when they run, for a setting changed while they wait.
+- **Indexes.** All 44 Postgres foreign keys without one (38 at the audit; webhooks and cooking added more), and a test that fails for any new foreign key without one; `jobs(status, run_at, created_at)` and `jobs(for_household_id, kind, status)`; `recipes(deleted_at)` where it isn't null, in place of the plain one; `recipes(household_id, created_at)` where `deleted_at` is null; and `site_recipes(classic, opened_at)`. MikroORM 7 declares partial indexes with an index's `where`, the same on both databases. The migrations only add and drop indexes.
+
+Decided while building it (November 14, 2026):
+
+- **Gathering live changes:** a person's for 1 second, Merran's (a job's, `by: null`) for 5. One change from a person brings what's waiting forward, and an area changed twice is refetched once.
+- **Trusting the live stream:** it counts as working when something came over it in the last minute (the server pings every 25 seconds), not when it looks open, since a phone waking from sleep can have a stream that looks open with nothing coming. While it works, the queries it covers stay fresh for 5 minutes, not 30 seconds, and coming back to the app doesn't fetch them again. Queries with their own freshness keep it.
+- **Stuck posts:** followed sites poll while a site is read for the first time, or while posts are waiting for up to 3 minutes after a read. A post a site refused stays waiting until the next read, hours later, so it no longer keeps the page asking.
+- **Usual buys' index moves to slice 7.** `purchases(household_id, bought_on)` only helps once usual buys read the last year rather than everything, which is slice 7's.
+- **No unique index on `chat_messages(chat_id, position)`.** `chat_id`'s index already finds a chat's messages, and a unique index would refuse to migrate a server where two sends once raced to the same position.
+
 ## Findings
 
 ### Work still inside a request
@@ -64,7 +91,7 @@ Across all of it, **AI calls have no time limit** (`useAi` in `services/ai/run.t
 4. **No time limits, and Stop isn't passed on** (above).
 5. **Nothing says when a job moves.** The runner sends no events, so the web app runs about eight polling loops on six different APIs: a link import every second, the Recipes banner every 2 s, a household import every second, tidy-up every 2 s, nutrition and photo runs every 3 s, Discover every 2 s, sites every 5 s, and the server's jobs every 2 or 30 s. Link, app and household imports never announce a change, so other tabs and phones don't refresh. Fix: a household `job` event on the live stream when a job starts, moves on and finishes, and one way for the web app to follow any job.
 6. **A household can't see its own jobs.** Only the server admin's Jobs card lists them (the 100 newest), and it has labels for 8 of the 18 kinds.
-7. **Jobs that do nothing.** Every save queues a nutrition job and a photo job even when the household has no USDA key, no AI and no photos; each then just ends (`services/nutrition/runs.ts`, `services/recipes/photos/runs.ts`), and its row stays for 30 days. Fix: check before queueing.
+7. **Jobs that do nothing.** Every save queues a nutrition job and a photo job even when the household has no USDA key, no AI and no photos; each then just ends (`services/nutrition/runs.ts`, `services/recipes/photos/runs.ts`), and its row stays for 30 days. Fix: check before queueing. Fixed in slice 1 (November 14, 2026).
 8. **A link import forgets what it did when Merran restarts.** It starts again from its payload and ignores its saved result (`import-links.ts`), so links it already imported are reported as already in the library.
 9. **One retry schedule for every kind.** Fixed with webhooks (#95, November 10, 2026): a handler can give its own `retryDelays`.
 10. **The docs don't match.** [stack.md](stack.md#a-job-runner-of-our-own-instead-of-hand-rolled-schedules) says jobs are claimed with `SKIP LOCKED` on Postgres; the runner uses a conditional update, which is right for one process. [platform.md](platform.md#jobs) lists a weekly classics check and prep reminders, which have no job yet.
@@ -80,7 +107,7 @@ So what's missing is a household **Imports** page listing every import, how it w
 
 ### Library search
 
-- **It feels slow because it flashes.** Each new search swaps the grid for skeletons (there's no `placeholderData` on the library's query), though the query itself takes milliseconds. The plan's and pairings' recipe pickers do the same.
+- **It feels slow because it flashes.** Each new search swaps the grid for skeletons (there's no `placeholderData` on the library's query), though the query itself takes milliseconds. The plan's and pairings' recipe pickers do the same. Fixed in slice 1 (November 14, 2026).
 - **Matching is one phrase.** `%chicken soup%` against the name, the description and ingredient lines, so "chicken soup" doesn't find "Soup with chicken". Nothing is ranked (a name match doesn't beat an ingredient match), tags aren't searched by the text, and SQLite only ignores case for ASCII letters.
 - **Every recipe change reloads every loaded page** of the library (below, under the web app).
 - **The pickers stop at 50,** and their 36 px tiles download the 800×600 card photo.
@@ -92,9 +119,9 @@ So what's missing is a household **Imports** page listing every import, how it w
 - **Discover shows nothing until it's all done.** One AI call with web search picks 10–12 links; the pages are opened four at a time, each four waiting for the slowest (up to 15 s); a second AI round runs if fewer than four opened; then the best 8 (two per site at most) are saved together at the end (`services/recipes/discover/discover.ts`). The web app polls all 12 recent searches every 2 s and shows skeletons until then. The first result arrives with the last, roughly 30 s to 2 minutes and more with a second round (estimated, not measured). It reports no progress and ignores **Stop**.
 - **No Find more on Discover.** Only a collection's Find more tells the search what's already been shown, so the same search again can bring the same dishes.
 - **Discover's photos are the sites' full-size images,** linked directly rather than resized like shelf photos.
-- **The Sites tab** makes four queries per followed site (`listSites`), shows 24 of the 120 kept for each with no way to see more, and polls every 5 s while any site has posts waiting. A post refused with 403 or 429 stays waiting, so that polling can go on for hours (how often this happens is unsure). The Recipes page loads all of it, poll included, just to know whether any site is followed (`SitesStart`).
+- **The Sites tab** makes four queries per followed site (`listSites`), shows 24 of the 120 kept for each with no way to see more, and polls every 5 s while any site has posts waiting. A post refused with 403 or 429 stays waiting, so that polling can go on for hours (how often this happens is unsure). The Recipes page loads all of it, poll included, just to know whether any site is followed (`SitesStart`). Fixed in slice 1 (November 14, 2026): the polling stops 3 minutes after a read, and the Recipes page asks `GET /api/sites/suggestions`. The four queries per site and the 24 shown are still to do.
 - **Followed sites' spotlight** takes the newest 24 and then drops the ones that don't suit the household, in the browser, so it can show very few, with no more to see.
-- **Starter collections** load the whole shelf (up to about 1,400 recipes, ingredients included) on every request, check the household's tastes on each and run the rules in JavaScript; each shows 24, with no more. During Find more the page polls every 2 s, repeating all of that each time.
+- **Starter collections** load the whole shelf (up to about 1,400 recipes, ingredients included) on every request, check the household's tastes on each and run the rules in JavaScript; each shows 24, with no more. During Find more the page polls every 2 s, repeating all of that each time. Fixed in slice 1 (November 14, 2026): Find more polls its own search, and the collection is fetched once when it's done.
 - **The shelf can't be searched** anywhere.
 
 ### The database
@@ -106,6 +133,8 @@ So what's missing is a household **Imports** page listing every import, how it w
 - The rest (users, aisles, lists, secrets, jobs) only cost a scan when one of those is deleted.
 
 Marking them `.index()` should leave the SQLite migration empty, since SQLite has indexes by the same names already (to check when it's generated).
+
+Fixed in slice 1 (November 14, 2026), with 44 by then, and the SQLite migration did leave them alone. A test now holds every foreign key to an index. Of the indexes below, all but usual buys' (moved to slice 7) and the unique one on `chat_messages` (left out) were added: see [What slice 1 built](#what-slice-1-built).
 
 **Indexes to add:**
 
@@ -141,21 +170,22 @@ No text lookups use `lower(column)`: names, foods and emails are normalized befo
 
 ### The web app
 
-- **Nothing is compressed.** No `hono/compress` and no precompressed assets: the first load is 44 files, 949 KB (about 318 KB if gzipped), before the signed-in app's own chunk. This is the biggest single win for phones and tunnels.
-- **Static files go through sign-in and the database.** The web app is served after `authenticateRequests` (`app.ts`), so every asset request looks up the session and the active household. Serve the web app's files before sign-in, or skip it outside `/api`.
+- **Nothing is compressed.** No `hono/compress` and no precompressed assets: the first load is 44 files, 949 KB (about 318 KB if gzipped), before the signed-in app's own chunk. This is the biggest single win for phones and tunnels. Fixed in slice 1 (November 14, 2026).
+- **Static files go through sign-in and the database.** The web app is served after `authenticateRequests` (`app.ts`), so every asset request looks up the session and the active household. Serve the web app's files before sign-in, or skip it outside `/api`. Fixed in slice 1 (November 14, 2026).
 - **Heavy code loads on every page.**
   - The signed-in app's chunk is 234 KB with the AI SDK (the assistant's `ChatView` is imported eagerly) and driver.js.
   - react-markdown (134 KB) comes in through the sidebar's Update badge.
   - The better-auth client lands in the first load because `routes/verify.tsx` uses `safeReturnTo` in `validateSearch`.
+  - These three are fixed in slice 1 (November 14, 2026). The rest of this list is slice 8's.
   - `@merran/shared` is one 109 KB chunk with the foods vocabulary in it.
   - There are 219 chunks, 89 of them under 2 KB, mostly icons.
   - The Fraunces font loads every axis where one is used.
-- **Switching back to the app refetches everything.** Queries go stale after 30 s and refetch when the window gets focus, so every app switch on a phone reloads the page's data, though the live stream already keeps it current.
+- **Switching back to the app refetches everything.** Queries go stale after 30 s and refetch when the window gets focus, so every app switch on a phone reloads the page's data, though the live stream already keeps it current. Fixed in slice 1 (November 14, 2026), for the queries the live stream covers, while it works.
 - **Pages wait in a chain.** Sign-in check, then the page's code, then its data: Today and the library have no loaders, the plan page waits for the household before asking for the plan, and Today asks for the plan twice (first with a stand-in time zone, then the household's).
 - **Today loads whole collections** (the full list, the pantry, 48 top-rated recipes) for a few counts and names.
 - **Onboarding refetches** on every navigation and after every recipes, plan or list fetch, and saves progress on every load.
 - **Nothing shows while a page loads,** so on slow Wi-Fi a tap looks like it did nothing.
-- **Big imports and library runs set off refetch storms.** A `recipes` change refetches every recipe query, every loaded library page one after another, tags and Review. Nutrition and photo runs send one change per recipe, and each recipe imported from a link queues its own nutrition and photo jobs, each sending one. Every recipe write announces four areas, even read-only posts like stand-ins, and moving between pages closes and reopens the live stream, missing what happens in between.
+- **Big imports and library runs set off refetch storms.** A `recipes` change refetches every recipe query, every loaded library page one after another, tags and Review. Nutrition and photo runs send one change per recipe, and each recipe imported from a link queues its own nutrition and photo jobs, each sending one. Every recipe write announces four areas, even read-only posts like stand-ins, and moving between pages closes and reopens the live stream, missing what happens in between. Partly fixed in slice 1 (November 14, 2026): changes are gathered for a second, and a job's for five, so a burst is one round of refetches. Announcing fewer areas and keeping the stream open across pages are still to do.
 - **Small tiles download the card photo.** Plan tiles and pickers (36–48 px) load the 800×600 card; there's no thumbnail size, and no image has `decoding="async"`.
 - Long lists aren't virtualized; that's fine until a pantry has hundreds of things.
 
@@ -165,7 +195,7 @@ Eight slices, each its own pull request (decided November 10, 2026), with its ow
 
 | # | Slice | What's in it | Size | Needs |
 |---|---|---|---|---|
-| 1 | **Quick wins** | Compression for the API and precompressed assets; static files before sign-in; the assistant, driver.js, markdown and the auth client loaded when needed; `keepPreviousData` on the library and pickers; live changes gathered for a second before refetching, and job-driven changes throttled; a longer `staleTime` and no refetch on focus while the live stream is connected; no nutrition or photo jobs that would do nothing; the missing indexes, the Postgres foreign keys first; Find more polling its own search, not the whole collection; a light "any sites followed?" query; no polling for stuck posts; the API descriptions that still say videos can't be imported | M in all, S each | — |
+| 1 | **Quick wins** (built November 14, 2026: [what it built](#what-slice-1-built)) | Compression for the API and precompressed assets; static files before sign-in; the assistant, driver.js, markdown and the auth client loaded when needed; `keepPreviousData` on the library and pickers; live changes gathered for a second before refetching, and job-driven changes throttled; a longer `staleTime` and no refetch on focus while the live stream is connected; no nutrition or photo jobs that would do nothing; the missing indexes, the Postgres foreign keys first; Find more polling its own search, not the whole collection; a light "any sites followed?" query; no polling for stuck posts; the API descriptions that still say videos can't be imported | M in all, S each | — |
 | 2 | **Job runner foundations** | A quick lane and a long lane, with a setting; limits per household; time limits and Stop passed to fetches, AI and video tools; a household `job` event on the live stream; `GET /households/current/jobs`; a link import that remembers its progress across a restart. Leaving full kinds out of the check and a retry schedule per kind came with webhooks ([What webhooks built](#what-webhooks-built)) | M | — |
 | 3 | **Imports in the background, with a history** | One-link, video, extension, share-sheet and proposal imports become import jobs that hand over after about 10 s; uploaded files checked in a job; the **Imports** page ([below](#the-imports-page)): every import, the recipes each brought in, what didn't come in and why, **Delete**, **Undo** and **Try again**; a notice when one finishes; no more in-memory video queue | L | 2 |
 | 4 | **The rest of the slow requests** | Receipts, **Work out nutrition**, **Make a photo**, **Check prices now** and **Empty** run as jobs; site photos fetched when the site is read; a time limit on text and photo imports | M | 2 |
