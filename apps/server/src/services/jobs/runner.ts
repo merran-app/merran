@@ -54,6 +54,11 @@ export type JobContext = {
   attempt: number
   /** How many tries it has in all, so a job can tell when this is the last. */
   maxAttempts: number
+  /**
+   * What it saved as it went (its result so far) as this try starts, so a
+   * job cut off by a restart can carry on from where it was. Null at first.
+   */
+  saved: Record<string, unknown> | null
   /** Its own entity manager: scoped to the job's household when it has one. */
   em: EntityManager
   /**
@@ -480,6 +485,7 @@ export class JobRunner {
       householdId,
       attempt,
       maxAttempts: job.maxAttempts,
+      saved: job.result ?? null,
       em: householdId
         ? forHousehold(this.#deps.database.em, householdId)
         : this.#em(),

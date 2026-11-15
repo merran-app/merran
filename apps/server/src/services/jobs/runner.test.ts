@@ -621,6 +621,33 @@ describe("the job runner", () => {
     }
   })
 
+  test("a job cut off by a restart sees what it saved so far", async () => {
+    const seen: unknown[] = []
+    let started!: () => void
+    const running = new Promise<void>((resolve) => (started = resolve))
+    const handler: JobHandler = {
+      kind: "resume",
+      run: async ({ saved, progress, signal }) => {
+        seen.push(saved)
+        if (seen.length > 1) return
+        await progress(1, 2, { done: ["a"] })
+        started()
+        await new Promise((resolve) =>
+          signal.addEventListener("abort", resolve)
+        )
+        throw new JobStopped()
+      },
+    }
+    const first = runner([handler])
+    await enqueue(em(), { kind: "resume" })
+    first.wake()
+    await running
+    await first.stop()
+
+    await runner([handler]).drain()
+    expect(seen).toEqual([null, { done: ["a"] }])
+  })
+
   test("everything a job calls sees its stop signal", async () => {
     let seen: AbortSignal | undefined
     let own: AbortSignal | undefined
