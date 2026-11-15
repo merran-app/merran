@@ -150,6 +150,8 @@ export async function rekeyHousehold(em: EntityManager) {
 /** Every household's food keys, made again for this version. */
 export const rekeyFoodsJob: JobHandler = {
   kind: REKEY_FOODS,
+  lane: "long",
+  area: "list",
   async run({ em, logger }) {
     let renamed = 0
     let joined = 0

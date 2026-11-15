@@ -14,6 +14,7 @@ import {
 import { Progress } from "@/components/ui/progress"
 import { Spinner } from "@/components/ui/spinner"
 import { useCapability } from "@/features/capabilities/queries"
+import { followEvery } from "@/features/live/state"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { CardActions } from "@/features/settings/card-actions"
 
@@ -24,7 +25,7 @@ const libraryQuery = queryOptions({
   refetchInterval: (query) =>
     query.state.data?.run &&
     ["queued", "running"].includes(query.state.data.run.status)
-      ? 3000
+      ? followEvery(3000)
       : false,
 })
 

@@ -7,6 +7,7 @@ import { NOT_DELETED_FILTER } from "../../../../database/scope.ts"
 import { RecipeInputSchema } from "../../../../http/schemas/recipes.ts"
 import { membersByEmail } from "../../../households/households.ts"
 import { enqueue } from "../../../jobs/jobs.ts"
+import { throwIfStopped } from "../../../jobs/stop.ts"
 import {
   JobStopped,
   type JobDeps,
@@ -152,6 +153,8 @@ async function bringIn(
         const body = await recipe.read()
         const input = RecipeInputSchema.parse(body.input)
         const photo = await body.photo().catch(() => null)
+        // Stopped while its photo came: not saved without it.
+        throwIfStopped()
         if (photo) {
           photoId = await storePhoto(deps.files, householdId, photo).catch(
             () => null
@@ -221,6 +224,9 @@ async function forgetToken(deps: JobDeps, jobId: string, payload: Payload) {
 
 export const appImportJob: JobHandler = {
   kind: KIND,
+  lane: "long",
+  area: "recipes",
+  perHousehold: 1,
   concurrency: 2,
   changes: ["recipes"],
   async run({

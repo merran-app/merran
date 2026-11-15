@@ -105,6 +105,7 @@ async function removeDelivery(em: EntityManager, reset: PasswordReset) {
 
 export const passwordResetEmailJob: JobHandler = {
   kind: "email.passwordReset",
+  lane: "quick",
   concurrency: 1,
   async run({ em, payload, jobId, deps, signal }) {
     if (typeof payload.resetId !== "string") return

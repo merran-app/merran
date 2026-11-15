@@ -190,6 +190,7 @@ async function cancelTimerJob(em: EntityManager, timer: CookingTimer) {
  */
 export const timerDoneJob: JobHandler = {
   kind: TIMER_DONE_JOB,
+  lane: "quick",
   async run({ em, payload, householdId }) {
     const timerRowId = String(payload.timerId)
     if (!householdId) {

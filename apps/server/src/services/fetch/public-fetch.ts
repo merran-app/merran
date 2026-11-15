@@ -3,6 +3,7 @@ import { lookup as lookUpAll } from "node:dns/promises"
 import { BlockList, isIP, type LookupFunction } from "node:net"
 import { Agent, fetch } from "undici"
 import { AppError } from "../../core/errors.ts"
+import { throwIfStopped, timeLimit } from "../jobs/stop.ts"
 
 // The one way Merran fetches things from the internet for someone: pages
 // to import, their photos, later feeds and store prices. It only reaches
@@ -292,7 +293,8 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
     const reach = { homeNetwork, refuseLinkLocal }
     let url = checkLink(raw, reach)
     const start = url.origin
-    const signal = AbortSignal.timeout(timeoutMs)
+    // Ends as soon as the job fetching it is stopped, too.
+    const signal = timeLimit(timeoutMs)
 
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
       let response
@@ -332,6 +334,7 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
           },
         })
       } catch (error) {
+        throwIfStopped()
         const code = (error as { cause?: { code?: string } }).cause?.code
         if (code === "EBLOCKED") throw privateAddress()
         if ((error as Error).name === "TimeoutError") {
@@ -397,16 +400,28 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
 
       const chunks: Buffer[] = []
       let size = 0
-      for await (const chunk of response.body ?? []) {
-        size += chunk.length
-        if (size > maxBytes) {
+      try {
+        for await (const chunk of response.body ?? []) {
+          size += chunk.length
+          if (size > maxBytes) {
+            throw new AppError(
+              "too_large",
+              "too_large",
+              "That's too large to fetch."
+            )
+          }
+          chunks.push(Buffer.from(chunk))
+        }
+      } catch (error) {
+        throwIfStopped()
+        if ((error as Error).name === "TimeoutError") {
           throw new AppError(
-            "too_large",
-            "too_large",
-            "That's too large to fetch."
+            "upstream",
+            "site_timeout",
+            "That site took too long to answer."
           )
         }
-        chunks.push(Buffer.from(chunk))
+        throw error
       }
       return {
         url: url.toString(),

@@ -1,19 +1,31 @@
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../app.ts"
+import { Job } from "../../../../database/entities/index.ts"
+import type { Database } from "../../../../database/orm.ts"
 import type { MediaMakers } from "../../../../services/ai/media.ts"
 import type { AiTarget } from "../../../../services/ai/providers.ts"
 import type { JobRunner } from "../../../../services/jobs/runner.ts"
+import { stopSignal } from "../../../../services/jobs/stop.ts"
 import { fakeAiFetcher, GOOD_KEYS, mockAiModels } from "../../../../test/ai.ts"
 import { createTestApp, setUpServer, TestClient } from "../../../../test/app.ts"
 
 /** What AI was asked to picture, and with which key and model. */
 const asked: { target: AiTarget; prompt: string }[] = []
 let picture: Buffer
+/** Pictures that never come, until the job asking is stopped. */
+let hang = false
 
 const media: MediaMakers = {
   image: async (target, prompt) => {
     asked.push({ target, prompt })
+    if (hang) {
+      // As the real maker does: it ends with the job's reason.
+      return new Promise((_resolve, reject) => {
+        const stop = stopSignal()
+        stop?.addEventListener("abort", () => reject(stop.reason))
+      })
+    }
     return picture
   },
   speech: () => Promise.reject(new Error("Not in these tests.")),
@@ -21,6 +33,7 @@ const media: MediaMakers = {
 
 let app: App
 let close: () => Promise<void>
+let database: Database
 let jobs: JobRunner
 let kyle: TestClient
 
@@ -35,7 +48,7 @@ beforeAll(async () => {
     ai: mockAiModels(),
     media,
   })
-  ;({ app, close, jobs } = test)
+  ;({ app, close, database, jobs } = test)
   kyle = await setUpServer(app, test.setupCode)
   // The server's OpenAI key, which covers the server admin's own household.
   const key = await kyle.post("/api/settings/server/ai/keys", {
@@ -155,5 +168,28 @@ describe("AI photos", () => {
     const library = await (await kyle.get("/api/recipes/photos")).json()
     expect(library).toMatchObject({ ready: false, why: "off" })
     await kyle.patch("/api/settings/server", { "photos.enabled": true })
+  })
+
+  // Last: it stops the runner, as Merran does when it shuts down.
+  test("a recipe's photo cut off by a restart is made at the next start, not counted as failed", async () => {
+    // Made by themselves again, which the library's test turned off.
+    await kyle.patch("/api/settings/server", { "photos.auto": true })
+    hang = true
+    await addRecipe("Bean Salad")
+    const photoJob = () =>
+      database.em
+        .fork()
+        .findOneOrFail(
+          Job,
+          { kind: "recipes.photos" },
+          { orderBy: { createdAt: "desc" } }
+        )
+    jobs.wake()
+    await expect.poll(async () => (await photoJob()).status).toBe("running")
+    await jobs.stop()
+
+    const job = await photoJob()
+    expect(job.status).toBe("queued")
+    expect(job.result?.failed ?? 0).toBe(0)
   })
 })

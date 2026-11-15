@@ -1,6 +1,7 @@
 import { queryOptions, useQuery } from "@tanstack/react-query"
 
 import { useCapability } from "@/features/capabilities/queries"
+import { followEvery } from "@/features/live/state"
 import { api, unwrap } from "@/lib/api/client"
 
 // Under ["recipes"], so a run's progress and new photos come in with live
@@ -11,7 +12,7 @@ export const photoLibraryQuery = queryOptions({
   refetchInterval: (query) =>
     query.state.data?.run &&
     ["queued", "running"].includes(query.state.data.run.status)
-      ? 3000
+      ? followEvery(3000)
       : false,
 })
 

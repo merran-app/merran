@@ -2,7 +2,10 @@ import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../../app.ts"
 import { AppError } from "../../../../../core/errors.ts"
 import type { Fetcher } from "../../../../../services/fetch/public-fetch.ts"
+import { Job } from "../../../../../database/entities/index.ts"
+import type { Database } from "../../../../../database/orm.ts"
 import type { JobRunner } from "../../../../../services/jobs/runner.ts"
+import { stopSignal } from "../../../../../services/jobs/stop.ts"
 import {
   createTestApp,
   setUpServer,
@@ -28,9 +31,29 @@ const PAGES: Record<string, string> = {
   "https://example.com/bread": recipePage("Soda Bread", "500 g flour"),
   "https://example.com/rice": recipePage("Garlic Rice", "1 cup rice"),
   "https://example.com/blog": "<html><body>Ten kitchen tips</body></html>",
+  "https://example.com/pasta": recipePage("Lemon Pasta", "200 g spaghetti"),
+  "https://example.com/stew": recipePage("Bean Stew", "2 cans beans"),
 }
 
+/** A site that never answers, until the job fetching it is stopped. */
+const SLOW = "https://example.com/slow"
+/** A recipe whose photo never comes, until the job is stopped. */
+const SLOW_PHOTO = "https://example.com/slow-photo.jpg"
+PAGES["https://example.com/salad"] = recipePage(
+  "Green Salad",
+  "1 head lettuce"
+).replace('"name":', `"image":"${SLOW_PHOTO}","name":`)
+let photoAsked = false
+
 const fetcher: Fetcher = async (url) => {
+  if (url === SLOW_PHOTO) photoAsked = true
+  if (url === SLOW || url === SLOW_PHOTO) {
+    // As the real fetcher does: it ends with the job's reason.
+    return new Promise((_resolve, reject) => {
+      const stop = stopSignal()
+      stop?.addEventListener("abort", () => reject(stop.reason))
+    })
+  }
   const page = PAGES[url]
   if (!page) {
     throw new AppError(
@@ -49,12 +72,13 @@ const fetcher: Fetcher = async (url) => {
 
 let app: App
 let close: () => Promise<void>
+let database: Database
 let jobs: JobRunner
 let kyle: TestClient
 
 beforeAll(async () => {
   const test = await createTestApp({ fetcher })
-  ;({ app, close, jobs } = test)
+  ;({ app, close, database, jobs } = test)
   kyle = await setUpServer(app, test.setupCode)
 })
 
@@ -169,6 +193,83 @@ describe("several links", () => {
     })
     await jobs.drain()
     expect((await kyle.get("/api/recipes/garlic-rice")).status).toBe(404)
+  })
+
+  test("cut off by a restart carry on from the link they were on", async () => {
+    // Lemon Pasta came in before Merran restarted; Bean Stew didn't.
+    const first = await start({ urls: ["https://example.com/pasta"] })
+    await jobs.drain()
+    const pasta = (await status(first.id)).items[0].recipe
+    const started = await start({
+      urls: ["https://example.com/pasta", "https://example.com/stew"],
+    })
+    await database.em.fork().nativeUpdate(
+      Job,
+      { id: started.id },
+      {
+        progress: { done: 1, total: 2 },
+        result: {
+          tag: null,
+          items: [
+            {
+              url: "https://example.com/pasta",
+              state: "added",
+              recipe: pasta,
+              error: null,
+            },
+            {
+              url: "https://example.com/stew",
+              state: "waiting",
+              recipe: null,
+              error: null,
+            },
+          ],
+        },
+      }
+    )
+
+    await jobs.drain()
+    expect(await status(started.id)).toMatchObject({
+      status: "done",
+      added: 2,
+      already: 0,
+      items: [
+        { state: "added", recipe: { id: pasta.id } },
+        { state: "added", recipe: { slug: "bean-stew" } },
+      ],
+    })
+  })
+
+  test("stopped while a link is fetched show it as stopped, not failed", async () => {
+    const started = await start({ urls: [SLOW, "https://example.com/soup"] })
+    const draining = jobs.drain()
+    await expect
+      .poll(async () => (await status(started.id)).items[0].state)
+      .toBe("adding")
+    await kyle.post(`/api/recipes/import/links/${started.id}/stop`)
+    await draining
+
+    expect(await status(started.id)).toMatchObject({
+      status: "cancelled",
+      failed: 0,
+      stopped: 2,
+      items: [{ state: "stopped" }, { state: "stopped" }],
+    })
+  })
+
+  test("stopped while a photo comes don't save the recipe without it", async () => {
+    const started = await start({ urls: ["https://example.com/salad"] })
+    const draining = jobs.drain()
+    await expect.poll(() => photoAsked).toBe(true)
+    await kyle.post(`/api/recipes/import/links/${started.id}/stop`)
+    await draining
+
+    expect(await status(started.id)).toMatchObject({
+      status: "cancelled",
+      added: 0,
+      items: [{ state: "stopped" }],
+    })
+    expect((await kyle.get("/api/recipes/green-salad")).status).toBe(404)
   })
 
   test("need at least one link Merran can fetch", async () => {

@@ -17,14 +17,15 @@ The repository's [.env.example](https://github.com/merran-app/merran/blob/main/.
 
 For a first installation, use the [copyable starter .env](../../get-started/install/#environment-variables) or [download it](../../../deploy/merran.env.example). It selects the `:next` alpha release channel and shows the host port, time zone and user/group IDs together. The self-contained TrueNAS, Dockge and Portainer examples put environment values directly in YAML instead of loading this file.
 
-| Setting           | Purpose                                                        |
-| ----------------- | -------------------------------------------------------------- |
-| MERRAN_PORT       | Published host port; 3000 by default                           |
-| TZ                | Container time zone                                            |
-| MERRAN_PUBLIC_URL | Address people use to reach Merran, used for links and sign-in |
-| MERRAN_LOG_LEVEL  | Logging detail                                                 |
-| MERRAN_IMAGE      | Container image or release tag                                 |
-| DATABASE_URL      | Postgres connection string, when using Postgres                |
+| Setting           | Purpose                                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| MERRAN_PORT       | Published host port; 3000 by default                                                                                                  |
+| TZ                | Container time zone                                                                                                                   |
+| MERRAN_PUBLIC_URL | Address people use to reach Merran, used for links and sign-in                                                                        |
+| MERRAN_LOG_LEVEL  | Logging detail                                                                                                                        |
+| MERRAN_IMAGE      | Container image or release tag                                                                                                        |
+| DATABASE_URL      | Postgres connection string, when using Postgres                                                                                       |
+| MERRAN_JOBS_LONG  | How many long jobs (imports, library runs, Discover, reading sites, prices) run at once; 4 by default. Quick jobs have 4 of their own |
 
 Apply environment changes by recreating the container:
 

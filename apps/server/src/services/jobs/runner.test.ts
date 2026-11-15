@@ -17,6 +17,7 @@ import {
   type JobDeps,
   type JobHandler,
 } from "./runner.ts"
+import { stopSignal } from "./stop.ts"
 
 let database: Database
 let close: () => Promise<void>
@@ -239,6 +240,105 @@ describe("the job runner", () => {
     ).toEqual(["recipes", "recipes"])
   })
 
+  describe("how a household's job is going", () => {
+    /** A runner whose household events are kept, and the job events heard. */
+    function following(handlers: JobHandler[]) {
+      const events = createEventBus()
+      const heard: Extract<LiveEvent, { type: "job" }>[] = []
+      events.subscribe(home, {
+        person: null,
+        client: null,
+        page: null,
+        areas: new Set(LIVE_AREAS),
+        send: (event) => {
+          if (event.type === "job") heard.push(event)
+        },
+        close: () => {},
+      })
+      const deps = {
+        logger: pino({ level: "silent" }),
+        database,
+        events,
+      } as unknown as JobDeps
+      return { jobs: new JobRunner({ deps, handlers }), heard }
+    }
+    const said = (heard: Extract<LiveEvent, { type: "job" }>[]) =>
+      heard.map((event) => [event.job.status, event.job.progress])
+
+    test("is told as it starts, moves on and ends", async () => {
+      const { jobs, heard } = following([
+        {
+          kind: "import",
+          area: "recipes",
+          run: async ({ progress }) => {
+            await progress(1, 2)
+            await progress(2, 2)
+          },
+        },
+      ])
+      const job = await enqueue(em(), { kind: "import", householdId: home })
+      await jobs.drain()
+
+      expect(said(heard)).toEqual([
+        ["running", null],
+        ["running", { done: 1, total: 2 }],
+        ["running", { done: 2, total: 2 }],
+        ["done", { done: 2, total: 2 }],
+      ])
+      expect(heard[0]).toMatchObject({
+        area: "recipes",
+        job: { id: job.id, kind: "import" },
+      })
+    })
+
+    test("says it's queued when it'll be tried again, and nothing when Merran shuts down", async () => {
+      let letItGo!: () => void
+      const held = new Promise<void>((resolve) => (letItGo = resolve))
+      const { jobs, heard } = following([
+        {
+          kind: "flaky",
+          area: "recipes",
+          run: async () => {
+            throw new Error("Broke")
+          },
+        },
+        {
+          kind: "long",
+          area: "recipes",
+          run: async ({ signal }) => {
+            letItGo()
+            await new Promise((resolve) =>
+              signal.addEventListener("abort", resolve)
+            )
+            throw new JobStopped()
+          },
+        },
+      ])
+      await enqueue(em(), { kind: "flaky", householdId: home, maxAttempts: 2 })
+      await jobs.drain()
+      expect(said(heard)).toEqual([
+        ["running", null],
+        ["queued", null],
+      ])
+
+      heard.length = 0
+      await enqueue(em(), { kind: "long", householdId: home })
+      jobs.wake()
+      await held
+      await jobs.stop()
+      expect(said(heard)).toEqual([["running", null]])
+    })
+
+    test("is told when a waiting job is cancelled", async () => {
+      const { jobs, heard } = following([
+        { kind: "import", area: "recipes", run: async () => {} },
+      ])
+      const job = await enqueue(em(), { kind: "import", householdId: home })
+      await jobs.cancel(em(), await load(job.id))
+      expect(said(heard)).toEqual([["cancelled", null]])
+    })
+  })
+
   test("runs one of a kind at a time, unless it says more", async () => {
     let now = 0
     let most = 0
@@ -290,7 +390,7 @@ describe("the job runner", () => {
           },
         },
       ],
-      { maxRunning: 2 }
+      { lanes: { long: 2 } }
     )
     for (const name of ["home 1", "home 2", "home 3"]) {
       await enqueue(em(), {
@@ -345,6 +445,262 @@ describe("the job runner", () => {
       letThemGo()
       await draining
     }
+  })
+
+  test("a quick job doesn't wait while long ones fill their lane", async () => {
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    const jobs = runner(
+      [
+        { kind: "import", lane: "long", concurrency: 2, run: () => held },
+        { kind: "email", lane: "quick", run: async () => {} },
+      ],
+      { lanes: { long: 1 } }
+    )
+    const first = await enqueue(em(), { kind: "import" })
+    const second = await enqueue(em(), { kind: "import" })
+    const email = await enqueue(em(), { kind: "email" })
+
+    const draining = jobs.drain()
+    try {
+      await expect.poll(async () => (await load(email.id)).status).toBe("done")
+      expect((await load(first.id)).status).toBe("running")
+      expect((await load(second.id)).status).toBe("queued")
+    } finally {
+      letThemGo()
+      await draining
+    }
+  })
+
+  test("each lane runs as many as its size", async () => {
+    let now = 0
+    let most = 0
+    // Each waits for another to start, rather than for a time that a busy
+    // database can outlast. Not for long, if none does.
+    let started!: () => void
+    const twoStarted = new Promise<void>((resolve) => (started = resolve))
+    const longKind = (kind: string): JobHandler => ({
+      kind,
+      lane: "long",
+      concurrency: 3,
+      run: async () => {
+        most = Math.max(most, ++now)
+        if (now === 2) started()
+        await Promise.race([
+          twoStarted,
+          new Promise((resolve) => setTimeout(resolve, 1000)),
+        ])
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        now--
+      },
+    })
+    const jobs = runner([longKind("a"), longKind("b"), longKind("c")], {
+      lanes: { quick: 1, long: 2 },
+    })
+    for (const kind of ["a", "b", "c"]) {
+      await enqueue(em(), { kind })
+      await enqueue(em(), { kind })
+    }
+    await jobs.drain()
+    expect(most).toBe(2)
+  })
+
+  test("a full lane's kinds are left out of the look for due work", async () => {
+    // Long jobs that could still start by their kind's limit, more than the
+    // runner looks at in one go and older, while their lane is full.
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    let quickRan = false
+    const jobs = runner(
+      [
+        { kind: "hog", lane: "long", concurrency: 5, run: () => held },
+        {
+          kind: "email",
+          lane: "quick",
+          run: async () => {
+            quickRan = true
+          },
+        },
+      ],
+      { lanes: { long: 1 } }
+    )
+    const tx = em()
+    const longAgo = new Date(Date.now() - 60 * 60_000)
+    for (let i = 0; i < 60; i++) {
+      tx.create(Job, { kind: "hog", payload: {}, runAt: longAgo })
+    }
+    await tx.flush()
+    await enqueue(em(), { kind: "email" })
+
+    const draining = jobs.drain()
+    try {
+      await expect
+        .poll(() => em().count(Job, { kind: "hog", status: "running" }))
+        .toBe(1)
+      // The next look for work, as the runner makes every few seconds.
+      jobs.wake()
+      await expect.poll(() => quickRan).toBe(true)
+    } finally {
+      letThemGo()
+      await draining
+    }
+  })
+
+  test("one household's jobs of a kind wait their turn without holding up another's", async () => {
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    const jobs = runner([
+      { kind: "import", concurrency: 2, perHousehold: 1, run: () => held },
+    ])
+    // Home's two are all there is at first, so a fair share alone would
+    // start both and leave next door's waiting.
+    await enqueue(em(), { kind: "import", householdId: home })
+    const second = await enqueue(em(), { kind: "import", householdId: home })
+
+    const draining = jobs.drain()
+    try {
+      await expect
+        .poll(() => em().count(Job, { status: "running" }))
+        .toBeGreaterThanOrEqual(1)
+      await enqueue(em(), { kind: "import", householdId: nextDoor })
+      // The next look for work, as adding a job starts in the app.
+      jobs.wake()
+      const running = async () => {
+        const jobs = await em().find(Job, { status: "running" })
+        return jobs.map((job) => job.forHousehold?.id).sort()
+      }
+      await expect.poll(running).toEqual([home, nextDoor].sort())
+      expect((await load(second.id)).status).toBe("queued")
+    } finally {
+      letThemGo()
+      await draining
+    }
+  })
+
+  test("a household at its limit for a kind is left out of the look for due work", async () => {
+    // More of one household's jobs of a kind are due than the runner looks
+    // at in one go, and older, while it runs as many as it may.
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    let nextDoorRan = false
+    const jobs = runner([
+      {
+        kind: "nutrition",
+        concurrency: 2,
+        perHousehold: 1,
+        run: async ({ householdId }) => {
+          if (householdId === nextDoor) nextDoorRan = true
+          else await held
+        },
+      },
+    ])
+    const tx = em()
+    const longAgo = new Date(Date.now() - 60 * 60_000)
+    for (let i = 0; i < 60; i++) {
+      tx.create(Job, {
+        kind: "nutrition",
+        payload: {},
+        forHousehold: home,
+        runAt: longAgo,
+      })
+    }
+    await tx.flush()
+    await enqueue(em(), { kind: "nutrition", householdId: nextDoor })
+
+    const draining = jobs.drain()
+    try {
+      await expect
+        .poll(() => em().count(Job, { kind: "nutrition", status: "running" }))
+        .toBeGreaterThanOrEqual(1)
+      // The next look for work, as the runner makes every few seconds.
+      jobs.wake()
+      await expect.poll(() => nextDoorRan).toBe(true)
+    } finally {
+      letThemGo()
+      await draining
+    }
+  })
+
+  test("a job cut off by a restart sees what it saved so far", async () => {
+    const seen: unknown[] = []
+    let started!: () => void
+    const running = new Promise<void>((resolve) => (started = resolve))
+    const handler: JobHandler = {
+      kind: "resume",
+      run: async ({ saved, progress, signal }) => {
+        seen.push(saved)
+        if (seen.length > 1) return
+        await progress(1, 2, { done: ["a"] })
+        started()
+        await new Promise((resolve) =>
+          signal.addEventListener("abort", resolve)
+        )
+        throw new JobStopped()
+      },
+    }
+    const first = runner([handler])
+    await enqueue(em(), { kind: "resume" })
+    first.wake()
+    await running
+    await first.stop()
+
+    await runner([handler]).drain()
+    expect(seen).toEqual([null, { done: ["a"] }])
+  })
+
+  test("a job that carries on after it's stopped is still stopped", async () => {
+    // Like a library run that catches each recipe's error, the stop's too.
+    let started!: () => void
+    let running = new Promise<void>((resolve) => (started = resolve))
+    const handler: JobHandler = {
+      kind: "swallow",
+      run: async ({ signal }) => {
+        started()
+        await new Promise((resolve) =>
+          signal.addEventListener("abort", resolve)
+        )
+        return { finished: true }
+      },
+    }
+
+    const cancelling = runner([handler])
+    const cancelled = await enqueue(em(), { kind: "swallow" })
+    const draining = cancelling.drain()
+    await running
+    cancelling.stopJob(cancelled.id)
+    await draining
+    expect(await load(cancelled.id)).toMatchObject({ status: "cancelled" })
+
+    running = new Promise<void>((resolve) => (started = resolve))
+    const shuttingDown = runner([handler])
+    const cutOff = await enqueue(em(), { kind: "swallow" })
+    shuttingDown.wake()
+    await running
+    await shuttingDown.stop()
+    // It runs again at the next start, without counting a try.
+    expect(await load(cutOff.id)).toMatchObject({
+      status: "queued",
+      attempts: 0,
+    })
+  })
+
+  test("everything a job calls sees its stop signal", async () => {
+    let seen: AbortSignal | undefined
+    let own: AbortSignal | undefined
+    const jobs = runner([
+      {
+        kind: "look",
+        run: async ({ signal }) => {
+          own = signal
+          await Promise.resolve()
+          seen = stopSignal()
+        },
+      },
+    ])
+    await enqueue(em(), { kind: "look" })
+    await jobs.drain()
+    expect(seen).toBeDefined()
+    expect(seen).toBe(own)
   })
 
   test("adds one job per key while it's waiting or running", async () => {

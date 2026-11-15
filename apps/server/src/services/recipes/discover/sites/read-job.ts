@@ -178,6 +178,7 @@ const Payload = z.object({ siteId: z.string().optional() })
 
 export const readSitesJob: JobHandler = {
   kind: READ_SITES,
+  lane: "long",
   concurrency: 2,
   async run({ em, payload, deps, signal, logger }) {
     if (!(await deps.settings.server(SITES.enabled))) return { off: true }

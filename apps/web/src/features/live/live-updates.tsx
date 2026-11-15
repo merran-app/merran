@@ -84,6 +84,10 @@ export function LiveUpdates({ children }: { children: React.ReactNode }) {
         const { people } = JSON.parse(message.data) as { people: Person[] }
         setPeople(people.filter((person) => person.id !== me.id))
       })
+      source.addEventListener("job", (message) => {
+        heardFromLive()
+        changes.addJob(JSON.parse(message.data) as { id: string; kind: string })
+      })
       source.addEventListener("ping", () => heardFromLive())
       source.addEventListener("ready", () => {
         heardFromLive()

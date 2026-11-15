@@ -3,6 +3,7 @@ import { beforeEach, test } from "node:test"
 
 import {
   coveredByLive,
+  followEvery,
   freshFor,
   heardFromLive,
   liveConnected,
@@ -63,4 +64,13 @@ test("covered queries skip the focus refetch only while it's working", () => {
   assert.equal(refetchOnFocus(["settings", "server"], NOW), true)
   // A phone waking after a while: the stream looks open, but nothing came.
   assert.equal(refetchOnFocus(["plan"], NOW + 61_000), true)
+})
+
+test("jobs are asked about rarely while the live stream says when they move", () => {
+  heardFromLive(NOW)
+  assert.equal(followEvery(1_000, NOW + 1_000), 30_000)
+  // A minute with nothing: the stream may be gone, so ask at the old pace.
+  assert.equal(followEvery(1_000, NOW + 60_000), 1_000)
+  lostLive()
+  assert.equal(followEvery(2_000, NOW), 2_000)
 })

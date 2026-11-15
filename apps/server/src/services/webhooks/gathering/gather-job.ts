@@ -207,6 +207,7 @@ async function mergeAndSend<T extends GatheredEventType>(
  */
 export const gatherJob: JobHandler = {
   kind: WEBHOOK_GATHER_JOB,
+  lane: "quick",
   concurrency: 1,
   async run({ em, payload, householdId }) {
     const type = gatheredType(payload)

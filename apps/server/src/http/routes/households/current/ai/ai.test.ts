@@ -1,5 +1,6 @@
 import { DEFAULT_AI_POLICY, type HouseholdAi } from "@merran/shared"
 import { generateText } from "ai"
+import { MockLanguageModelV4 } from "ai/test"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../../app.ts"
 import { AppError } from "../../../../../core/errors.ts"
@@ -12,8 +13,13 @@ import {
   forHousehold,
   HOUSEHOLD_FILTER,
 } from "../../../../../database/scope.ts"
-import type { AiTarget } from "../../../../../services/ai/providers.ts"
-import { useAi } from "../../../../../services/ai/run.ts"
+import type {
+  AiModels,
+  AiTarget,
+} from "../../../../../services/ai/providers.ts"
+import { aiTimeLimitMs, useAi } from "../../../../../services/ai/run.ts"
+import { JobStopped } from "../../../../../services/jobs/runner.ts"
+import { withStopSignal } from "../../../../../services/jobs/stop.ts"
 import type { Settings } from "../../../../../services/settings/settings.ts"
 import {
   ADDRESSES,
@@ -403,6 +409,49 @@ describe("AI calls", () => {
       ])
     )
     await kyle.put("/api/households/current/ai", picks)
+  })
+})
+
+describe("AI calls that don't answer", () => {
+  /** A model that answers only when its call is called off. */
+  const hanging: AiModels = (target) =>
+    new MockLanguageModelV4({
+      provider: target.provider,
+      modelId: target.model,
+      doGenerate: ({ abortSignal }) =>
+        new Promise((_resolve, reject) => {
+          abortSignal?.addEventListener("abort", () =>
+            reject(abortSignal.reason)
+          )
+        }),
+    })
+  const call = (timeLimitMs?: number) =>
+    useAi(
+      { settings, fetcher, ai: hanging },
+      forHousehold(database.em.fork(), homeId),
+      { householdId: homeId, userId: kyleId, task: "import", timeLimitMs },
+      (model) => generateText({ model, prompt: "A recipe, please." })
+    )
+
+  test("give up after their time limit, saying so", async () => {
+    await setPolicy({})
+    await expect(call(50)).rejects.toMatchObject({ code: "ai_timeout" })
+  })
+
+  test("wait 90 seconds in a request, under a tunnel's 100, and 3 minutes in a job", () => {
+    expect(aiTimeLimitMs()).toBe(90_000)
+    withStopSignal(new AbortController().signal, () => {
+      expect(aiTimeLimitMs()).toBe(180_000)
+    })
+  })
+
+  test("end with the job's reason when the job is stopped", async () => {
+    const controller = new AbortController()
+    const calling = withStopSignal(controller.signal, () => call())
+    // Once the call has reached the model, past working out whose key pays.
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    controller.abort(new JobStopped("cancelled"))
+    await expect(calling).rejects.toBeInstanceOf(JobStopped)
   })
 })
 

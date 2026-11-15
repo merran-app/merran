@@ -5,6 +5,7 @@ import { join } from "node:path"
 import type { Logger } from "pino"
 import { AppError } from "../../../../core/errors.ts"
 import { VIDEO } from "../../../../modules/video/settings.ts"
+import { stopSignal } from "../../../jobs/stop.ts"
 import type { Settings } from "../../../settings/settings.ts"
 
 // yt-dlp and ffmpeg, which read recipes out of TikTok, YouTube, Instagram
@@ -72,7 +73,13 @@ function run(command: string, args: string[], timeout: number) {
     execFile(
       command,
       args,
-      { timeout, maxBuffer: 64 * 1024 * 1024, windowsHide: true },
+      {
+        timeout,
+        maxBuffer: 64 * 1024 * 1024,
+        windowsHide: true,
+        // Stopping the job that runs it stops yt-dlp or ffmpeg too.
+        signal: stopSignal(),
+      },
       (error, stdout, stderr) => {
         if (error) {
           reject(Object.assign(error, { stderr: String(stderr) }))

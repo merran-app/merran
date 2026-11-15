@@ -1,6 +1,8 @@
 import { createServer } from "node:http"
 import type { AddressInfo } from "node:net"
 import { describe, expect, test } from "vitest"
+import { JobStopped } from "../jobs/runner.ts"
+import { withStopSignal } from "../jobs/stop.ts"
 import {
   checkLink,
   checkPublicLink,
@@ -109,6 +111,24 @@ describe("public fetches", () => {
     await expect(
       fetcher(`${site}/slow`, { homeNetwork: true, timeoutMs: 100 })
     ).rejects.toMatchObject({ code: "site_timeout" })
+    server.closeAllConnections()
+    server.close()
+  })
+
+  test("end at once with the job's reason when the job is stopped, not as a time-out", async () => {
+    const server = createServer(() => {
+      // Never answers.
+    })
+    await new Promise<void>((resolve) => server.listen(0, resolve))
+    const { port } = server.address() as AddressInfo
+    const fetcher = createPublicFetcher({ version: "0.0.0" })
+    const controller = new AbortController()
+
+    const fetching = withStopSignal(controller.signal, () =>
+      fetcher(`http://127.0.0.1:${port}/soup`, { homeNetwork: true })
+    )
+    controller.abort(new JobStopped("cancelled"))
+    await expect(fetching).rejects.toBeInstanceOf(JobStopped)
     server.closeAllConnections()
     server.close()
   })

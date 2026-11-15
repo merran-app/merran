@@ -182,6 +182,9 @@ const Payload = z.object({
 /** Turns a cooking note into a suggestion, in the background. */
 export const noteEditJob: JobHandler = {
   kind: KIND,
+  lane: "long",
+  area: "recipes",
+  perHousehold: 1,
   concurrency: 2,
   async run({ em, householdId, payload, deps }) {
     if (!householdId) throw new Error("A note needs a household.")

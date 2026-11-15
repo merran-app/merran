@@ -112,6 +112,15 @@ export const BOOT_SETTINGS = {
     }),
     default: [],
   }),
+  jobsLong: numberSetting({
+    key: "server.jobsLong",
+    env: "MERRAN_JOBS_LONG",
+    envOnly: true,
+    description:
+      "How many long jobs run at once: imports, library runs, Discover, reading sites, prices. Quick jobs like emails and webhook deliveries have 4 places of their own.",
+    schema: z.number().int().min(1).max(32),
+    default: 4,
+  }),
   version: textSetting({
     key: "server.version",
     env: "MERRAN_VERSION",
@@ -147,6 +156,8 @@ export type Config = {
   secret: string | undefined
   publicUrl: string | undefined
   trustedProxies: string[]
+  /** How many long jobs run at once. */
+  jobsLong: number
   /** The built web app to serve, or null to serve only the API. */
   webDir: string | null
   /** Module settings set in the environment, by key. They can't be changed in the app. */
@@ -222,6 +233,7 @@ export function loadConfig(
     secret: devSetup ? undefined : (read(BOOT_SETTINGS.secret) ?? undefined),
     publicUrl: read(BOOT_SETTINGS.publicUrl)?.replace(/\/$/, ""),
     trustedProxies: read(BOOT_SETTINGS.trustedProxies),
+    jobsLong: read(BOOT_SETTINGS.jobsLong),
     webDir: WEB_DIR,
     fromEnv: new Map([...values].filter(([key]) => !bootKeys.has(key))),
   }
