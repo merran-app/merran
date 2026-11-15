@@ -12,15 +12,3 @@ export const authClient = createAuthClient({
     oauthProviderClient(),
   ],
 })
-
-/** Return URLs are local page paths, including after verification and external sign-in. */
-export function safeReturnTo(target: string | undefined) {
-  if (
-    !target ||
-    !target.startsWith("/") ||
-    target.startsWith("//") ||
-    /[\\\u0000-\u001f]/.test(target)
-  )
-    return "/"
-  return target
-}

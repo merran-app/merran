@@ -38,8 +38,13 @@ import { formatRelativeDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 import { useAssistant } from "./assistant-context"
-import { ChatView } from "./chat-view"
 import { chatQuery, chatsQuery } from "./queries"
+
+// The chat brings the AI SDK and markdown with it, so it loads when the
+// assistant first opens rather than with every page.
+const ChatView = React.lazy(() =>
+  import("./chat-view").then((module) => ({ default: module.ChatView }))
+)
 
 /** Opens the assistant, from the top bar. Shown once there's AI. */
 export function AssistantButton() {
@@ -176,12 +181,14 @@ export function AssistantPanel() {
       ) : session.chatId ? (
         <SavedChat key={session.key} chatId={session.chatId} />
       ) : (
-        <ChatView
-          key={session.key}
-          chatId={null}
-          initialMessages={[]}
-          onStarted={setChatId}
-        />
+        <React.Suspense fallback={<ChatSkeleton />}>
+          <ChatView
+            key={session.key}
+            chatId={null}
+            initialMessages={[]}
+            onStarted={setChatId}
+          />
+        </React.Suspense>
       )}
     </>
   )
@@ -215,20 +222,25 @@ function SavedChat({ chatId }: { chatId: string }) {
   const [opened, setOpened] = React.useState(data)
   if (data && !opened) setOpened(data)
   if (isError) return null
-  if (!opened) {
-    return (
-      <div className="grid gap-3 p-4">
-        <Skeleton className="h-10 w-2/3 justify-self-end rounded-2xl" />
-        <Skeleton className="h-24 rounded-2xl" />
-      </div>
-    )
-  }
+  if (!opened) return <ChatSkeleton />
   return (
-    <ChatView
-      chatId={chatId}
-      initialMessages={opened.messages as unknown as UIMessage[]}
-      onStarted={setChatId}
-    />
+    <React.Suspense fallback={<ChatSkeleton />}>
+      <ChatView
+        chatId={chatId}
+        initialMessages={opened.messages as unknown as UIMessage[]}
+        onStarted={setChatId}
+      />
+    </React.Suspense>
+  )
+}
+
+/** Where a chat will be, while its messages or the chat itself load. */
+function ChatSkeleton() {
+  return (
+    <div className="grid gap-3 p-4">
+      <Skeleton className="h-10 w-2/3 justify-self-end rounded-2xl" />
+      <Skeleton className="h-24 rounded-2xl" />
+    </div>
   )
 }
 

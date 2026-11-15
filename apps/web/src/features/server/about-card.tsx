@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card"
 
 import { serverSettingsQuery } from "./queries"
-import { UpdatesSection } from "./updates"
+import { UpdatesSection } from "./updates-section"
 
 /**
  * What's running: the version, how it was installed, and its database; and
