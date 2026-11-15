@@ -37,7 +37,10 @@ const route = createRoute({
 
 export default (router: Router, { files }: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em } = inHousehold(c)
-    return c.json(await bulkDeleted(em, files, c.req.valid("json")), 200)
+    const { em, householdId } = inHousehold(c)
+    return c.json(
+      await bulkDeleted(em, files, householdId, c.req.valid("json")),
+      200
+    )
   })
 }

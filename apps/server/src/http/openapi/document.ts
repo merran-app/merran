@@ -5,6 +5,7 @@ import { KEY_PERMISSION } from "../middleware/auth.ts"
 import { BETTER_AUTH_ENDPOINTS } from "../routes/auth/better-auth.ts"
 import { OAUTH_PROTOCOL_ENDPOINTS } from "../auth/oauth.ts"
 import { authOverrides } from "./auth-overrides.ts"
+import { registerWebhookEvents } from "./webhooks.ts"
 
 type Document = ReturnType<OpenAPIHono<AppEnv>["getOpenAPI31Document"]>
 type Operation = Record<string, unknown>
@@ -59,6 +60,11 @@ const TAGS = [
       "Recipe sites a household follows, and their newest recipes, read in the background as Merran, following robots.txt.",
   },
   {
+    name: "Cooking",
+    description:
+      "Who's cooking now: cook view starts a session when someone leaves Get ready, checks in while it's open, and reports its timers, which the server keeps so they go off on time. Each sends a webhook event. For a Home Assistant sensor, read sessions with plan read access.",
+  },
+  {
     name: "Plan",
     description:
       "The week plan: meals on days and in the week's pool, what's next, and Fill the week's ideas, each saying why. Today is always the household's, in its time zone.",
@@ -77,6 +83,11 @@ const TAGS = [
     name: "Live",
     description:
       "What changes in the household, as it happens: the live updates the app uses, and who has the list open.",
+  },
+  {
+    name: "Webhooks",
+    description:
+      "Telling tools like Home Assistant and n8n when things happen in the household, signed in the Standard Webhooks format: each webhook's address, events, secret and deliveries log. Managed by the household's admins in the app, never with API keys.",
   },
   {
     name: "Stores",
@@ -111,6 +122,7 @@ export async function buildOpenApiDocument(
   auth: Auth,
   { version, serverUrl }: { version: string; serverUrl: string }
 ): Promise<Document> {
+  registerWebhookEvents(app.openAPIRegistry)
   const document = app.getOpenAPI31Document({
     openapi: "3.1.0",
     info: {

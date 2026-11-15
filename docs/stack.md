@@ -110,7 +110,7 @@ The REFERENCE app runs a dozen `setInterval` checks (autoplan every 5 minutes, p
 The well-known queues each need one particular store: pg-boss and Graphile Worker only run on Postgres, and BullMQ needs Redis. So Merran has a small runner of its own (a few hundred lines) on a `jobs` table, which works the same on both databases:
 
 - jobs added in the same transaction as the change that needs them
-- retries with backoff, a limit per kind ("two library runs at a time"), one at a time per key ("one nutrition run per recipe"), and a fair share per household
+- retries with backoff, a limit per kind ("two library runs at a time"), one at a time per key ("one nutrition run per recipe"), and a fair share per household; a kind at its limit is left out when looking for due work, so a pile of one kind can't keep the others waiting
 - schedules with `croner` (cron expressions in each household's time zone)
 - work that survives restarts without each feature writing its own "carry on at startup" code
 - on Postgres, jobs are claimed with `SKIP LOCKED`; SQLite has a single writer, so a plain transaction does

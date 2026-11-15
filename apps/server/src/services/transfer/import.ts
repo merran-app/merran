@@ -15,6 +15,8 @@ import { membersByEmail } from "../households/households.ts"
 import { enqueue } from "../jobs/jobs.ts"
 import { JobStopped, type JobDeps, type JobHandler } from "../jobs/runner.ts"
 import { storePhoto } from "../recipes/photos/photos.ts"
+import { appLink } from "../webhooks/payloads.ts"
+import { record } from "../webhooks/record.ts"
 import { importRecipe, type RecipeOrigin } from "../recipes/recipes.ts"
 import { scheduleAutoplan } from "../plan/autoplan.ts"
 import { tagKey } from "../recipes/tags.ts"
@@ -115,7 +117,7 @@ async function takeDetails(
 export const importJob: JobHandler = {
   kind: KIND,
   concurrency: 2,
-  async run({ em, householdId, payload, progress, signal, deps }) {
+  async run({ jobId, em, householdId, payload, progress, signal, deps }) {
     if (!householdId) throw new Error("An import needs a household.")
     const { file, newHousehold, userId } = Payload.parse(payload)
     const data = await openExport(file)
@@ -242,6 +244,19 @@ export const importJob: JobHandler = {
       // Done with: an upload that failed stays for Try again, a week at most.
       data.close()
       await rm(file, { force: true })
+      // Any recipe that fails fails the whole import, so none are counted failed.
+      await record(em, householdId, {
+        type: "import.finished",
+        data: {
+          import: { id: jobId },
+          kind: "archive",
+          app: null,
+          added: result.recipes,
+          skipped: result.skipped,
+          failed: 0,
+          url: appLink("/settings/import-export"),
+        },
+      })
       return result
     } finally {
       data.close()

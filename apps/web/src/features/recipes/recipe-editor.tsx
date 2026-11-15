@@ -20,19 +20,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FieldGroup, FieldLegend, FieldSet } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { useRefreshRecipes, type Recipe, type RecipeInput } from "./queries"
 import { RatingInput } from "./rating-stars"
+import { LinesEditor } from "./lines-editor/lines-editor"
+import {
+  linesFromRows,
+  newRowKey,
+  rowsFromLines,
+  type LineList,
+  type LineRow,
+} from "./lines-editor/line-rows"
 import { TagsField } from "./tags-field"
 
 type Form = {
@@ -46,8 +48,8 @@ type Form = {
   totalMinutes: string
   rating: number | null
   tags: string[]
-  ingredients: string
-  steps: string
+  ingredients: LineRow[]
+  steps: LineRow[]
   notes: string
 }
 
@@ -68,8 +70,11 @@ function startingValues(recipe?: Recipe): Form {
     totalMinutes: text(recipe?.totalMinutes),
     rating: recipe?.rating ?? null,
     tags: recipe?.tags ?? [],
-    ingredients: recipe ? joinSections(recipe.ingredients).join("\n") : "",
-    steps: recipe ? joinSections(recipe.steps).join("\n") : "",
+    ingredients: rowsFromLines(
+      recipe ? joinSections(recipe.ingredients) : [],
+      newRowKey
+    ),
+    steps: rowsFromLines(recipe ? joinSections(recipe.steps) : [], newRowKey),
     notes: recipe?.notes ?? "",
   }
 }
@@ -90,8 +95,8 @@ function toInput(form: Form): RecipeInput {
     totalMinutes: numberOrNull(form.totalMinutes),
     rating: form.rating,
     tags: form.tags,
-    ingredients: form.ingredients.split("\n"),
-    steps: form.steps.split("\n"),
+    ingredients: linesFromRows(form.ingredients),
+    steps: linesFromRows(form.steps),
     notes: orNull(form.notes),
   }
 }
@@ -139,13 +144,50 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       const fields = Object.entries(error.fields)
-      // "ingredients.12" is a problem with one line of the ingredients.
+      // "ingredients.12" is a problem with one line of the ingredients. Each
+      // line has a box of its own, so its message goes under that box.
       for (const [field, message] of fields) {
-        form.setError(field.split(".")[0] as keyof Form, { message })
+        const [name, line] = field.split(".")
+        if (
+          (name === "steps" || name === "ingredients") &&
+          line !== undefined
+        ) {
+          form.setError(`${name}.${Number(line)}.text`, { message })
+        } else {
+          form.setError(name as keyof Form, { message })
+        }
       }
       if (fields.length === 0) form.setError("root", { message: error.message })
     }
   })
+
+  /** A list's card, in a box each: the form holds its rows, and the server's errors land on them. */
+  function linesCard(list: LineList) {
+    return (
+      <Controller
+        control={form.control}
+        name={list}
+        render={({ field }) => (
+          <LinesEditor
+            list={list}
+            value={field.value}
+            onChange={(rows) => {
+              // Only when there are some: clearing redraws the whole form,
+              // which on every key would slow typing in a long recipe.
+              if (form.formState.errors[list]) form.clearErrors(list)
+              field.onChange(rows)
+            }}
+            errors={{
+              list: errors[list]?.message,
+              rows: field.value.map(
+                (_, index) => errors[list]?.[index]?.text?.message
+              ),
+            }}
+          />
+        )}
+      />
+    )
+  }
 
   const cancel = () =>
     recipe
@@ -305,41 +347,9 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("recipes.fields.ingredients")}</CardTitle>
-            <CardDescription>
-              {t("recipes.editor.ingredientsHint")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TextareaField
-              label={t("recipes.fields.ingredients")}
-              hideLabel
-              className="min-h-48"
-              placeholder={t("recipes.editor.ingredientsPlaceholder")}
-              error={errors.ingredients?.message}
-              {...form.register("ingredients")}
-            />
-          </CardContent>
-        </Card>
+        {linesCard("ingredients")}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("recipes.fields.steps")}</CardTitle>
-            <CardDescription>{t("recipes.editor.stepsHint")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TextareaField
-              label={t("recipes.fields.steps")}
-              hideLabel
-              className="min-h-48"
-              placeholder={t("recipes.editor.stepsPlaceholder")}
-              error={errors.steps?.message}
-              {...form.register("steps")}
-            />
-          </CardContent>
-        </Card>
+        {linesCard("steps")}
 
         <Card>
           <CardHeader>

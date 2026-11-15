@@ -20,6 +20,7 @@ import { choose } from "../basket/products.ts"
 import { recordPrices } from "../basket/prices.ts"
 import type { BasketDeps } from "../basket/types.ts"
 import { connectionOf, type StoreDeps } from "../store-connections.ts"
+import { record } from "../../webhooks/record.ts"
 import { judgeSales } from "../history.ts"
 import { sentDetails } from "../sent.ts"
 
@@ -303,4 +304,26 @@ export async function walmartSent(
     store: "Walmart",
     cartUrl: WALMART_CART_URL,
   }
+}
+
+/**
+ * The extension says its fill of the Walmart cart is done, with its totals,
+ * which webhooks are told. The server only hears of each product as it goes
+ * in, so this is the only place that knows how it ended.
+ */
+export async function walmartFilled(
+  deps: StoreDeps,
+  em: EntityManager,
+  householdId: string,
+  totals: { sent: number; notFound: number }
+) {
+  await needWalmart(deps)
+  await record(em, householdId, {
+    type: "list.sent",
+    data: {
+      store: { id: "walmart", name: "Walmart" },
+      sent: totals.sent,
+      notFound: totals.notFound,
+    },
+  })
 }

@@ -12,6 +12,7 @@ import { TELEMETRY } from "./telemetry/settings.ts"
 import { UPDATES } from "./updates/settings.ts"
 import { VIDEO } from "./video/settings.ts"
 import { VOICE } from "./voice/settings.ts"
+import { WEBHOOKS } from "./webhooks/settings.ts"
 
 /**
  * Every module's settings, kept apart from the modules themselves so
@@ -32,4 +33,5 @@ export const MODULE_SETTINGS: readonly AnySetting[] = [
   ...Object.values(ERROR_TRACKING),
   ...Object.values(TELEMETRY),
   ...Object.values(UPDATES),
+  ...Object.values(WEBHOOKS),
 ]

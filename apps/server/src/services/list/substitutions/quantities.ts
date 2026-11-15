@@ -11,6 +11,7 @@ import { PantryItem, ShoppingItem } from "../../../database/entities/index.ts"
 import { coverFromPantry } from "../../pantry/stock.ts"
 import { toNumber } from "../../../database/numbers.ts"
 import { householdAliases } from "../../foods/aliases.ts"
+import { recordListChange } from "../../webhooks/events/list.ts"
 import { addMealNeeds, onHandOf } from "../meals.ts"
 
 /** Recalculate changed foods only. A purchase or manual remainder is never discarded. */
@@ -24,6 +25,8 @@ export async function updateSwapQuantities(
   const rows = await em.find(ShoppingItem, {})
   const pantry = await em.find(PantryItem, {})
   const needed = [] as ReturnType<typeof combineLines>
+  const removed = new Set<ShoppingItem>()
+  const lowered = new Set<ShoppingItem>()
   for (const change of changes) {
     const before = combineLines(change.before, aliases)
     const after = combineLines(change.after, aliases)
@@ -89,14 +92,17 @@ export async function updateSwapQuantities(
         if (
           !staying.length &&
           (amount.quantity === null || amount.quantity <= 0.001)
-        )
+        ) {
           em.remove(row)
-        else
+          removed.add(row)
+        } else {
           em.assign(row, {
             quantity: amount.quantity,
             unit: amount.unit,
             forMeals: staying.length ? staying : null,
           })
+          lowered.add(row)
+        }
       }
       for (const row of pantry.filter((row) => covers(row.foodKey, food))) {
         const shares = (row.forMeals ?? []).filter(
@@ -135,6 +141,12 @@ export async function updateSwapQuantities(
     householdId,
     needed.filter((item) => !isOnHand(item.name))
   )
+  // What's added for the swap, addMealNeeds tells webhooks itself.
   await addMealNeeds(em, householdId, covered.items, listId)
+  const changed = [...lowered].filter((row) => !removed.has(row))
+  await recordListChange(em, householdId, [...removed, ...changed], {
+    changed: changed.length,
+    removed: removed.size,
+  })
   await em.flush()
 }

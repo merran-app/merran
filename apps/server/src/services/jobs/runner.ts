@@ -13,6 +13,7 @@ import type { Fetcher } from "../fetch/public-fetch.ts"
 import type { Settings } from "../settings/settings.ts"
 import type { FileStore } from "../storage/files.ts"
 import type { VideoTools } from "../recipes/import/video/tools.ts"
+import { MERRAN, withActor } from "../webhooks/actor.ts"
 import { enqueue, onJobAdded } from "./jobs.ts"
 
 // Merran's job runner (docs/stack.md, "A job runner of our own"): one
@@ -47,6 +48,10 @@ export type JobContext = {
   jobId: string
   payload: Record<string, unknown>
   householdId: string | null
+  /** Which try this is, counting from 1. */
+  attempt: number
+  /** How many tries it has in all, so a job can tell when this is the last. */
+  maxAttempts: number
   /** Its own entity manager: scoped to the job's household when it has one. */
   em: EntityManager
   /**
@@ -68,6 +73,12 @@ export type JobHandler = {
   kind: string
   /** How many of this kind run at once. */
   concurrency?: number
+  /**
+   * How long to wait after each failed try, in milliseconds: the first after
+   * try 1, and so on. Past its end, or without it, the wait doubles from 30
+   * seconds up to 30 minutes.
+   */
+  retryDelays?: readonly number[]
   run(ctx: JobContext): Promise<Record<string, unknown> | void>
 }
 
@@ -235,12 +246,6 @@ export class JobRunner {
     if (this.#stopping) return
     const free = this.#maxRunning - this.#running.size
     if (free <= 0) return
-    const em = this.#em()
-    const due = await em.find(
-      Job,
-      { status: "queued", runAt: { $lte: new Date() } },
-      { orderBy: { runAt: "asc", createdAt: "asc" }, limit: 50 }
-    )
     const byKind = new Map<string, number>()
     const byHousehold = new Map<string, number>()
     for (const running of this.#running.values()) {
@@ -248,6 +253,8 @@ export class JobRunner {
       const household = running.householdId ?? ""
       byHousehold.set(household, (byHousehold.get(household) ?? 0) + 1)
     }
+    const em = this.#em()
+    const due = await this.#dueJobs(em, this.#kindsAtLimit(byKind))
 
     let started = 0
     // A fair share: households with the least running go first.
@@ -286,6 +293,34 @@ export class JobRunner {
     }
   }
 
+  /** The kinds running as many at once as they may. */
+  #kindsAtLimit(byKind: ReadonlyMap<string, number>) {
+    return [...byKind]
+      .filter(
+        ([kind, running]) =>
+          running >= (this.#handlers.get(kind)?.concurrency ?? 1)
+      )
+      .map(([kind]) => kind)
+  }
+
+  /**
+   * The jobs that are due, oldest first, as many as one look takes in.
+   * Kinds at their limit are left out: they couldn't start anyway, and
+   * when more of one are due than a look takes in, as when deliveries pile
+   * up for a receiver that hangs, they'd keep every other kind waiting.
+   */
+  #dueJobs(em: EntityManager, kindsAtLimit: readonly string[]) {
+    return em.find(
+      Job,
+      {
+        status: "queued",
+        runAt: { $lte: new Date() },
+        ...(kindsAtLimit.length > 0 ? { kind: { $nin: kindsAtLimit } } : {}),
+      },
+      { orderBy: { runAt: "asc", createdAt: "asc" }, limit: 50 }
+    )
+  }
+
   #run(handler: JobHandler, job: Job, attempt: number) {
     const controller = new AbortController()
     const householdId = job.forHousehold?.id ?? null
@@ -303,6 +338,8 @@ export class JobRunner {
       jobId: job.id,
       payload: job.payload,
       householdId,
+      attempt,
+      maxAttempts: job.maxAttempts,
       em: householdId
         ? forHousehold(this.#deps.database.em, householdId)
         : this.#em(),
@@ -323,43 +360,48 @@ export class JobRunner {
 
     running.done = (async () => {
       try {
-        const result = await handler.run(ctx)
-        await this.#finish(job.id, {
+        // A job is Merran's own work, though adding it wakes the runner
+        // from inside whichever request added it.
+        const result = await withActor(MERRAN, () => handler.run(ctx))
+        await this.#endTry(job.id, attempt, {
           status: "done",
           result: result ?? null,
           error: null,
+          finishedAt: new Date(),
         })
       } catch (err) {
         if (running.stopped === "cancelled") {
-          await this.#finish(job.id, { status: "cancelled" })
+          await this.#endTry(job.id, attempt, {
+            status: "cancelled",
+            finishedAt: new Date(),
+          })
         } else if (running.stopped === "shutdown") {
           // Runs again at the next start, without counting as a try.
-          await this.#em().nativeUpdate(
-            Job,
-            { id: job.id },
-            { status: "queued", attempts: attempt - 1, startedAt: null }
-          )
+          await this.#endTry(job.id, attempt, {
+            status: "queued",
+            attempts: attempt - 1,
+            startedAt: null,
+          })
         } else {
           const message = err instanceof Error ? err.message : String(err)
           if (attempt < job.maxAttempts) {
             logger.warn({ err }, `Job failed; trying again (${attempt})`)
-            const wait = Math.min(
-              RETRY_MAX_MS,
-              RETRY_BASE_MS * 2 ** (attempt - 1)
-            )
-            await this.#em().nativeUpdate(
-              Job,
-              { id: job.id },
-              {
-                status: "queued",
-                runAt: new Date(Date.now() + wait),
-                error: message,
-                startedAt: null,
-              }
-            )
+            const wait =
+              handler.retryDelays?.[attempt - 1] ??
+              Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** (attempt - 1))
+            await this.#endTry(job.id, attempt, {
+              status: "queued",
+              runAt: new Date(Date.now() + wait),
+              error: message,
+              startedAt: null,
+            })
           } else {
             logger.error({ err }, "Job failed")
-            await this.#finish(job.id, { status: "failed", error: message })
+            await this.#endTry(job.id, attempt, {
+              status: "failed",
+              error: message,
+              finishedAt: new Date(),
+            })
           }
         }
       } finally {
@@ -385,6 +427,43 @@ export class JobRunner {
       { id: jobId },
       { ...changes, finishedAt: new Date() }
     )
+  }
+
+  /**
+   * Saves how a try ended, if the job is still on the try it was taken for.
+   * One started over while it ran (`restartJob`) isn't: it goes back in the
+   * queue with the fresh start it was given, to run again from its first
+   * try, whatever this one came to.
+   */
+  async #endTry(
+    jobId: string,
+    attempt: number,
+    changes: Partial<
+      Pick<
+        Job,
+        | "status"
+        | "result"
+        | "error"
+        | "attempts"
+        | "runAt"
+        | "startedAt"
+        | "finishedAt"
+      >
+    >
+  ) {
+    const em = this.#em()
+    const saved = await em.nativeUpdate(
+      Job,
+      { id: jobId, attempts: attempt },
+      changes
+    )
+    if (saved === 0) {
+      await em.nativeUpdate(
+        Job,
+        { id: jobId },
+        { status: "queued", startedAt: null }
+      )
+    }
   }
 
   /** Makes sure a scheduled kind has its next run waiting. */

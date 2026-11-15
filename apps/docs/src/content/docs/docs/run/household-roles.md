@@ -19,6 +19,7 @@ Sign in and switch to the household you intend to manage. Open **Settings → Ho
 | Change household tastes                                            | Yes    | Yes   | Yes                   |
 | Change household details, theme nights, and administrator settings | No     | Yes   | Yes                   |
 | Create or cancel invite links                                      | No     | Yes   | Yes                   |
+| Add, pause and delete [webhooks](../../integrations/webhooks/)     | No     | Yes   | Yes                   |
 | Promote or demote members and admins                               | No     | Yes   | Yes                   |
 | Make or unmake an owner, or remove another owner                   | No     | No    | Yes                   |
 | Import/export household data and inspect household import jobs     | No     | Yes   | Yes                   |

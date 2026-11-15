@@ -15,9 +15,21 @@ import {
 import { cn } from "@/lib/utils"
 
 import { formatDuration } from "./durations"
+import { sendTimer } from "./reports/send"
+import { timerReport } from "./reports/timer-report"
 
-/** Where a timer was started from, to get back to it. */
-export type Cooking = { slug: string; scale: number; with?: string }
+/**
+ * Where a timer was started from, to get back to it, and the cooking
+ * session it's reported in.
+ */
+export type Cooking = {
+  slug: string
+  scale: number
+  with?: string
+  /** The planned meal it's cooked for, so coming back keeps its place. */
+  meal?: string
+  session?: string
+}
 
 export type Timer = {
   id: string
@@ -49,13 +61,32 @@ function load(): Timer[] {
 }
 
 function change(next: Timer[]) {
+  const before = timers
   timers = next
   try {
     localStorage.setItem(KEY, JSON.stringify(timers))
   } catch {
     // Not saved; they still run until the page reloads.
   }
+  reportChanges(before, next)
   for (const listener of listeners) listener()
+}
+
+/**
+ * Tells the server about timers started, given more time or cancelled in a
+ * cooking session, wherever in the app that happened, so it can say when
+ * one's done even if this device sleeps. Going off is the server's to say.
+ */
+function reportChanges(before: Timer[], after: Timer[]) {
+  const now = Date.now()
+  const ids = new Set([...before, ...after].map((timer) => timer.id))
+  for (const id of ids) {
+    const was = before.find((timer) => timer.id === id)
+    const is = after.find((timer) => timer.id === id)
+    const report = timerReport(was, is, now)
+    const session = (is ?? was)?.cooking?.session
+    if (report && session) sendTimer(session, id, report)
+  }
 }
 
 function subscribe(listener: () => void) {
@@ -328,6 +359,7 @@ export function TimerBadges() {
                 search={{
                   scale: timer.cooking.scale,
                   ...(timer.cooking.with ? { with: timer.cooking.with } : {}),
+                  ...(timer.cooking.meal ? { meal: timer.cooking.meal } : {}),
                 }}
                 className={style}
                 title={timer.label}

@@ -1,6 +1,7 @@
 import { z } from "@hono/zod-openapi"
 import { DIETS, INGREDIENT_MARKS, MAX_STARS, STAR_STEP } from "@merran/shared"
 import { RECIPE_ORIGINS } from "../../database/entities/index.ts"
+import { MadeInSessionField } from "./cooking.ts"
 import {
   COOK_NOTE,
   IDS,
@@ -676,6 +677,7 @@ export const MadeSchema = z
         description:
           "How many servings were made, for the meal it cooks. Left out, it's as planned, or the recipe's own.",
       }),
+    session: MadeInSessionField,
   })
   .openapi("Made", { example: { servings: 2 } })
 

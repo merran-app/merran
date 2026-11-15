@@ -1,0 +1,875 @@
+import { z } from "@hono/zod-openapi"
+import {
+  COOKING_OUTCOMES,
+  MEALS,
+  STORAGE_PLACES,
+  type WebhookEventType,
+} from "@merran/shared"
+import { IDS, TIMES } from "../../http/schemas/examples.ts"
+import { ACTOR_VIAS } from "./actor.ts"
+import { linkBase } from "./state.ts"
+
+// What each event carries, as the schemas the API reference describes them
+// with. Events carry ids, names, titles and links, never whole recipes, so
+// a leaked delivery log reveals little; a receiver fetches more through the
+// API with its own key (docs/webhooks.md).
+
+/** The parts of a recipe an edit can change, for `recipe.updated`. */
+export const RECIPE_PARTS = [
+  "details",
+  "ingredients",
+  "steps",
+  "tags",
+  "photo",
+  "diets",
+] as const
+export type RecipePart = (typeof RECIPE_PARTS)[number]
+
+/**
+ * How a recipe was added. Pages, the extension and shares arrive as `link`;
+ * imports of other apps and archives don't send `recipe.created`.
+ */
+const CREATED_ORIGINS = [
+  "manual",
+  "link",
+  "video",
+  "text",
+  "photo",
+  "assistant",
+] as const
+
+/** The stores a list can be sent to. */
+export const STORES = ["kroger", "walmart"] as const
+
+/** What kinds of import send `import.finished`. */
+const IMPORT_KINDS = ["links", "collection", "app", "archive"] as const
+
+/** The apps Merran imports from, for an `app` import. */
+const IMPORT_APPS = ["mealie", "paprika"] as const
+
+/** Where a thing waiting in Review came from. */
+const REVIEW_SOURCES = ["mcp", "cook_note"] as const
+
+const RECIPE_EXAMPLE = {
+  id: IDS.lemonChicken,
+  slug: "lemon-chicken",
+  title: "Lemon Chicken",
+  url: "https://merran.example.com/recipes/lemon-chicken",
+}
+
+const SIDE_EXAMPLE = {
+  id: IDS.garlicRice,
+  slug: "garlic-rice",
+  title: "Garlic Rice",
+  url: "https://merran.example.com/recipes/garlic-rice",
+}
+
+const MEAL_EXAMPLE = {
+  entryId: IDS.planEntry,
+  date: "2026-10-15",
+  meal: "dinner" as const,
+  pool: false,
+  title: "Lemon Chicken",
+  recipe: RECIPE_EXAMPLE,
+  side: SIDE_EXAMPLE,
+}
+
+const COOK_EXAMPLE = { id: IDS.sam, name: "Sam Rivera" }
+
+/** A cooking session's part of every cooking event's example. */
+const COOKING_EXAMPLE = {
+  cook: COOK_EXAMPLE,
+  session: { id: IDS.cookingSession },
+  recipe: RECIPE_EXAMPLE,
+}
+
+const TIMER_EXAMPLE = {
+  id: "t-4f2a",
+  label: "Simmer the sauce",
+  seconds: 600,
+  endsAt: "2026-10-15T18:40:00.000Z",
+}
+
+/** A dish as the heads-ups carry it, in the examples. */
+const DISH_EXAMPLE = {
+  entryId: IDS.planEntry,
+  title: "Lemon Chicken",
+  recipe: RECIPE_EXAMPLE,
+  side: SIDE_EXAMPLE,
+  totalMinutes: 45,
+}
+
+const USE_SOON_EXAMPLE = {
+  id: IDS.pantryItems[0],
+  name: "Spinach",
+  place: "fridge" as const,
+  useBy: "2026-10-16",
+}
+
+/** What every event starts with, in the examples: Sam, in the app. */
+const CONTEXT_EXAMPLE = {
+  household: { id: IDS.household, name: "The Riveras" },
+  by: { id: IDS.sam, name: "Sam Rivera" },
+  via: "app" as const,
+  key: null,
+}
+
+/** The same, for work Merran finishes on its own, in the background. */
+const MERRAN_CONTEXT_EXAMPLE = {
+  household: CONTEXT_EXAMPLE.household,
+  by: null,
+  via: "merran" as const,
+  key: null,
+}
+
+/**
+ * Who did it in each event's example, as its guide says: the events that
+ * finish in the background are Merran's own work. A cooking note turned
+ * into an edit is too, which is `review.waiting`'s example.
+ */
+function contextExample(type: WebhookEventType) {
+  switch (type) {
+    case "import.finished":
+    case "tidy.ready":
+    case "review.waiting":
+    case "cooking.ended":
+    case "timer.finished":
+    case "day.summary":
+    case "meal.time_to_start":
+    case "pantry.use_soon":
+      return MERRAN_CONTEXT_EXAMPLE
+    default:
+      return CONTEXT_EXAMPLE
+  }
+}
+
+/** A sample of what each event carries besides, for the API reference. */
+const EXAMPLES = {
+  "recipe.created": {
+    recipe: RECIPE_EXAMPLE,
+    origin: "link" as const,
+    sourceUrl: "https://example.com/lemon-chicken",
+  },
+  "recipe.updated": {
+    recipe: RECIPE_EXAMPLE,
+    parts: ["ingredients", "steps"] satisfies RecipePart[],
+  },
+  "recipe.deleted": { recipe: RECIPE_EXAMPLE },
+  "recipe.restored": { recipe: RECIPE_EXAMPLE },
+  "import.finished": {
+    import: { id: IDS.job },
+    kind: "links" as const,
+    app: null,
+    added: 11,
+    skipped: 1,
+    failed: 0,
+    url: `https://merran.example.com/recipes/import/${IDS.job}`,
+  },
+  "tidy.ready": {
+    count: 12,
+    recipes: [RECIPE_EXAMPLE, SIDE_EXAMPLE],
+    url: "https://merran.example.com/recipes/review",
+  },
+  "review.waiting": {
+    source: "cook_note" as const,
+    count: 1,
+    recipe: RECIPE_EXAMPLE,
+    url: "https://merran.example.com/recipes/review",
+  },
+  "cooking.started": {
+    ...COOKING_EXAMPLE,
+    with: SIDE_EXAMPLE,
+    meal: MEAL_EXAMPLE,
+    servings: 4,
+  },
+  "cooking.ended": {
+    ...COOKING_EXAMPLE,
+    with: SIDE_EXAMPLE,
+    outcome: "timed_out" as const,
+    minutes: 74,
+  },
+  "timer.started": { ...COOKING_EXAMPLE, timer: TIMER_EXAMPLE },
+  "timer.extended": {
+    ...COOKING_EXAMPLE,
+    timer: {
+      ...TIMER_EXAMPLE,
+      seconds: 660,
+      endsAt: "2026-10-15T18:41:00.000Z",
+    },
+  },
+  "timer.finished": { ...COOKING_EXAMPLE, timer: TIMER_EXAMPLE },
+  "timer.cancelled": { ...COOKING_EXAMPLE, timer: TIMER_EXAMPLE },
+  "plan.changed": {
+    days: ["2026-10-15", "2026-10-16"],
+    pools: ["2026-10-11"],
+    added: 2,
+    moved: 1,
+    changed: 0,
+    removed: 0,
+  },
+  "plan.autoplanned": {
+    week: "2026-10-18",
+    meals: 5,
+    url: "https://merran.example.com/plan?week=2026-10-18",
+  },
+  "meal.cooked": { ...MEAL_EXAMPLE, servings: 4, planned: true },
+  "meal.skipped": MEAL_EXAMPLE,
+  "list.changed": {
+    lists: [{ id: IDS.shoppingList, name: "Groceries", left: 8, checked: 14 }],
+    added: 0,
+    checked: 14,
+    unchecked: 0,
+    changed: 0,
+    removed: 0,
+  },
+  "list.completed": {
+    list: { id: IDS.costcoList, name: "Costco" },
+    bought: 9,
+    left: 0,
+  },
+  "list.sent": {
+    store: { id: "kroger" as const, name: "Kroger" },
+    sent: 23,
+    notFound: 2,
+  },
+  "pantry.changed": {
+    added: 6,
+    usedUp: 2,
+    moved: 0,
+    changed: 1,
+    removed: 0,
+  },
+  "day.summary": {
+    date: "2026-10-15",
+    meals: [{ meal: "dinner" as const, time: "18:00", dishes: [DISH_EXAMPLE] }],
+    pool: [{ ...MEAL_EXAMPLE, date: "2026-10-11", pool: true, side: null }],
+    useSoon: [USE_SOON_EXAMPLE],
+    list: { items: 12 },
+  },
+  "meal.time_to_start": {
+    date: "2026-10-15",
+    meal: "dinner" as const,
+    time: "18:00",
+    serveAt: "2026-10-16T01:00:00.000Z",
+    startAt: "2026-10-16T00:15:00.000Z",
+    minutes: 45,
+    dishes: [DISH_EXAMPLE],
+  },
+  "pantry.use_soon": { items: [USE_SOON_EXAMPLE] },
+  "webhook.test": { webhook: { id: IDS.webhook, name: "Home Assistant" } },
+}
+
+/** Something with a name, like a household, a person or an API key. */
+const named = (example: { id: string; name: string }) =>
+  z.object({ id: z.string(), name: z.string() }).openapi({ example })
+
+/** A recipe as events carry it: enough to name it and link to it. */
+export const RecipeRefSchema = z
+  .object({
+    id: z.string(),
+    slug: z.string(),
+    title: z.string(),
+    url: z.string().nullable().openapi({
+      description:
+        "Its page in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL).",
+    }),
+  })
+  .openapi({ example: RECIPE_EXAMPLE })
+export type RecipeRef = z.infer<typeof RecipeRefSchema>
+
+/** A whole number of things, for the counts events carry. */
+const count = (description: string) =>
+  z.number().int().min(0).openapi({ description })
+
+/** Where something is in Merran, or null without MERRAN_PUBLIC_URL. */
+export function appLink(path: string): string | null {
+  const base = linkBase()
+  return base ? `${base}${path}` : null
+}
+
+/** The recipe in an event, from the recipe as it's saved. */
+export function recipeRef(recipe: {
+  id: string
+  slug: string
+  name: string
+}): RecipeRef {
+  const base = linkBase()
+  return {
+    id: recipe.id,
+    slug: recipe.slug,
+    title: recipe.name,
+    url: base ? `${base}/recipes/${recipe.slug}` : null,
+  }
+}
+
+/** A planned meal as events carry it: when, which meal, and what's on it. */
+export const MealRefSchema = z.object({
+  entryId: z.string().openapi({ description: "The meal's entry in the plan." }),
+  date: z.string().openapi({
+    description:
+      "Its day, as YYYY-MM-DD. For a meal in the week's pool, the first day of that week.",
+  }),
+  meal: z.enum(MEALS),
+  pool: z.boolean().openapi({
+    description:
+      "Whether it's in the week's pool, waiting for a day, rather than planned for one.",
+  }),
+  title: z.string().openapi({
+    description:
+      "The recipe's name, or the note for a meal that's only a note.",
+  }),
+  recipe: RecipeRefSchema.nullable().openapi({
+    description:
+      "The recipe. Null for a meal that's only a note, or one whose recipe is in Recently deleted.",
+  }),
+  side: RecipeRefSchema.nullable().openapi({
+    description:
+      "The side dish, if it has one. Null while it's in Recently deleted, as the plan leaves it out.",
+  }),
+})
+export type MealRef = z.infer<typeof MealRefSchema>
+
+/** A shopping list and how far along it is. */
+export const ListTallySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  left: count("How many things on it aren't checked off."),
+  checked: count("How many things on it are checked off."),
+})
+export type ListTally = z.infer<typeof ListTallySchema>
+
+/** A dish on the plan as the heads-ups carry it, with how long it takes. */
+export const DishSchema = z
+  .object({
+    entryId: z
+      .string()
+      .openapi({ description: "The dish's entry in the plan." }),
+    title: z.string().openapi({
+      description:
+        "The recipe's name, or the note for a dish that's only a note.",
+    }),
+    recipe: RecipeRefSchema.nullable().openapi({
+      description: "The recipe. Null for a dish that's only a note.",
+    }),
+    side: RecipeRefSchema.nullable().openapi({
+      description: "The side dish, if it has one.",
+    }),
+    totalMinutes: z.number().int().min(0).nullable().openapi({
+      description:
+        "How long it takes, in minutes: the recipe's total time, or its prep and cook times added up, or its side's when that's longer. Null when neither says.",
+    }),
+  })
+  .openapi({ example: DISH_EXAMPLE })
+export type Dish = z.infer<typeof DishSchema>
+
+/** Something at home that's coming up to its use-by day. */
+export const UseSoonItemSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    place: z.enum(STORAGE_PLACES).nullable().openapi({
+      description: "Where it's kept, if that's been said.",
+    }),
+    useBy: z.string().openapi({
+      description:
+        "Its use-by day, as YYYY-MM-DD. It may have gone by already.",
+    }),
+  })
+  .openapi({ example: USE_SOON_EXAMPLE })
+export type UseSoonItem = z.infer<typeof UseSoonItemSchema>
+
+/** A meal's time of day on the household's clock. */
+const mealTime = z.string().openapi({
+  description:
+    "When it's served, as HH:mm on the household's clock: the time set for that meal on that day, or the household's usual time for the meal.",
+})
+
+/** A kitchen timer as events carry it. */
+export const TimerRefSchema = z
+  .object({
+    id: z.string().openapi({
+      description: "The timer's id, which cook view picked when it started.",
+    }),
+    label: z.string().openapi({
+      description: 'What it\'s for, like "Simmer the sauce" or "10 minutes".',
+    }),
+    seconds: z.number().int().min(1).openapi({
+      description:
+        "How long it runs, in seconds: its length when started, with each minute added.",
+    }),
+    endsAt: z.string().openapi({
+      description:
+        "When it goes off, by the server's clock: cook view says how many seconds are left, not when.",
+    }),
+  })
+  .openapi({ example: TIMER_EXAMPLE })
+export type TimerRef = z.infer<typeof TimerRefSchema>
+
+/** Who's cooking, and what: the start of every cooking and timer event. */
+const CookingSchema = z.object({
+  cook: named(COOK_EXAMPLE).nullable().openapi({
+    description:
+      "Who's cooking. It stays set when Merran ends the session or a timer goes off, when `by` is null. Null if they've since left Merran.",
+  }),
+  session: z.object({ id: z.string() }).openapi({
+    description:
+      "The cooking session: one person cooking a recipe on one device, from leaving Get ready in cook view until cooking ends.",
+  }),
+  recipe: RecipeRefSchema,
+})
+
+/** The recipe cooked with it, when it's cooked as a pairing. */
+const withRecipe = RecipeRefSchema.nullable().openapi({
+  description:
+    "The recipe cooked with it, when cook view cooks two as a pairing. Null otherwise.",
+})
+
+/** Whose household it happened in, who did it, how, and with which key. */
+const EventContextSchema = z.object({
+  household: named(CONTEXT_EXAMPLE.household),
+  by: named(CONTEXT_EXAMPLE.by).nullable().openapi({
+    description:
+      "Who did it. Null when Merran did it on its own: a schedule, a timer going off, or work it does in the background, like importing a batch of links.",
+  }),
+  via: z.enum(ACTOR_VIAS).openapi({
+    description:
+      "How it was done: `app` by someone signed in, `api` with an API key or OAuth connection on the REST API, `mcp` by an AI app through /mcp, or `merran` by Merran on its own.",
+  }),
+  key: named({ id: IDS.apiKey, name: "Home Assistant" }).nullable().openapi({
+    description:
+      "The API key or OAuth connection used, for `api` and `mcp`. Null otherwise.",
+  }),
+})
+
+/** What each event carries besides who did it. */
+export const WEBHOOK_PAYLOADS = {
+  "recipe.created": z
+    .object({
+      recipe: RecipeRefSchema,
+      origin: z.enum(CREATED_ORIGINS).openapi({
+        description:
+          "How it was added. Pages, the extension and shares arrive as `link`.",
+      }),
+      sourceUrl: z.string().nullable().openapi({
+        description: "The link it came from, if it came from one.",
+      }),
+    })
+    .openapi({ example: EXAMPLES["recipe.created"] }),
+  "recipe.updated": z
+    .object({
+      recipe: RecipeRefSchema,
+      parts: z.array(z.enum(RECIPE_PARTS)).min(1).openapi({
+        description: "Which parts of the recipe changed.",
+      }),
+    })
+    .openapi({ example: EXAMPLES["recipe.updated"] }),
+  "recipe.deleted": z
+    .object({ recipe: RecipeRefSchema })
+    .openapi({ example: EXAMPLES["recipe.deleted"] }),
+  "recipe.restored": z
+    .object({ recipe: RecipeRefSchema })
+    .openapi({ example: EXAMPLES["recipe.restored"] }),
+  "import.finished": z
+    .object({
+      import: z
+        .object({ id: z.string() })
+        .openapi({ description: "The import, which is a job in Jobs." }),
+      kind: z.enum(IMPORT_KINDS).openapi({
+        description:
+          "What was imported: a batch of `links`, a `collection`, another `app`'s files, or a Merran `archive`.",
+      }),
+      app: z.enum(IMPORT_APPS).nullable().openapi({
+        description:
+          "Which app the files came from, for `app`. Null otherwise.",
+      }),
+      added: count("How many recipes were added."),
+      skipped: count("How many were skipped, like ones already in Merran."),
+      failed: count(
+        "How many couldn't be imported. Always 0 for an archive, where one that fails stops the whole import."
+      ),
+      url: z.string().nullable().openapi({
+        description:
+          "Where to see the import in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL).",
+      }),
+    })
+    .openapi({ example: EXAMPLES["import.finished"] }),
+  "tidy.ready": z
+    .object({
+      count: z.number().int().min(1).openapi({
+        description: "How many recipes have suggestions waiting.",
+      }),
+      recipes: z.array(RecipeRefSchema).max(10).openapi({
+        description:
+          "Up to 10 of those recipes. `count` says how many there are in all.",
+      }),
+      url: z.string().nullable().openapi({
+        description:
+          "Review in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL).",
+      }),
+    })
+    .openapi({ example: EXAMPLES["tidy.ready"] }),
+  "review.waiting": z
+    .object({
+      source: z.enum(REVIEW_SOURCES).openapi({
+        description:
+          "Where it came from: an AI app's proposal over `mcp`, or a `cook_note` turned into an edit.",
+      }),
+      count: z.number().int().min(1).openapi({
+        description: "How many things are waiting from this.",
+      }),
+      recipe: RecipeRefSchema.nullable().openapi({
+        description: "The recipe it's about, if there is one.",
+      }),
+      url: z.string().nullable().openapi({
+        description:
+          "Review in Merran. Null when the server has no public address (MERRAN_PUBLIC_URL).",
+      }),
+    })
+    .openapi({ example: EXAMPLES["review.waiting"] }),
+  "cooking.started": z
+    .object({
+      ...CookingSchema.shape,
+      with: withRecipe,
+      meal: MealRefSchema.nullable().openapi({
+        description: "The planned meal it's cooked for, if there is one.",
+      }),
+      servings: z.number().nullable().openapi({
+        description:
+          "How many servings it's making, as cook view shows them. Null for a recipe that doesn't say.",
+      }),
+    })
+    .openapi({ example: EXAMPLES["cooking.started"] }),
+  "cooking.ended": z
+    .object({
+      ...CookingSchema.shape,
+      with: withRecipe,
+      outcome: z.enum(COOKING_OUTCOMES).openapi({
+        description:
+          "How it ended: `made` with Done cooking in cook view; `stopped` when cook view was left, once its timers were done; or `timed_out` when cook view went quiet for 30 minutes with no timer running, or 12 hours after it started.",
+      }),
+      minutes: count("How long cooking went on, in whole minutes."),
+    })
+    .openapi({ example: EXAMPLES["cooking.ended"] }),
+  "timer.started": z
+    .object({ ...CookingSchema.shape, timer: TimerRefSchema })
+    .openapi({ example: EXAMPLES["timer.started"] }),
+  "timer.extended": z
+    .object({ ...CookingSchema.shape, timer: TimerRefSchema })
+    .openapi({ example: EXAMPLES["timer.extended"] }),
+  "timer.finished": z
+    .object({ ...CookingSchema.shape, timer: TimerRefSchema })
+    .openapi({ example: EXAMPLES["timer.finished"] }),
+  "timer.cancelled": z
+    .object({ ...CookingSchema.shape, timer: TimerRefSchema })
+    .openapi({ example: EXAMPLES["timer.cancelled"] }),
+  "plan.changed": z
+    .object({
+      days: z.array(z.string()).openapi({
+        description: "The days touched, as YYYY-MM-DD, earliest first.",
+      }),
+      pools: z.array(z.string()).openapi({
+        description:
+          "The weeks whose pool was touched, each by its first day as YYYY-MM-DD.",
+      }),
+      added: count("How many meals were added."),
+      moved: count(
+        "How many meals were moved to another day or meal, or had their dishes put in another order."
+      ),
+      changed: count(
+        "How many meals had their recipe, side, note or servings changed, or their ingredients changed by a substitute. Servings given as a meal is marked made say how many it made, and don't count."
+      ),
+      removed: count("How many meals were removed."),
+    })
+    .openapi({ example: EXAMPLES["plan.changed"] }),
+  "plan.autoplanned": z
+    .object({
+      week: z.string().openapi({
+        description: "The week it planned, by its first day as YYYY-MM-DD.",
+      }),
+      meals: count("How many meals it planned."),
+      url: z.string().nullable().openapi({
+        description:
+          "That week in the plan. Null when the server has no public address (MERRAN_PUBLIC_URL).",
+      }),
+    })
+    .openapi({ example: EXAMPLES["plan.autoplanned"] }),
+  "meal.cooked": z
+    .object({
+      ...MealRefSchema.shape,
+      servings: z.number().nullable().openapi({
+        description: "How many servings were made, if it was said.",
+      }),
+      planned: z.boolean().openapi({
+        description:
+          "Whether the meal was on the plan before it was made, rather than added by making it.",
+      }),
+    })
+    .openapi({ example: EXAMPLES["meal.cooked"] }),
+  "meal.skipped": z
+    .object(MealRefSchema.shape)
+    .openapi({ example: EXAMPLES["meal.skipped"] }),
+  "list.changed": z
+    .object({
+      lists: z.array(ListTallySchema).openapi({
+        description: "Each list touched, with how far along it is now.",
+      }),
+      added: count("How many things were added."),
+      checked: count("How many were checked off."),
+      unchecked: count("How many were unchecked."),
+      changed: count("How many had their name, amount, aisle or list changed."),
+      removed: count("How many were removed."),
+    })
+    .openapi({ example: EXAMPLES["list.changed"] }),
+  "list.completed": z
+    .object({
+      list: named(EXAMPLES["list.completed"].list),
+      bought: count("How many things on it were checked off."),
+      left: count(
+        "How many were still unchecked, when it's put away with things left."
+      ),
+    })
+    .openapi({ example: EXAMPLES["list.completed"] }),
+  "list.sent": z
+    .object({
+      store: z
+        .object({ id: z.enum(STORES), name: z.string() })
+        .openapi({ example: EXAMPLES["list.sent"].store }),
+      sent: count("How many things were sent to the store's cart."),
+      notFound: count("How many the store didn't have a product for."),
+    })
+    .openapi({ example: EXAMPLES["list.sent"] }),
+  "pantry.changed": z
+    .object({
+      added: count("How many things were put away."),
+      usedUp: count("How many were used up."),
+      moved: count("How many were moved to another place."),
+      changed: count(
+        "How many had their amount, aisle, name or use-by date changed."
+      ),
+      removed: count("How many were removed."),
+    })
+    .openapi({ example: EXAMPLES["pantry.changed"] }),
+  "day.summary": z
+    .object({
+      date: z.string().openapi({
+        description:
+          "The day it's about, as YYYY-MM-DD: today, in the household.",
+      }),
+      meals: z
+        .array(
+          z.object({
+            meal: z.enum(MEALS),
+            time: mealTime,
+            dishes: z.array(DishSchema).min(1),
+          })
+        )
+        .openapi({
+          description:
+            "Each meal planned for the day, in the day's order, with its dishes. Dishes marked Didn't are left out.",
+        }),
+      pool: z.array(MealRefSchema).openapi({
+        description:
+          "The meals waiting in this week's pool for a day, not yet made or skipped.",
+      }),
+      useSoon: z.array(UseSoonItemSchema).openapi({
+        description:
+          "What's at home within 2 days of its use-by day, or past it, soonest first.",
+      }),
+      list: z
+        .object({
+          items: count(
+            "How many things on the shopping lists aren't checked off."
+          ),
+        })
+        .openapi({ description: "The shopping lists." }),
+    })
+    .openapi({ example: EXAMPLES["day.summary"] }),
+  "meal.time_to_start": z
+    .object({
+      date: z.string().openapi({
+        description: "The meal's day, as YYYY-MM-DD.",
+      }),
+      meal: z.enum(MEALS),
+      time: mealTime,
+      serveAt: z.string().openapi({
+        description: "When it's served, as an instant.",
+      }),
+      startAt: z.string().openapi({
+        description:
+          "When to start cooking: when it's served, less its longest dish's time.",
+      }),
+      minutes: count("How long its longest dish takes, in minutes."),
+      dishes: z.array(DishSchema).min(1).openapi({
+        description: "Each dish planned for the meal, in the plan's order.",
+      }),
+    })
+    .openapi({ example: EXAMPLES["meal.time_to_start"] }),
+  "pantry.use_soon": z
+    .object({
+      items: z.array(UseSoonItemSchema).min(1).openapi({
+        description:
+          "What came within 2 days of its use-by day since this was last sent, soonest first.",
+      }),
+    })
+    .openapi({ example: EXAMPLES["pantry.use_soon"] }),
+  "webhook.test": z
+    .object({ webhook: named(EXAMPLES["webhook.test"].webhook) })
+    .openapi({ example: EXAMPLES["webhook.test"] }),
+} satisfies Record<WebhookEventType, z.ZodObject>
+
+/** What an event of type `T` carries besides who did it. */
+export type EventData<T extends WebhookEventType> = z.infer<
+  (typeof WEBHOOK_PAYLOADS)[T]
+>
+
+/** The fields of an event of type `T`, kept apart from the other events'. */
+type PayloadShape<T extends WebhookEventType> =
+  (typeof WEBHOOK_PAYLOADS)[T]["shape"]
+
+/** The body a delivery of an event of `type` sends. */
+export function webhookEnvelopeSchema<T extends WebhookEventType>(type: T) {
+  const example = { ...contextExample(type), ...EXAMPLES[type] }
+  const shape: PayloadShape<T> = WEBHOOK_PAYLOADS[type].shape
+  const data = EventContextSchema.extend(shape).openapi({ example })
+  return z
+    .object({
+      type: z.literal(type),
+      timestamp: z.string().openapi({
+        description:
+          "When it happened, which isn't always when it's sent: deliveries can arrive out of order. A gathered event happened when the last change in it was made.",
+      }),
+      data,
+    })
+    .openapi({ example: { type, timestamp: TIMES.now, data: example } })
+}
+
+/** Each event's line and description in the API reference. */
+export const WEBHOOK_SUMMARIES: Record<
+  WebhookEventType,
+  { summary: string; description: string }
+> = {
+  "recipe.created": {
+    summary: "A recipe was added",
+    description:
+      "Sent when a recipe is added: typed in, imported from a link, a page, text, photos or a video, sent from the extension or a share, or applied from a proposal. Links imported many at once send one each, but recipes brought in from another app or a Merran archive don't send it.",
+  },
+  "recipe.updated": {
+    summary: "A recipe was changed",
+    description:
+      "Sent when someone saves edits to a recipe, applies a tidy-up or proposal, saves a swap, restores a version, or changes its photo, diets or what can be left out, saying which parts changed. Nothing is sent when nothing changed, and stars, cooking notes, tags changed on many recipes at once, renamed tags and background nutrition, photo and food-matching runs don't send it.",
+  },
+  "recipe.deleted": {
+    summary: "A recipe was deleted",
+    description:
+      "Sent when a recipe goes to Recently deleted. Deleting it for good from there sends nothing more.",
+  },
+  "recipe.restored": {
+    summary: "A recipe was restored",
+    description: "Sent when a recipe comes back from Recently deleted.",
+  },
+  "import.finished": {
+    summary: "An import finished",
+    description:
+      "Sent when an import runs to its end: a batch of links, a collection, an import from Mealie or Paprika, or a Merran archive. It says what kind it was and how many recipes were added, skipped and failed. An import that fails as a whole or is stopped sends nothing; it shows on its page and in Jobs. Archive imports always report 0 failed, because one recipe that fails fails the whole import. Links in a batch still send `recipe.created` each, but recipes from another app or an archive don't.",
+  },
+  "tidy.ready": {
+    summary: "Tidy up has suggestions",
+    description:
+      "Sent when Tidy up finishes with suggestions waiting in Review, for one recipe or a run of many, whether it was started by hand or on its own. It counts the recipes and names up to 10 of them. A run that's stopped sends nothing.",
+  },
+  "review.waiting": {
+    summary: "Something is waiting in Review",
+    description:
+      "Sent when something new waits in Review that didn't come from your own chat: an AI app's proposal over MCP, or a cooking note that became an edit. A cooking note turned into an edit is sent as Merran's own work.",
+  },
+  "cooking.started": {
+    summary: "Cooking started",
+    description:
+      "Sent when someone leaves Get ready in cook view, or opens cook view on a recipe with nothing to get ready. Each device cooking is a session of its own. A reload carries on with the same session and sends nothing, and guests cooking from a shared link never send it.",
+  },
+  "cooking.ended": {
+    summary: "Cooking ended",
+    description:
+      "Sent when a cooking session ends: with Done cooking in cook view (`made`), even with timers running; when cook view is left (`stopped`), at once with no timer running, or when its last running timer is done or cancelled; a minute after cook view's page is closed, unless it comes back (`stopped`); or when cook view goes quiet for 30 minutes with no timer running, or 12 hours after it started (`timed_out`). Done cooking, leaving with nothing running, and cancelling the last timer are sent as the cook; the rest are Merran's own, with `cook` saying who was cooking.",
+  },
+  "timer.started": {
+    summary: "A timer started",
+    description:
+      "Sent when a timer starts in cook view, from a time in a step or as a new timer. It says when it goes off, by the server's clock.",
+  },
+  "timer.extended": {
+    summary: "A timer got more time",
+    description:
+      "Sent when a timer gets +1 minute, in cook view or on the message when it goes off. One that's gone off runs again, and is sent `timer.finished` again when it's done.",
+  },
+  "timer.finished": {
+    summary: "A timer is done",
+    description:
+      "Sent by the server when a timer's time is up, even if the device that started it is asleep or closed. It's Merran's own, with `cook` saying whose timer it was.",
+  },
+  "timer.cancelled": {
+    summary: "A timer was cancelled",
+    description:
+      "Sent when a timer is cancelled before it goes off. Dismissing one that's gone off sends nothing.",
+  },
+  "plan.changed": {
+    summary: "The plan changed",
+    description:
+      "Sent when meals are added, moved, changed or removed, whatever did it: someone in the app, the autoplan, a proposal, Repeat last week, Clear, Undo, a substitute found from the shopping list, or Made it. Changes are gathered for 30 seconds and sent as one event for each person, so someone adding a whole week sends one. Marking meals made or Didn't isn't a plan change; those send `meal.cooked` and `meal.skipped`. Undo sends this, but never `meal.cooked` or `meal.skipped` again.",
+  },
+  "plan.autoplanned": {
+    summary: "The autoplan planned a week",
+    description:
+      "Sent when the autoplan plans a week, on its schedule or when someone runs it. It also sends `plan.changed` for the meals it added.",
+  },
+  "meal.cooked": {
+    summary: "A meal was made",
+    description:
+      'Sent when a meal is marked made anywhere: cook view, the plan, Today\'s "Did you make these?", or a recipe made off the plan. It says whether the meal was planned and how many servings were made. Undo never sends it again, and setting a meal back to planned sends nothing.',
+  },
+  "meal.skipped": {
+    summary: "A meal was skipped",
+    description:
+      "Sent when a planned meal is marked Didn't. Undo never sends it again, and setting a meal back to planned sends nothing.",
+  },
+  "list.changed": {
+    summary: "The shopping list changed",
+    description:
+      "Sent when things on a list are added, checked off, unchecked, changed or removed. Changes are gathered for 30 seconds and sent as one event for each person, so someone checking off 30 things sends one. It lists each shopping list touched with how many things are left and checked. Merging duplicate lines and moving things when a list is removed send nothing.",
+  },
+  "list.completed": {
+    summary: "A shopping list was finished",
+    description:
+      "Sent when the last unchecked thing on a list is checked off, however it's done, or when Put away clears a list that still has unchecked things. A list that was finished already sends nothing more when it's put away, so one trip sends one. Undo and Clear checked don't send it.",
+  },
+  "list.sent": {
+    summary: "A shopping list was sent to a store",
+    description:
+      "Sent when a list goes to a store's cart: Kroger's, or Walmart's through the extension. It says how many things were sent and how many the store had no product for. The extension reports each stretch of a Walmart fill, with what's new since its last report, so a fill that's stopped and carried on sends one for each stretch and counts each product once. An extension too old to report sends nothing for Walmart.",
+  },
+  "pantry.changed": {
+    summary: "The pantry changed",
+    description:
+      "Sent when things are put away, used up, moved, changed or removed. Changes are gathered for 30 seconds and sent as one event for each person.",
+  },
+  "day.summary": {
+    summary: "The day ahead",
+    description:
+      "Sent once a day, at the time set as Daily summary at on the Webhooks page (07:00 unless it's changed), on the household's clock. It lists the day's meals with their times and dishes, what's waiting in the week's pool, what to use soon, and how many things are on the shopping lists. It's sent even on a day with nothing planned. When the server was off at that time, it's sent when it's back, the same day.",
+  },
+  "meal.time_to_start": {
+    summary: "Time to start cooking",
+    description:
+      "Sent when it's time to start cooking a planned meal: when it's served, less its longest dish's total time (or prep and cook time added up). A meal whose dishes don't say how long they take sends nothing, nor does the pool. Each meal sends it once, up to 15 minutes late, so a meal planned after its start time has gone by sends nothing.",
+  },
+  "pantry.use_soon": {
+    summary: "Things to use soon",
+    description:
+      "Sent with the daily summary, at the same time, when things at home have come within 2 days of their use-by day since it was last sent, listing only those. Nothing is sent when nothing has. The first one a webhook gets lists everything that's close.",
+  },
+  "webhook.test": {
+    summary: "A test was sent",
+    description:
+      "Sent only when someone chooses Send a test for a webhook, and only to that webhook, even when it's paused. It's tried once, never retried, and never pauses the webhook.",
+  },
+}

@@ -12,6 +12,7 @@ import { telemetry } from "./telemetry/index.ts"
 import { video } from "./video/index.ts"
 import { voice } from "./voice/index.ts"
 import { updates } from "./updates/index.ts"
+import { webhooks } from "./webhooks/index.ts"
 
 /** Every module, in the order Settings lists them. */
 export const MODULES: readonly Module[] = [
@@ -28,4 +29,5 @@ export const MODULES: readonly Module[] = [
   errorTracking,
   telemetry,
   updates,
+  webhooks,
 ]

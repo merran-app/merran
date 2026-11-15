@@ -9,7 +9,6 @@ import {
   weekStartOf,
   type Meal,
   type Reason,
-  type MealRecipe,
 } from "@merran/shared"
 import { LockMode } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
@@ -27,6 +26,10 @@ import { photoUrls } from "../recipes/photos/photos.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import { toNumber } from "../../database/numbers.ts"
 import { totalMinutes } from "../recipes/recipes.ts"
+import { recordPlanEvents } from "../webhooks/events/plan.ts"
+import { snapshotOf, type EntrySnapshot } from "./snapshots.ts"
+
+export { snapshotOf, type EntrySnapshot }
 
 // The week plan: meals on days, and the week's pool of meals for any day.
 // "Today" is always the household's, in its own time zone. The shopping
@@ -109,30 +112,6 @@ export function describeEntry(entry: PlanEntry) {
 }
 
 export type DescribedEntry = ReturnType<typeof describeEntry>
-
-/** A meal as it was, to put it back as it was (Undo). */
-export function snapshotOf(entry: PlanEntry) {
-  return {
-    id: entry.id,
-    date: entry.date,
-    anyDay: entry.anyDay,
-    meal: entry.meal,
-    position: entry.position,
-    status: entry.status,
-    recipe: entry.recipe?.id ?? null,
-    withRecipe: entry.withRecipe?.id ?? null,
-    note: entry.note ?? null,
-    servings: toNumber(entry.servings),
-    listedAt: entry.listedAt?.toISOString() ?? null,
-    why: entry.why ?? null,
-    cookedAt: entry.cookedAt?.toISOString() ?? null,
-    variants: entry.variants ?? [],
-  }
-}
-
-export type EntrySnapshot = Omit<ReturnType<typeof snapshotOf>, "variants"> & {
-  variants?: MealRecipe[]
-}
 
 /** Meals in the order a day has them. */
 export function sortEntries<
@@ -358,6 +337,8 @@ export async function addEntry(
 ) {
   const { weekStartsOn } = await householdClock(em, householdId)
   const entry = await createEntry(em, householdId, input, weekStartsOn)
+  // Saves the meal with the event, so neither is left without the other.
+  await recordPlanEvents(em, householdId, { before: [], after: [entry] })
   await em.flush()
   return describeEntry(entry)
 }
@@ -376,6 +357,7 @@ export async function addEntries(
       // Each after the one added before it in the same slot.
       await tx.flush()
     }
+    await recordPlanEvents(tx, householdId, { before: [], after: added })
     return sortEntries(added).map(describeEntry)
   })
 }
@@ -474,10 +456,12 @@ export async function updateEntry(
   changes: EntryChanges
 ) {
   const entry = await findEntry(em, entryId)
+  const before = snapshotOf(entry)
   const made = madeBy(entry)
   const was = shoppingFor(entry)
   const wasCooked = entry.status === "cooked"
   await change(em, householdId, entry, changes)
+  await recordPlanEvents(em, householdId, { before: [before], after: [entry] })
   await em.flush()
   await remade(em, [...made, ...madeBy(entry)])
   await followPlan(em, householdId, [
@@ -508,6 +492,7 @@ export async function removeEntry(
     { entry, was: entry.status === "cooked", now: false },
   ])
   em.remove(entry)
+  await recordPlanEvents(em, householdId, { before: [before], after: [] })
   await em.flush()
   await remade(em, made)
   return before
@@ -691,6 +676,10 @@ export async function bulkPlan(
         }))
       )
     }
+    await recordPlanEvents(tx, householdId, {
+      before,
+      after: action.action === "remove" ? [] : entries,
+    })
     return {
       entries:
         action.action === "remove"
@@ -733,6 +722,9 @@ export async function restoreEntries(
       )
     )
     const restored: PlanEntry[] = []
+    // The meals as they were before they were put back, for the ones that
+    // were still there.
+    const before: EntrySnapshot[] = []
     const made: string[] = []
     const listing: {
       entry: PlanEntry
@@ -748,8 +740,10 @@ export async function restoreEntries(
       let entry = await tx.findOne(PlanEntry, { id: snapshot.id })
       const was = entry ? shoppingFor(entry) : null
       const wasCooked = entry?.status === "cooked"
-      if (entry) made.push(...madeBy(entry))
-      else {
+      if (entry) {
+        before.push(snapshotOf(entry))
+        made.push(...madeBy(entry))
+      } else {
         // An id another household has can't come back here.
         const elsewhere = await tx.count(
           PlanEntry,
@@ -790,6 +784,11 @@ export async function restoreEntries(
     await remade(tx, made)
     await followPlan(tx, householdId, listing)
     await followCooking(tx, householdId, cooking)
+    await recordPlanEvents(tx, householdId, {
+      before,
+      after: restored,
+      undo: true,
+    })
     return sortEntries(restored).map(describeEntry)
   })
 }
@@ -853,6 +852,7 @@ export async function repeatLastWeek(
       )
     }
     await tx.flush()
+    await recordPlanEvents(tx, householdId, { before: [], after: added })
     return sortEntries(added).map(describeEntry)
   })
 }
@@ -893,6 +893,7 @@ export async function clearRest(
     )
     tx.remove(entries)
     await tx.flush()
+    await recordPlanEvents(tx, householdId, { before, after: [] })
     return before
   })
 }
@@ -1006,6 +1007,8 @@ async function cookTodayIn(
       { populate: POPULATE }
     )
   )
+  // The meals it cooks as they were: none when it adds one.
+  let before: EntrySnapshot[] = entries.map(snapshotOf)
   if (entries.length === 0) {
     const pooled = await em.findOne(
       PlanEntry,
@@ -1018,6 +1021,7 @@ async function cookTodayIn(
       { populate: POPULATE }
     )
     if (pooled) {
+      before = [snapshotOf(pooled)]
       pooled.position = await nextPosition(em, {
         date: clock.today,
         meal,
@@ -1049,6 +1053,7 @@ async function cookTodayIn(
     householdId,
     entries.map((entry) => ({ entry, was: false, now: true }))
   )
+  await recordPlanEvents(em, householdId, { before, after: entries })
   return entries[0]!.id
 }
 

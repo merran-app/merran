@@ -16,6 +16,7 @@ import {
 } from "../../database/entities/index.ts"
 import { householdAliases, householdKeys } from "../foods/aliases.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
+import { recordPantryChange } from "../webhooks/events/pantry.ts"
 import { amountOf, measured, merged } from "./pantry.ts"
 
 // Cooking a planned meal uses what it takes from the pantry: what was set
@@ -27,17 +28,23 @@ import { amountOf, measured, merged } from "./pantry.ts"
 const shareOf = (item: PantryItem, meal: string) =>
   (item.forMeals ?? []).find((share) => share.meal === meal) ?? null
 
-/** Takes what cooked meals need from the pantry, remembering what, to put back. */
+/**
+ * Takes what cooked meals need from the pantry, remembering what, to put
+ * back. Says how many things it took from, all of them or some.
+ */
 export async function useForMeals(
   em: EntityManager,
   entries: readonly PlanEntry[]
-) {
+): Promise<number> {
   const cooking = entries.filter((entry) => !entry.pantryUsed)
-  if (cooking.length === 0) return
+  if (cooking.length === 0) return 0
   const linesOf = await loadMealLines(em, cooking[0]!.household.id, cooking)
   const pantry = await em.find(PantryItem, {})
   const aliases = await householdAliases(em)
   const gone = new Set<string>()
+  // For webhooks: things it took some of, leaving the rest. A meal's share
+  // coming off takes nothing.
+  const lessened = new Set<string>()
 
   for (const entry of cooking) {
     /** Each row as it was, the first time this meal touched it. */
@@ -85,6 +92,7 @@ export async function useForMeals(
         touch(row)
         if (rest.quantity > 0.001) {
           row.quantity = rest.quantity
+          lessened.add(row.id)
           break
         }
         // Not enough in this one: the rest from the next.
@@ -132,15 +140,22 @@ export async function useForMeals(
     entry.pantryUsed = used.length > 0 ? used : null
   }
   for (const row of pantry) if (gone.has(row.id)) em.remove(row)
+  // Two meals can take from the same thing: it's used up once.
+  return new Set([...gone, ...lessened]).size
 }
 
-/** Puts back what cooking meals took from the pantry, when they weren't cooked. */
+/**
+ * Puts back what cooking meals took from the pantry, when they weren't
+ * cooked. Says how many things it made again, and how many it added to.
+ */
 export async function putBack(
   em: EntityManager,
   householdId: string,
   entries: readonly PlanEntry[]
-) {
+): Promise<{ added: number; changed: number }> {
   const keyOf = await householdKeys(em)
+  const madeAgain = new Set<string>()
+  const addedTo = new Set<string>()
   for (const entry of entries) {
     for (const taken of entry.pantryUsed ?? []) {
       const row = await em.findOne(PantryItem, { id: taken.id })
@@ -163,17 +178,24 @@ export async function putBack(
           forMeals: taken.share ? [taken.share] : null,
           createdAt: new Date(taken.createdAt),
         })
+        madeAgain.add(taken.id)
         continue
       }
       if (taken.quantity !== null && measured(row)) {
         const sum = addAmounts(amountOf(row), taken, row.foodKey)
         if (sum) em.assign(row, { quantity: sum.quantity, unit: sum.unit })
+        // A meal whose share came off and took nothing gives back nothing.
+        if (sum && taken.quantity > 0.001) addedTo.add(row.id)
       }
       if (taken.share)
         row.forMeals = merged([...(row.forMeals ?? []), taken.share])
     }
     entry.pantryUsed = null
   }
+  // A thing made again for one meal and added to for another is back, not
+  // changed.
+  const changed = [...addedTo].filter((id) => !madeAgain.has(id))
+  return { added: madeAgain.size, changed: changed.length }
 }
 
 /**
@@ -189,14 +211,16 @@ export async function followCooking(
   const undone = changes.filter((change) => change.was && !change.now)
   const cooked = changes.filter((change) => !change.was && change.now)
   if (undone.length === 0 && cooked.length === 0) return
-  await putBack(
+  const back = await putBack(
     em,
     householdId,
     undone.map((change) => change.entry)
   )
-  await useForMeals(
+  const usedUp = await useForMeals(
     em,
     cooked.map((change) => change.entry)
   )
+  // Once for both, before the flush that saves them.
+  await recordPantryChange(em, householdId, { ...back, usedUp })
   await em.flush()
 }

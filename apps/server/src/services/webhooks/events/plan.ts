@@ -1,0 +1,213 @@
+import type { EntityManager } from "@mikro-orm/sql"
+import type { PlanEntry, Recipe } from "../../../database/entities/index.ts"
+import { toNumber } from "../../../database/numbers.ts"
+import { snapshotOf, type EntrySnapshot } from "../../plan/snapshots.ts"
+import type { GatheredPart } from "../gathering/gathering.ts"
+import { recipeRef, type MealRef, type RecipeRef } from "../payloads.ts"
+import { record, wantsEvent } from "../record.ts"
+
+// What the plan tells webhooks: plan.changed, gathered from every add, move
+// and removal, whatever did it, and meal.cooked and meal.skipped, sent at
+// once. Each plan function takes snapshots of the meals it touches, changes
+// them, and says what it did with the two.
+
+type PlanChange = GatheredPart<"plan.changed">
+
+/** Where a meal is: a day, or its week's pool. */
+type Place = Pick<EntrySnapshot, "date" | "anyDay">
+
+/** Whether a meal's place in the plan is another: day, pool, meal or order. */
+function movedBetween(before: EntrySnapshot, after: EntrySnapshot): boolean {
+  return (
+    before.date !== after.date ||
+    before.anyDay !== after.anyDay ||
+    before.meal !== after.meal ||
+    before.position !== after.position
+  )
+}
+
+/**
+ * Whether what a meal is has changed: its dishes, note or servings.
+ * Servings given as a meal is marked made are how many it made, not a
+ * change to the plan, so they don't count then.
+ */
+function changedBetween(before: EntrySnapshot, after: EntrySnapshot): boolean {
+  const madeNow = after.status === "cooked" && before.status !== "cooked"
+  const servingsChanged = before.servings !== after.servings && !madeNow
+  return (
+    before.recipe !== after.recipe ||
+    before.withRecipe !== after.withRecipe ||
+    before.note !== after.note ||
+    servingsChanged ||
+    JSON.stringify(before.variants ?? []) !==
+      JSON.stringify(after.variants ?? [])
+  )
+}
+
+/**
+ * What changed between the meals as they were and as they are, matched by
+ * id. Their status, when they were cooked or listed, why they were picked,
+ * and the servings given with marking them made don't count: marking meals
+ * made or Didn't is meal.cooked and meal.skipped.
+ */
+export function planChange(
+  before: readonly EntrySnapshot[],
+  after: readonly EntrySnapshot[]
+): PlanChange {
+  const was = new Map(before.map((entry) => [entry.id, entry]))
+  const now = new Map(after.map((entry) => [entry.id, entry]))
+  const days = new Set<string>()
+  const pools = new Set<string>()
+  let added = 0
+  let moved = 0
+  let changed = 0
+  let removed = 0
+
+  const touch = (place: Place) => {
+    if (place.anyDay) pools.add(place.date)
+    else days.add(place.date)
+  }
+
+  for (const entry of after) {
+    const old = was.get(entry.id)
+    if (!old) {
+      added += 1
+      touch(entry)
+    } else if (movedBetween(old, entry)) {
+      moved += 1
+      touch(old)
+      touch(entry)
+    } else if (changedBetween(old, entry)) {
+      changed += 1
+      touch(entry)
+    }
+  }
+  for (const entry of before) {
+    if (now.has(entry.id)) continue
+    removed += 1
+    touch(entry)
+  }
+
+  return {
+    ...(days.size > 0 ? { days: [...days].sort() } : {}),
+    ...(pools.size > 0 ? { pools: [...pools].sort() } : {}),
+    ...(added > 0 ? { added } : {}),
+    ...(moved > 0 ? { moved } : {}),
+    ...(changed > 0 ? { changed } : {}),
+    ...(removed > 0 ? { removed } : {}),
+  }
+}
+
+/**
+ * A meal as events carry it. Its recipe and side are loaded when they
+ * aren't. Its title is the recipe's name, or the version's when the meal has
+ * one, as the plan shows it; for a meal that's only a note, the note.
+ */
+export async function mealRef(
+  em: EntityManager,
+  entry: PlanEntry
+): Promise<MealRef> {
+  return (await loadedMeal(em, entry)).ref
+}
+
+/** A meal as events carry it, with the recipe it was made from. */
+async function loadedMeal(em: EntityManager, entry: PlanEntry) {
+  await em.populate(entry, ["recipe", "withRecipe"])
+  const main = entry.recipe?.getEntity()
+  const side = entry.withRecipe?.getEntity()
+  const variant = entry.variants?.find((value) => value.recipeId === main?.id)
+  const ref: MealRef = {
+    entryId: entry.id,
+    date: entry.date,
+    meal: entry.meal,
+    pool: entry.anyDay,
+    title: variant?.name ?? main?.name ?? entry.note ?? "",
+    recipe: shownRecipe(main),
+    side: shownRecipe(side),
+  }
+  return { ref, main, variant }
+}
+
+/**
+ * A meal's recipe or side as events name it: none while it's in Recently
+ * deleted, as the plan shows it.
+ */
+function shownRecipe(recipe: Recipe | undefined): RecipeRef | null {
+  return recipe && !recipe.deletedAt ? recipeRef(recipe) : null
+}
+
+/** How many servings a meal made: its own, else its version's or recipe's. */
+function servingsMade(
+  entry: PlanEntry,
+  loaded: Awaited<ReturnType<typeof loadedMeal>>
+): number | null {
+  const own = toNumber(entry.servings)
+  if (own !== null) return own
+
+  return loaded.variant?.servings ?? toNumber(loaded.main?.servings) ?? null
+}
+
+/**
+ * Tells webhooks that meals were marked made or Didn't: those that are now,
+ * and weren't before. A meal that wasn't in `before` was added by being
+ * made.
+ */
+async function recordMealEvents(
+  em: EntityManager,
+  householdId: string,
+  before: readonly EntrySnapshot[],
+  after: readonly PlanEntry[]
+): Promise<void> {
+  const was = new Map(before.map((entry) => [entry.id, entry]))
+  // Asked once for each, before any meal's recipe is loaded for them.
+  const wantsCooked = await wantsEvent(em, householdId, "meal.cooked")
+  const wantsSkipped = await wantsEvent(em, householdId, "meal.skipped")
+
+  for (const entry of after) {
+    const old = was.get(entry.id)
+    if (wantsCooked && entry.status === "cooked" && old?.status !== "cooked") {
+      const loaded = await loadedMeal(em, entry)
+      await record(em, householdId, {
+        type: "meal.cooked",
+        data: {
+          ...loaded.ref,
+          servings: servingsMade(entry, loaded),
+          planned: !!old,
+        },
+      })
+    } else if (
+      wantsSkipped &&
+      entry.status === "skipped" &&
+      old?.status !== "skipped"
+    ) {
+      await record(em, householdId, {
+        type: "meal.skipped",
+        data: await mealRef(em, entry),
+      })
+    }
+  }
+}
+
+/**
+ * Tells webhooks what a plan change did: the meals it touched as they were,
+ * and as they are now (none, for ones it removed). Called after the change
+ * is made, with the entity manager or transaction it was made in.
+ */
+export async function recordPlanEvents(
+  em: EntityManager,
+  householdId: string,
+  change: {
+    before: readonly EntrySnapshot[]
+    after: readonly PlanEntry[]
+    /** Undo restores meals, so it never says they were cooked or skipped again. */
+    undo?: boolean
+  }
+): Promise<void> {
+  if (!change.undo) {
+    await recordMealEvents(em, householdId, change.before, change.after)
+  }
+  await record(em, householdId, {
+    type: "plan.changed",
+    data: planChange(change.before, change.after.map(snapshotOf)),
+  })
+}

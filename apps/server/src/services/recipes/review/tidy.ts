@@ -24,6 +24,8 @@ import { useAi, type AiDeps } from "../../ai/run.ts"
 import { findRecipe, marksFrom } from "../recipes.ts"
 import { inHouseholdTransaction } from "../../../database/transactions.ts"
 import { listTags, tagKey } from "../tags.ts"
+import { appLink, recipeRef } from "../../webhooks/payloads.ts"
+import { record } from "../../webhooks/record.ts"
 
 // Tidy up: the AI tidies a recipe, a section at a time, and what it
 // changes waits in the Review queue as a proposal. It never changes the
@@ -380,6 +382,17 @@ export async function proposeTidy(
         job: options.jobId ?? null,
         createdBy: options.userId,
       })
+      // A run says so once, when it ends (tidy-run.ts), not for each recipe.
+      if (!options.jobId) {
+        await record(tx, options.householdId, {
+          type: "tidy.ready",
+          data: {
+            count: 1,
+            recipes: [recipeRef(recipe)],
+            url: appLink("/recipes/review"),
+          },
+        })
+      }
       await tx.flush()
       return proposal.id
     }

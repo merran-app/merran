@@ -143,13 +143,15 @@ People make their own keys for scripts, Home Assistant, the browser extension an
 
 ### Webhooks
 
-Household admins add them in Settings → Household → Webhooks, for Home Assistant, n8n and the like.
+Planned in full on November 10, 2026: [webhooks.md](webhooks.md) has the events, payloads, delivery, the page, cooking sessions and the build order. In short:
 
-- **Events:** the plan changed, a meal was cooked or skipped, the list changed, something went in or out of the pantry, a recipe was added or changed, a bulk import finished, the weekly autoplan ran, something's due to be used soon. One event stream inside Merran feeds the live updates, webhooks and notifications, so they always agree.
+- **Household owners and admins add them** on their own Webhooks page in Settings (moved from the Household page on November 10, 2026), for Home Assistant, n8n and the like. Server-level webhooks come later on the same engine.
+- **Events** are recorded by the change itself, in its transaction, through one `record()`: recipes, imports, tidy-up and Review, the plan and meals, the list, the pantry, then cooking and timers (cook view now tells the server), then a daily summary, time to start a meal, and what to use soon.
 - **Each webhook** has an address, the events it wants, and a secret. Deliveries are signed in the Standard Webhooks format (an HMAC of the body, a timestamp and an id), so the receiver can check they came from Merran and aren't replayed.
-- **Delivery** runs on the job runner: retries with backoff for about a day, then the webhook is paused and its household admins are told. Each webhook shows its recent deliveries with their responses, and **Send a test**.
-- **Payloads** carry ids and a short summary, not whole recipes, so a leaked webhook log reveals little. The receiver can fetch more through the API.
+- **Delivery** runs on the job runner: retries on Standard Webhooks' schedule for about 27 hours, then the webhook is paused and its household admins are told. Each webhook shows its recent deliveries with their responses, and **Send a test**.
+- **Payloads** carry ids, names, titles and links, not whole recipes, so a leaked webhook log reveals little. The receiver can fetch more through the API.
 - **The home network:** Home Assistant usually lives on the same network as Merran, but letting any household make the server call local addresses is a risk on a shared server. So webhooks to private addresses are refused unless the server admin allows them (for every household, or chosen ones).
+- **Live updates** keep their own path-based announcements for now, rather than coming from the same `record()` as webhooks (decided November 10, 2026); moving them over is a follow-up.
 
 ### MCP server
 

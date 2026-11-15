@@ -48,6 +48,10 @@ export const IDS = {
   siteRecipe: id(49),
   otherSiteRecipe: id(50),
   photoRun: id(51),
+  webhook: id(52),
+  webhookDelivery: id(53),
+  webhookEvent: id(54),
+  cookingSession: id(55),
 }
 
 export const TIMES = {

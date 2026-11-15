@@ -239,6 +239,7 @@
       "server": "Whole server",
       "serverNote": "Changes here reach every household on this server.",
       "onlyServer": {
+        "switchedOff": "This is turned off for every household, so only the server's settings are here.",
         "noHousehold": "You're not in a household, so only the server's settings are here.",
         "notAdmin": "You're not an admin of this household, so only the server's settings are here."
       }
@@ -255,6 +256,10 @@
       "apps": {
         "title": "Apps and devices",
         "description": "Merran on your devices, and other apps that connect to it."
+      },
+      "webhooks": {
+        "title": "Webhooks",
+        "description": "Tell Home Assistant, n8n and other tools when things happen."
       },
       "household": {
         "title": "Household",
@@ -507,6 +512,246 @@
         "expires": "Expires {{date}}",
         "cancel": "Cancel",
         "cancelled": "Invite cancelled."
+      },
+      "webhooks": {
+        "title": "Webhooks",
+        "description": "Tell Home Assistant, n8n and other tools when things happen in your kitchen.",
+        "add": "Add webhook",
+        "editTitle": "Change webhook",
+        "formDescription": "Merran sends a message to this address when one of the events happens.",
+        "none": "No webhooks yet",
+        "noneHint": "Add one with the address Home Assistant or n8n gives you.",
+        "name": "Name",
+        "namePlaceholder": "Home Assistant",
+        "nameNeeded": "Give it a name.",
+        "address": "Address",
+        "addressNeeded": "Give it an address.",
+        "eventsTitle": "Events",
+        "eventsNeeded": "Pick at least one event, or send everything.",
+        "everything": "Everything, including events added later",
+        "everythingShort": "Everything",
+        "everythingChosen": "Every event, including ones added later.",
+        "areaCount": "{{chosen}} of {{total}}",
+        "areaAll": "Every event in {{area}}",
+        "optional": "Optional",
+        "eventCount_one": "{{count}} event",
+        "eventCount_other": "{{count}} events",
+        "headers": "Extra headers",
+        "headersSealed": "Header values stay sealed. To change the headers, fill in every value again.",
+        "headerName": "Header name",
+        "headerValue": "Value",
+        "headerValueNeeded": "Give it a value.",
+        "headerValueCharacters": "A header can't hold line breaks or characters like emoji.",
+        "addHeader": "Add a header",
+        "removeHeader": "Remove header",
+        "state": {
+          "working": "Working",
+          "failing": "Failing",
+          "paused": "Paused"
+        },
+        "lastDelivered": "Last delivered {{date}}",
+        "neverDelivered": "Nothing delivered yet",
+        "saved": "Saved.",
+        "secret": "Signing secret",
+        "madeTitle": "Here's the secret",
+        "madeDescription": "Copy it into the tool that checks signatures. You can show it again later.",
+        "allowHomeNetwork": "Allow the home network for this household",
+        "test": "Send a test",
+        "tested": "Delivered: {{status}}.",
+        "testFailed": "Not delivered: {{error}}",
+        "edit": "Edit",
+        "pause": "Pause",
+        "resume": "Resume",
+        "resumeAndResend": "Resume and resend",
+        "resumeDescription": "Also resend what failed in the last day?",
+        "showSecret": "Show secret",
+        "rotateSecret": "Rotate secret",
+        "rotateDescription": "Deliveries are signed with both secrets for a day, so you can change over without missing any.",
+        "delete": "Delete",
+        "deleteTitle": "Delete {{name}}?",
+        "deleteDescription": "It stops at once, and its deliveries log goes with it.",
+        "deliveries": "Deliveries",
+        "noDeliveries": "Nothing sent yet.",
+        "resend": "Resend",
+        "showMore": "Show more",
+        "tries_one": "{{count}} try",
+        "tries_other": "{{count}} tries",
+        "answer": "Answer",
+        "body": "Body",
+        "pausedReason": {
+          "gave_up": "Paused after a day of failed deliveries.",
+          "gone": "Paused: it answered that it's gone.",
+          "by_hand": "Paused by hand."
+        },
+        "deliveryState": {
+          "waiting": "Trying",
+          "delivered": "Delivered",
+          "failed": "Failed",
+          "stopped": "Stopped"
+        },
+        "areas": {
+          "recipes": "Recipes",
+          "cooking": "Cooking",
+          "plan": "Plan",
+          "list": "Shopping list",
+          "pantry": "Pantry",
+          "headsUps": "Heads-ups"
+        },
+        "events": {
+          "recipe": {
+            "created": "A recipe is added",
+            "updated": "A recipe is changed",
+            "deleted": "A recipe is deleted",
+            "restored": "A recipe is restored"
+          },
+          "import": {
+            "finished": "An import finishes"
+          },
+          "tidy": {
+            "ready": "Tidy up has suggestions"
+          },
+          "review": {
+            "waiting": "Something waits in Review"
+          },
+          "cooking": {
+            "started": "Cooking starts",
+            "ended": "Cooking ends"
+          },
+          "timer": {
+            "started": "A timer starts",
+            "extended": "A timer gets more time",
+            "finished": "A timer is done",
+            "cancelled": "A timer is cancelled"
+          },
+          "plan": {
+            "changed": "The plan changes",
+            "autoplanned": "The autoplan plans a week"
+          },
+          "meal": {
+            "cooked": "A meal is made",
+            "skipped": "A meal is skipped",
+            "time_to_start": "It's time to start a meal"
+          },
+          "list": {
+            "changed": "The list changes",
+            "completed": "A list is finished",
+            "sent": "A list goes to a store"
+          },
+          "pantry": {
+            "changed": "The pantry changes",
+            "use_soon": "Something needs using soon"
+          },
+          "webhook": {
+            "test": "A test"
+          },
+          "day": {
+            "summary": "The daily summary"
+          }
+        },
+        "chips": {
+          "recipe": {
+            "created": "Added",
+            "updated": "Changed",
+            "deleted": "Deleted",
+            "restored": "Restored"
+          },
+          "import": {
+            "finished": "Import finished"
+          },
+          "tidy": {
+            "ready": "Tidy-up ready"
+          },
+          "review": {
+            "waiting": "Waiting in Review"
+          },
+          "cooking": {
+            "started": "Started",
+            "ended": "Ended"
+          },
+          "timer": {
+            "started": "Timer started",
+            "extended": "More time",
+            "finished": "Timer done",
+            "cancelled": "Timer cancelled"
+          },
+          "plan": {
+            "changed": "Changed",
+            "autoplanned": "Autoplanned"
+          },
+          "meal": {
+            "cooked": "Cooked",
+            "skipped": "Skipped",
+            "time_to_start": "Time to start"
+          },
+          "list": {
+            "changed": "Changed",
+            "completed": "Completed",
+            "sent": "Sent to a store"
+          },
+          "pantry": {
+            "changed": "Changed",
+            "use_soon": "Use soon"
+          },
+          "day": {
+            "summary": "Daily summary"
+          }
+        },
+        "eventHints": {
+          "recipe": {
+            "created": "Typed in, imported, or added from a suggestion.",
+            "updated": "Edits, tidy-ups, swaps, restored versions, and photo or diet changes.",
+            "deleted": "Moved to Recently deleted.",
+            "restored": "Brought back from Recently deleted."
+          },
+          "import": {
+            "finished": "A batch of links, another app's recipes or a Merran archive is in."
+          },
+          "tidy": {
+            "ready": "Tidy up has finished, with suggestions to review."
+          },
+          "review": {
+            "waiting": "From an AI app, or a cooking note turned into an edit."
+          },
+          "cooking": {
+            "started": "Someone leaves Get ready in cook view.",
+            "ended": "Done cooking, leaving cook view once its timers are done, or no word for 30 minutes."
+          },
+          "timer": {
+            "started": "A step's time, or a new timer, in cook view.",
+            "extended": "+1 min, in cook view or on its message.",
+            "finished": "Time's up. Sent by the server, even if the screen is off.",
+            "cancelled": "Cancelled before it went off."
+          },
+          "plan": {
+            "changed": "Meals added, moved, changed or removed, gathered over 30 seconds.",
+            "autoplanned": "On its schedule, or when someone runs it."
+          },
+          "meal": {
+            "cooked": "Made it, on the plan or off it.",
+            "skipped": "A planned meal marked Didn't.",
+            "time_to_start": "When a meal's longest dish needs starting, from its time on the plan."
+          },
+          "list": {
+            "changed": "Things added, checked off, changed or removed, gathered over 30 seconds.",
+            "completed": "The last thing is checked off, or it's put away with things left.",
+            "sent": "Sent to the Kroger cart, or to Walmart's through the extension."
+          },
+          "pantry": {
+            "changed": "Things put away, used up, moved, changed or removed, gathered over 30 seconds.",
+            "use_soon": "With the daily summary, when things come within 2 days of their use-by date."
+          },
+          "day": {
+            "summary": "Each day at the Daily summary at time: the day's meals, the pool, what to use soon and the list."
+          }
+        },
+        "schedule": {
+          "title": "Daily heads-ups",
+          "description": "When webhooks that want the daily summary or things to use soon hear about the day.",
+          "summaryAt": "Daily summary at",
+          "summaryAtHint": "In the household's time zone. A time that's gone by today starts tomorrow.",
+          "save": "Save",
+          "saved": "Saved."
+        }
       },
       "new": {
         "title": "Start another household",
@@ -850,6 +1095,17 @@
         "enabledHint": "Households with an OpenAI or Google key can make them, and make them for their whole library.",
         "auto": "For each new recipe",
         "autoHint": "One made by itself for a recipe added without a photo: typed in, read from text, or from the assistant. Never for a library moved in at once."
+      },
+      "webhooks": {
+        "title": "Webhooks",
+        "description": "Households can tell other tools, like Home Assistant and n8n, when things happen.",
+        "enabled": "Let households send webhooks",
+        "enabledHint": "Off stops every household's webhooks, and keeps them for later.",
+        "homeNetwork": "Webhooks to the home network",
+        "homeNetworkHint": "Home Assistant usually lives on the home network. On a server shared with others, allow only the households you trust to reach it.",
+        "homeNetworkOff": "Off",
+        "homeNetworkAll": "Every household",
+        "homeNetworkChosen": "Chosen households"
       },
       "voice": {
         "title": "Voice",
@@ -1376,6 +1632,24 @@
       "ingredientsPlaceholder": "2 cups flour\n1 tsp salt\n# For the glaze\n1 cup powdered sugar",
       "stepsHint": "One step per line. # starts a section here too.",
       "stepsPlaceholder": "Heat the oven to 400°F.\nToss the vegetables with the oil and salt.",
+      "stepsBoxesHint": "Enter starts the next step. Paste several lines to add a step for each.",
+      "editAsText": "Edit as text",
+      "stepLabel": "Step {{number}}",
+      "stepPlaceholder": "Heat the oven to 400°F.",
+      "stepOptions": "Options for step {{number}}",
+      "sectionName": "Section name",
+      "sectionOptions": "Options for this section",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "addSectionAbove": "Add a section above",
+      "deleteRow": "Delete",
+      "addStep": "Add step",
+      "addSection": "Add section",
+      "ingredientsBoxesHint": "Enter starts the next ingredient. Paste several lines to add one for each.",
+      "ingredientLabel": "Ingredient {{number}}",
+      "ingredientPlaceholder": "2 cups flour",
+      "ingredientOptions": "Options for ingredient {{number}}",
+      "addIngredient": "Add ingredient",
       "tagsAndNotes": "Tags and notes",
       "tagPlaceholder": "Add a tag",
       "tagsHint": "Press Enter, or type a comma, after each one.",

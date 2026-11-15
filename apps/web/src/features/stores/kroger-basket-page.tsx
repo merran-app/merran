@@ -192,6 +192,8 @@ function Review({
               itemId: line.itemId,
               packages: packagesOf(line),
             })),
+            // Left out of the lines, so webhooks are told by the page.
+            notFound: basket.lines.filter((line) => !line.product).length,
           },
         })
       )

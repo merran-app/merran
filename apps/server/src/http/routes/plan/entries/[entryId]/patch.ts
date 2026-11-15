@@ -1,5 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
+import { madeInSession } from "../../../../../services/cooking/sessions.ts"
 import { updateEntry } from "../../../../../services/plan/plan.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
@@ -37,15 +38,20 @@ const route = createRoute({
   },
 })
 
-export default (router: Router, _deps: AppDeps) => {
+export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em, householdId } = inHousehold(c)
+    const { em, householdId, userId } = inHousehold(c)
+    const { session, ...changes } = c.req.valid("json")
     const entry = await updateEntry(
       em,
       householdId,
       c.req.valid("param").entryId,
-      c.req.valid("json")
+      changes
     )
+    // Made it from cook view ends its cooking session, after meal.cooked.
+    if (session && changes.status === "cooked" && entry.status === "cooked") {
+      await madeInSession(em, householdId, userId, session, deps.logger)
+    }
     return c.json(entry, 200)
   })
 }

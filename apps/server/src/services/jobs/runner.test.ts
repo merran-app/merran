@@ -3,7 +3,13 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
 import { Household, Job } from "../../database/entities/index.ts"
 import type { Database } from "../../database/orm.ts"
 import { createTestDatabase } from "../../test/database.ts"
-import { cancelJob, enqueue, retryJob } from "./jobs.ts"
+import {
+  currentActor,
+  MERRAN,
+  withActor,
+  type Actor,
+} from "../webhooks/actor.ts"
+import { cancelJob, enqueue, restartJob, retryJob } from "./jobs.ts"
 import {
   JobRunner,
   JobStopped,
@@ -96,6 +102,89 @@ describe("the job runner", () => {
     expect(await load(job.id)).toMatchObject({ status: "queued", attempts: 0 })
   })
 
+  test("a kind's own retry schedule sets each wait", async () => {
+    const tries: number[] = []
+    const jobs = runner([
+      {
+        kind: "scheduled-flaky",
+        retryDelays: [5_000, 300_000],
+        run: async (ctx) => {
+          tries.push(ctx.attempt)
+          throw new Error(`Broke on try ${ctx.attempt}`)
+        },
+      },
+    ])
+    const job = await enqueue(em(), {
+      kind: "scheduled-flaky",
+      maxAttempts: 3,
+    })
+
+    await jobs.drain()
+    const afterFirst = (await load(job.id)).runAt.getTime() - Date.now()
+    expect(afterFirst).toBeGreaterThan(4_000)
+    expect(afterFirst).toBeLessThan(6_000)
+
+    await em().nativeUpdate(Job, { id: job.id }, { runAt: new Date() })
+    await jobs.drain()
+    const afterSecond = (await load(job.id)).runAt.getTime() - Date.now()
+    expect(afterSecond).toBeGreaterThan(295_000)
+    expect(afterSecond).toBeLessThan(305_000)
+
+    await em().nativeUpdate(Job, { id: job.id }, { runAt: new Date() })
+    await jobs.drain()
+    expect((await load(job.id)).status).toBe("failed")
+    expect(tries).toEqual([1, 2, 3])
+  })
+
+  test("a job knows which try it's on and how many it has", async () => {
+    const seen: number[][] = []
+    const jobs = runner([
+      {
+        kind: "counting",
+        run: async (ctx) => {
+          seen.push([ctx.attempt, ctx.maxAttempts])
+          if (ctx.attempt === 1) throw new Error("Broke on try 1")
+        },
+      },
+    ])
+    const job = await enqueue(em(), { kind: "counting", maxAttempts: 2 })
+
+    await jobs.drain()
+    await em().nativeUpdate(Job, { id: job.id }, { runAt: new Date() })
+    await jobs.drain()
+
+    expect(seen).toEqual([
+      [1, 2],
+      [2, 2],
+    ])
+    expect((await load(job.id)).status).toBe("done")
+  })
+
+  test("a job runs as Merran, even when someone's request started it", async () => {
+    let actor: Actor | undefined
+    const jobs = runner([
+      {
+        kind: "whoami",
+        run: async () => {
+          actor = currentActor()
+        },
+      },
+    ])
+    const kyle: Actor = {
+      by: { id: "u1", name: "Kyle" },
+      via: "app",
+      key: null,
+    }
+
+    // Adding a job wakes the runner from inside the request that added it.
+    await withActor(kyle, async () => {
+      await enqueue(em(), { kind: "whoami" })
+      await jobs.drain()
+    })
+
+    expect(actor).toEqual(MERRAN)
+  })
+
   test("runs one of a kind at a time, unless it says more", async () => {
     let now = 0
     let most = 0
@@ -165,6 +254,43 @@ describe("the job runner", () => {
 
     // Next door doesn't wait for all of home's.
     expect(started.slice(0, 2).sort()).toEqual(["home 1", "next door"])
+  })
+
+  test("a kind at its limit doesn't keep other kinds from their turn", async () => {
+    // More of one kind are due than the runner looks at in one go, as when
+    // deliveries pile up for a receiver that hangs, and they came first.
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    let otherRan = false
+    const jobs = runner([
+      { kind: "hog", run: () => held },
+      {
+        kind: "other",
+        run: async () => {
+          otherRan = true
+        },
+      },
+    ])
+    const tx = em()
+    const longAgo = new Date(Date.now() - 60 * 60_000)
+    for (let i = 0; i < 60; i++) {
+      tx.create(Job, { kind: "hog", payload: {}, runAt: longAgo })
+    }
+    await tx.flush()
+    await enqueue(em(), { kind: "other" })
+
+    const draining = jobs.drain()
+    try {
+      await expect
+        .poll(() => em().count(Job, { kind: "hog", status: "running" }))
+        .toBe(1)
+      // The next look for work, as the runner makes every few seconds.
+      jobs.wake()
+      await expect.poll(() => otherRan).toBe(true)
+    } finally {
+      letThemGo()
+      await draining
+    }
   })
 
   test("adds one job per key while it's waiting or running", async () => {
@@ -260,6 +386,67 @@ describe("the job runner", () => {
     const job = await enqueue(em(), { kind: "long" })
     await jobs.start()
     await expect.poll(async () => (await load(job.id)).status).toBe("running")
+    await jobs.stop()
+
+    expect(await load(job.id)).toMatchObject({ status: "queued", attempts: 0 })
+  })
+
+  test("a job started over while it runs runs again from its first try", async () => {
+    // However the try under way ends: done, failing with tries left, or
+    // failing its last.
+    for (const ending of ["done", "retry", "last"] as const) {
+      let letItEnd!: () => void
+      const held = new Promise<void>((resolve) => (letItEnd = resolve))
+      const tries: number[] = []
+      const jobs = runner([
+        {
+          kind: "held",
+          run: async ({ attempt }) => {
+            tries.push(attempt)
+            // Only the try under way is held; the one after just runs.
+            if (tries.length > 1) return
+            await held
+            if (ending !== "done") throw new Error(`Broke on try ${attempt}`)
+          },
+        },
+      ])
+      const job = await enqueue(em(), { kind: "held", maxAttempts: 3 })
+      if (ending === "last") {
+        await em().nativeUpdate(Job, { id: job.id }, { attempts: 2 })
+      }
+      const draining = jobs.drain()
+      await expect.poll(async () => (await load(job.id)).status).toBe("running")
+
+      const tx = em()
+      await restartJob(tx, await tx.findOneOrFail(Job, { id: job.id }))
+      letItEnd()
+      await draining
+
+      expect(tries, ending).toEqual([ending === "last" ? 3 : 1, 1])
+      expect(await load(job.id), ending).toMatchObject({
+        status: "done",
+        attempts: 1,
+      })
+    }
+  })
+
+  test("a job started over while it runs keeps its fresh start through a shutdown", async () => {
+    const jobs = runner([
+      {
+        kind: "long",
+        run: ({ signal }) =>
+          new Promise((_, reject) =>
+            signal.addEventListener("abort", () => reject(new JobStopped()))
+          ),
+      },
+    ])
+    const job = await enqueue(em(), { kind: "long", maxAttempts: 3 })
+    await em().nativeUpdate(Job, { id: job.id }, { attempts: 2 })
+    await jobs.start()
+    await expect.poll(async () => (await load(job.id)).status).toBe("running")
+
+    const tx = em()
+    await restartJob(tx, await tx.findOneOrFail(Job, { id: job.id }))
     await jobs.stop()
 
     expect(await load(job.id)).toMatchObject({ status: "queued", attempts: 0 })

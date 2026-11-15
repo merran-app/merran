@@ -245,8 +245,9 @@ describe("capabilities", () => {
         { id: "test", on: false, needs: "key" },
       ])
     )
-    // Password sign-in and recipe sites work without optional configuration.
-    expect(body.capabilities).toEqual(["auth.passwords", "sites"])
+    // Password sign-in, recipe sites and webhooks work without optional
+    // configuration.
+    expect(body.capabilities).toEqual(["auth.passwords", "sites", "webhooks"])
     expect(body.client).toEqual({})
   })
 
@@ -260,6 +261,7 @@ describe("capabilities", () => {
     expect(body.capabilities).toEqual([
       "auth.passwords",
       "sites",
+      "webhooks",
       "test.things",
     ])
     expect(body.client).toEqual({ test: { color: "red" } })

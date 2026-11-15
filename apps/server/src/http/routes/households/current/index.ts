@@ -12,6 +12,7 @@ import onHandRoutes from "./on-hand/index.ts"
 import sharesRoutes from "./shares/index.ts"
 import tastesRoutes from "./tastes/index.ts"
 import themesRoutes from "./themes/index.ts"
+import webhooksRoutes from "./webhooks/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
   get(router, deps)
@@ -26,4 +27,5 @@ export default (router: Router, deps: AppDeps) => {
   sharesRoutes(router, deps)
   tastesRoutes(router, deps)
   themesRoutes(router, deps)
+  webhooksRoutes(router, deps)
 }

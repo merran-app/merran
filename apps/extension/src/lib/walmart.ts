@@ -54,6 +54,11 @@ type Fill = {
   lines: { itemId: string; packages: number }[]
 }
 
+/** How many products went in the cart, and how many were left out. */
+type Totals = { sent: number; notFound: number }
+
+const NOTHING_REPORTED: Totals = { sent: 0, notFound: 0 }
+
 /** A job as the extension keeps it: what the page sees, and what's left. */
 type Job = WalmartJob & {
   origin: string
@@ -61,6 +66,12 @@ type Job = WalmartJob & {
   beside: Beside | null
   /** That tab, to go back to when it's done. */
   merranTab: number | null
+  /**
+   * How much of a fill Merran has been told, so each report says only
+   * what's new since the last: a fill stopped and carried on reports each
+   * stretch once. A find never reports.
+   */
+  reported: Totals
 } & ({ kind: "find"; todo: Find[] } | { kind: "fill"; todo: Fill[] })
 
 type Beside = { windowId: number; index: number }
@@ -77,10 +88,14 @@ let running = false
 async function loadJob(): Promise<Job | null> {
   if (active) return active
   const { walmartJob } = await browser.storage.local.get("walmartJob")
-  const job = (walmartJob as Job | undefined) ?? null
+  const stored = walmartJob as Job | undefined
+  if (!stored) return null
+  // Kept by an extension from before fills reported, which told Merran
+  // nothing.
+  const job: Job = { ...stored, reported: stored.reported ?? NOTHING_REPORTED }
   // Marked running, but not running here: the browser stopped the
   // extension part way.
-  if (job?.state === "running") {
+  if (job.state === "running") {
     return { ...job, state: "stopped", now: null, stopping: false }
   }
   return job
@@ -120,7 +135,7 @@ const changed = () => browser.storage.local.set({ bridgeChanged: Date.now() })
 
 /** The job as a page sees it. */
 function shown(job: Job): WalmartJob {
-  const { origin, beside, merranTab, todo, ...seen } = job
+  const { origin, beside, merranTab, reported, todo, ...seen } = job
   return seen
 }
 
@@ -345,6 +360,51 @@ async function runFind(job: Job & { kind: "find" }, connection: Connection) {
   job.state = "done"
 }
 
+/**
+ * What a fill has done that Merran hasn't been told: the products that went
+ * in, and the ones left out, since the last report. It counts as told at
+ * once, before it's sent, so a fill carried on while a report is on its way
+ * never tells the same products twice. Null when there's nothing new, and
+ * for a find, which never reports.
+ */
+function takeReport(job: Job): Totals | null {
+  if (job.kind !== "fill") return null
+  const report = {
+    sent: Math.max(0, job.added.length - job.reported.sent),
+    notFound: Math.max(0, job.skipped.length - job.reported.notFound),
+  }
+  if (report.sent === 0 && report.notFound === 0) return null
+  job.reported = { sent: job.added.length, notFound: job.skipped.length }
+  return report
+}
+
+/**
+ * Tells Merran what a stretch of filling did, so webhooks hear the list
+ * went to the cart. Only a report: nothing waits for it, and a failure
+ * here never breaks the fill. One that doesn't get through isn't tried
+ * again.
+ */
+function sendReport(report: Totals, connection: Connection) {
+  void unwrap(
+    apiFor(connection).POST("/api/stores/walmart/filled", { body: report }),
+    connection.origin
+  ).catch(() => {
+    // An older server doesn't have it, and what went in is in the cart.
+  })
+}
+
+/**
+ * Tells Merran what a job that's being forgotten put in the cart and
+ * Merran hasn't heard about: a fill stopped at Walmart's check, say, which
+ * never reached its end.
+ */
+async function reportLeftOver(job: Job) {
+  const report = takeReport(job)
+  if (!report) return
+  const connection = await connectionFor(job.origin, job.householdId)
+  if (connection) sendReport(report, connection)
+}
+
 /** Adds each product to the cart from its page, one at a time. */
 async function runFill(job: Job & { kind: "fill" }, connection: Connection) {
   const api = apiFor(connection)
@@ -454,7 +514,22 @@ async function start(job: Job, connection: Connection, front: boolean) {
   void run(job, connection)
 }
 
-/** Runs a job until it's done, stopped, or stopped at Walmart's check. */
+/**
+ * Starts a new job, in front, in place of the one kept: that one tells
+ * Merran what it put in the cart that Merran hasn't heard about, as
+ * dismissing it would.
+ */
+async function startNew(job: Job, connection: Connection) {
+  const replaced = await loadJob()
+  await start(job, connection, true)
+  if (replaced) await reportLeftOver(replaced)
+}
+
+/**
+ * Runs a job until it's done, stopped, or stopped at Walmart's check. A
+ * fill reports each stretch of filling once it's saved, so the page never
+ * waits on Merran hearing about it.
+ */
 async function run(job: Job, connection: Connection) {
   try {
     if (job.kind === "find") await runFind(job, connection)
@@ -469,9 +544,13 @@ async function run(job: Job, connection: Connection) {
   } finally {
     job.now = null
     job.stopping = false
+    // Paused at Walmart's check, a fill carries on by itself once the
+    // person's through, so it reports when it ends, or when it's dismissed.
+    const report = job.state === "check" ? null : takeReport(job)
     await save(job)
     active = null
     running = false
+    if (report) sendReport(report, connection)
     if (job.state === "done") await backToMerran(job)
   }
 }
@@ -545,6 +624,7 @@ function newJob(
     skipped: [],
     error: null,
     at: new Date().toISOString(),
+    reported: NOTHING_REPORTED,
   }
 }
 
@@ -670,7 +750,7 @@ export async function answerPage<C extends ExtensionCommand>(
           kind: "find",
           todo: basket.toFind,
         })
-        await start(job, connection, true)
+        await startNew(job, connection)
         return { ok: true }
       } catch (error) {
         running = false
@@ -704,7 +784,7 @@ export async function answerPage<C extends ExtensionCommand>(
           todo: fills,
         })
         job.skipped = skipped
-        await start(job, connection, true)
+        await startNew(job, connection)
         return { ok: true }
       } catch (error) {
         running = false
@@ -763,6 +843,8 @@ export async function answerPage<C extends ExtensionCommand>(
       if (job?.origin === origin) {
         await browser.storage.local.remove("walmartJob")
         await badge(null)
+        // Stop at Walmart's check dismisses a fill that went part way.
+        await reportLeftOver(job)
       }
       return { ok: true }
     }

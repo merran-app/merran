@@ -27,6 +27,12 @@ import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { aislesOf, findAisle, householdAisles } from "../list/aisles.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import { toNumber } from "../../database/numbers.ts"
+import {
+  asKept,
+  pantryChange,
+  recordPantryChange,
+  type Kept,
+} from "../webhooks/events/pantry.ts"
 
 // What's at home, kept in the fridge, the freezer or the cupboard. It
 // goes in from the list when it's checked off or the shopping's put
@@ -412,7 +418,7 @@ export async function addTyped(
   const today = await householdToday(em, householdId)
   const place = await placeFor(em, householdId, { name, unit }, today)
   const storedIn = input.storedIn ?? place.storedIn
-  const { item } = await store(em, householdId, {
+  const { item, created } = await store(em, householdId, {
     name,
     quantity,
     unit,
@@ -427,6 +433,12 @@ export async function addTyped(
           : place.useBy,
     forMeals: [],
   })
+  // Added into what's there, it changes that.
+  await recordPantryChange(
+    em,
+    householdId,
+    created ? { added: 1 } : { changed: 1 }
+  )
   await em.flush()
   return (await describeItems(em, householdId, [item]))[0]!
 }
@@ -448,6 +460,7 @@ export async function updateItem(
 ) {
   const keyOf = await householdKeys(em)
   const item = await findItem(em, id)
+  const was = asKept(item)
   if (changes.name !== undefined) {
     item.name = changes.name.trim()
     item.foodKey = keyOf(item.name)
@@ -469,6 +482,8 @@ export async function updateItem(
       ? em.getReference(Aisle, aisle.id, { wrapped: true })
       : null
   }
+  // Saving it as it is changes nothing.
+  await recordPantryChange(em, householdId, pantryChange(was, item))
   await em.flush()
   return (await describeItems(em, householdId, [item]))[0]!
 }
@@ -511,6 +526,8 @@ export async function splitItem(
   })
   item.quantity = rest.quantity
   item.unit = rest.unit
+  // Some of one thing moved, whether it joined what's there or not.
+  await recordPantryChange(em, householdId, { moved: 1 })
   await em.flush()
   const [described, movedView] = await describeItems(em, householdId, [
     item,
@@ -538,11 +555,26 @@ export function itemSnapshot(item: PantryItem) {
 
 export type PantrySnapshotItem = ReturnType<typeof itemSnapshot>
 
-/** Used up, or thrown out: says what it was, for Undo. */
-export async function removeItem(em: EntityManager, id: string) {
+/**
+ * Takes something out of the pantry, to be saved with the caller's next
+ * flush. Says what it was, for Undo.
+ */
+export async function takeOutItem(em: EntityManager, id: string) {
   const item = await findItem(em, id)
   const before = itemSnapshot(item)
   em.remove(item)
+  return before
+}
+
+/** Used up, or thrown out: says what it was, for Undo. */
+export async function removeItem(
+  em: EntityManager,
+  householdId: string,
+  id: string
+) {
+  const before = await takeOutItem(em, id)
+  // The app calls this Used up.
+  await recordPantryChange(em, householdId, { usedUp: 1 })
   await em.flush()
   return before
 }
@@ -568,6 +600,7 @@ export async function bulkItems(
       id: { $in: ids.filter((id) => UUID.test(id)) },
     })
     const before = items.map(itemSnapshot)
+    const was = items.map(asKept)
     if (bulk.action === "storedIn") {
       // Only what really moves teaches where it goes.
       const moving = items.filter(
@@ -588,8 +621,36 @@ export async function bulkItems(
       } else item.useBy = bulk.useBy
     }
     await tx.flush()
+    await recordBulk(tx, householdId, bulk, items, was)
     return { changed: items.length, before }
   })
+}
+
+/**
+ * Tells webhooks what a bulk change did: things used up, or moved, or
+ * given a use-by date. Only what really moved or changed counts. `was` is
+ * each thing as it was, in the order of `items`.
+ */
+async function recordBulk(
+  tx: EntityManager,
+  householdId: string,
+  bulk: PantryBulk,
+  items: readonly PantryItem[],
+  was: readonly Kept[]
+) {
+  if (bulk.action === "remove") {
+    // The app calls this Used up.
+    await recordPantryChange(tx, householdId, { usedUp: items.length })
+    return
+  }
+
+  const counts = { moved: 0, changed: 0 }
+  items.forEach((item, index) => {
+    const change = pantryChange(was[index]!, item)
+    counts.moved += change.moved
+    counts.changed += change.changed
+  })
+  await recordPantryChange(tx, householdId, counts)
 }
 
 /** Everything out of the pantry. Says what was there, for Undo. */
@@ -599,6 +660,7 @@ export async function clearPantry(em: EntityManager, householdId: string) {
     const before = items.map(itemSnapshot)
     for (const item of items) tx.remove(item)
     await tx.flush()
+    await recordPantryChange(tx, householdId, { removed: items.length })
     return { before }
   })
 }
@@ -618,9 +680,13 @@ export async function restoreItems(
       (await householdAisles(tx, householdId)).map((aisle) => [aisle.id, aisle])
     )
     const restored: PantryItem[] = []
+    // For webhooks: things back in the pantry, and things there that were
+    // put back as they were (Undo of a move, say).
+    const counts = { added: 0, moved: 0, changed: 0 }
     for (const snapshot of snapshots) {
       if (!UUID.test(snapshot.id)) continue
       let item = await tx.findOne(PantryItem, { id: snapshot.id })
+      const was = item ? asKept(item) : null
       if (!item) {
         const elsewhere = await tx.count(
           PantryItem,
@@ -648,8 +714,16 @@ export async function restoreItems(
         forMeals: snapshot.forMeals,
       })
       restored.push(item)
+      if (!was) {
+        counts.added++
+      } else {
+        const change = pantryChange(was, item)
+        counts.moved += change.moved
+        counts.changed += change.changed
+      }
     }
     await tx.flush()
+    await recordPantryChange(tx, householdId, counts)
     return describeItems(tx, householdId, restored)
   })
 }

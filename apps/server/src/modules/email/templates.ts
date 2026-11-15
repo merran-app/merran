@@ -129,6 +129,57 @@ export function testEmail() {
   }
 }
 
+/**
+ * Tells a household's owners and admins that Merran stopped sending to one
+ * of its webhooks, why, and where to start it again.
+ */
+export function webhookPausedEmail(options: {
+  household: string
+  webhook: string
+  reason: "gave_up" | "gone"
+  /** The Webhooks section of Household settings, when Merran knows its address. */
+  link: string | null
+}) {
+  const webhook = escapeHtml(options.webhook)
+  const why =
+    options.reason === "gave_up"
+      ? {
+          text: `Merran couldn't deliver to ${options.webhook} for about a day, so it has stopped sending to it.`,
+          html: `Merran couldn&rsquo;t deliver to <strong style="color:#263b2b;">${webhook}</strong> for about a day, so it has stopped sending to it.`,
+        }
+      : {
+          text: `${options.webhook} answered that it's gone, so Merran has stopped sending to it.`,
+          html: `<strong style="color:#263b2b;">${webhook}</strong> answered that it&rsquo;s gone, so Merran has stopped sending to it.`,
+        }
+  const next =
+    "Check the tool it sends to, then resume it in Settings → Webhooks."
+  const whyYou = `You're getting this because you're an owner or admin of ${options.household} on Merran.`
+  const link = options.link ? escapeHtml(options.link) : null
+
+  return {
+    subject: `${options.webhook} is paused`,
+    text: [
+      why.text,
+      next,
+      ...(options.link ? [`Open your webhooks: ${options.link}`] : []),
+      whyYou,
+    ].join("\n\n"),
+    html: layout({
+      preview: why.text,
+      eyebrow: "Webhooks",
+      title: `${options.webhook} is paused.`,
+      body: `<p style="${paragraph}">${why.html}</p>
+          <p style="${paragraph}">Check the tool it sends to, then resume it in <strong style="color:#263b2b;">Settings &rarr; Household &rarr; Webhooks</strong>.</p>${
+            link
+              ? `
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px;"><tr><td bgcolor="#315c3c" style="border:1px solid #315c3c;border-radius:7px;mso-padding-alt:15px 24px;"><a href="${link}" style="display:inline-block;padding:15px 24px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:22px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:7px;">Open webhooks&nbsp; &rarr;</a></td></tr></table>`
+              : ""
+          }`,
+      footer: whyYou,
+    }),
+  }
+}
+
 export function passwordResetEmail(options: { link: string; expiresAt: Date }) {
   const url = new URL(options.link)
   if (

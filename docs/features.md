@@ -72,6 +72,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
 | A recipe library: photos, servings, times, sections, notes, source, rating | Headline | Built | |
+| Steps and ingredients edited in a box each, or as text | Detail | Built | Enter starts the next line and Backspace joins; pasting lines adds one for each; sections as heading rows; a menu to move, add a section or delete; steps numbered, ingredients with a dot; Edit as text, remembered on the device for each card; [plan](recipe-editor.md) (November 14, 2026) |
 | Scaling | Key | Built | |
 | Units as written, US or metric, both ways | Key | Built | Per device |
 | Versions, with restore | Detail | Built | |
@@ -222,7 +223,8 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | A documented public API (OpenAPI), with a reference page | Headline | Built | The web app uses the same API |
 | API keys with permissions, one household, rate limits | Key | Built | Available in alpha.5: key creation and the generated-key screen use a drawer on mobile, including MCP setup; larger screens use a dialog. |
 | Live events stream | Detail | Built | |
-| Webhooks for Home Assistant, n8n and others | Key | Planned | |
+| Webhooks for Home Assistant, n8n and others | Key | Built | All four pull requests built, November 10, 11, 13 and 13, 2026 ([plan](webhooks.md)): household admins add webhooks in Settings → Webhooks, its own page, with signed Standard Webhooks deliveries, retries over about 27 hours, a deliveries log, Send a test and pausing, with a server card to turn them off and allow the home network, and events for recipes added, changed, deleted and restored, imports finishing, tidy-up and Review, the plan changing or autoplanned, meals made or skipped, the list changing, finished or sent to a store (Walmart through the extension, which now reports when its fill ends), and the pantry changing, with the busy ones gathered for 30 seconds into one event for each person, and cooking from cook view: cooking started and ended, and timers started, given more time, done (sent by the server, on time) and cancelled, with `GET /api/cooking/sessions` for a Home Assistant sensor; and the daily heads-ups, under Heads-ups: a daily summary at the household's Daily summary at time (07:00 unless changed), "time to start" for each meal from its time and its longest dish, and what's come close to its use-by date; guide for Home Assistant and n8n |
+| Server-level webhooks: an update is available, a job keeps failing, someone signed up, a backup finished | Detail | Later | On the same engine as the household's ([plan](webhooks.md#later)) |
 | MCP server for compatible external AI apps | Headline | Built | Available in alpha.5: stateless /mcp with the official SDK, scoped API keys or OAuth tokens, shared assistant tools and proposals in Review. Direct plan/list application remains future work ([decision](platform.md#mcp-server)) |
 | OAuth connections for MCP and REST clients | Key | Built | Available in alpha.5: PKCE, discovery, dynamic and administrator client registration, household consent, separate resource audiences, rotating refresh tokens and connection revocation. Operator confirmed MCP OAuth and recipe proposals on TrueNAS/Dockge; REST clients and broader lifecycle checks remain. General “Sign in with Merran” is excluded ([plan](authentication.md)). |
 | Household-owned API keys; OpenTelemetry; a Helm chart | Detail | Later | |

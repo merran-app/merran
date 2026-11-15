@@ -1,6 +1,7 @@
 import { z } from "@hono/zod-openapi"
 import { AVOID_LEVELS, DIETS, THEME_KINDS } from "@merran/shared"
 import { MEALS, PLAN_STATUSES } from "../../database/entities/index.ts"
+import { MadeInSessionField } from "./cooking.ts"
 import { IDS, TIMES } from "./examples.ts"
 import { MealRecipeSchema } from "./meal-recipes.ts"
 
@@ -257,6 +258,10 @@ export const PlanEntryChangesSchema = z
     status: StatusSchema,
     why: why.nullable().openapi({
       description: "Why a new recipe was picked, as Something else said.",
+    }),
+    session: MadeInSessionField.openapi({
+      description:
+        "With `status: cooked`, the cooking session it was made in, from cook view's Made it. It ends, as `made`, sending `cooking.ended` after `meal.cooked`. Left alone otherwise, as is one that's ended or someone else's.",
     }),
   })
   .partial()

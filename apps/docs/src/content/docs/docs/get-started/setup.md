@@ -73,7 +73,7 @@ For a source checkout using `pnpm dev`, the server does not automatically load `
 
 ## Find the right settings
 
-- **Settings** has a page for each topic: your own **Profile**, **Sign-in**, and **Apps and devices**, and the household's **Household**, **Planning**, **Recipes**, **AI**, **Shopping and stores**, and **Import and export**.
+- **Settings** has a page for each topic: your own **Profile**, **Sign-in**, and **Apps and devices**, and the household's **Webhooks**, **Household**, **Planning**, **Recipes**, **AI**, **Shopping and stores**, and **Import and export**.
 - As the server admin, you also see **Server**, and a switch to **Whole server** on pages with settings that reach every household.
 - Most household settings are for household owners and admins; a few, like **Tastes**, anyone in the household can change.
 

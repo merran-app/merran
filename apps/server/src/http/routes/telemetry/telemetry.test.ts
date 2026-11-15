@@ -73,6 +73,7 @@ test("the next summary can be seen before saying yes to it", async () => {
       errorTracking: false,
       telemetry: false,
       updates: true,
+      webhooks: true,
     },
     aiProviders: [],
     households: "1",

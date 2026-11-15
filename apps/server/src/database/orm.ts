@@ -6,6 +6,7 @@ import { MikroORM as PostgresORM } from "@mikro-orm/postgresql"
 import type { MikroORM } from "@mikro-orm/sql"
 import { MikroORM as SqliteORM } from "@mikro-orm/sqlite"
 import type { DatabaseConfig } from "../core/config.ts"
+import { AtCommit } from "./at-commit.ts"
 import { entities } from "./entities/index.ts"
 
 export type Database = MikroORM
@@ -19,6 +20,8 @@ function options(kind: DatabaseConfig["kind"]) {
   const folder = migrationsFolder(kind)
   return {
     entities,
+    // Work a transaction does as it commits (at-commit.ts).
+    subscribers: [new AtCommit()],
     extensions: [Migrator],
     migrations: {
       path: folder,

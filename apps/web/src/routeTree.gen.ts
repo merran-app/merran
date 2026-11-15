@@ -63,6 +63,8 @@ import { Route as AppSettingsShoppingIndexRouteImport } from './routes/_app/sett
 import { Route as AppSettingsShoppingServerRouteImport } from './routes/_app/settings/shopping/server'
 import { Route as AppSettingsSignInIndexRouteImport } from './routes/_app/settings/sign-in/index'
 import { Route as AppSettingsSignInServerRouteImport } from './routes/_app/settings/sign-in/server'
+import { Route as AppSettingsWebhooksIndexRouteImport } from './routes/_app/settings/webhooks/index'
+import { Route as AppSettingsWebhooksServerRouteImport } from './routes/_app/settings/webhooks/server'
 import { Route as FocusRecipesSlugCookRouteImport } from './routes/_focus/recipes/$slug/cook'
 
 const AppRoute = AppRouteImport.update({
@@ -343,6 +345,18 @@ const AppSettingsSignInServerRoute = AppSettingsSignInServerRouteImport.update({
   path: '/sign-in/server',
   getParentRoute: () => AppSettingsRoute,
 } as any)
+const AppSettingsWebhooksIndexRoute =
+  AppSettingsWebhooksIndexRouteImport.update({
+    id: '/webhooks/',
+    path: '/webhooks/',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
+const AppSettingsWebhooksServerRoute =
+  AppSettingsWebhooksServerRouteImport.update({
+    id: '/webhooks/server',
+    path: '/webhooks/server',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
 const FocusRecipesSlugCookRoute = FocusRecipesSlugCookRouteImport.update({
   id: '/recipes/$slug/cook',
   path: '/recipes/$slug/cook',
@@ -392,6 +406,7 @@ export interface FileRoutesByFullPath {
   '/settings/recipes/server': typeof AppSettingsRecipesServerRoute
   '/settings/shopping/server': typeof AppSettingsShoppingServerRoute
   '/settings/sign-in/server': typeof AppSettingsSignInServerRoute
+  '/settings/webhooks/server': typeof AppSettingsWebhooksServerRoute
   '/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/pantry/receipts/': typeof AppPantryReceiptsIndexRoute
   '/recipes/$slug/': typeof AppRecipesSlugIndexRoute
@@ -403,6 +418,7 @@ export interface FileRoutesByFullPath {
   '/settings/recipes/': typeof AppSettingsRecipesIndexRoute
   '/settings/shopping/': typeof AppSettingsShoppingIndexRoute
   '/settings/sign-in/': typeof AppSettingsSignInIndexRoute
+  '/settings/webhooks/': typeof AppSettingsWebhooksIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -446,6 +462,7 @@ export interface FileRoutesByTo {
   '/settings/recipes/server': typeof AppSettingsRecipesServerRoute
   '/settings/shopping/server': typeof AppSettingsShoppingServerRoute
   '/settings/sign-in/server': typeof AppSettingsSignInServerRoute
+  '/settings/webhooks/server': typeof AppSettingsWebhooksServerRoute
   '/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/pantry/receipts': typeof AppPantryReceiptsIndexRoute
   '/recipes/$slug': typeof AppRecipesSlugIndexRoute
@@ -457,6 +474,7 @@ export interface FileRoutesByTo {
   '/settings/recipes': typeof AppSettingsRecipesIndexRoute
   '/settings/shopping': typeof AppSettingsShoppingIndexRoute
   '/settings/sign-in': typeof AppSettingsSignInIndexRoute
+  '/settings/webhooks': typeof AppSettingsWebhooksIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -504,6 +522,7 @@ export interface FileRoutesById {
   '/_app/settings/recipes/server': typeof AppSettingsRecipesServerRoute
   '/_app/settings/shopping/server': typeof AppSettingsShoppingServerRoute
   '/_app/settings/sign-in/server': typeof AppSettingsSignInServerRoute
+  '/_app/settings/webhooks/server': typeof AppSettingsWebhooksServerRoute
   '/_focus/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/_app/pantry/receipts/': typeof AppPantryReceiptsIndexRoute
   '/_app/recipes/$slug/': typeof AppRecipesSlugIndexRoute
@@ -515,6 +534,7 @@ export interface FileRoutesById {
   '/_app/settings/recipes/': typeof AppSettingsRecipesIndexRoute
   '/_app/settings/shopping/': typeof AppSettingsShoppingIndexRoute
   '/_app/settings/sign-in/': typeof AppSettingsSignInIndexRoute
+  '/_app/settings/webhooks/': typeof AppSettingsWebhooksIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -561,6 +581,7 @@ export interface FileRouteTypes {
     | '/settings/recipes/server'
     | '/settings/shopping/server'
     | '/settings/sign-in/server'
+    | '/settings/webhooks/server'
     | '/recipes/$slug/cook'
     | '/pantry/receipts/'
     | '/recipes/$slug/'
@@ -572,6 +593,7 @@ export interface FileRouteTypes {
     | '/settings/recipes/'
     | '/settings/shopping/'
     | '/settings/sign-in/'
+    | '/settings/webhooks/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -615,6 +637,7 @@ export interface FileRouteTypes {
     | '/settings/recipes/server'
     | '/settings/shopping/server'
     | '/settings/sign-in/server'
+    | '/settings/webhooks/server'
     | '/recipes/$slug/cook'
     | '/pantry/receipts'
     | '/recipes/$slug'
@@ -626,6 +649,7 @@ export interface FileRouteTypes {
     | '/settings/recipes'
     | '/settings/shopping'
     | '/settings/sign-in'
+    | '/settings/webhooks'
   id:
     | '__root__'
     | '/_app'
@@ -672,6 +696,7 @@ export interface FileRouteTypes {
     | '/_app/settings/recipes/server'
     | '/_app/settings/shopping/server'
     | '/_app/settings/sign-in/server'
+    | '/_app/settings/webhooks/server'
     | '/_focus/recipes/$slug/cook'
     | '/_app/pantry/receipts/'
     | '/_app/recipes/$slug/'
@@ -683,6 +708,7 @@ export interface FileRouteTypes {
     | '/_app/settings/recipes/'
     | '/_app/settings/shopping/'
     | '/_app/settings/sign-in/'
+    | '/_app/settings/webhooks/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1080,6 +1106,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsSignInServerRouteImport
       parentRoute: typeof AppSettingsRoute
     }
+    '/_app/settings/webhooks/': {
+      id: '/_app/settings/webhooks/'
+      path: '/webhooks'
+      fullPath: '/settings/webhooks/'
+      preLoaderRoute: typeof AppSettingsWebhooksIndexRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/webhooks/server': {
+      id: '/_app/settings/webhooks/server'
+      path: '/webhooks/server'
+      fullPath: '/settings/webhooks/server'
+      preLoaderRoute: typeof AppSettingsWebhooksServerRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
     '/_focus/recipes/$slug/cook': {
       id: '/_focus/recipes/$slug/cook'
       path: '/recipes/$slug/cook'
@@ -1103,6 +1143,7 @@ interface AppSettingsRouteChildren {
   AppSettingsRecipesServerRoute: typeof AppSettingsRecipesServerRoute
   AppSettingsShoppingServerRoute: typeof AppSettingsShoppingServerRoute
   AppSettingsSignInServerRoute: typeof AppSettingsSignInServerRoute
+  AppSettingsWebhooksServerRoute: typeof AppSettingsWebhooksServerRoute
   AppSettingsAiIndexRoute: typeof AppSettingsAiIndexRoute
   AppSettingsAppsIndexRoute: typeof AppSettingsAppsIndexRoute
   AppSettingsHouseholdIndexRoute: typeof AppSettingsHouseholdIndexRoute
@@ -1110,6 +1151,7 @@ interface AppSettingsRouteChildren {
   AppSettingsRecipesIndexRoute: typeof AppSettingsRecipesIndexRoute
   AppSettingsShoppingIndexRoute: typeof AppSettingsShoppingIndexRoute
   AppSettingsSignInIndexRoute: typeof AppSettingsSignInIndexRoute
+  AppSettingsWebhooksIndexRoute: typeof AppSettingsWebhooksIndexRoute
 }
 
 const AppSettingsRouteChildren: AppSettingsRouteChildren = {
@@ -1125,6 +1167,7 @@ const AppSettingsRouteChildren: AppSettingsRouteChildren = {
   AppSettingsRecipesServerRoute: AppSettingsRecipesServerRoute,
   AppSettingsShoppingServerRoute: AppSettingsShoppingServerRoute,
   AppSettingsSignInServerRoute: AppSettingsSignInServerRoute,
+  AppSettingsWebhooksServerRoute: AppSettingsWebhooksServerRoute,
   AppSettingsAiIndexRoute: AppSettingsAiIndexRoute,
   AppSettingsAppsIndexRoute: AppSettingsAppsIndexRoute,
   AppSettingsHouseholdIndexRoute: AppSettingsHouseholdIndexRoute,
@@ -1132,6 +1175,7 @@ const AppSettingsRouteChildren: AppSettingsRouteChildren = {
   AppSettingsRecipesIndexRoute: AppSettingsRecipesIndexRoute,
   AppSettingsShoppingIndexRoute: AppSettingsShoppingIndexRoute,
   AppSettingsSignInIndexRoute: AppSettingsSignInIndexRoute,
+  AppSettingsWebhooksIndexRoute: AppSettingsWebhooksIndexRoute,
 }
 
 const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(

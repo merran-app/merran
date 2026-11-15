@@ -35,9 +35,9 @@ const route = createRoute({
 
 export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em } = inHousehold(c)
+    const { em, householdId } = inHousehold(c)
     return c.json(
-      await sendKrogerBasket(deps, em, c.req.valid("json").lines),
+      await sendKrogerBasket(deps, em, householdId, c.req.valid("json")),
       200
     )
   })

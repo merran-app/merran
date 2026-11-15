@@ -1,0 +1,1181 @@
+---
+title: Webhooks
+description: Tell Home Assistant, n8n and other tools when things happen in your kitchen, and check that each message came from your Merran.
+sidebar:
+  order: 7
+---
+
+A webhook is an address Merran sends a message to when something happens. Add one from Home Assistant, n8n or any tool that can receive a web request, pick the events you want, and that tool hears about them as they happen.
+
+Merran sends these events:
+
+| Event                                      | When                                                                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| [`recipe.created`](#recipecreated)         | A recipe is added                                                                          |
+| [`recipe.updated`](#recipeupdated)         | A recipe is changed                                                                        |
+| [`recipe.deleted`](#recipedeleted)         | A recipe goes to Recently deleted                                                          |
+| [`recipe.restored`](#reciperestored)       | A recipe comes back from Recently deleted                                                  |
+| [`import.finished`](#importfinished)       | An import runs to its end                                                                  |
+| [`tidy.ready`](#tidyready)                 | Tidy up finishes with suggestions waiting                                                  |
+| [`review.waiting`](#reviewwaiting)         | Something new waits in Review                                                              |
+| [`cooking.started`](#cookingstarted)       | Someone starts cooking in cook view                                                        |
+| [`cooking.ended`](#cookingended)           | Cooking ends: Done cooking, cook view left, or no word for 30 minutes                      |
+| [`timer.started`](#timerstarted)           | A timer starts in cook view                                                                |
+| [`timer.extended`](#timerextended)         | A timer gets **+1 min**                                                                    |
+| [`timer.finished`](#timerfinished)         | A timer's time is up                                                                       |
+| [`timer.cancelled`](#timercancelled)       | A timer is cancelled before it goes off                                                    |
+| [`plan.changed`](#planchanged)             | Meals are added, moved, changed or removed (gathered)                                      |
+| [`plan.autoplanned`](#planautoplanned)     | The autoplan plans a week                                                                  |
+| [`meal.cooked`](#mealcooked)               | A meal is marked made                                                                      |
+| [`meal.skipped`](#mealskipped)             | A planned meal is marked Didn't                                                            |
+| [`list.changed`](#listchanged)             | Things on a list are added, checked off, changed or removed (gathered)                     |
+| [`list.completed`](#listcompleted)         | The last thing on a list is checked off, or it's put away with things left                 |
+| [`list.sent`](#listsent)                   | A list goes to a store's cart                                                              |
+| [`pantry.changed`](#pantrychanged)         | Things are put away, used up, moved, changed or removed (gathered)                         |
+| [`day.summary`](#daysummary)               | Each day at **Daily summary at**: the day's meals, the pool, what to use soon and the list |
+| [`meal.time_to_start`](#mealtime_to_start) | It's time to start cooking a planned meal                                                  |
+| [`pantry.use_soon`](#pantryuse_soon)       | Things at home come within 2 days of their use-by date                                     |
+| [`webhook.test`](#webhooktest)             | Someone chooses **Send a test**                                                            |
+
+`day.summary`, `meal.time_to_start` and `pantry.use_soon` are the [daily heads-ups](#daily-heads-ups), which Merran sends on a schedule rather than when someone changes something.
+
+## Before you start
+
+- You need to be an **Owner** or **Admin** of the household. Members don't see webhooks.
+- A server admin can turn webhooks off for the whole server, with the **Let households send webhooks** switch in **Settings → Webhooks → Whole server** or `MERRAN_WEBHOOKS=false`. Then households don't see the **Webhooks** page, and saved webhooks are kept for later.
+- Set the server's public address (`MERRAN_PUBLIC_URL`) if you want the links in the messages: each recipe's `url`, and the ones for imports, Review and a week of the plan. Without it, every `url` is `null`.
+- Webhooks are managed in the app only. API keys can't add, change or read them.
+- A household can have up to 10 webhooks, and each can have up to 5 extra headers.
+
+## Add a webhook
+
+1. Open **Settings → Webhooks**. A server admin sees the household's webhooks under **This household**.
+2. Choose **Add webhook**.
+3. Enter a **Name**, like `Home Assistant`, so you can tell it apart in the list.
+4. Enter the **Address** the other tool gave you. It must start with `http://` or `https://`, can't have a user name or password in it (use a header instead), and is sealed like the server's other secrets once saved.
+5. Under **Events**, open an area like **Recipes** or **Shopping list** and tap the events you want, which light up when chosen. The line under the chips says what sends the one you touched last. To choose a whole area at once, tick the checkbox on the area's row, which also shows how many are chosen, like "2 of 7". Or choose **Everything, including events added later**, which hides the areas.
+6. If the tool wants a token or password in a header, open **Extra headers** (it says **Optional** until you add one), choose **Add a header** and fill in its name and value. Each value goes on one line, and headers that can't be sent with a request, like `Connection`, `Transfer-Encoding` or `Expect`, can't be added. Header values stay sealed: to change the headers later, fill in every value again, and Merran asks for any you leave empty.
+7. Save it. Merran shows **Here's the secret**: copy it into the tool that checks signatures. You can show it again later with **Show secret**.
+8. Open the webhook and choose **Send a test**. Merran sends a `webhook.test` event once and shows the answer.
+
+Each webhook in the list shows its name, the host it sends to, how many events it wants, and its state:
+
+- **Working**: deliveries are arriving.
+- **Failing**: a delivery didn't go through and Merran is trying again.
+- **Paused**: Merran has stopped sending. See [Retries and pausing](#retries-and-pausing).
+
+Open a webhook to see its **Deliveries**, and to **Edit**, **Pause** or **Resume**, **Rotate secret**, **Show secret** or **Delete** it.
+
+## Daily heads-ups
+
+Three events come on a schedule, under **Heads-ups** in a webhook's events: **Daily summary** (`day.summary`), **Time to start** (`meal.time_to_start`) and **Use soon** (`pantry.use_soon`). They work on the household's clock, in the **Time zone** set in **Settings → Household**, and Merran looks for them every 5 minutes.
+
+- **Daily summary** goes once a day at the time under **Daily heads-ups** in **Settings → Webhooks**: **Daily summary at**, 07:00 unless you change it. Choose **Save** after changing it. A time that's already gone by today starts tomorrow, and a webhook added after today's time hears tomorrow's. If the server was off at that time, the summary goes when it's back that day.
+- **Use soon** goes at the same time, but only when something at home has come within 2 days of its use-by date since it was last sent, and lists only those. The first one a webhook hears lists everything that's close.
+- **Time to start** goes when a planned meal's longest dish needs starting: the meal's time less that dish's total time, or its prep and cook times added up when the recipe gives no total. A meal's time is the one on the **Plan** page: the time set for that day, or the household's usual time for the meal under **Usual meal times** in **Settings → Planning → Calendar subscriptions**. A meal whose dishes don't say how long they take sends nothing, nor do meals in **This week, any day**, made ones or ones marked **Didn't**. It goes within 5 minutes of the start, once, and never more than 15 minutes late, so a meal planned after its start has gone by says nothing.
+
+## The home network
+
+Home Assistant usually lives on your home network, which Merran refuses by default: on a server shared with others, any household could otherwise make Merran call machines on your network. A server admin allows it in one of two ways:
+
+- In **Settings → Webhooks → Whole server**, set **Webhooks to the home network** to **Off** (the default), **Every household** or **Chosen households**, and pick the households. Or set `MERRAN_WEBHOOKS_HOME_NETWORK` to `off`, `all` or `chosen`, which locks the setting in the app.
+- When the server admin adds a webhook for a household that isn't allowed yet, the form shows **Allow the home network for this household**, so on a server with one household it takes one tick.
+
+Without permission, saving an address on the home network fails with "This address is on your home network. The server admin can allow that in Settings → Webhooks → Whole server." Merran checks again on every send, so a name that starts pointing at your home network later is refused too.
+
+Even with permission, a webhook can't reach a link-local address, like `169.254.169.254`, where a cloud server's metadata service hands out its keys. Saving one fails with "Webhooks can't reach link-local addresses, like 169.254.169.254.", and a name that leads to one is refused when Merran sends.
+
+Use Home Assistant's IP address, like `http://192.168.1.20:8123/api/webhook/…`, rather than `homeassistant.local`. That name often doesn't resolve from inside Docker.
+
+## Home Assistant
+
+This automation announces a new recipe. Its webhook trigger gives you the message as `trigger.json`.
+
+1. In Home Assistant, make an automation with a **Webhook** trigger. It shows you the webhook id and the address, `http://<home-assistant-ip>:8123/api/webhook/<webhook id>`.
+2. In Merran, add a webhook with that address and tick **A recipe is added** (`recipe.created`).
+3. Use this in the automation's YAML, with your own webhook id and speaker:
+
+```yaml
+alias: Announce new recipes
+triggers:
+  - trigger: webhook
+    webhook_id: merran-recipes-9f3c1a7e5b2d
+    allowed_methods:
+      - POST
+    local_only: true
+conditions:
+  - condition: template
+    value_template: "{{ trigger.json.type == 'recipe.created' }}"
+actions:
+  - action: tts.speak
+    target:
+      entity_id: tts.home_assistant_cloud
+    data:
+      media_player_entity_id: media_player.kitchen
+      message: "A new recipe was added: {{ trigger.json.data.recipe.title }}"
+```
+
+The template condition lets one webhook serve several events: only the ones whose `type` it names run the actions. `local_only: true` makes Home Assistant refuse requests from outside your home network, which is where Merran is.
+
+To say something when a shopping trip is over, tick **A list is finished** (`list.completed`) and use:
+
+```yaml
+alias: Shopping list is done
+triggers:
+  - trigger: webhook
+    webhook_id: merran-list-done-4d8e2b6a1c07
+    allowed_methods:
+      - POST
+    local_only: true
+conditions:
+  - condition: template
+    value_template: "{{ trigger.json.type == 'list.completed' }}"
+actions:
+  - action: tts.speak
+    target:
+      entity_id: tts.home_assistant_cloud
+    data:
+      media_player_entity_id: media_player.kitchen
+      message: "The shopping list is done"
+```
+
+Home Assistant's webhook trigger checks no signature. The webhook id in the address is the secret: whoever has the address can start the automation, so choose a long random id and don't share it. Merran seals the address when it's saved.
+
+### The kitchen reacting to cooking
+
+To turn the hood fan on while someone cooks, tick **Cooking starts** and **Cooking ends** (`cooking.started`, `cooking.ended`) under **Cooking**, and use:
+
+```yaml
+alias: Hood fan while cooking
+triggers:
+  - trigger: webhook
+    webhook_id: merran-cooking-7b1e9c3a5d2f
+    allowed_methods:
+      - POST
+    local_only: true
+actions:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.json.type == 'cooking.started' }}"
+        sequence:
+          - action: fan.turn_on
+            target:
+              entity_id: fan.range_hood
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.json.type == 'cooking.ended' }}"
+        sequence:
+          - action: fan.turn_off
+            target:
+              entity_id: fan.range_hood
+```
+
+Cooking ends with **Done cooking**, when cook view is left (once its timers are done, if any are running), a minute after cook view's page is closed, or after 30 minutes with no word from cook view and no timer running. So the fan doesn't stay on all night if someone walks away. If two people cook at once, each has their own session: check `trigger.json.data.session.id`, or read who's cooking (below), before turning the fan off.
+
+To hear on the speakers when a timer is done, tick **A timer is done** (`timer.finished`). Merran keeps each timer itself and sends this on time, even if the phone or tablet that started it has gone to sleep:
+
+```yaml
+alias: Kitchen timer done
+triggers:
+  - trigger: webhook
+    webhook_id: merran-timers-2c8f4a6e1b9d
+    allowed_methods:
+      - POST
+    local_only: true
+conditions:
+  - condition: template
+    value_template: "{{ trigger.json.type == 'timer.finished' }}"
+actions:
+  - action: tts.speak
+    target:
+      entity_id: tts.home_assistant_cloud
+    data:
+      media_player_entity_id: media_player.kitchen
+      message: "{{ trigger.json.data.timer.label }} is done"
+```
+
+### A morning summary and "time to start"
+
+To get the day's meals on your phone each morning and hear when to start dinner, tick the **Heads-ups** area's **Daily summary** and **Time to start** (`day.summary`, `meal.time_to_start`), and use:
+
+```yaml
+alias: Meal heads-ups
+triggers:
+  - trigger: webhook
+    webhook_id: merran-heads-ups-5e2a9c7b3d1f
+    allowed_methods:
+      - POST
+    local_only: true
+actions:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.json.type == 'day.summary' }}"
+        sequence:
+          - action: notify.notify
+            data:
+              title: Today's meals
+              message: >-
+                {% set day = trigger.json.data %}
+                {% for meal in day.meals %}
+                {{ meal.meal | capitalize }} at {{ meal.time }}: {{ meal.dishes | map(attribute='title') | join(' and ') }}.
+                {% else %}
+                Nothing planned today.
+                {% endfor %}
+                {% if day.useSoon %}Use soon: {{ day.useSoon | map(attribute='name') | join(', ') }}.{% endif %}
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.json.type == 'meal.time_to_start' }}"
+        sequence:
+          - action: tts.speak
+            target:
+              entity_id: tts.home_assistant_cloud
+            data:
+              media_player_entity_id: media_player.kitchen
+              message: >-
+                Time to start {{ trigger.json.data.meal }}:
+                {{ trigger.json.data.dishes | map(attribute='title') | join(' and ') }},
+                ready at {{ trigger.json.data.time }}
+```
+
+The summary is sent even on a day with nothing planned, so the morning message still comes. To show what to use soon on a wall display instead, tick **Use soon** (`pantry.use_soon`) too, and keep the latest `trigger.json.data.items` in a template sensor or a text helper.
+
+### Who's cooking now
+
+A sensor can read who's cooking, with their running timers, from `GET /api/cooking/sessions`, using an [API key](../../api/) with **Plan** read access. No webhook is needed. An empty `sessions` list means nobody's cooking:
+
+```yaml
+rest:
+  - resource: http://<merran-address>/api/cooking/sessions
+    headers:
+      Authorization: !secret merran_api_key
+    scan_interval: 60
+    sensor:
+      - name: Merran cooking
+        value_template: "{{ value_json.sessions | length }}"
+        json_attributes:
+          - sessions
+```
+
+Put `Bearer ` and the key in `merran_api_key` in your `secrets.yaml`.
+
+## n8n
+
+1. In n8n, add a **Webhook** node. Set **HTTP Method** to `POST` and copy its **Production URL**.
+2. In Merran, add a webhook with that address and the events you want.
+3. To make n8n refuse anyone but Merran, set the Webhook node's **Authentication** to **Header Auth**, make a credential with a name like `x-merran-key` and a long random value, and add the same name and value in Merran under **Extra headers**.
+4. To check each message came from your Merran, add a **Code** node after the Webhook node. Turn on **Raw Body** in the Webhook node's options so the Code node can read the exact text Merran signed. Then check the signature with [`standardwebhooks`](#check-signatures):
+
+```js
+const { Webhook } = require("standardwebhooks")
+
+const secret = "whsec_…" // From Show secret. Better: an n8n credential or variable.
+const item = $input.first()
+// The raw body, exactly as Merran signed it.
+const payload = (await this.helpers.getBinaryDataBuffer(0, "data")).toString(
+  "utf8"
+)
+
+// Throws if the signature or timestamp is wrong, which stops the workflow.
+new Webhook(secret).verify(payload, {
+  "webhook-id": item.json.headers["webhook-id"],
+  "webhook-timestamp": item.json.headers["webhook-timestamp"],
+  "webhook-signature": item.json.headers["webhook-signature"],
+})
+
+return [{ json: JSON.parse(payload) }]
+```
+
+To post the day's meals to a chat each morning, tick **Daily summary** (`day.summary`) and, after the Code node, add an **If** node that checks `{{ $json.type }}` is equal to `day.summary`. On its true branch, add a Discord, Telegram or Slack node with this message:
+
+```text
+{{ $json.data.meals.length === 0 ? "Nothing planned today." : $json.data.meals.map((meal) => `${meal.meal} at ${meal.time}: ${meal.dishes.map((dish) => dish.title).join(" and ")}`).join("\n") }}
+```
+
+For "time to start", tick **Time to start** (`meal.time_to_start`) and check for that type instead: `$json.data.startAt` is when to start, `$json.data.serveAt` when it's served, and `$json.data.dishes` what's cooking.
+
+n8n Cloud can't call your home network, and a self-hosted n8n beside Merran may need its container's address rather than `localhost`. If the Code node can't load `standardwebhooks`, a self-hosted n8n needs `NODE_FUNCTION_ALLOW_EXTERNAL=standardwebhooks` and the package installed.
+
+## What each message looks like
+
+Merran sends a `POST` with a JSON body and these headers:
+
+- `content-type: application/json`
+- `user-agent: Merran/<version> (+https://merran.app)`
+- `webhook-id`: `msg_` and the event's id. It's the same on every try, so a receiver can ignore one it has handled already.
+- `webhook-timestamp`: when this try was sent, in seconds since 1970.
+- `webhook-signature`: see [Check signatures](#check-signatures).
+
+The body always has the same three parts: `type`, `timestamp` (when it happened, which isn't always when it's sent: deliveries can arrive out of order) and `data`. Every `data` has:
+
+- `household`: its `id` and `name`.
+- `by`: who did it, with their `id` and `name`, or `null` when Merran did it on its own.
+- `via`: how it was done. `app` is someone signed in, `api` is an API key or an OAuth connection on the REST API, `mcp` is an AI app connected with [MCP](../mcp/), and `merran` is Merran on its own.
+- `key`: for `api` and `mcp`, the key or connection used, with its `id` and `name`, and `null` otherwise. A flow that changes things through the API can use `by` and `key` to ignore the event it caused.
+
+Messages carry ids, names, titles and links, never whole recipes. Fetch more through the [API](../../api/) with your own key.
+
+### Gathered events
+
+Plan, list and pantry changes are gathered: `plan.changed`, `list.changed` and `pantry.changed` wait 30 seconds and are sent as one event for each person, so someone checking off 30 things at the store sends one `list.changed`, not 30. The counts in it are exact. Each person gets their own event, so `by`, `via` and `key` stay true, and a flow can still ignore the change it caused. The 30 seconds start with the first change. Changes that arrive meanwhile join that event and don't extend the wait, so it goes out about 30 to 35 seconds after the first change. A change that arrives just as the event is being put together goes out with the next one, about 30 seconds later. An event's `timestamp` is when the last change in it was made, not when it was sent: the `list.changed` for a trip's check-offs has the time of the last check, which is also when the `list.completed` it caused happened.
+
+### recipe.created
+
+Sent when a recipe is added: typed in, imported from a link, a page, text, photos or a video, sent from the [browser extension](../browser-extension/) or a share, or applied from a proposal. Links imported many at once send one each, but recipes brought in from another app or a Merran archive don't send it.
+
+`origin` is how it was added: `manual`, `link`, `video`, `text`, `photo` or `assistant`. Pages, the extension and shares arrive as `link`. `sourceUrl` is where it came from, or `null`.
+
+```json
+{
+  "type": "recipe.created",
+  "timestamp": "2026-11-10T18:04:12.511Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "api",
+    "key": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+      "name": "Merran extension"
+    },
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "origin": "link",
+    "sourceUrl": "https://example.com/lemon-chicken"
+  }
+}
+```
+
+### recipe.updated
+
+Sent when someone saves edits to a recipe, applies a tidy-up or proposal, saves a swap, restores a version, or changes its photo, diets or what can be left out. `parts` says what changed: any of `details`, `ingredients`, `steps`, `tags`, `photo` and `diets`. Nothing is sent when nothing changed. Stars, cooking notes, tags changed on many recipes at once, renamed tags and background nutrition, photo and food-matching runs don't send it.
+
+```json
+{
+  "type": "recipe.updated",
+  "timestamp": "2026-11-10T18:20:41.093Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "parts": ["ingredients", "steps"]
+  }
+}
+```
+
+### recipe.deleted
+
+Sent when a recipe goes to Recently deleted. Deleting it for good from there sends nothing more.
+
+```json
+{
+  "type": "recipe.deleted",
+  "timestamp": "2026-11-10T18:31:07.640Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    }
+  }
+}
+```
+
+### recipe.restored
+
+Sent when a recipe comes back from Recently deleted. Its body is the same as `recipe.deleted`'s, with `"type": "recipe.restored"`.
+
+### import.finished
+
+Sent when an import runs to its end: a batch of links, a collection, an import from Mealie or Paprika, or a Merran archive. `kind` is `links`, `collection`, `app` or `archive`, and `app` says `mealie` or `paprika` for an `app` import, or is `null`. `added`, `skipped` and `failed` count recipes. `import` is the job, which you can also see in **Jobs**, and `url` is its page in Merran.
+
+An import that fails as a whole, or that you stop, sends nothing: it shows on its page and in **Jobs**. An archive import always says `failed: 0`, because one recipe that fails fails the whole import. It's sent as Merran's own work (`by` is `null`, `via` is `merran`), because the import finishes in the background.
+
+```json
+{
+  "type": "import.finished",
+  "timestamp": "2026-11-10T19:12:30.402Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": null,
+    "via": "merran",
+    "key": null,
+    "import": {
+      "id": "0199e8b0-5a10-7a01-8b00-00000000000b"
+    },
+    "kind": "links",
+    "app": null,
+    "added": 11,
+    "skipped": 1,
+    "failed": 0,
+    "url": "https://merran.example.com/recipes/import/0199e8b0-5a10-7a01-8b00-00000000000b"
+  }
+}
+```
+
+### tidy.ready
+
+Sent when Tidy up finishes with suggestions waiting in Review, whether it was started by hand, for one recipe or many, or ran on its own. `count` is how many recipes have suggestions, and `recipes` names up to 10 of them. A run that's stopped sends nothing. Tidy runs are Merran's own work, so `by` is `null` and `via` is `merran`.
+
+```json
+{
+  "type": "tidy.ready",
+  "timestamp": "2026-11-10T19:20:08.117Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": null,
+    "via": "merran",
+    "key": null,
+    "count": 12,
+    "recipes": [
+      {
+        "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+        "slug": "lemon-chicken",
+        "title": "Lemon Chicken",
+        "url": "https://merran.example.com/recipes/lemon-chicken"
+      },
+      {
+        "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+        "slug": "garlic-rice",
+        "title": "Garlic Rice",
+        "url": "https://merran.example.com/recipes/garlic-rice"
+      }
+    ],
+    "url": "https://merran.example.com/recipes/review"
+  }
+}
+```
+
+### review.waiting
+
+Sent when something new waits in Review that didn't come from your own chat: a proposal from an AI app connected with [MCP](../mcp/), or a cooking note that became an edit. `source` is `mcp` or `cook_note`, and `recipe` is the recipe it's about, or `null`. A cooking note turned into an edit is sent as Merran's own work.
+
+```json
+{
+  "type": "review.waiting",
+  "timestamp": "2026-11-10T19:31:46.870Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": null,
+    "via": "merran",
+    "key": null,
+    "source": "cook_note",
+    "count": 1,
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "url": "https://merran.example.com/recipes/review"
+  }
+}
+```
+
+### Cooking sessions
+
+Cooking events are about a cooking session: one person cooking a recipe in cook view, on one device. It starts when they leave **Get ready**, and ends with **Done cooking**, when they leave cook view, or when cook view goes quiet. Two people cooking, or one person on two devices, are two sessions. Guests cooking from a shared link never send these.
+
+Every cooking event has `session` (its `id`), `recipe`, and `cook`: who's cooking, with their `id` and `name`. `cook` stays set when Merran ends the session or a timer goes off, when `by` is `null` and `via` is `merran`. It's `null` only if that person has since left Merran.
+
+### cooking.started
+
+Sent when someone leaves **Get ready** in cook view, or opens cook view on a recipe with nothing to get ready. `with` is the recipe cooked with it when cook view cooks two as a pairing, or `null`. `meal` is the planned meal it's cooked for, shaped like [`meal.cooked`](#mealcooked)'s, or `null`. `servings` is how many cook view shows, or `null` for a recipe that doesn't say. A reload carries on with the same session and sends nothing.
+
+```json
+{
+  "type": "cooking.started",
+  "timestamp": "2026-11-10T18:02:40.118Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "cook": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "session": { "id": "0199e8b0-5a10-7a01-8b00-000000000037" },
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "with": null,
+    "meal": {
+      "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+      "date": "2026-10-15",
+      "meal": "dinner",
+      "pool": false,
+      "title": "Lemon Chicken",
+      "recipe": {
+        "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+        "slug": "lemon-chicken",
+        "title": "Lemon Chicken",
+        "url": "https://merran.example.com/recipes/lemon-chicken"
+      },
+      "side": null
+    },
+    "servings": 4
+  }
+}
+```
+
+### cooking.ended
+
+Sent when a cooking session ends. `outcome` says how:
+
+- `made`: **Done cooking** in cook view, which ends it at once, even with timers running. It comes after the [`meal.cooked`](#mealcooked) it sends.
+- `stopped`: cook view was left without **Done cooking**. With no timer running it ends then; with timers running, when the last one is done or cancelled. Closing or reloading the page ends it a minute later, unless cook view comes back, as a reload does.
+- `timed_out`: cook view went quiet for 30 minutes with no timer running, or 12 hours went by since it started.
+
+`minutes` is how long cooking went on, in whole minutes, and `with` is as in `cooking.started`. **Done cooking**, leaving with no timer running, and cancelling the last timer are sent as the cook. When Merran ends the session itself (a timer going off, the minute after the page closed, or going quiet), `by` is `null` and `via` is `merran`.
+
+```json
+{
+  "type": "cooking.ended",
+  "timestamp": "2026-11-10T19:16:02.441Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": null,
+    "via": "merran",
+    "key": null,
+    "cook": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "session": { "id": "0199e8b0-5a10-7a01-8b00-000000000037" },
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "with": null,
+    "outcome": "timed_out",
+    "minutes": 74
+  }
+}
+```
+
+### timer.started
+
+Sent when a timer starts in cook view, from a time in a step or as a new timer. `timer` has the `id` cook view gave it, its `label` (like "Simmer the sauce" or "10 minutes"), `seconds` (its length, with each minute added) and `endsAt`, when it goes off by the server's clock.
+
+```json
+{
+  "type": "timer.started",
+  "timestamp": "2026-11-10T18:30:00.204Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "cook": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "session": { "id": "0199e8b0-5a10-7a01-8b00-000000000037" },
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "timer": {
+      "id": "6f1c2b9e-0d4a-4e57-9a3b-2c8e7f5d1a60",
+      "label": "Simmer the sauce",
+      "seconds": 600,
+      "endsAt": "2026-11-10T18:40:00.204Z"
+    }
+  }
+}
+```
+
+### timer.extended
+
+Sent when a timer gets **+1 min**, in cook view or on the message when it goes off, shaped like `timer.started`. `endsAt` is the new end, and `seconds` has the minute added. A timer that has gone off runs again, and sends `timer.finished` again when it's done.
+
+### timer.finished
+
+Sent by Merran when a timer's time is up, shaped like `timer.started`, with `by` `null` and `via` `merran`. Merran keeps each timer itself, so this goes out on time even if the device that started it is asleep or closed. If the cook left cook view while it ran and it was the last timer running, [`cooking.ended`](#cookingended) follows.
+
+### timer.cancelled
+
+Sent when a timer is cancelled before it goes off, shaped like `timer.started`. Dismissing a timer that has gone off sends nothing.
+
+### plan.changed
+
+Sent when meals are added, moved, changed or removed, whatever did it: someone in the app, the autoplan, a proposal, **Repeat last week**, **Clear**, **Undo**, a substitute picked with **Find a substitute** on the shopping list, or **Made it** when it adds a meal or moves one out of the pool. It's [gathered](#gathered-events), so someone filling a whole week sends one.
+
+`days` are the days touched, earliest first, and `pools` are the weeks whose pool was touched, each by its first day. `added`, `moved`, `changed` and `removed` count meals: `moved` is a meal on another day or at another meal, or with its dishes in another order, and `changed` is a meal whose recipe, side, note or servings changed, or whose ingredients a substitute changed.
+
+Marking a meal made or **Didn't** isn't a plan change: it sends [`meal.cooked`](#mealcooked) or [`meal.skipped`](#mealskipped). Servings given as a meal is marked made aren't either: they're how many it made, which `meal.cooked` carries. **Undo** puts meals back and sends this event, but never `meal.cooked` or `meal.skipped` again.
+
+```json
+{
+  "type": "plan.changed",
+  "timestamp": "2026-11-10T19:45:02.331Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "days": ["2026-10-15", "2026-10-16"],
+    "pools": ["2026-10-11"],
+    "added": 2,
+    "moved": 1,
+    "changed": 0,
+    "removed": 0
+  }
+}
+```
+
+### plan.autoplanned
+
+Sent when the autoplan plans a week, on its schedule or when someone runs it. `week` is the week's first day, `meals` is how many meals it planned, and `url` is that week in the plan. It also sends `plan.changed` for the meals it added.
+
+```json
+{
+  "type": "plan.autoplanned",
+  "timestamp": "2026-11-10T19:50:00.000Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "week": "2026-10-18",
+    "meals": 5,
+    "url": "https://merran.example.com/plan?week=2026-10-18"
+  }
+}
+```
+
+### meal.cooked
+
+Sent when a meal is marked made, wherever that happens: cook view, the plan, Today's **Did you make these?**, or a recipe made off the plan. `planned` says whether the meal was on the plan before, and `servings` how many were made, or `null`. `date` is the meal's day, or the first day of the week for a meal in the pool, and `recipe` is `null` for a meal that's only a note. `side` is `null` when the meal has none, or its side is in Recently deleted, as the plan leaves it out. Setting a meal back to planned sends nothing, and **Undo** never sends this again.
+
+```json
+{
+  "type": "meal.cooked",
+  "timestamp": "2026-11-10T22:41:19.275Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+    "date": "2026-10-15",
+    "meal": "dinner",
+    "pool": false,
+    "title": "Lemon Chicken",
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "side": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+      "slug": "garlic-rice",
+      "title": "Garlic Rice",
+      "url": "https://merran.example.com/recipes/garlic-rice"
+    },
+    "servings": 4,
+    "planned": true
+  }
+}
+```
+
+### meal.skipped
+
+Sent when a planned meal is marked **Didn't**. Its body is the same as `meal.cooked`'s, without `servings` and `planned`. Setting a meal back to planned sends nothing, and **Undo** never sends this again.
+
+```json
+{
+  "type": "meal.skipped",
+  "timestamp": "2026-11-10T22:44:51.902Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+    "date": "2026-10-15",
+    "meal": "dinner",
+    "pool": false,
+    "title": "Lemon Chicken",
+    "recipe": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+      "slug": "lemon-chicken",
+      "title": "Lemon Chicken",
+      "url": "https://merran.example.com/recipes/lemon-chicken"
+    },
+    "side": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+      "slug": "garlic-rice",
+      "title": "Garlic Rice",
+      "url": "https://merran.example.com/recipes/garlic-rice"
+    }
+  }
+}
+```
+
+### list.changed
+
+Sent when things on a list are added, checked off, unchecked, changed or removed. It's [gathered](#gathered-events), so someone checking off 30 things sends one. `lists` has each list touched with how many things are `left` and `checked` now. `changed` counts things whose name, amount, aisle or list changed.
+
+Merging duplicate lines and moving things when a list is removed send nothing, and **Undo** sends this event but never [`list.completed`](#listcompleted).
+
+```json
+{
+  "type": "list.changed",
+  "timestamp": "2026-11-10T17:52:33.640Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "lists": [
+      {
+        "id": "0199e8b0-5a10-7a01-8b00-00000000001c",
+        "name": "Groceries",
+        "left": 8,
+        "checked": 14
+      }
+    ],
+    "added": 0,
+    "checked": 14,
+    "unchecked": 0,
+    "changed": 0,
+    "removed": 0
+  }
+}
+```
+
+### list.completed
+
+Sent when the last unchecked thing on a list is checked off, however that's done, or when **Put away** clears a list that still has unchecked things. `bought` is how many things on it were checked off, and `left` how many were still unchecked when it was put away. A list that was finished already sends nothing more when it's put away, so one trip sends one. **Clear checked** and **Undo** don't send it.
+
+```json
+{
+  "type": "list.completed",
+  "timestamp": "2026-11-10T17:58:10.114Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "list": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000025",
+      "name": "Costco"
+    },
+    "bought": 9,
+    "left": 0
+  }
+}
+```
+
+### list.sent
+
+Sent when a list goes to a store's cart: Kroger's, or Walmart's through the [browser extension](../browser-extension/). `store` is `kroger` or `walmart`, `sent` is how many things went to the cart, and `notFound` how many the store had no product for. For Walmart, the extension reports each stretch of filling: when the fill is done, when someone stops it or it fails, and when a fill paused at Walmart's check that it's a person is stopped there. Each says only what went in and was left out since the last, so a fill stopped and carried on sends two, and adding up `sent` counts each product once. An extension too old to report sends no `list.sent` for Walmart.
+
+```json
+{
+  "type": "list.sent",
+  "timestamp": "2026-11-10T18:05:27.356Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "store": {
+      "id": "kroger",
+      "name": "Kroger"
+    },
+    "sent": 23,
+    "notFound": 2
+  }
+}
+```
+
+### pantry.changed
+
+Sent when things are put away, used up, moved to another place, changed or removed. It's [gathered](#gathered-events). `added` is things put away, `usedUp` is things marked **Used up**, and `changed` counts things whose amount, aisle, name or use-by date changed.
+
+```json
+{
+  "type": "pantry.changed",
+  "timestamp": "2026-11-10T18:40:12.009Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "added": 6,
+    "usedUp": 2,
+    "moved": 0,
+    "changed": 1,
+    "removed": 0
+  }
+}
+```
+
+### day.summary
+
+Sent once a day at **Daily summary at** on the household's clock, by Merran, so `by` is `null` and `via` is `merran`. It's sent even on a day with nothing planned. See [Daily heads-ups](#daily-heads-ups) for when.
+
+- `date` is today, in the household.
+- `meals` are the day's meals in the order they're served, each with its `time` (HH:mm on the household's clock) and its `dishes`. Dishes marked **Didn't** are left out.
+- Each dish has its `entryId` in the plan, its `title` as the plan shows it, its `recipe` and `side` (`null` for a note, or a side in Recently deleted), and `totalMinutes`: the recipe's total time, or its prep and cook times added up, or its side's when that's longer, or `null` when neither says.
+- `pool` is what's waiting in this week's **This week, any day** and isn't made yet, shaped like [`meal.cooked`](#mealcooked)'s meal.
+- `useSoon` is everything at home within 2 days of its use-by date, or past it, soonest first. `place` is `fridge`, `freezer`, `cupboard` or `null`.
+- `list.items` is how many things on the shopping lists aren't checked off.
+
+```json
+{
+  "type": "day.summary",
+  "timestamp": "2026-10-15T14:00:02.118Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": null,
+    "via": "merran",
+    "key": null,
+    "date": "2026-10-15",
+    "meals": [
+      {
+        "meal": "dinner",
+        "time": "18:00",
+        "dishes": [
+          {
+            "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+            "title": "Lemon Chicken",
+            "recipe": {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "slug": "lemon-chicken",
+              "title": "Lemon Chicken",
+              "url": "https://merran.example.com/recipes/lemon-chicken"
+            },
+            "side": {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+              "slug": "garlic-rice",
+              "title": "Garlic Rice",
+              "url": "https://merran.example.com/recipes/garlic-rice"
+            },
+            "totalMinutes": 45
+          }
+        ]
+      }
+    ],
+    "pool": [],
+    "useSoon": [
+      {
+        "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+        "name": "Spinach",
+        "place": "fridge",
+        "useBy": "2026-10-16"
+      }
+    ],
+    "list": { "items": 12 }
+  }
+}
+```
+
+### meal.time_to_start
+
+Sent by Merran when it's time to start cooking a planned meal: its time less its longest dish's time. See [Daily heads-ups](#daily-heads-ups) for which meals send it. `time` is when it's served on the household's clock, `serveAt` and `startAt` are the same moments as timestamps, and `minutes` is how long the longest dish takes. `dishes` are the meal's dishes still to make, shaped like `day.summary`'s.
+
+```json
+{
+  "type": "meal.time_to_start",
+  "timestamp": "2026-10-16T00:15:03.402Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": null,
+    "via": "merran",
+    "key": null,
+    "date": "2026-10-15",
+    "meal": "dinner",
+    "time": "18:00",
+    "serveAt": "2026-10-16T01:00:00.000Z",
+    "startAt": "2026-10-16T00:15:00.000Z",
+    "minutes": 45,
+    "dishes": [
+      {
+        "entryId": "0199e8b0-5a10-7a01-8b00-00000000001b",
+        "title": "Lemon Chicken",
+        "recipe": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+          "slug": "lemon-chicken",
+          "title": "Lemon Chicken",
+          "url": "https://merran.example.com/recipes/lemon-chicken"
+        },
+        "side": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+          "slug": "garlic-rice",
+          "title": "Garlic Rice",
+          "url": "https://merran.example.com/recipes/garlic-rice"
+        },
+        "totalMinutes": 45
+      }
+    ]
+  }
+}
+```
+
+### pantry.use_soon
+
+Sent by Merran with the daily summary, at **Daily summary at**, when things at home have come within 2 days of their use-by date since it was last sent. `items` lists only those, soonest first, shaped like `day.summary`'s `useSoon`: something put away since the last one is listed even if its use-by date has gone by. Nothing is sent when nothing has come close. The first one a webhook hears lists everything that's close.
+
+```json
+{
+  "type": "pantry.use_soon",
+  "timestamp": "2026-10-15T14:00:02.240Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": null,
+    "via": "merran",
+    "key": null,
+    "items": [
+      {
+        "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+        "name": "Spinach",
+        "place": "fridge",
+        "useBy": "2026-10-16"
+      }
+    ]
+  }
+}
+```
+
+### webhook.test
+
+Sent only when someone chooses **Send a test**, and only to that webhook, even when it's paused. It's tried once, never retried, and never pauses the webhook. `webhook` is the webhook it was sent to, and `by` the person who sent it.
+
+```json
+{
+  "type": "webhook.test",
+  "timestamp": "2026-11-10T18:02:55.208Z",
+  "data": {
+    "household": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+      "name": "The Riveras"
+    },
+    "by": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+      "name": "Sam Rivera"
+    },
+    "via": "app",
+    "key": null,
+    "webhook": {
+      "id": "0199e8b0-5a10-7a01-8b00-000000000034",
+      "name": "Home Assistant"
+    }
+  }
+}
+```
+
+The [API reference](../../api/) lists each event with its full schema.
+
+## Check signatures
+
+Anyone who learns your webhook's address could send it a message. Merran signs every delivery, so a receiver that checks can tell the ones from your Merran. Merran follows [Standard Webhooks](https://www.standardwebhooks.com/), so a library does the checking in most languages. It's worth doing for any receiver that does something you'd mind a stranger starting.
+
+`webhook-signature` is `v1,` and a base64 HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{body}`, made from the secret's bytes: the part after `whsec_`, base64-decoded, not the text of the secret. After **Rotate secret**, each delivery carries two signatures, separated by a space, for 24 hours, so you can change the receiver's secret without missing any. A receiver accepts a message if either matches.
+
+Check the body exactly as it arrived, not after parsing it and writing it out again, and refuse a `webhook-timestamp` more than 5 minutes from now. The libraries below do both.
+
+In JavaScript, with `npm install standardwebhooks`:
+
+```js
+import { Webhook } from "standardwebhooks"
+
+const wh = new Webhook(process.env.MERRAN_WEBHOOK_SECRET) // whsec_…
+
+export function handle(rawBody, headers) {
+  // Throws if the signature is wrong or the timestamp is more than 5 minutes off.
+  const message = wh.verify(rawBody, {
+    "webhook-id": headers["webhook-id"],
+    "webhook-timestamp": headers["webhook-timestamp"],
+    "webhook-signature": headers["webhook-signature"],
+  })
+  console.log(message.type, message.data.recipe?.title)
+}
+```
+
+In Python, with `pip install standardwebhooks`:
+
+```python
+import os
+from standardwebhooks.webhooks import Webhook
+
+wh = Webhook(os.environ["MERRAN_WEBHOOK_SECRET"])  # whsec_…
+
+def handle(raw_body: bytes, headers: dict):
+    # Raises WebhookVerificationError if the signature is wrong
+    # or the timestamp is more than 5 minutes off.
+    message = wh.verify(raw_body, headers)
+    print(message["type"], message["data"].get("recipe", {}).get("title"))
+```
+
+Because deliveries can be tried more than once, a receiver should use `webhook-id` to ignore one it has already handled.
+
+## Retries and pausing
+
+A delivery is delivered when the receiver answers with any `2xx` within 10 seconds. Anything else is a failure: another status, a timeout, a refused connection, or a redirect, which Merran doesn't follow.
+
+After a failure Merran tries again after 5 seconds, 5 minutes, 30 minutes, 2 hours, 5 hours, 10 hours and 10 hours: eight tries in about 27 hours, enough to ride out a night of Home Assistant being down. While it's trying, the webhook shows **Failing**, with the last error.
+
+The webhook becomes **Paused** when:
+
+- a delivery runs out of tries, or
+- the receiver answers `410 Gone`, which pauses it at once.
+
+While paused, nothing new is sent to it, and its waiting deliveries stop. The household's admins see it in **Settings → Webhooks**, and get an email if email is set up on the server. **Resume** starts sending new events again, and **Resume and resend** also resends what failed in the last day. You can **Pause** a webhook by hand too.
+
+Turning webhooks off for the whole server, with the **Let households send webhooks** switch in **Settings → Webhooks → Whole server** or `MERRAN_WEBHOOKS=false`, stops deliveries waiting for a retry too: one whose next try comes while webhooks are off is **Stopped**, and isn't sent when they're turned back on. Each can be sent again with **Resend** in the webhook's **Deliveries**.
+
+Open a webhook's **Deliveries** to see the last 30 days: the event, when it happened, how many tries it took, its status, the answer's status code, how long it took, the first part of the answer and the exact body sent. When a try failed, Merran's error shows above the answer, where a tool like n8n usually says what was wrong. While the webhook is open, its state and deliveries keep up on their own.
+
+**Resend** sends a delivery again from its first try. One still **Trying** can't be resent while Merran is trying it, but one left **Trying** with nothing trying it, as can happen after a crash, can.
+
+**Send a test** is the exception to all of this: it's sent once, even to a paused webhook, never retried, and never pauses the webhook. The answer shows right away.
+
+## Rotate a secret
+
+**Rotate secret** makes a new secret and shows it. For 24 hours each delivery carries signatures from both the new and the old, so you can update your receiver and not miss a message. **Show secret** shows the current one again whenever you need it.
+
+## What stays private
+
+- The address, the secret and the extra headers are sealed like the server's other secrets. The list shows only the host.
+- Messages carry names, ids and titles, not whole recipes.
+- Webhooks are left out of the household export, because they hold secrets.
+- Nothing is sent until a household adds a webhook.
+
+## Troubleshooting
+
+| What you see                                        | What to try                                                                                                                                                                       |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "This address is on your home network…" when saving | A server admin allows it in **Settings → Webhooks → Whole server**. See [The home network](#the-home-network).                                                                    |
+| The test fails for a Home Assistant name            | Use its IP address instead of `homeassistant.local`.                                                                                                                              |
+| The test works, but a real event never arrives      | Check the webhook wants that event under **Edit**, and that it isn't **Paused**.                                                                                                  |
+| Signatures never match                              | Check the whole body as received, the secret from **Show secret**, and that the receiver's clock is within 5 minutes. After a rotation, both work for a day.                      |
+| **Webhooks** isn't in Settings                      | You need to be an **Owner** or **Admin**, and a server admin may have turned webhooks off.                                                                                        |
+| The daily summary comes at the wrong hour           | It goes at **Daily summary at** on the household's clock: check the **Time zone** in **Settings → Household**.                                                                    |
+| "Time to start" never comes for a meal              | Its dishes need a total time, or prep and cook times, on their recipes. It also says nothing more than 15 minutes late, so a meal planned after its start has gone by is skipped. |

@@ -100,7 +100,7 @@ Every outside call Merran can make, when, and how to stop it. This table also go
 | USDA | Working out nutrition | Food names | No USDA key |
 | Kroger | Prices, product search, sending a cart | Food names, product ids, the linked account's token | No Kroger app |
 | Browsers' push services | Sending a notification | An encrypted message only the phone can read | Notifications off |
-| Addresses a household chose | Webhooks | Event ids and a short summary, signed | No webhooks; private addresses refused unless the server admin allows |
+| Addresses a household chose | Webhooks ([plan](webhooks.md)) | Signed events: ids, names, titles and links, never whole recipes | No webhooks; private addresses refused unless the server admin allows |
 | SMTP server | Administrator tests, household invitations and password recovery (released in alpha.4) | Sender, recipient, household name/role for invites, and the expiring invite or reset link | Off until enabled and configured |
 | SSO provider | Signing in | The usual OIDC exchange | No SSO |
 | Sentry or compatible | Errors | Scrubbed error reports | No DSN |
