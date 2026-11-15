@@ -632,7 +632,7 @@ export interface paths {
          *     - `ready` when it's open, with the areas it hears about.
          *     - `plan`, `list`, `pantry`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.
          *     - `presence` with who has `page` open, when someone opens or leaves it.
-         *     - `job` when one of the household's jobs, like an import, starts, moves on or ends, with its `id`, `kind`, `status` and `progress`. Only about jobs in areas it hears about. Fetch the job to see more.
+         *     - `job` when one of the household's jobs, like an import, starts, moves on or ends, with its `id`, `kind`, `status` and `progress`. Only about jobs in areas it hears about. Fetch what shows the job to see more, like the import or the run.
          *     - `ping` now and then, to keep the connection open.
          *
          *     A device that sends the same `client` with its own changes (in the `X-Merran-Client` header) isn't told about them; your other devices are. An API key hears about the areas it can read. With an API key, it needs the `any: read` permission.
@@ -2964,7 +2964,7 @@ export interface paths {
         put?: never;
         /**
          * Stop a link import
-         * @description The recipes it added stay. The link it's on finishes first, so the answer may still say it's running. With an API key, it needs the `imports: write` permission.
+         * @description The recipes it added stay. The link it's on is cut off and shows as stopped; it takes a moment, so the answer may still say it's running. With an API key, it needs the `imports: write` permission.
          */
         post: operations["stopLinkImport"];
         delete?: never;
@@ -3068,7 +3068,7 @@ export interface paths {
         put?: never;
         /**
          * Stop working out nutrition
-         * @description What it worked out stays. The recipe it's on finishes first, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
+         * @description What it worked out stays. The recipe it's on is cut off, not counted as failed; it takes a moment, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["stopNutritionRun"];
         delete?: never;
@@ -3112,7 +3112,7 @@ export interface paths {
         put?: never;
         /**
          * Stop making AI photos
-         * @description The photos made stay. The one being made finishes first, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
+         * @description The photos made stay. The one being made is cut off, not counted as failed; it takes a moment, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["stopPhotoRun"];
         delete?: never;
@@ -3200,7 +3200,7 @@ export interface paths {
         put?: never;
         /**
          * Stop a tidy up run
-         * @description The suggestions it made stay in Review. The recipe it's on finishes first, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
+         * @description The suggestions it made stay in Review. The recipe it's on is cut off, not counted as failed; it takes a moment, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["stopTidyRun"];
         delete?: never;
