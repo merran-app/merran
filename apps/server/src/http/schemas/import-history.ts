@@ -36,7 +36,7 @@ const RECIPE = {
 }
 
 export const ImportParam = z.object({
-  importId: z.string().openapi({ param: { name: "importId", in: "path" } }),
+  importId: z.uuid().openapi({ param: { name: "importId", in: "path" } }),
 })
 
 export const ImportSchema = z

@@ -15,9 +15,10 @@ import type { ShelfRecipe } from "./queries"
 
 /**
  * Imports a recipe from its page, saying so; the new recipe, or null when
- * it didn't come in or is still coming in the background.
+ * it didn't come in or is still coming in the background. `stillImporting`
+ * is what to say then, for a caller that meant to do more with it.
  */
-export function useImportRecipe() {
+export function useImportRecipe(options: { stillImporting?: string } = {}) {
   const { t } = useTranslation()
   const refresh = useRefreshRecipes()
   const startedNotice = useStartedNotice()
@@ -27,7 +28,7 @@ export function useImportRecipe() {
         api.POST("/api/recipes/import", { body: { url } })
       )
       if (importStarted(result)) {
-        startedNotice(result)
+        startedNotice(result, options.stillImporting)
         return null
       }
       await refresh()

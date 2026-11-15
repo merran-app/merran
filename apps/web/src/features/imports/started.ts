@@ -17,15 +17,16 @@ export function importStarted<T extends object>(
 
 /**
  * Says an import is still going, with View to follow it: for a link that
- * took longer than the wait, or a video.
+ * took longer than the wait, or a video. A caller that meant to do more
+ * with the recipe says what it couldn't do yet.
  */
 export function useStartedNotice() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   return React.useCallback(
-    (started: ImportStarted) => {
+    (started: ImportStarted, message?: string) => {
       const importId = started.import.id
-      toast(t("imports.started"), {
+      toast(message ?? t("imports.started"), {
         id: importId,
         action: {
           label: t("imports.view"),

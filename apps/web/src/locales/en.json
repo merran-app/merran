@@ -3100,6 +3100,7 @@
       "startOver": "Start over",
       "fromSite": "New on {{site}}",
       "importAndPlan": "Import and plan for tonight",
+      "stillImporting": "Still importing, so it isn't planned yet. Plan it for tonight once it's in your recipes.",
       "from": "Ideas from",
       "sources": {
         "both": "Both",

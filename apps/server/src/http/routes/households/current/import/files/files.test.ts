@@ -4,9 +4,16 @@ import yazl from "yazl"
 import {
   Import,
   ImportItem,
+  Recipe,
 } from "../../../../../../database/entities/index.ts"
 import type { Database } from "../../../../../../database/orm.ts"
+import { forHousehold } from "../../../../../../database/scope.ts"
+import {
+  addItem,
+  beginImport,
+} from "../../../../../../services/imports/imports.ts"
 import type { JobRunner } from "../../../../../../services/jobs/runner.ts"
+import { mealieRef } from "../../../../../../services/recipes/import/apps/mealie/recipe.ts"
 import {
   account,
   createTestApp,
@@ -411,6 +418,69 @@ describe("a Mealie backup", () => {
       expect.arrayContaining([expect.any(String), expect.any(String)])
     )
     expect(items.every((item) => item.ref?.startsWith("mealie:"))).toBe(true)
+  })
+
+  test("cut off by a restart, carries on without counting what came in as already here", async () => {
+    const BARLEY = "f15c1294d8a84f91a09114854680dc81"
+    const RYE = "f25c1294d8a84f91a09114854680dc82"
+    const extra = {
+      recipes: [
+        {
+          id: BARLEY,
+          group_id: GROUP,
+          name: "Barley Stew",
+          created_at: "2024-02-01T00:00:00",
+        },
+        {
+          id: RYE,
+          group_id: GROUP,
+          name: "Rye Loaf",
+          created_at: "2024-02-02T00:00:00",
+        },
+      ],
+    }
+    const checked = await check(kyle, await backup(extra))
+    const file = await checked.json()
+    const started = await kyle.post(
+      `/api/households/current/import/files/${file.id}/start`,
+      {}
+    )
+    const { id } = await started.json()
+
+    // What the record says when a restart cuts it off after Barley Stew.
+    const home = (await (await kyle.get("/api/households/current")).json()).id
+    const em = forHousehold(db.em, home)
+    const barley = em.create(Recipe, {
+      household: home,
+      slug: "barley-stew",
+      name: "Barley Stew",
+      origin: "mealie",
+      importedFrom: mealieRef(BARLEY),
+    })
+    await em.flush()
+    await beginImport(em, id)
+    await addItem(em, id, {
+      label: "Barley Stew",
+      ref: mealieRef(BARLEY),
+      state: "added",
+      recipeId: barley.id,
+    })
+
+    await jobs.drain()
+    // Four recipes, each once: Barley Stew as it came in before the
+    // restart, not again as already here. The backup's own two came in
+    // earlier or now.
+    const record = await (await kyle.get(`/api/imports/${id}`)).json()
+    expect(record).toMatchObject({ status: "done", total: 4 })
+    expect(record.added + record.already).toBe(4)
+    expect(
+      record.cameIn.items.map(
+        (item: { recipe: { name: string } }) => item.recipe.name
+      )
+    ).toEqual(expect.arrayContaining(["Barley Stew", "Rye Loaf"]))
+    expect(
+      record.alreadyHere.items.map((item: { label: string }) => item.label)
+    ).not.toContain("Barley Stew")
   })
 
   test("with more than one group, imports the one chosen", async () => {

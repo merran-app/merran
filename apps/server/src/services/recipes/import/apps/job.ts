@@ -13,6 +13,7 @@ import {
   cancelWaitingImport,
   enqueueImport,
   ensureImport,
+  recordedItems,
 } from "../../../imports/imports.ts"
 import { throwIfStopped } from "../../../jobs/stop.ts"
 import {
@@ -175,12 +176,15 @@ async function bringIn(
 ) {
   const userOf = await membersByEmail(em, householdId)
   const total = only?.size ?? source.total
+  // Carrying on after a restart: what it got to before stays as it was.
+  const before = await recordedItems(em, importId)
+  const earlier = [...before.values()]
   let done = 0
-  let added = 0
-  let skipped = 0
+  let added = earlier.filter((item) => item.state === "added").length
+  let skipped = earlier.filter((item) => item.state === "already").length
   let photos = 0
   const failed: { name: string; error: string }[] = []
-  let failures = 0
+  let failures = earlier.filter((item) => item.state === "failed").length
 
   await progress(0, total)
   for await (const recipe of source.recipes()) {
@@ -188,6 +192,10 @@ async function bringIn(
     // Trying again: just the ones that didn't come in before.
     if (only && !only.has(recipe.ref)) continue
     done++
+    if (before.has(recipe.ref)) {
+      await progress(done, Math.max(done, total))
+      continue
+    }
     const name = recipe.name.slice(0, 200) || recipe.ref
     const here = await em.findOne(
       Recipe,

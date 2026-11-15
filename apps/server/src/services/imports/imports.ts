@@ -130,6 +130,25 @@ export async function addItem(
   await em.flush()
 }
 
+/**
+ * What an import has said of each item so far, by its ref: for a job that
+ * carries on after a restart, so it skips what it got to before rather
+ * than counting its own recipes as already here.
+ */
+export async function recordedItems(em: EntityManager, importId: string) {
+  const items = await em.find(
+    ImportItem,
+    { import: importId, ref: { $ne: null } },
+    { fields: ["ref", "state", "recipe"] }
+  )
+  return new Map(
+    items.map((item) => [
+      item.ref!,
+      { state: item.state, recipeId: item.recipe?.id ?? null },
+    ])
+  )
+}
+
 /** The import's job has started, and how many it has, once it knows. */
 export async function beginImport(
   em: EntityManager,

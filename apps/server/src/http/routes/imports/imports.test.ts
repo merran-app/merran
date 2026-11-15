@@ -298,6 +298,15 @@ describe("the Imports page", () => {
     expect(await tx.count(Import, { id: other }, { filters: false })).toBe(1)
   })
 
+  test("refuses an address that isn't an import's, without looking it up", async () => {
+    // Postgres can't compare "not-an-id" with an id: it must never get there.
+    const res = await kyle.get("/api/imports/not-an-id")
+    expect(res.status).toBe(400)
+    expect(await res.json()).toMatchObject({
+      error: { code: "invalid_request" },
+    })
+  })
+
   test("replaces the routes that only followed several links", async () => {
     const id = await startLinks(["https://example.com/soup"])
     await jobs.drain()

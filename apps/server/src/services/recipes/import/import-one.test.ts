@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { AppError } from "../../../core/errors.ts"
-import { Import, ImportItem } from "../../../database/entities/index.ts"
+import { Import, ImportItem, Job } from "../../../database/entities/index.ts"
 import type { Database } from "../../../database/orm.ts"
 import { forHousehold } from "../../../database/scope.ts"
 import type { JobRunner } from "../../jobs/runner.ts"
@@ -91,6 +91,39 @@ describe("one link", () => {
       url: "https://example.com/quick",
     })
     expect(result).toMatchObject({ done: { duplicate: true } })
+  })
+
+  test("a page the extension read isn't kept with its job once it's in", async () => {
+    const jsonld = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Recipe",
+      name: "Members' Pie",
+      recipeIngredient: ["1 pastry case"],
+      recipeInstructions: [{ "@type": "HowToStep", text: "Bake it." }],
+    })
+    const result = await importOne(em(), deps(), {
+      householdId: home,
+      userId,
+      page: {
+        url: "https://members.example/pie",
+        title: "Members' Pie",
+        description: "",
+        jsonld: [jsonld],
+        images: [],
+        text: "Signed in as Kyle. Members' Pie: bake it.",
+      },
+    })
+    expect(result).toMatchObject({ done: { recipe: { name: "Members' Pie" } } })
+    // The text of a page someone was signed in to stays with no job.
+    const job = await database.em.fork().findOneOrFail(
+      Job,
+      {
+        kind: "recipes.importLink",
+        payload: { url: "https://members.example/pie" },
+      },
+      { filters: false }
+    )
+    expect(job.payload).toMatchObject({ page: null })
   })
 
   test("that didn't come in says why, as before", async () => {

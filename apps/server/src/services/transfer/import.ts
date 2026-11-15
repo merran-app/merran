@@ -15,9 +15,11 @@ import { membersByEmail } from "../households/households.ts"
 import {
   addItem,
   asImport,
+  beginImport,
   cancelWaitingImport,
   enqueueImport,
   ensureImport,
+  recordedItems,
 } from "../imports/imports.ts"
 import {
   JobStopped,
@@ -196,9 +198,12 @@ async function bringInExport(
       await takeDetails(em, deps, householdId, await data.household(), userId)
     }
     const recipes = await data.recipes()
+    await beginImport(em, jobId, recipes.length)
 
     // People are matched by email to who's in this household.
     const userOf = await membersByEmail(em, householdId)
+    // Carrying on after a restart: what it got to before stays as it was.
+    const before = await recordedItems(em, jobId)
 
     /** Each recipe's id in the export, and its id here. */
     const ids = new Map<string, string>()
@@ -206,6 +211,16 @@ async function bringInExport(
     let photos = 0
     for (const [index, recipe] of recipes.entries()) {
       if (signal.aborted) throw new JobStopped()
+      const earlier = before.get(recipe.id)
+      if (earlier) {
+        if (earlier.recipeId) {
+          ids.set(recipe.id, earlier.recipeId)
+          // Its pairings come once every recipe is in, as for the rest.
+          if (earlier.state === "added") added.add(earlier.recipeId)
+        }
+        await progress(index + 1, recipes.length)
+        continue
+      }
       const here = UUID.test(recipe.id)
         ? await em.findOne(
             Recipe,

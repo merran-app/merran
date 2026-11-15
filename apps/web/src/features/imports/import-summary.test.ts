@@ -49,6 +49,17 @@ test("stopped, failed or undone says so", () => {
       { key: "imports.summary.stopped", values: { count: 4 } },
     ]
   )
+  // Stopped once it had got to them all: nothing to say it never got to.
+  assert.deepEqual(
+    importSummary({
+      ...counts,
+      status: "cancelled",
+      already: 0,
+      failed: 0,
+      stopped: 0,
+    }),
+    [{ key: "imports.summary.cameIn", values: { count: 48 } }]
+  )
   assert.deepEqual(
     importSummary({ ...counts, status: "failed", already: 0, failed: 0 }),
     [

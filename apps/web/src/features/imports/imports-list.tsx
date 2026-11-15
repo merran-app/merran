@@ -72,10 +72,11 @@ export function ImportsList({ imports }: { imports: Import[] }) {
               className="flex items-center gap-3 p-4 hover:bg-muted/50"
             >
               <div className="grid min-w-0 flex-1 gap-0.5">
-                <span className="font-medium">
-                  {title}
+                {/* A long link shortens to fit rather than running off. */}
+                <span className="flex min-w-0 items-baseline gap-2 font-medium">
+                  <span className="shrink-0">{title}</span>
                   {detail && (
-                    <span className="ms-2 truncate font-normal text-muted-foreground">
+                    <span className="min-w-0 truncate font-normal text-muted-foreground">
                       {detail}
                     </span>
                   )}

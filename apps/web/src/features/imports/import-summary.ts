@@ -44,7 +44,7 @@ export function importSummary(found: Counts): SummaryLine {
   if (found.failed > 0) {
     line.push({ key: "imports.summary.didnt", values: { count: found.failed } })
   }
-  if (found.status === "cancelled") {
+  if (found.status === "cancelled" && found.stopped > 0) {
     line.push({
       key: "imports.summary.stopped",
       values: { count: found.stopped },

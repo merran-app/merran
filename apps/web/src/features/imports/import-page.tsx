@@ -21,6 +21,7 @@ import { useRefreshRecipes } from "@/features/recipes/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
 
+import { importActions } from "./import-actions"
 import { useImportTitle, useSummaryText } from "./imports-list"
 import { linkLabel } from "./link-label"
 import {
@@ -99,13 +100,7 @@ export function ImportPage({ importId }: { importId: string }) {
 
   const going = isGoing(data)
   const { title, detail } = titleOf(data)
-  const canTryAgain =
-    !going &&
-    data.status !== "undone" &&
-    (data.failed > 0 ||
-      data.stopped > 0 ||
-      data.status === "failed" ||
-      data.status === "cancelled")
+  const can = importActions(data)
   // Mealie through its API: its token is asked for again.
   const needsToken = data.kind === "mealie" && data.source !== null
   const tagSearch = data.tag ? { tags: data.tag } : {}
@@ -174,7 +169,7 @@ export function ImportPage({ importId }: { importId: string }) {
         description={summaryOf(data)}
         actions={
           <>
-            {going && (
+            {can.stop && (
               <Button
                 variant="outline"
                 disabled={busy}
@@ -183,7 +178,7 @@ export function ImportPage({ importId }: { importId: string }) {
                 {t("imports.stop")}
               </Button>
             )}
-            {canTryAgain &&
+            {can.tryAgain &&
               (needsToken ? (
                 <TokenDialog onToken={(token) => tryAgain(token)} />
               ) : (
@@ -195,10 +190,8 @@ export function ImportPage({ importId }: { importId: string }) {
                   {t("imports.tryAgain")}
                 </Button>
               ))}
-            {!going && data.status !== "undone" && data.added > 0 && (
-              <UndoDialog detail={data} onUndo={undo} />
-            )}
-            {data.status === "undone" && (
+            {can.undo && <UndoDialog detail={data} onUndo={undo} />}
+            {can.restore && (
               <Button
                 variant="outline"
                 disabled={busy}
@@ -207,7 +200,7 @@ export function ImportPage({ importId }: { importId: string }) {
                 {t("imports.restore")}
               </Button>
             )}
-            {!going && (
+            {can.deleteRecord && (
               <ConfirmDialog
                 trigger={
                   <Button variant="ghost">{t("imports.deleteRecord")}</Button>

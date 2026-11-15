@@ -163,48 +163,79 @@ function oneLinkJob(
     cancelledWaiting: (em, job) => cancelWaitingImport(em, job.id),
     async run({ jobId, em, householdId, payload, signal, deps }) {
       if (!householdId) throw new Error("An import needs a household.")
-      const { url, force, userId, page } = Payload.parse(payload)
-      await beginImport(em, jobId, 1)
+      const job = Payload.parse(payload)
       try {
-        const result = page
-          ? await importReadPage(em, deps, { householdId, userId, page })
-          : await importLink(em, deps, { householdId, userId, url, force })
-        await settleItem(em, jobId, 0, {
-          state: result.duplicate ? "already" : "added",
-          recipeId: result.recipe.id,
-        })
-        await finishImport(em, jobId, { status: "done" })
-        return { recipeId: result.recipe.id, duplicate: result.duplicate }
-      } catch (err) {
-        const why =
-          signal.reason instanceof JobStopped ? signal.reason.why : null
-        // Runs again at the next start.
-        if (signal.aborted && why === "shutdown") throw err
-        if (signal.aborted) {
-          await finishImport(em, jobId, { status: "cancelled" })
-          throw err
-        }
-        if (!(err instanceof AppError)) {
-          await finishImport(em, jobId, {
-            status: "failed",
-            error: "Something went wrong with that link.",
-          })
-          throw err
-        }
-        // It didn't come in: the record says why, and so does the answer to
-        // a request still waiting.
-        await settleItem(em, jobId, 0, { state: "failed", error: err.message })
-        await finishImport(em, jobId, { status: "failed", error: err.message })
-        return {
-          error: {
-            kind: err.kind,
-            code: err.code,
-            message: err.message,
-            ...(err.fields ? { fields: err.fields } : {}),
-          },
+        return await importTheLink(em, deps, jobId, householdId, job, signal)
+      } finally {
+        // A page the extension read can hold what its reader sees signed
+        // in, so it's kept only while the job needs it: through a restart,
+        // not for the 30 days the job is.
+        if (job.page && !shuttingDown(signal)) {
+          await deps.database.em
+            .fork()
+            .nativeUpdate(
+              Job,
+              { id: jobId },
+              { payload: { ...job, page: null } }
+            )
         }
       }
     },
+  }
+}
+
+/** Merran is shutting down, so the job runs again next start. */
+const shuttingDown = (signal: AbortSignal) =>
+  signal.aborted &&
+  signal.reason instanceof JobStopped &&
+  signal.reason.why === "shutdown"
+
+/** Brings in the job's link or page, keeping its record's one item. */
+async function importTheLink(
+  em: EntityManager,
+  deps: Parameters<JobHandler["run"]>[0]["deps"],
+  jobId: string,
+  householdId: string,
+  { url, force, userId, page }: z.infer<typeof Payload>,
+  signal: AbortSignal
+) {
+  await beginImport(em, jobId, 1)
+  try {
+    const result = page
+      ? await importReadPage(em, deps, { householdId, userId, page })
+      : await importLink(em, deps, { householdId, userId, url, force })
+    await settleItem(em, jobId, 0, {
+      state: result.duplicate ? "already" : "added",
+      recipeId: result.recipe.id,
+    })
+    await finishImport(em, jobId, { status: "done" })
+    return { recipeId: result.recipe.id, duplicate: result.duplicate }
+  } catch (err) {
+    // Runs again at the next start.
+    if (shuttingDown(signal)) throw err
+    if (signal.aborted) {
+      await finishImport(em, jobId, { status: "cancelled" })
+      throw err
+    }
+    if (!(err instanceof AppError)) {
+      await finishImport(em, jobId, {
+        status: "failed",
+        error: "Something went wrong with that link.",
+      })
+      throw err
+    }
+    // It didn't come in: the record says why, and so does the answer to
+    // a request still waiting.
+    await settleItem(em, jobId, 0, { state: "failed", error: err.message })
+    await finishImport(em, jobId, { status: "failed", error: err.message })
+    return {
+      error: {
+        kind: err.kind,
+        code: err.code,
+        message: err.message,
+        ...(err.fields ? { fields: err.fields } : {}),
+      },
+    }
   }
 }
 
