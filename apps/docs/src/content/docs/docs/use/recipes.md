@@ -26,6 +26,8 @@ These steps follow the current repository implementation. They have not yet been
 
 **Expected result:** the recipe appears in this household's library, with a source link and a photo when one could be downloaded. A missing photo does not necessarily mean the import failed.
 
+Most links come in within a few seconds. One that takes longer than about ten seconds, such as a slow site or one Merran reads with AI, carries on in the background: you'll see **Still importing. It'll be in your recipes soon.** with **View**, and you can close the dialog. When it's in, Merran tells you (for example **Lemon Chicken is in your recipes.**), on every device you have open, and the import has its place on the [Imports](#imports) page.
+
 Merran first reads structured recipe data on the page. If none is available, it can use AI when configured. A blocked, private, or unsupported page may still fail. Import is not a promise that every website can be read.
 
 From alpha.7, on the many food blogs that use the WordPress Recipe Maker card, Merran also brings in the card's ingredient groups (such as "Orange sauce"), its numbered notes, and its summary. A short version of the recipe that a site puts before the full steps, such as **Abbreviated recipe**, is left out, so the steps aren't there twice.
@@ -40,10 +42,10 @@ If **You have this one** appears, choose **Open it** to use the existing recipe.
 
 1. In **Add a recipe**, choose **Got several? Paste them all**.
 2. Paste URLs one per line or mixed into text. Review the new and skipped links and optionally enter **Tag them (optional)**.
-3. Choose **Import** with the displayed count. The progress page continues working if you leave it.
-4. Review the results. Use the retry action for failed links, or **Stop** to stop pending work.
+3. Choose **Import** with the displayed count. The import's page shows each link as it goes, and carries on if you leave it.
+4. Review the results. Use **Try again** for links that didn't come in, or **Stop** to stop pending work.
 
-Only the first 100 links are considered per batch. Existing recipes are skipped; unavailable video imports are left out. Successful imports remain even if other links fail.
+Only the first 100 links are considered per batch. Existing recipes are skipped. Video links come in with the rest when video import is on; when it's off, they're left out and the list says so. Successful imports remain even if other links fail.
 
 ### Type one in
 
@@ -62,7 +64,7 @@ Only the first 100 links are considered per batch. Existing recipes are skipped;
 | Photos or PDF | Choose **Photos or PDF**, select the pages in order, then **Read it** or **Read them**.        | AI import; the picker accepts up to four files for one recipe. Use readable pages and review the result.                                                                                 |
 | Video link    | Paste a TikTok, YouTube, Instagram, or Facebook link into **Link to a recipe**.                | Optional video module, server tools `yt-dlp` and `ffmpeg`, and AI. Audio transcription may need a configured transcription provider. Availability depends on access to the source video. |
 
-Text and photo controls appear only when AI is available. Video processing can take longer than a page import. These methods send content to the configured services and may incur provider charges. They produce a saved recipe to check, not a guarantee that missing quantities were recovered correctly.
+Text and photo controls appear only when AI is available. Video processing can take longer than a page import, so a video link always carries on in the background, with a notice when it's in, like a slow link. These methods send content to the configured services and may incur provider charges. They produce a saved recipe to check, not a guarantee that missing quantities were recovered correctly.
 
 ## Edit and organize
 
@@ -111,9 +113,9 @@ Keep your Mealie backup until you have checked the imported library. This import
 
 1. Obtain a Mealie backup ZIP or recipe export ZIP.
 2. In Merran, open **Settings → Import and export → From another app**. If a method selector is shown, choose **A file**.
-3. Select the file and choose **Check the file**.
+3. Select the file and choose **Check the file**. A big file can show **Checking the file…** for a moment while Merran reads it.
 4. Review the recipe count. If the backup has several groups, choose the **Mealie group** you want.
-5. Choose **Import**, wait for the results, and review any errors.
+5. Choose **Import**, wait for the results, and review any errors. **See the import** opens its page on the [Imports](#imports) page, which keeps the results after you leave Settings.
 6. Open several imported recipes and compare photos, servings, ingredients, steps, ratings, and notes with the source.
 
 The same card also accepts Paprika exports. Merran's own household archive uses the separate import card on this settings page.
@@ -126,7 +128,21 @@ The same card also accepts Paprika exports. Merran's own household archive uses 
 4. Choose **Connect**, review the found recipe count, then **Import**.
 5. Check the results and compare representative recipes with Mealie before relying on the new library.
 
-**Expected result:** new recipes and supported associated data are added to the active household. Previously imported recipes are skipped, so importing again brings in new recipes rather than synchronizing later edits. The token is kept only while the import runs. Missing photos or individual recipe errors should be reviewed in the import results.
+**Expected result:** new recipes and supported associated data are added to the active household. Previously imported recipes are skipped, so importing again brings in new recipes rather than synchronizing later edits. The token is kept only while the import runs, so **Try again** asks for it again. Missing photos or individual recipe errors should be reviewed in the import results.
+
+## Imports
+
+**Recipes → ⋯ → Imports** lists everything that brought recipes in over the last 90 days, newest first: several links, a starter collection, a Mealie backup, export or connection, a Paprika file, a Merran export, and a single link or video that carried on in the background. Each says who started it, when, and how it went, such as **48 came in, 3 already here, 1 didn't**. Everyone in the household sees every import. When one you started finishes, Merran tells you, with **View** to its page.
+
+An import's page has three lists, a hundred at a time (**Next 100** shows more):
+
+- **Came in:** each recipe it brought in. Tick some and choose **Delete** with their count, such as **Delete 3**, to move them to Recently deleted.
+- **Already in your recipes:** each linked to the one you have.
+- **Didn't come in:** each with why. **Try again** starts a new import of just those, and of any it never got to. For a file, Merran keeps the upload for a week after an import with failures; after that, upload it again. For Mealie through its API, enter the **API token** again.
+
+**Undo** moves what the import brought in to Recently deleted, where it stays for 30 days. It asks first, with every recipe ticked and those **Changed since**, **Planned** or **Cooked** marked; untick any to keep them. A running import is stopped first. For a Merran export, Undo covers its recipes; the household settings it brought stay. An undone import says how many recipes went, with **Restore** to put back those still in Recently deleted.
+
+**Delete the record** removes the import from the list. Its recipes stay.
 
 ## Troubleshooting
 
@@ -139,6 +155,8 @@ The same card also accepts Paprika exports. Merran's own household archive uses 
 | Mealie connection fails                      | Check the address from the server's network, token permissions, and access to the chosen recipes. A file export is an alternative. |
 | No direct Mealie option                      | Direct connection is restricted to server admins; household admins can use file import.                                            |
 | Import skips a recipe you changed in Mealie  | Re-import skips known recipes. Edit the Merran copy; this is not ongoing synchronization.                                          |
+| An import brought in recipes you don't want  | Open it on the **Imports** page and use **Undo**, or tick the ones to throw out and choose **Delete** with their count.            |
+| **Try again** says to upload the file again  | Merran keeps an upload for a week after an import with failures. Upload it again in **From another app**.                          |
 
 ## Next steps
 

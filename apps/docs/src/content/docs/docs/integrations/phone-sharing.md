@@ -18,7 +18,7 @@ These steps match alpha.4's UI and share endpoint. Real Android and iOS share-sh
 1. Open your server's HTTPS address in Chrome and sign in.
 2. Open Chrome's menu and choose **Install app** or **Add to home screen**. Complete installation.
 3. In the app containing the recipe, choose **Share**, then **Merran**. Share the recipe page/link, photos, screenshots, or a PDF.
-4. Follow Merran's result. A recipe opens for review; multiple links can start a background import. A recognized receipt opens for review before pantry changes.
+4. Follow Merran's result. A recipe opens for review; multiple links can start a background import. A link that takes more than about ten seconds, or a video, carries on in the background and opens its page on the Imports page, and Merran tells you when it's in. A recognized receipt opens for review before pantry changes.
 
 **Expected result:** The shared content reaches the signed-in household. Review imported recipes and receipt lines before relying on their amounts. Installing a home-screen bookmark alone does not guarantee that the browser registers a share target.
 

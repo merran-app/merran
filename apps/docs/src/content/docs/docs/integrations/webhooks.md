@@ -421,9 +421,9 @@ Sent when a recipe comes back from Recently deleted. Its body is the same as `re
 
 ### import.finished
 
-Sent when an import runs to its end: a batch of links, a collection, an import from Mealie or Paprika, or a Merran archive. `kind` is `links`, `collection`, `app` or `archive`, and `app` says `mealie` or `paprika` for an `app` import, or is `null`. `added`, `skipped` and `failed` count recipes. `import` is the job, which you can also see in **Jobs**, and `url` is its page in Merran.
+Sent when an import runs to its end: a batch of links, a collection, an import from Mealie or Paprika, or a Merran archive. `kind` is `links`, `collection`, `app` or `archive`, and `app` says `mealie` or `paprika` for an `app` import, or is `null`. `added`, `skipped` and `failed` count recipes. `import` is the import, whose id is its job's, and `url` is its page on the **Imports** page (Recipes → ⋯ → **Imports**). A single link or video that went on in the background sends no `import.finished`; its `recipe.created` says it's in.
 
-An import that fails as a whole, or that you stop, sends nothing: it shows on its page and in **Jobs**. An archive import always says `failed: 0`, because one recipe that fails fails the whole import. It's sent as Merran's own work (`by` is `null`, `via` is `merran`), because the import finishes in the background.
+An import that fails as a whole, or that you stop, sends nothing: it shows on its page on the Imports page. An archive import always says `failed: 0`, because one recipe that fails fails the whole import. It's sent as Merran's own work (`by` is `null`, `via` is `merran`), because the import finishes in the background.
 
 ```json
 {
@@ -445,7 +445,7 @@ An import that fails as a whole, or that you stop, sends nothing: it shows on it
     "added": 11,
     "skipped": 1,
     "failed": 0,
-    "url": "https://merran.example.com/recipes/import/0199e8b0-5a10-7a01-8b00-00000000000b"
+    "url": "https://merran.example.com/recipes/imports/0199e8b0-5a10-7a01-8b00-00000000000b"
   }
 }
 ```

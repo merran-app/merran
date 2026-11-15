@@ -32,15 +32,15 @@ For a change, ask explicitly—for example, “Suggest dinners for Monday and Tu
 2. Choose **Dismiss** if you do not want the proposed change.
 3. Otherwise choose the action that matches the card:
 
-| Proposal         | Action and result                                                                                               |
-| ---------------- | --------------------------------------------------------------------------------------------------------------- |
-| Recipe edit      | **Review**, select the sections to keep, then apply them                                                        |
-| New recipe       | **Save recipe** creates it in the household library                                                             |
-| Meals            | **Add to the plan** adds the proposed entries                                                                   |
-| Shopping items   | **Add to the list** adds those items                                                                            |
-| Household tastes | **Remember** changes the shared tastes/preferences shown on the card                                            |
-| Recipe link      | **Import** fetches the recipe; fallback import processing may make additional AI calls                          |
-| Ingredient swap  | **Save to recipe** makes the change permanent; **Use this time** applies it to the current cooking view instead |
+| Proposal         | Action and result                                                                                                                                                                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Recipe edit      | **Review**, select the sections to keep, then apply them                                                                                                                                                                                            |
+| New recipe       | **Save recipe** creates it in the household library                                                                                                                                                                                                 |
+| Meals            | **Add to the plan** adds the proposed entries                                                                                                                                                                                                       |
+| Shopping items   | **Add to the list** adds those items                                                                                                                                                                                                                |
+| Household tastes | **Remember** changes the shared tastes/preferences shown on the card                                                                                                                                                                                |
+| Recipe link      | **Import** fetches the recipe; fallback import processing may make additional AI calls. A link that takes more than about ten seconds, or a video, carries on in the background: **Still importing. It'll be in your recipes soon.**, with **View** |
+| Ingredient swap  | **Save to recipe** makes the change permanent; **Use this time** applies it to the current cooking view instead                                                                                                                                     |
 
 4. Wait for the success state, then open the affected recipe, plan, list, or settings to check the result.
 

@@ -13,17 +13,20 @@ Sign in and switch to the household you intend to manage. Open **Settings → Ho
 
 ## Choose a role
 
-| Capability                                                         | Member | Admin | Owner                 |
-| ------------------------------------------------------------------ | ------ | ----- | --------------------- |
-| Use and edit shared recipes, plans, lists, and pantry              | Yes    | Yes   | Yes                   |
-| Change household tastes                                            | Yes    | Yes   | Yes                   |
-| Change household details, theme nights, and administrator settings | No     | Yes   | Yes                   |
-| Create or cancel invite links                                      | No     | Yes   | Yes                   |
-| Add, pause and delete [webhooks](../../integrations/webhooks/)     | No     | Yes   | Yes                   |
-| Promote or demote members and admins                               | No     | Yes   | Yes                   |
-| Make or unmake an owner, or remove another owner                   | No     | No    | Yes                   |
-| Import/export household data and inspect household import jobs     | No     | Yes   | Yes                   |
-| Leave the household                                                | Yes    | Yes   | Unless the last owner |
+| Capability                                                                                             | Member | Admin | Owner                 |
+| ------------------------------------------------------------------------------------------------------ | ------ | ----- | --------------------- |
+| Use and edit shared recipes, plans, lists, and pantry                                                  | Yes    | Yes   | Yes                   |
+| Change household tastes                                                                                | Yes    | Yes   | Yes                   |
+| Change household details, theme nights, and administrator settings                                     | No     | Yes   | Yes                   |
+| Create or cancel invite links                                                                          | No     | Yes   | Yes                   |
+| Add, pause and delete [webhooks](../../integrations/webhooks/)                                         | No     | Yes   | Yes                   |
+| Promote or demote members and admins                                                                   | No     | Yes   | Yes                   |
+| Make or unmake an owner, or remove another owner                                                       | No     | No    | Yes                   |
+| Import/export household data and inspect household import jobs                                         | No     | Yes   | Yes                   |
+| See every import on the **Imports** page, and **Stop**, **Undo**, **Restore** or **Delete the record** | Yes    | Yes   | Yes                   |
+| **Try again** on links that didn't come in                                                             | Yes    | Yes   | Yes                   |
+| **Try again** on a file, a Merran export or Mealie                                                     | No     | Yes   | Yes                   |
+| Leave the household                                                                                    | Yes    | Yes   | Unless the last owner |
 
 There is no read-only household membership role. **Member** still permits everyday changes to shared kitchen data. Household AI credentials and settings are managed by owners/admins within the server's AI policy; see [AI setup](../ai-setup/).
 
@@ -58,7 +61,7 @@ The household must always retain an owner. Before the final owner leaves, they m
 
 ## Server administrators
 
-The **Server** page in **Settings**, and the **Whole server** side of other pages, appear only for server administrators. They manage server configuration, optional modules, shared AI policy, and server-wide jobs. Starting another household (**Settings → Household → Whole server**) or importing an export as a new household also requires this role. Live Mealie migration requires both server-administrator and household-administrator access.
+The **Server** page in **Settings**, and the **Whole server** side of other pages, appear only for server administrators. They manage server configuration, optional modules, shared AI policy, and server-wide jobs. Starting another household (**Settings → Household → Whole server**) or importing an export as a new household also requires this role. Live Mealie migration requires both server-administrator and household-administrator access, and so does **Try again** on one.
 
 A server administrator's account does not automatically bypass household membership or owner checks. Household **Admin** does not grant access to **Server** or to the **Whole server** side of other pages. The person operating the server and its database still controls the underlying storage; household boundaries are application permissions, not protection from the server operator.
 

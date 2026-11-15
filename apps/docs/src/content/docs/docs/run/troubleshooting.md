@@ -54,7 +54,7 @@ For optional connections:
 ## An import fails
 
 1. Identify the import type and use its matching instructions in [Recipes](../../use/recipes/): a recipe URL, text/photo, exported files, a Merran export, and live Mealie migration use different paths.
-2. Read the error or import summary before submitting again. Check the destination household and whether any recipes were already added.
+2. Open it on **Recipes → ⋯ → Imports** and read **Didn't come in**, where each item says why, before submitting again. Check the destination household and whether any recipes were already added. **Try again** starts a new import of just what didn't come in.
 3. For a recipe website, confirm the page is publicly reachable. A page behind a login, blocked by the site, or without usable recipe data may need text/manual entry. AI-dependent extraction also needs eligible AI access. A site that turned Merran away can still be imported with the [browser extension](../../integrations/browser-extension/), or through the server's own [FlareSolverr](../../integrations/flaresolverr/).
 4. For video, check that video imports are enabled, AI is available, and `yt-dlp` and `ffmpeg` are available to the server. Some sites require cookies; configured cookie files must exist inside the container. External sites can still refuse downloads.
 5. For archive/file imports, use the format the importer expects, inspect the reported upload/format limit, and check disk space and write access in the data directory. An HTTP upload rejection before a job appears can also come from the reverse proxy's request-size limit.
@@ -62,7 +62,7 @@ For optional connections:
 
 **Expected result:** the import summary accounts for imported, skipped, and failed items, and the intended recipes appear in the household. A successful request or a **Done** job alone is not proof that every source item imported. Check the result and a sample of recipes, quantities, images, and notes.
 
-Import failures can leave partial results. Stopping or retrying does not promise rollback. Review what was saved before retrying, and back up before large migrations. If an old import's uploaded file has been cleaned up, submit the source file again rather than repeatedly retrying the old job.
+Import failures can leave partial results. Stopping or retrying does not undo them: **Undo** on the import's page moves what it brought in to Recently deleted, for 30 days. Review what was saved before retrying, and back up before large migrations. Merran keeps an uploaded file for a week after an import with failures; once it's cleaned up, **Try again** says to upload it again. Import records are kept for 90 days.
 
 ## Background jobs are waiting or failing
 
