@@ -22,6 +22,20 @@ test("a plan query is covered, a settings one isn't", () => {
   assert.equal(coveredByLive(["planning"]), false)
 })
 
+test("what changes without a word on the stream isn't covered", () => {
+  // Recipe sites are read for the whole server, prices are checked and
+  // webhooks delivered by jobs, and reading a receipt says nothing.
+  assert.equal(coveredByLive(["recipes", "sites"]), false)
+  assert.equal(coveredByLive(["recipes", "sites", "suggestions"]), false)
+  assert.equal(coveredByLive(["recipes", "collections", "soups"]), false)
+  assert.equal(coveredByLive(["list", "prices"]), false)
+  assert.equal(coveredByLive(["household", "webhooks", "id-1"]), false)
+  assert.equal(coveredByLive(["pantry", "receipts"]), false)
+  // The rest of those areas still are.
+  assert.equal(coveredByLive(["recipes", "detail", "soup"]), true)
+  assert.equal(coveredByLive(["household", "members"]), true)
+})
+
 test("a stream that's quiet for a minute isn't trusted", () => {
   assert.equal(liveConnected(NOW), false)
   heardFromLive(NOW)

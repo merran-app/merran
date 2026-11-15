@@ -259,6 +259,7 @@ function tellWebhooks(
 export const linkImportJob: JobHandler = {
   kind: KIND,
   concurrency: 2,
+  changes: ["recipes"],
   async run({
     jobId,
     em,

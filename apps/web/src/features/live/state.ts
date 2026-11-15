@@ -16,6 +16,19 @@ export const LIVE_REFRESH: Record<string, QueryKey[]> = {
 }
 
 /**
+ * In those areas, but changed by what doesn't say so on the stream: recipe
+ * sites read for the whole server, prices checked and webhooks delivered by
+ * jobs, and receipts read. These are fetched again as any other query is.
+ */
+const NOT_LIVE: QueryKey[] = [
+  ["recipes", "sites"],
+  ["recipes", "collections"],
+  ["list", "prices"],
+  ["household", "webhooks"],
+  ["pantry", "receipts"],
+]
+
+/**
  * The server pings every 25 seconds, so a minute without a word means the
  * stream is gone, even when it looks open, as after a phone wakes up.
  */
@@ -50,6 +63,7 @@ function startsWith(queryKey: QueryKey, prefix: QueryKey) {
 
 /** Whether the live stream says when this query's data changes. */
 export function coveredByLive(queryKey: QueryKey) {
+  if (NOT_LIVE.some((prefix) => startsWith(queryKey, prefix))) return false
   return Object.values(LIVE_REFRESH).some((keys) =>
     keys.some((prefix) => startsWith(queryKey, prefix))
   )

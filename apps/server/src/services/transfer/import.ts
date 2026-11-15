@@ -117,6 +117,8 @@ async function takeDetails(
 export const importJob: JobHandler = {
   kind: KIND,
   concurrency: 2,
+  // Recipes, and a new household's details and settings.
+  changes: ["recipes", "household"],
   async run({ jobId, em, householdId, payload, progress, signal, deps }) {
     if (!householdId) throw new Error("An import needs a household.")
     const { file, newHousehold, userId } = Payload.parse(payload)
