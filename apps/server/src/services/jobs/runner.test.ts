@@ -446,6 +446,81 @@ describe("the job runner", () => {
     }
   })
 
+  test("one household's jobs of a kind wait their turn without holding up another's", async () => {
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    const jobs = runner([
+      { kind: "import", concurrency: 2, perHousehold: 1, run: () => held },
+    ])
+    // Home's two are all there is at first, so a fair share alone would
+    // start both and leave next door's waiting.
+    await enqueue(em(), { kind: "import", householdId: home })
+    const second = await enqueue(em(), { kind: "import", householdId: home })
+
+    const draining = jobs.drain()
+    try {
+      await expect
+        .poll(() => em().count(Job, { status: "running" }))
+        .toBeGreaterThanOrEqual(1)
+      await enqueue(em(), { kind: "import", householdId: nextDoor })
+      // The next look for work, as adding a job starts in the app.
+      jobs.wake()
+      const running = async () => {
+        const jobs = await em().find(Job, { status: "running" })
+        return jobs.map((job) => job.forHousehold?.id).sort()
+      }
+      await expect.poll(running).toEqual([home, nextDoor].sort())
+      expect((await load(second.id)).status).toBe("queued")
+    } finally {
+      letThemGo()
+      await draining
+    }
+  })
+
+  test("a household at its limit for a kind is left out of the look for due work", async () => {
+    // More of one household's jobs of a kind are due than the runner looks
+    // at in one go, and older, while it runs as many as it may.
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    let nextDoorRan = false
+    const jobs = runner([
+      {
+        kind: "nutrition",
+        concurrency: 2,
+        perHousehold: 1,
+        run: async ({ householdId }) => {
+          if (householdId === nextDoor) nextDoorRan = true
+          else await held
+        },
+      },
+    ])
+    const tx = em()
+    const longAgo = new Date(Date.now() - 60 * 60_000)
+    for (let i = 0; i < 60; i++) {
+      tx.create(Job, {
+        kind: "nutrition",
+        payload: {},
+        forHousehold: home,
+        runAt: longAgo,
+      })
+    }
+    await tx.flush()
+    await enqueue(em(), { kind: "nutrition", householdId: nextDoor })
+
+    const draining = jobs.drain()
+    try {
+      await expect
+        .poll(() => em().count(Job, { kind: "nutrition", status: "running" }))
+        .toBeGreaterThanOrEqual(1)
+      // The next look for work, as the runner makes every few seconds.
+      jobs.wake()
+      await expect.poll(() => nextDoorRan).toBe(true)
+    } finally {
+      letThemGo()
+      await draining
+    }
+  })
+
   test("adds one job per key while it's waiting or running", async () => {
     const first = await enqueue(em(), { kind: "x", key: "only-one" })
     const second = await enqueue(em(), { kind: "x", key: "only-one" })

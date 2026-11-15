@@ -87,6 +87,12 @@ export type JobHandler = {
   /** How many of this kind run at once. */
   concurrency?: number
   /**
+   * How many of this kind one household runs at once, so two big imports
+   * from one household don't keep every other household's waiting. None
+   * means only the kind's own limit.
+   */
+  perHousehold?: number
+  /**
    * How long to wait after each failed try, in milliseconds: the first after
    * try 1, and so on. Past its end, or without it, the wait doubles from 30
    * seconds up to 30 minutes.
@@ -138,6 +144,10 @@ const POLL_MS = 5_000
 const PROGRESS_EVERY_MS = 500
 
 const scheduleKey = (kind: string) => `schedule:${kind}`
+
+/** A household and a kind of job, to count what each household runs. */
+const householdKind = (householdId: string, kind: string) =>
+  `${householdId} ${kind}`
 
 export class JobRunner {
   readonly #deps: JobDeps
@@ -272,11 +282,16 @@ export class JobRunner {
     const byLane = new Map<JobLane, number>()
     const byKind = new Map<string, number>()
     const byHousehold = new Map<string, number>()
+    const byHouseholdKind = new Map<string, number>()
     for (const running of this.#running.values()) {
       byLane.set(running.lane, (byLane.get(running.lane) ?? 0) + 1)
       byKind.set(running.kind, (byKind.get(running.kind) ?? 0) + 1)
       const household = running.householdId ?? ""
       byHousehold.set(household, (byHousehold.get(household) ?? 0) + 1)
+      if (running.householdId) {
+        const key = householdKind(running.householdId, running.kind)
+        byHouseholdKind.set(key, (byHouseholdKind.get(key) ?? 0) + 1)
+      }
     }
     const laneFull = (lane: JobLane) =>
       (byLane.get(lane) ?? 0) >= this.#lanes[lane]
@@ -285,7 +300,8 @@ export class JobRunner {
     const em = this.#em()
     const due = await this.#dueJobs(
       em,
-      this.#kindsThatCantStart(byKind, laneFull)
+      this.#kindsThatCantStart(byKind, laneFull),
+      this.#householdsAtLimit(byHouseholdKind)
     )
 
     // A fair share: households with the least running go first.
@@ -308,6 +324,15 @@ export class JobRunner {
       const lane = this.#laneOf(job.kind)
       if (laneFull(lane)) continue
       if ((byKind.get(job.kind) ?? 0) >= (handler.concurrency ?? 1)) continue
+      const household = job.forHousehold?.id ?? null
+      const ownKey = household ? householdKind(household, job.kind) : null
+      if (
+        ownKey &&
+        handler.perHousehold !== undefined &&
+        (byHouseholdKind.get(ownKey) ?? 0) >= handler.perHousehold
+      ) {
+        continue
+      }
       // Taken only if still queued, so it runs once.
       const taken = await em.nativeUpdate(
         Job,
@@ -315,15 +340,30 @@ export class JobRunner {
         { status: "running", startedAt: new Date(), attempts: job.attempts + 1 }
       )
       if (taken !== 1) continue
-      const household = job.forHousehold?.id ?? null
       byLane.set(lane, (byLane.get(lane) ?? 0) + 1)
       byKind.set(job.kind, (byKind.get(job.kind) ?? 0) + 1)
       byHousehold.set(
         household ?? "",
         (byHousehold.get(household ?? "") ?? 0) + 1
       )
+      if (ownKey) {
+        byHouseholdKind.set(ownKey, (byHouseholdKind.get(ownKey) ?? 0) + 1)
+      }
       this.#run(handler, lane, job, job.attempts + 1)
     }
+  }
+
+  /** The households running as many of a kind at once as it lets one. */
+  #householdsAtLimit(byHouseholdKind: ReadonlyMap<string, number>) {
+    const atLimit: { kind: string; forHousehold: string }[] = []
+    for (const [key, running] of byHouseholdKind) {
+      const [householdId, kind] = key.split(" ") as [string, string]
+      const limit = this.#handlers.get(kind)?.perHousehold
+      if (limit !== undefined && running >= limit) {
+        atLimit.push({ kind, forHousehold: householdId })
+      }
+    }
+    return atLimit
   }
 
   /**
@@ -348,12 +388,17 @@ export class JobRunner {
 
   /**
    * The jobs that are due, oldest first, as many as one look takes in.
-   * Kinds that couldn't start are left out: when more of one are due than
-   * a look takes in, as when deliveries pile up for a receiver that hangs,
-   * or a big import's nutrition jobs fill the long lane, they'd keep every
-   * other kind waiting.
+   * Kinds that couldn't start are left out, and so is each household's
+   * kind it runs as many of as it may: when more of those are due than a
+   * look takes in, as when deliveries pile up for a receiver that hangs, or
+   * one household's big import queues a hundred nutrition jobs, they'd keep
+   * every other kind and household waiting.
    */
-  #dueJobs(em: EntityManager, kindsThatCantStart: readonly string[]) {
+  #dueJobs(
+    em: EntityManager,
+    kindsThatCantStart: readonly string[],
+    householdsAtLimit: readonly { kind: string; forHousehold: string }[]
+  ) {
     return em.find(
       Job,
       {
@@ -361,6 +406,9 @@ export class JobRunner {
         runAt: { $lte: new Date() },
         ...(kindsThatCantStart.length > 0
           ? { kind: { $nin: kindsThatCantStart } }
+          : {}),
+        ...(householdsAtLimit.length > 0
+          ? { $not: { $or: [...householdsAtLimit] } }
           : {}),
       },
       { orderBy: { runAt: "asc", createdAt: "asc" }, limit: 50 }

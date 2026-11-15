@@ -259,6 +259,7 @@ export async function planAheadNow(
 export const autoplanJob: JobHandler = {
   kind: AUTOPLAN_JOB,
   lane: "long",
+  perHousehold: 1,
   concurrency: 2,
   async run({ em, householdId, payload, deps, logger }) {
     if (!householdId) return

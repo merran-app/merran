@@ -345,6 +345,7 @@ const Payload = z.object({
 export const discoverJob: JobHandler = {
   kind: KIND,
   lane: "long",
+  perHousehold: 1,
   concurrency: 2,
   async run({ em, householdId, payload, deps, logger }) {
     if (!householdId) throw new Error("A search needs a household.")

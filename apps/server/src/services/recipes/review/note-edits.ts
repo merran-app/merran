@@ -183,6 +183,7 @@ const Payload = z.object({
 export const noteEditJob: JobHandler = {
   kind: KIND,
   lane: "long",
+  perHousehold: 1,
   concurrency: 2,
   async run({ em, householdId, payload, deps }) {
     if (!householdId) throw new Error("A note needs a household.")
