@@ -350,7 +350,7 @@ export const discoverJob: JobHandler = {
   area: "recipes",
   perHousehold: 1,
   concurrency: 2,
-  async run({ em, householdId, payload, deps, logger }) {
+  async run({ em, householdId, payload, signal, deps, logger }) {
     if (!householdId) throw new Error("A search needs a household.")
     const { discoveryId, userId, avoid } = Payload.parse(payload)
     const discovery = await findDiscovery(em, discoveryId)
@@ -388,6 +388,8 @@ export const discoverJob: JobHandler = {
           ? "Nothing turned up that Merran could open. Try another theme."
           : null
     } catch (err) {
+      // Stopped, or Merran is shutting down: the search didn't fail.
+      if (signal.aborted) throw err
       discovery.status = "failed"
       discovery.error =
         err instanceof AppError

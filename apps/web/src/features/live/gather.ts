@@ -16,12 +16,10 @@ const MERRAN_WAIT_MS = 5_000
 const JOB_WAIT_MS = 1_000
 
 /**
- * Gathers changes over the live stream before fetching again, so a burst
- * of them is one round of requests rather than one per change. Whatever is
- * gathered goes together at the soonest time any change asked for.
+ * Query keys gathered to fetch again together, at the soonest time any of
+ * them asked for, each once.
  */
-export function gatherChanges(refresh: (keys: QueryKey[]) => void) {
-  /** What to fetch again, by its key as text, so each goes once. */
+function batch(refresh: (keys: QueryKey[]) => void) {
   const keys = new Map<string, QueryKey>()
   let due: number | null = null
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -34,14 +32,7 @@ export function gatherChanges(refresh: (keys: QueryKey[]) => void) {
     refresh(gathered)
   }
 
-  function stop() {
-    clearTimeout(timer)
-    timer = undefined
-    due = null
-    keys.clear()
-  }
-
-  function gather(more: readonly QueryKey[], waitMs: number) {
+  function add(more: readonly QueryKey[], waitMs: number) {
     for (const key of more) keys.set(JSON.stringify(key), key)
     const at = Date.now() + waitMs
     // Something already waiting goes sooner: this change goes with it.
@@ -51,14 +42,43 @@ export function gatherChanges(refresh: (keys: QueryKey[]) => void) {
     timer = setTimeout(send, at - Date.now())
   }
 
+  function stop() {
+    clearTimeout(timer)
+    timer = undefined
+    due = null
+    keys.clear()
+  }
+
+  return { add, stop }
+}
+
+/**
+ * Gathers changes over the live stream before fetching again, so a burst
+ * of them is one round of requests rather than one per change. A job's
+ * moves are gathered apart from what changed in the areas: an import says
+ * both as it goes, and its moves, a second apart, would otherwise fetch
+ * the whole library every second rather than every five.
+ */
+export function gatherChanges(refresh: (keys: QueryKey[]) => void) {
+  const areas = batch(refresh)
+  const jobs = batch(refresh)
+
   /** Something in an area changed, by a person or by Merran. */
   function add(area: string, byMerran: boolean) {
-    gather(LIVE_REFRESH[area] ?? [], byMerran ? MERRAN_WAIT_MS : PERSON_WAIT_MS)
+    areas.add(
+      LIVE_REFRESH[area] ?? [],
+      byMerran ? MERRAN_WAIT_MS : PERSON_WAIT_MS
+    )
   }
 
   /** One of the household's jobs started, moved on or ended. */
   function addJob(job: { id: string; kind: string }) {
-    gather(jobRefresh(job), JOB_WAIT_MS)
+    jobs.add(jobRefresh(job), JOB_WAIT_MS)
+  }
+
+  function stop() {
+    areas.stop()
+    jobs.stop()
   }
 
   return { add, addJob, stop }

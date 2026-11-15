@@ -37,9 +37,17 @@ const PAGES: Record<string, string> = {
 
 /** A site that never answers, until the job fetching it is stopped. */
 const SLOW = "https://example.com/slow"
+/** A recipe whose photo never comes, until the job is stopped. */
+const SLOW_PHOTO = "https://example.com/slow-photo.jpg"
+PAGES["https://example.com/salad"] = recipePage(
+  "Green Salad",
+  "1 head lettuce"
+).replace('"name":', `"image":"${SLOW_PHOTO}","name":`)
+let photoAsked = false
 
 const fetcher: Fetcher = async (url) => {
-  if (url === SLOW) {
+  if (url === SLOW_PHOTO) photoAsked = true
+  if (url === SLOW || url === SLOW_PHOTO) {
     // As the real fetcher does: it ends with the job's reason.
     return new Promise((_resolve, reject) => {
       const stop = stopSignal()
@@ -247,6 +255,21 @@ describe("several links", () => {
       stopped: 2,
       items: [{ state: "stopped" }, { state: "stopped" }],
     })
+  })
+
+  test("stopped while a photo comes don't save the recipe without it", async () => {
+    const started = await start({ urls: ["https://example.com/salad"] })
+    const draining = jobs.drain()
+    await expect.poll(() => photoAsked).toBe(true)
+    await kyle.post(`/api/recipes/import/links/${started.id}/stop`)
+    await draining
+
+    expect(await status(started.id)).toMatchObject({
+      status: "cancelled",
+      added: 0,
+      items: [{ state: "stopped" }],
+    })
+    expect((await kyle.get("/api/recipes/green-salad")).status).toBe(404)
   })
 
   test("need at least one link Merran can fetch", async () => {

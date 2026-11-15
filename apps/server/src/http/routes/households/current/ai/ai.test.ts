@@ -17,7 +17,7 @@ import type {
   AiModels,
   AiTarget,
 } from "../../../../../services/ai/providers.ts"
-import { useAi } from "../../../../../services/ai/run.ts"
+import { aiTimeLimitMs, useAi } from "../../../../../services/ai/run.ts"
 import { JobStopped } from "../../../../../services/jobs/runner.ts"
 import { withStopSignal } from "../../../../../services/jobs/stop.ts"
 import type { Settings } from "../../../../../services/settings/settings.ts"
@@ -436,6 +436,13 @@ describe("AI calls that don't answer", () => {
   test("give up after their time limit, saying so", async () => {
     await setPolicy({})
     await expect(call(50)).rejects.toMatchObject({ code: "ai_timeout" })
+  })
+
+  test("wait 90 seconds in a request, under a tunnel's 100, and 3 minutes in a job", () => {
+    expect(aiTimeLimitMs()).toBe(90_000)
+    withStopSignal(new AbortController().signal, () => {
+      expect(aiTimeLimitMs()).toBe(180_000)
+    })
   })
 
   test("end with the job's reason when the job is stopped", async () => {

@@ -648,6 +648,42 @@ describe("the job runner", () => {
     expect(seen).toEqual([null, { done: ["a"] }])
   })
 
+  test("a job that carries on after it's stopped is still stopped", async () => {
+    // Like a library run that catches each recipe's error, the stop's too.
+    let started!: () => void
+    let running = new Promise<void>((resolve) => (started = resolve))
+    const handler: JobHandler = {
+      kind: "swallow",
+      run: async ({ signal }) => {
+        started()
+        await new Promise((resolve) =>
+          signal.addEventListener("abort", resolve)
+        )
+        return { finished: true }
+      },
+    }
+
+    const cancelling = runner([handler])
+    const cancelled = await enqueue(em(), { kind: "swallow" })
+    const draining = cancelling.drain()
+    await running
+    cancelling.stopJob(cancelled.id)
+    await draining
+    expect(await load(cancelled.id)).toMatchObject({ status: "cancelled" })
+
+    running = new Promise<void>((resolve) => (started = resolve))
+    const shuttingDown = runner([handler])
+    const cutOff = await enqueue(em(), { kind: "swallow" })
+    shuttingDown.wake()
+    await running
+    await shuttingDown.stop()
+    // It runs again at the next start, without counting a try.
+    expect(await load(cutOff.id)).toMatchObject({
+      status: "queued",
+      attempts: 0,
+    })
+  })
+
   test("everything a job calls sees its stop signal", async () => {
     let seen: AbortSignal | undefined
     let own: AbortSignal | undefined

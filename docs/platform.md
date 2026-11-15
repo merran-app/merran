@@ -335,7 +335,7 @@ Merran's own job runner does everything in the background, from a `jobs` table i
 | Reading recipe sites, followed and suggested | Every 6 hours per site, checked every half hour | Long |
 | Checking starter collections' classics | Weekly (not a job yet) | |
 | Bulk imports: several links, other apps, a Merran export | When started; two of each kind at a time, one per household | Long |
-| Library runs: tidy up, nutrition, photos | When started; two at a time, one per household | Long |
+| Library runs: tidy up, nutrition, photos | When started; two at a time | Long |
 | Nutrition and photo for a saved recipe | After saving, when they can be made | Long |
 | Discover searches | When started; two at a time, one per household | Long |
 | Purging Recently deleted | Daily | Long |
@@ -348,8 +348,8 @@ Merran's own job runner does everything in the background, from a `jobs` table i
 | Update check | Every 6 hours, unless turned off | Quick |
 
 - **Two lanes** (decided November 10, built November 15, 2026). The quick lane, 4 at a time, is for jobs that call no AI, open no pages and finish in seconds, so an invitation or a webhook never waits behind an import. The long lane, 4 at a time unless `MERRAN_JOBS_LONG` says otherwise, is for the rest.
-- **Limits per household.** One household runs one import, library run or Discover search of each kind at a time, so two big imports from one household don't keep another's waiting. Each household also gets a fair share: those with the least running go first.
-- **Stop and time limits.** Stop reaches every fetch, AI call and video tool a job makes, so it takes effect at once, not between items. AI calls give up after 3 minutes (5 for Discover's web search), fetches after 15 seconds unless known to be slow, and yt-dlp and ffmpeg have limits of their own.
+- **Limits per household.** One household runs one import or Discover search of each kind at a time, so two big imports from one household don't keep another's waiting. Library runs have no such limit: they share their kinds with each saved recipe's own nutrition, photo and tidy-up, which shouldn't wait an hour behind a run. Each household also gets a fair share: those with the least running go first.
+- **Stop and time limits.** Stop reaches every fetch, AI call and video tool a job makes, so it takes effect at once, not between items (a video still waiting for a download slot waits it out). What a job was on when it stopped isn't counted as failed or saved half done, and a job stopped is stopped, whatever its handler made of it. AI calls give up after 3 minutes in a job (5 for Discover's web search) and 90 seconds in a request, under the 100 seconds Cloudflare's tunnel waits; fetches after 15 seconds unless known to be slow; and yt-dlp and ffmpeg have limits of their own.
 - **Following a job.** The live stream sends a `job` event when one of a household's jobs starts, moves on or ends, to everyone who may read its area (an import's is recipes), and the app follows imports, library runs and Discover searches by it rather than polling. Household admins can list the household's jobs (`GET /households/current/jobs`) and follow or stop one.
 - Work in progress survives restarts. Nothing important is kept only in memory: receipt drafts, the share inbox and pending Kroger sign-ins move to the database, with an expiry, or become jobs. A job cut off by a restart sees what it saved so far; a link import carries on from the link it was on.
 - Settings → Server → **Jobs** shows what's running, what failed and why, with Retry and Cancel.

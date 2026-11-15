@@ -19,7 +19,7 @@ import {
 } from "ai"
 import type { AppDeps } from "../../core/context.ts"
 import { AppError } from "../../core/errors.ts"
-import { throwIfStopped, timeLimit } from "../jobs/stop.ts"
+import { stopSignal, throwIfStopped, timeLimit } from "../jobs/stop.ts"
 import {
   clearOutOfCredit,
   isOutOfCredit,
@@ -230,6 +230,17 @@ export async function prepareAi(
  */
 const AI_TIME_LIMIT_MS = 3 * 60_000
 
+/**
+ * In a request, under the 100 seconds Cloudflare's tunnel waits for an
+ * answer, so the person sees why rather than the tunnel's error page.
+ */
+const AI_REQUEST_TIME_LIMIT_MS = 90_000
+
+/** How long an AI call may take here: in a job, or in a request. */
+export function aiTimeLimitMs() {
+  return stopSignal() ? AI_TIME_LIMIT_MS : AI_REQUEST_TIME_LIMIT_MS
+}
+
 function aiTimedOut() {
   return new AppError(
     "upstream",
@@ -281,13 +292,16 @@ export async function useAi<T extends { usage: LanguageModelUsage }>(
      * models Merran knows; an address's are tried as they are.
      */
     needs?: readonly ModelAbility[]
-    /** How long it may take: 3 minutes unless it's known to take longer. */
+    /**
+     * How long it may take: 3 minutes in a job and 90 seconds in a request,
+     * unless it's known to take longer.
+     */
     timeLimitMs?: number
   },
   call: (model: LanguageModel, extras: AiExtras) => Promise<T>
 ): Promise<T> {
   // Ends at the time limit, or as soon as the job calling it is stopped.
-  const limit = timeLimit(options.timeLimitMs ?? AI_TIME_LIMIT_MS)
+  const limit = timeLimit(options.timeLimitMs ?? aiTimeLimitMs())
   // A key that turns out to be out of credit is noted, and the next tried:
   // a few at most.
   const outOfCredit: string[] = []

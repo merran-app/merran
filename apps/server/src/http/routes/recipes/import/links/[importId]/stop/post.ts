@@ -23,7 +23,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Stop a link import",
   description:
-    "The recipes it added stay. The link it's on finishes first, so the answer may still say it's running.",
+    "The recipes it added stay. The link it's on is cut off and shows as stopped; it takes a moment, so the answer may still say it's running.",
   ...openToKeys("imports", "write"),
   request: { params: LinkImportParam },
   responses: {

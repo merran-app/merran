@@ -43,7 +43,7 @@ const route = createRoute({
     "- `ready` when it's open, with the areas it hears about.",
     "- `plan`, `list`, `pantry`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.",
     "- `presence` with who has `page` open, when someone opens or leaves it.",
-    "- `job` when one of the household's jobs, like an import, starts, moves on or ends, with its `id`, `kind`, `status` and `progress`. Only about jobs in areas it hears about. Fetch the job to see more.",
+    "- `job` when one of the household's jobs, like an import, starts, moves on or ends, with its `id`, `kind`, `status` and `progress`. Only about jobs in areas it hears about. Fetch what shows the job to see more, like the import or the run.",
     "- `ping` now and then, to keep the connection open.",
     "",
     "A device that sends the same `client` with its own changes (in the `X-Merran-Client` header) isn't told about them; your other devices are. An API key hears about the areas it can read.",

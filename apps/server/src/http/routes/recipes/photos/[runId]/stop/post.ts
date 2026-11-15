@@ -20,7 +20,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Stop making AI photos",
   description:
-    "The photos made stay. The one being made finishes first, so the answer may still say it's running.",
+    "The photos made stay. The one being made is cut off, not counted as failed; it takes a moment, so the answer may still say it's running.",
   ...openToKeys("recipes", "write"),
   request: { params: PhotoRunParam },
   responses: {

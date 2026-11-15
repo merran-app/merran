@@ -76,7 +76,8 @@ export const nutritionRunJob: JobHandler = {
   kind: KIND,
   lane: "long",
   area: "recipes",
-  perHousehold: 1,
+  // None per household: a recipe just saved gets its nutrition while the
+  // household's library run goes on.
   concurrency: 2,
   async run({ em, householdId, payload, progress, signal, logger, deps }) {
     if (!householdId) throw new Error("Nutrition needs a household.")
@@ -116,6 +117,8 @@ export const nutritionRunJob: JobHandler = {
           counts.workedOut++
           inARow = 0
         } catch (err) {
+          // Stopped while it was on this one, which didn't fail.
+          if (signal.aborted) throw err
           if (
             err instanceof AppError &&
             err.code === "usda_rate_limited" &&

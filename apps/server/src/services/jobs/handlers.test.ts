@@ -29,6 +29,17 @@ describe("the kinds of job", () => {
     expect(missing.map((handler) => handler.kind)).toEqual([])
   })
 
+  test("kinds a recipe's own jobs share with library runs have no limit per household", () => {
+    // A recipe just saved gets its nutrition, photo and tidy-up while the
+    // household's library run of the same kind goes on, perhaps for an hour.
+    const shared = ["recipes.nutrition", "recipes.photos", "recipes.tidy"]
+    const limited = JOB_HANDLERS.filter(
+      (handler) =>
+        shared.includes(handler.kind) && handler.perHousehold !== undefined
+    )
+    expect(limited.map((handler) => handler.kind)).toEqual([])
+  })
+
   test("emails, deliveries and housekeeping are quick; AI and pages are long", () => {
     const quick = JOB_HANDLERS.filter((handler) => handler.lane === "quick")
     expect(quick.map((handler) => handler.kind).sort()).toEqual(

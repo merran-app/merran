@@ -71,7 +71,8 @@ export const tidyRunJob: JobHandler = {
   kind: KIND,
   lane: "long",
   area: "recipes",
-  perHousehold: 1,
+  // None per household: a recipe just imported is tidied while the
+  // household's library run goes on.
   concurrency: 2,
   async run({
     jobId,
@@ -107,6 +108,8 @@ export const tidyRunJob: JobHandler = {
         else counts.fine++
         inARow = 0
       } catch (err) {
+        // Stopped while it was on this one, which didn't fail.
+        if (signal.aborted) throw err
         counts.failed++
         inARow++
         if (stopsTheRun(err)) {

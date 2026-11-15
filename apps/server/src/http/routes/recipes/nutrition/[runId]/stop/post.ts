@@ -23,7 +23,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Stop working out nutrition",
   description:
-    "What it worked out stays. The recipe it's on finishes first, so the answer may still say it's running.",
+    "What it worked out stays. The recipe it's on is cut off, not counted as failed; it takes a moment, so the answer may still say it's running.",
   ...openToKeys("recipes", "write"),
   request: { params: NutritionRunParam },
   responses: {

@@ -514,6 +514,10 @@ export class JobRunner {
         const result = await withActor(MERRAN, () =>
           withStopSignal(controller.signal, () => handler.run(ctx))
         )
+        // Stopped, though it ended as if it hadn't: a handler that catches
+        // each item's error caught the stop too, and its last item isn't
+        // done. It's cancelled, or runs again next start.
+        if (running.stopped) throw new JobStopped(running.stopped)
         tell(
           await this.#endTry(job.id, attempt, {
             status: "done",
