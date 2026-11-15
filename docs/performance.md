@@ -1,6 +1,8 @@
 # Speed, search and background work
 
-Audited November 10, 2026. Nothing here is built yet: this is what's slow or feels slow, what still runs inside a request that should be a job, what search and Discover need, and which indexes are missing, split into slices to plan in detail and build one at a time. The order, the job lanes, imports and the Imports page were decided the same day ([Decisions](#decisions)); how search matches was left to a revamp of its own.
+Audited November 10, 2026. This is what's slow or feels slow, what still runs inside a request that should be a job, what search and Discover need, and which indexes are missing, split into slices to plan in detail and build one at a time. The order, the job lanes, imports and the Imports page were decided the same day ([Decisions](#decisions)); how search matches was left to a revamp of its own.
+
+Checked again November 14, 2026, after webhooks were built (#95 to #100) ahead of slice 2: they built two of its pieces, leaving full kinds out of the check and a retry schedule per kind ([What webhooks built](#what-webhooks-built)). Nothing else here is built yet.
 
 ## Goal
 
@@ -19,6 +21,21 @@ So none of it is done again:
 - Routes are split into their own chunks (`autoCodeSplitting`), hashed assets are cached for a year, and photos are WebP in two sizes with lazy loading on cards.
 - On SQLite, every foreign key has an index (MikroORM adds one for each `manyToOne`). Postgres is another story; see [The database](#the-database).
 - Token and hash lookups (share links, calendar subscriptions, sessions, OAuth tokens, rate limits) are all unique indexes, and price history, store products and placements are covered by their unique keys.
+
+### What webhooks built
+
+The webhooks pull requests changed the job runner (`services/jobs/runner.ts`, `jobs.ts`) on the way, so slice 2 starts from here:
+
+- **Full kinds are left out of the check.** The runner's look for due work skips kinds already running as many as they may (`#dueJobs`), so a pile of one kind can't keep the rest waiting. [Finding 1](#the-job-runner) is fixed.
+- **A retry schedule per kind.** A handler can give `retryDelays`; webhook deliveries use it for eight tries over about 27 hours. Without it, the wait still doubles from 30 seconds to 30 minutes. [Finding 9](#the-job-runner) is fixed.
+- **A job knows which try it's on** (`attempt` and `maxAttempts` in its context), so it can tell when this is its last.
+- **A job can be started over while it runs** (`restartJob`). How a try ended is only saved if the job is still on that try, so one started over runs again from its first try.
+- **Jobs written with the change that makes them:** `createJob` and `wakeRunner` save a job in the same flush as everything else, and `atCommit` (`database/at-commit.ts`) writes a job's row as the transaction commits.
+- **Jobs run as Merran** (`withActor(MERRAN, …)`), so webhooks say Merran did what a job did.
+- **The daily clean-up** also clears webhook events and cooking sessions older than 30 days.
+- **New kinds:** deliveries (two at a time), gathering (one at a time across the server), the heads-up schedule, and keyed jobs for cook view's timers, quiet checks and closing sessions.
+
+What's still to do from slice 2: the two lanes and their setting, limits per household, time limits and Stop passed on, the household `job` event, a household's list of its jobs, and a link import that remembers its progress across a restart.
 
 ## Findings
 
@@ -41,15 +58,15 @@ Across all of it, **AI calls have no time limit** (`useAi` in `services/ai/run.t
 
 ### The job runner
 
-1. **One full kind holds up the rest.** Each check takes the 50 oldest due jobs of any kind (`runner.ts`), then skips kinds already at their limit. A 100-link import queues up to 100 nutrition and 100 photo jobs, limited to a few at a time, which fill those 50 places, so other kinds and other households wait while slots are free. Fix: leave kinds at their limit out of the query.
-2. **Four slots for everything,** with no priority and no setting. Invitation and password reset emails wait behind long AI runs, and the planned webhook deliveries (four at a time, in the webhooks plan) could take every slot. Fix: a lane for quick jobs (emails, webhook deliveries) apart from long ones (imports, library runs, Discover), and a setting for the long lane (decided; see [decision 4](#decisions)).
+1. **One full kind holds up the rest.** Each check took the 50 oldest due jobs of any kind (`runner.ts`), then skipped kinds already at their limit. A 100-link import queues up to 100 nutrition and 100 photo jobs, limited to a few at a time, which filled those 50 places, so other kinds and other households waited while slots were free. Fixed with webhooks (#95, November 10, 2026): kinds at their limit are left out of the query.
+2. **Four slots for everything,** with no priority and no setting. Invitation and password reset emails wait behind long AI runs, and webhook deliveries (two at a time) and gathering (one) share the same four with them: a big link import and the nutrition and photo jobs it queues fill all four, and deliveries wait. Fix: a lane for quick jobs (emails, webhook deliveries) apart from long ones (imports, library runs, Discover), and a setting for the long lane (decided; see [decision 4](#decisions)).
 3. **Limits are for the whole server, and a whole import is one job.** [platform.md](platform.md#jobs) promises "three pages or one video at a time per household", but two big imports from one household block every household's link imports for as long as they take. Fix: limits per household as well as per kind.
 4. **No time limits, and Stop isn't passed on** (above).
 5. **Nothing says when a job moves.** The runner sends no events, so the web app runs about eight polling loops on six different APIs: a link import every second, the Recipes banner every 2 s, a household import every second, tidy-up every 2 s, nutrition and photo runs every 3 s, Discover every 2 s, sites every 5 s, and the server's jobs every 2 or 30 s. Link, app and household imports never announce a change, so other tabs and phones don't refresh. Fix: a household `job` event on the live stream when a job starts, moves on and finishes, and one way for the web app to follow any job.
 6. **A household can't see its own jobs.** Only the server admin's Jobs card lists them (the 100 newest), and it has labels for 8 of the 18 kinds.
 7. **Jobs that do nothing.** Every save queues a nutrition job and a photo job even when the household has no USDA key, no AI and no photos; each then just ends (`services/nutrition/runs.ts`, `services/recipes/photos/runs.ts`), and its row stays for 30 days. Fix: check before queueing.
 8. **A link import forgets what it did when Merran restarts.** It starts again from its payload and ignores its saved result (`import-links.ts`), so links it already imported are reported as already in the library.
-9. **One retry schedule for every kind.** The webhooks plan needs its own, so this lands with or before it.
+9. **One retry schedule for every kind.** Fixed with webhooks (#95, November 10, 2026): a handler can give its own `retryDelays`.
 10. **The docs don't match.** [stack.md](stack.md#a-job-runner-of-our-own-instead-of-hand-rolled-schedules) says jobs are claimed with `SKIP LOCKED` on Postgres; the runner uses a conditional update, which is right for one process. [platform.md](platform.md#jobs) lists a weekly classics check and prep reminders, which have no job yet.
 
 ### Following background work
@@ -149,7 +166,7 @@ Eight slices, each its own pull request (decided November 10, 2026), with its ow
 | # | Slice | What's in it | Size | Needs |
 |---|---|---|---|---|
 | 1 | **Quick wins** | Compression for the API and precompressed assets; static files before sign-in; the assistant, driver.js, markdown and the auth client loaded when needed; `keepPreviousData` on the library and pickers; live changes gathered for a second before refetching, and job-driven changes throttled; a longer `staleTime` and no refetch on focus while the live stream is connected; no nutrition or photo jobs that would do nothing; the missing indexes, the Postgres foreign keys first; Find more polling its own search, not the whole collection; a light "any sites followed?" query; no polling for stuck posts; the API descriptions that still say videos can't be imported | M in all, S each | — |
-| 2 | **Job runner foundations** | Leaving full kinds out of the check; a quick lane and a long lane, with a setting; limits per household; time limits and Stop passed to fetches, AI and video tools; a retry schedule per kind; a household `job` event on the live stream; `GET /households/current/jobs`; a link import that remembers its progress across a restart | M | — |
+| 2 | **Job runner foundations** | A quick lane and a long lane, with a setting; limits per household; time limits and Stop passed to fetches, AI and video tools; a household `job` event on the live stream; `GET /households/current/jobs`; a link import that remembers its progress across a restart. Leaving full kinds out of the check and a retry schedule per kind came with webhooks ([What webhooks built](#what-webhooks-built)) | M | — |
 | 3 | **Imports in the background, with a history** | One-link, video, extension, share-sheet and proposal imports become import jobs that hand over after about 10 s; uploaded files checked in a job; the **Imports** page ([below](#the-imports-page)): every import, the recipes each brought in, what didn't come in and why, **Delete**, **Undo** and **Try again**; a notice when one finishes; no more in-memory video queue | L | 2 |
 | 4 | **The rest of the slow requests** | Receipts, **Work out nutrition**, **Make a photo**, **Check prices now** and **Empty** run as jobs; site photos fetched when the site is read; a time limit on text and photo imports | M | 2 |
 | 5 | **Discover as it finds them, and Find more** | Each recipe saved as soon as it's opened (duplicates and the two-per-site rule applied as it goes); a pool of four instead of batches; progress and **Stop**; the cards found so far shown while it searches; matches from the shelf first, instantly and without AI; **Find more** adding to the same search; Discover photos resized like the shelf's. Later: the AI offering each link as it finds it, so the first card comes before the AI finishes | M | 2 for the events, otherwise none |
@@ -157,7 +174,7 @@ Eight slices, each its own pull request (decided November 10, 2026), with its ow
 | 7 | **Queries that grow** | One loader for planning, sales and costs that works out each line's food once; usual buys from the last year; "Same as…" touching only the rows it changes; the shelf kept in memory for collections; duplicates filtered in SQL; tags pruned in one statement; old prices, sessions, tokens and proposals cleared daily; SQLite's settings applied on each connection | M–L | — |
 | 8 | **Loading the app** | Data started alongside each page's code (loaders), the household loaded with the sign-in check, one summary for Today, a progress bar while a page loads, `@merran/shared` split by use, small chunks grouped, the one font axis, onboarding's extra requests, and the live stream kept open across pages | M | — |
 
-Slice 1 is cheap and felt on every page. Slice 2 is what 3, 4 and 5 build on, and what the webhooks plan needs (lanes and a retry schedule per kind), so it goes before webhooks. Slice 3 is the one asked for first, so it follows straight after. Decided November 10, 2026: build them in this order.
+Slice 1 is cheap and felt on every page. Slice 2 is what 3, 4 and 5 build on, and what webhooks need (lanes and a retry schedule per kind). Slice 3 is the one asked for first, so it follows straight after. Decided November 10, 2026: build them in this order. Webhooks were built first in the end, with the retry schedule and full kinds left out of the check; the lanes are still to come in slice 2, and until then deliveries share the four slots with long jobs.
 
 ### The Imports page
 
