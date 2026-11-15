@@ -1,25 +1,37 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { compress } from "hono/compress"
 import { pino } from "pino"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import * as shares from "../services/recipes/sharing/shares.ts"
-import { createTestApp, setUpServer, type TestClient } from "../test/app.ts"
+import {
+  createTestApp,
+  setUpServer,
+  TEST_ORIGIN,
+  type TestClient,
+} from "../test/app.ts"
 import { handleNotFound } from "./errors.ts"
 import { createRouter } from "./router.ts"
-import { serveWebApp } from "./web-app.ts"
+import { serveWebApp, serveWebFiles } from "./web-app.ts"
 
 const logger = pino({ level: "silent" })
 const dir = mkdtempSync(join(tmpdir(), "merran-web-"))
 mkdirSync(join(dir, "assets"))
 writeFileSync(join(dir, "index.html"), "<!doctype html><title>Merran</title>")
 writeFileSync(join(dir, "assets", "app-1a2b.js"), "console.log('hi')")
+// The copies the build compresses ahead of time, told apart by their bytes.
+writeFileSync(join(dir, "assets", "app-1a2b.js.br"), "br!")
+writeFileSync(join(dir, "assets", "app-1a2b.js.gz"), "gz!")
 writeFileSync(join(dir, "favicon.svg"), "<svg/>")
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
+/** As the server's app is put together, with the web app around the API. */
 function createApp(webDir: string) {
   const app = createRouter()
+  app.use(compress())
+  serveWebFiles(app, webDir)
   app.get("/api/health", (c) => c.json({ ok: true }))
   serveWebApp(app, webDir, logger, null)
   app.notFound(handleNotFound)
@@ -48,6 +60,31 @@ describe("the web app", () => {
     const icon = await app.request("/favicon.svg")
     expect(icon.status).toBe(200)
     expect(icon.headers.get("cache-control")).toBeNull()
+  })
+
+  it("serves the Brotli copy to browsers that take it", async () => {
+    const res = await app.request("/assets/app-1a2b.js", {
+      headers: { "accept-encoding": "br, gzip" },
+    })
+    expect(res.status).toBe(200)
+    expect(res.headers.get("content-encoding")).toBe("br")
+    expect(res.headers.get("vary")).toContain("Accept-Encoding")
+    expect(res.headers.get("cache-control")).toContain("immutable")
+    expect(await res.text()).toBe("br!")
+  })
+
+  it("serves the gzip copy to browsers that only take gzip", async () => {
+    const res = await app.request("/assets/app-1a2b.js", {
+      headers: { "accept-encoding": "gzip" },
+    })
+    expect(res.headers.get("content-encoding")).toBe("gzip")
+    expect(await res.text()).toBe("gz!")
+  })
+
+  it("serves the file as it is without Accept-Encoding", async () => {
+    const res = await app.request("/assets/app-1a2b.js")
+    expect(res.headers.get("content-encoding")).toBeNull()
+    expect(await res.text()).toBe("console.log('hi')")
   })
 
   it("leaves the API alone", async () => {
@@ -108,6 +145,40 @@ describe("without a built web app", () => {
     const app = createApp(join(dir, "not-built"))
     expect((await app.request("/api/health")).status).toBe(200)
     expect((await app.request("/")).status).toBe(404)
+  })
+})
+
+describe("the web app in the whole server", () => {
+  let testApp: Awaited<ReturnType<typeof createTestApp>>
+  let kyle: TestClient
+
+  beforeAll(async () => {
+    testApp = await createTestApp({ webDir: dir })
+    kyle = await setUpServer(testApp.app, testApp.setupCode)
+  })
+
+  afterAll(() => testApp.close())
+
+  it("serves files without asking who's signed in", async () => {
+    // Reading the session takes the database: files shouldn't need it.
+    const fork = vi.spyOn(testApp.database.em, "fork")
+    try {
+      const res = await kyle.get("/assets/app-1a2b.js")
+      expect(res.status).toBe(200)
+      expect(fork).not.toHaveBeenCalled()
+    } finally {
+      fork.mockRestore()
+    }
+  })
+
+  it("compresses API answers", async () => {
+    const res = await testApp.app.request(`${TEST_ORIGIN}/api/openapi.json`, {
+      headers: { "accept-encoding": "gzip" },
+    })
+    expect(res.status).toBe(200)
+    expect(res.headers.get("content-encoding")).toBe("gzip")
+    const unzipped = res.body!.pipeThrough(new DecompressionStream("gzip"))
+    expect(await new Response(unzipped).json()).toHaveProperty("openapi")
   })
 })
 

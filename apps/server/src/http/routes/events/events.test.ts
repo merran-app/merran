@@ -190,6 +190,25 @@ describe("live updates", () => {
     await listeners(0)
   })
 
+  test("aren't compressed, so each one arrives as it's sent", async () => {
+    const headers = kyle.headers()
+    headers.set("accept-encoding", "gzip, deflate, br")
+    const controller = new AbortController()
+    const res = await app.request(`${TEST_ORIGIN}/api/events`, {
+      headers,
+      signal: controller.signal,
+    })
+    expect(res.status).toBe(200)
+    expect(res.headers.get("content-encoding")).toBeNull()
+    // The first event can be read as it is, as a browser would.
+    const reader = res.body!.getReader()
+    const { value } = await reader.read()
+    expect(new TextDecoder().decode(value)).toContain("event: ready")
+    void reader.cancel()
+    controller.abort()
+    await listeners(0)
+  })
+
   test("say who has a page open", async () => {
     const kyleOnList = await listen(kyle, { page: "list" })
     expect(await kyleOnList.next()).toMatchObject({

@@ -49,9 +49,30 @@ async function filledPage(
 }
 
 /**
- * Serves the built web app: its files, and its index.html for every other
- * page, so the app's own router can show it. Does nothing when the app
- * hasn't been built, as in development, where Vite serves it instead.
+ * Serves the built web app's files, with the copies the build compressed
+ * ahead of time for browsers that take them. Goes before signing in, since
+ * they're the same for everyone: a page's scripts don't each read the
+ * session. Does nothing when the app hasn't been built, as in development,
+ * where Vite serves it instead.
+ */
+export function serveWebFiles(app: Router, dir: string) {
+  if (!existsSync(join(dir, "index.html"))) return
+  const files = serveStatic({ root: dir, precompressed: true })
+
+  app.use("*", async (c, next) => {
+    const path = c.req.path
+    if (isApi(path) || path === "/" || path === "/index.html") return next()
+    if (path.startsWith(ASSETS)) {
+      c.header("Cache-Control", "public, max-age=31536000, immutable")
+    }
+    return files(c, next)
+  })
+}
+
+/**
+ * Serves the built web app's index.html for every page its files don't
+ * answer, so the app's own router can show it, and takes what Android's
+ * share sheet posts. Does nothing when the app hasn't been built.
  */
 export function serveWebApp(
   app: Router,
@@ -65,16 +86,6 @@ export function serveWebApp(
     return
   }
   const index = readFileSync(indexFile, "utf8")
-  const files = serveStatic({ root: dir })
-
-  app.use("*", async (c, next) => {
-    const path = c.req.path
-    if (isApi(path) || path === "/" || path === "/index.html") return next()
-    if (path.startsWith(ASSETS)) {
-      c.header("Cache-Control", "public, max-age=31536000, immutable")
-    }
-    return files(c, next)
-  })
 
   // Android's share sheet posts to /share, for the web app's service worker
   // to keep its photos and PDFs (public/sw.js). Without one, as when its

@@ -1,4 +1,5 @@
 import { Scalar } from "@scalar/hono-api-reference"
+import { compress } from "hono/compress"
 import { requestId } from "hono/request-id"
 import { secureHeaders } from "hono/secure-headers"
 import type { AppDeps } from "./core/context.ts"
@@ -18,7 +19,7 @@ import {
 } from "./http/openapi/document.ts"
 import { createRouter } from "./http/router.ts"
 import routes from "./http/routes/index.ts"
-import { serveWebApp } from "./http/web-app.ts"
+import { serveWebApp, serveWebFiles } from "./http/web-app.ts"
 import registerMcp from "./http/mcp/index.ts"
 import { mountOAuthProtocol } from "./http/auth/oauth.ts"
 
@@ -29,9 +30,13 @@ export function createApp(deps: AppDeps) {
   const app = createRouter()
 
   app.use(requestId())
+  // Streams, like live updates and the assistant's replies, are left as
+  // they are, so each part arrives as it's sent.
+  app.use(compress())
   app.use(clientAddress(trustedProxies(deps.config.trustedProxies)))
   app.use(secureHeaders())
   app.use(requestLogger(deps.logger))
+  if (deps.config.webDir) serveWebFiles(app, deps.config.webDir)
   app.use(entityManager(deps.database))
   mountOAuthProtocol(app, deps)
   app.use("/api/*", async (c, next) => {
