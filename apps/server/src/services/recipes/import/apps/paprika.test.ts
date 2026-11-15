@@ -98,11 +98,20 @@ describe("a Paprika recipe", () => {
     })
   })
 
-  test("is read from gzipped JSON, and nothing else", () => {
-    expect(readPaprikaRecipe(gzipSync(JSON.stringify(recipe)))?.name).toBe(
-      "Lemon Chicken\n"
+  test("is read from gzipped JSON, and nothing else", async () => {
+    expect(
+      (await readPaprikaRecipe(gzipSync(JSON.stringify(recipe))))?.name
+    ).toBe("Lemon Chicken\n")
+    expect(
+      await readPaprikaRecipe(Buffer.from(JSON.stringify(recipe)))
+    ).toBeNull()
+    expect(await readPaprikaRecipe(gzipSync("not json"))).toBeNull()
+  })
+
+  test("is unzipped without holding up the server", () => {
+    // Unzipping in the background, not on the one thread every request shares.
+    expect(readPaprikaRecipe(gzipSync(JSON.stringify(recipe)))).toBeInstanceOf(
+      Promise
     )
-    expect(readPaprikaRecipe(Buffer.from(JSON.stringify(recipe)))).toBeNull()
-    expect(readPaprikaRecipe(gzipSync("not json"))).toBeNull()
   })
 })

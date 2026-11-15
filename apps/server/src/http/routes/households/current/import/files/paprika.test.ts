@@ -50,14 +50,22 @@ function zipOf(files: [string, Buffer][]) {
 const paprika = (recipe: object) => gzipSync(JSON.stringify(recipe))
 
 async function importFile(zip: Uint8Array, type = "application/zip") {
-  const checked = await kyle.upload(
+  const sent = await kyle.upload(
     "/api/households/current/import/files",
     zip,
     type,
     "POST"
   )
-  expect(checked.status).toBe(200)
-  const file = await checked.json()
+  expect(sent.status).toBe(202)
+  // Checked in the background: what's in it, once it's been read.
+  await jobs.drain()
+  const checked = await (
+    await kyle.get(
+      `/api/households/current/import/files/${(await sent.json()).id}`
+    )
+  ).json()
+  expect(checked.status).toBe("ready")
+  const file = checked.file
   const started = await kyle.post(
     `/api/households/current/import/files/${file.id}/start`,
     {}

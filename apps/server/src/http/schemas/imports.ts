@@ -47,6 +47,34 @@ export const ImportFileSchema = z
     },
   })
 
+/** A file's check, with what's in it once it's read. */
+export const ImportFileCheckSchema = z
+  .object({
+    id: z.string().openapi({
+      description:
+        "The file: follow its check at /households/current/import/files/{fileId}.",
+    }),
+    status: z.enum(["checking", "ready", "failed"]).openapi({
+      description:
+        "Checking while Merran reads it, then ready with what's in it, or failed with why it can't be imported.",
+    }),
+    file: ImportFileSchema.nullable().openapi({
+      description: "What's in it, once it's ready.",
+    }),
+    error: z
+      .object({ code: z.string(), message: z.string() })
+      .nullable()
+      .openapi({ description: "Why it can't be imported, once it failed." }),
+  })
+  .openapi("ImportFileCheck", {
+    example: {
+      id: IDS.importFile,
+      status: "checking",
+      file: null,
+      error: null,
+    },
+  })
+
 export const ImportFileParam = z.object({
   fileId: z.uuid().openapi({ param: { name: "fileId", in: "path" } }),
 })

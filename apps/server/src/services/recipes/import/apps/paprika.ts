@@ -1,4 +1,5 @@
-import { gunzipSync } from "node:zlib"
+import { promisify } from "node:util"
+import { gunzip } from "node:zlib"
 import { joinSections, splitSections } from "@merran/shared"
 import sharp from "sharp"
 import type { Fetcher } from "../../../fetch/public-fetch.ts"
@@ -20,12 +21,20 @@ type PaprikaRecipe = Record<string, any>
 /** A photo this big on its short side is good enough without looking further. */
 const GOOD_PHOTO_SIDE = 450
 
+/**
+ * Unzips in the background, not on the one thread every request and job
+ * shares: a file of a thousand recipes would hold them all up.
+ */
+const unzip = promisify(gunzip)
+
 /** One recipe, from its gzipped JSON, or null if that isn't what it is. */
-export function readPaprikaRecipe(file: Buffer | null): PaprikaRecipe | null {
+export async function readPaprikaRecipe(
+  file: Buffer | null
+): Promise<PaprikaRecipe | null> {
   if (!file || file[0] !== 0x1f || file[1] !== 0x8b) return null
   try {
     const recipe = JSON.parse(
-      gunzipSync(file, { maxOutputLength: 100_000_000 }).toString("utf8")
+      (await unzip(file, { maxOutputLength: 100_000_000 })).toString("utf8")
     )
     return recipe && typeof recipe.name === "string" ? recipe : null
   } catch {
@@ -224,7 +233,7 @@ export async function readPaprikaExport(zip: OpenZip) {
   // aren't all held at once, photos and all.
   const found: Found[] = []
   for (const file of files) {
-    const recipe = readPaprikaRecipe(await file.read())
+    const recipe = await readPaprikaRecipe(await file.read())
     if (!recipe || recipe.in_trash) continue
     found.push({
       ref: paprikaRef(recipe),
@@ -236,8 +245,8 @@ export async function readPaprikaExport(zip: OpenZip) {
 }
 
 /** One recipe exported on its own (.paprikarecipe), or null if it isn't. */
-export function readPaprikaFile(file: Buffer) {
-  const recipe = readPaprikaRecipe(file)
+export async function readPaprikaFile(file: Buffer) {
+  const recipe = await readPaprikaRecipe(file)
   if (!recipe || recipe.in_trash) return null
   return sourceOf(
     [

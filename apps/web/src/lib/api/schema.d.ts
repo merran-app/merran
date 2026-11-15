@@ -885,9 +885,29 @@ export interface paths {
         put?: never;
         /**
          * Check a file from another app
-         * @description Household admins only. The body is the file: a Mealie backup, or recipes exported from Mealie. It's kept, and what's in it is said, so its import can be started at /households/current/import/files/{fileId}/start. A file not started is cleared away after a week.
+         * @description Household admins only. The body is the file: a Mealie backup, recipes exported from Mealie, or a Paprika export. It's kept, and read in the background: follow its check at /households/current/import/files/{fileId} until it says what's in it, then start its import at /households/current/import/files/{fileId}/start. A small file is often checked by the time this answers. A file not started is cleared away after a week.
          */
         post: operations["checkImportFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/import/files/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How a file's check is going
+         * @description Household admins only. Checking while Merran reads it, then what's in it, or why it can't be imported.
+         */
+        get: operations["getImportFile"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -11190,6 +11210,30 @@ export interface components {
         /**
          * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-000000000018",
+         *       "status": "checking",
+         *       "file": null,
+         *       "error": null
+         *     }
+         */
+        ImportFileCheck: {
+            /** @description The file: follow its check at /households/current/import/files/{fileId}. */
+            id: string;
+            /**
+             * @description Checking while Merran reads it, then ready with what's in it, or failed with why it can't be imported.
+             * @enum {string}
+             */
+            status: "checking" | "ready" | "failed";
+            file: components["schemas"]["ImportFile"];
+            /** @description Why it can't be imported, once it failed. */
+            error: {
+                code: string;
+                message: string;
+            } | null;
+        };
+        /**
+         * @description What's in it, once it's ready.
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000018",
          *       "app": "mealie",
          *       "what": "backup",
          *       "recipes": 312,
@@ -11227,7 +11271,7 @@ export interface components {
                 name: string;
                 recipes: number;
             }[];
-        };
+        } | null;
         /**
          * @example {
          *       "group": "0199e8b0-5a10-7a01-8b00-000000000019"
@@ -21113,22 +21157,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description What's in it. */
-            200: {
+            /** @description Kept, and being checked. */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportFile"];
-                };
-            };
-            /** @description Merran can't read that file. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
+                    "application/json": components["schemas"]["ImportFileCheck"];
                 };
             };
             /** @description Not signed in. */
@@ -21151,6 +21186,55 @@ export interface operations {
             };
             /** @description The file is too big. */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getImportFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The check. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportFileCheck"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The file isn't here any more. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

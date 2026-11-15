@@ -211,13 +211,29 @@ async function backup(extra?: Parameters<typeof database>[0]) {
   })
 }
 
-const check = (client: TestClient, zip: Uint8Array) =>
-  client.upload(
+/**
+ * Sends a file to be checked and waits for its check, answering as the
+ * check used to: 200 with what's in it, or 400 with why not.
+ */
+async function check(client: TestClient, zip: Uint8Array) {
+  const sent = await client.upload(
     "/api/households/current/import/files",
     zip,
     "application/zip",
     "POST"
   )
+  if (sent.status !== 202) return sent
+  const { id } = await sent.json()
+  await jobs.drain()
+  const checked = await (
+    await client.get(`/api/households/current/import/files/${id}`)
+  ).json()
+  const ready = checked.status === "ready"
+  return {
+    status: ready ? 200 : 400,
+    json: async () => (ready ? checked.file : { error: checked.error }),
+  }
+}
 
 async function importFile(
   client: TestClient,
@@ -255,6 +271,29 @@ beforeAll(async () => {
 afterAll(() => close())
 
 describe("a Mealie backup", () => {
+  test("is checked in the background, and then says what's in it", async () => {
+    const sent = await kyle.upload(
+      "/api/households/current/import/files",
+      await backup(),
+      "application/zip",
+      "POST"
+    )
+    expect(sent.status).toBe(202)
+    const { id, status } = await sent.json()
+    // Checked at once here, or soon after on a busy server.
+    expect(["checking", "ready"]).toContain(status)
+    await jobs.drain()
+    const checked = await (
+      await kyle.get(`/api/households/current/import/files/${id}`)
+    ).json()
+    expect(checked).toMatchObject({
+      id,
+      status: "ready",
+      file: { id, app: "mealie", what: "backup", recipes: 2 },
+      error: null,
+    })
+  })
+
   test("is checked before it's imported", async () => {
     const res = await check(kyle, await backup())
     expect(res.status).toBe(200)

@@ -4,6 +4,7 @@ import { passwordResetEmailJob } from "../../modules/email/password-resets.ts"
 import { checkUpdatesJob } from "../../modules/updates/check.ts"
 import { aiPhotoRunJob } from "../recipes/photos/runs.ts"
 import { appImportJob } from "../recipes/import/apps/job.ts"
+import { checkFileJob } from "../recipes/import/apps/check-job.ts"
 import { purgeDeletedJob } from "../recipes/deleted.ts"
 import { discoverJob } from "../recipes/discover/discover.ts"
 import { linkImportJob } from "../recipes/import/import-links.ts"
@@ -36,6 +37,7 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
   sendTelemetryJob,
   importJob,
   appImportJob,
+  checkFileJob,
   linkImportJob,
   importLinkJob,
   importVideoJob,

@@ -4076,8 +4076,63 @@
           "createdAt": "2026-10-15T18:30:00.000Z"
         }
       },
-      "ImportFile": {
+      "ImportFileCheck": {
         "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The file: follow its check at /households/current/import/files/{fileId}."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "checking",
+              "ready",
+              "failed"
+            ],
+            "description": "Checking while Merran reads it, then ready with what's in it, or failed with why it can't be imported."
+          },
+          "file": {
+            "$ref": "#/components/schemas/ImportFile"
+          },
+          "error": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "description": "Why it can't be imported, once it failed."
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "file",
+          "error"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000018",
+          "status": "checking",
+          "file": null,
+          "error": null
+        }
+      },
+      "ImportFile": {
+        "type": [
+          "object",
+          "null"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -4155,7 +4210,8 @@
               "recipes": 14
             }
           ]
-        }
+        },
+        "description": "What's in it, once it's ready."
       },
       "StartImportFile": {
         "type": "object",
@@ -22415,7 +22471,7 @@
           "Households"
         ],
         "summary": "Check a file from another app",
-        "description": "Household admins only. The body is the file: a Mealie backup, or recipes exported from Mealie. It's kept, and what's in it is said, so its import can be started at /households/current/import/files/{fileId}/start. A file not started is cleared away after a week.",
+        "description": "Household admins only. The body is the file: a Mealie backup, recipes exported from Mealie, or a Paprika export. It's kept, and read in the background: follow its check at /households/current/import/files/{fileId} until it says what's in it, then start its import at /households/current/import/files/{fileId}/start. A small file is often checked by the time this answers. A file not started is cleared away after a week.",
         "security": [
           {
             "session": []
@@ -22439,22 +22495,12 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "What's in it.",
+          "202": {
+            "description": "Kept, and being checked.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportFile"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Merran can't read that file.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/ImportFileCheck"
                 }
               }
             }
@@ -22481,6 +22527,74 @@
           },
           "413": {
             "description": "The file is too big.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/import/files/{fileId}": {
+      "get": {
+        "operationId": "getImportFile",
+        "tags": [
+          "Households"
+        ],
+        "summary": "How a file's check is going",
+        "description": "Household admins only. Checking while Merran reads it, then what's in it, or why it can't be imported.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "fileId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportFileCheck"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The file isn't here any more.",
             "content": {
               "application/json": {
                 "schema": {
