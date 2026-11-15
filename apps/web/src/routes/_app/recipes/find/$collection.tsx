@@ -39,7 +39,7 @@ function CollectionPage() {
         })
       )
       await navigate({
-        to: "/recipes/import/$importId",
+        to: "/recipes/imports/$importId",
         params: { importId: started.id },
       })
     } catch (err) {

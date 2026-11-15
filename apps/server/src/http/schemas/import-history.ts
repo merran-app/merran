@@ -18,7 +18,9 @@ const IMPORT = {
   added: 2,
   already: 0,
   failed: 1,
+  undone: 0,
   stopped: 0,
+  error: null,
   startedBy: { id: KYLE, name: "Kyle" },
   createdAt: "2026-11-15T18:02:11.000Z",
   finishedAt: "2026-11-15T18:02:40.000Z",
@@ -65,8 +67,15 @@ export const ImportSchema = z
       description: "Already in the household's recipes, so not added again.",
     }),
     failed: z.number().int().openapi({ description: "Didn't come in." }),
+    undone: z.number().int().openapi({
+      description:
+        "How many recipes Undo moved to Recently deleted: fewer than came in when some were kept or deleted already. 0 when it isn't undone.",
+    }),
     stopped: z.number().int().openapi({
       description: "Never got to, once it was stopped or failed.",
+    }),
+    error: z.string().nullable().openapi({
+      description: "Why the whole import stopped, when it failed.",
     }),
     startedBy: z
       .object({ id: z.string(), name: z.string() })
@@ -235,13 +244,13 @@ export const ImportDetailSchema = ImportSchema.extend({
 
 export const UndoImportRequestSchema = z
   .object({
-    recipeIds: z.array(z.string()).max(10_000).openapi({
+    keep: z.array(z.string()).max(10_000).default([]).openapi({
       description:
-        "The recipes it brought in to move to Recently deleted: every one, unless someone unticked some to keep them. Any it didn't bring in are left alone.",
+        "Recipes it brought in to keep, which someone unticked: every other one it brought in goes to Recently deleted.",
     }),
   })
   .openapi("UndoImportRequest", {
-    example: { recipeIds: [RECIPE.id] },
+    example: { keep: [RECIPE.id] },
   })
 
 export const RetryImportRequestSchema = z

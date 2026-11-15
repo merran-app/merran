@@ -36,7 +36,7 @@ export type ShareOutcome = Base &
         outcome: "importing"
         code: null
         recipe: null
-        /** The import, to follow at /recipes/import/links/{importId}. */
+        /** The import, to follow at /imports/{importId}. */
         importId: string
         receiptId: null
         /** Its page. */
@@ -209,7 +209,7 @@ export async function shareToMerran(
         recipe: null,
         importId: started.id,
         receiptId: null,
-        url: `${options.baseUrl}/recipes/import/${started.id}`,
+        url: `${options.baseUrl}/recipes/imports/${started.id}`,
       }
     }
 
@@ -227,7 +227,7 @@ export async function shareToMerran(
         recipe: null,
         importId: result.started.id,
         receiptId: null,
-        url: `${options.baseUrl}/recipes/import/${result.started.id}`,
+        url: `${options.baseUrl}/recipes/imports/${result.started.id}`,
       }
     }
     return added(result.done.recipe, result.done.duplicate, options.baseUrl)

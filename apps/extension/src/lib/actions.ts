@@ -87,7 +87,7 @@ export async function importLink(url: string) {
 /** Where an import's answer leads: its recipe, or the import still going. */
 function answerLink(connection: Connection, result: ImportAnswer) {
   return "import" in result
-    ? `${connection.origin}/recipes/import/${result.import.id}`
+    ? `${connection.origin}/recipes/imports/${result.import.id}`
     : recipeLink(connection, result.recipe.slug)
 }
 

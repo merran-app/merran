@@ -99,7 +99,7 @@ const start = async (body: unknown) => {
   return res.json()
 }
 const status = async (id: string) =>
-  (await kyle.get(`/api/recipes/import/links/${id}`)).json()
+  (await kyle.get(`/api/imports/${id}`)).json()
 
 describe("several links", () => {
   test("are checked, tidied and counted before importing", async () => {
@@ -135,14 +135,12 @@ describe("several links", () => {
       tag: "to try",
       total: 3,
       done: 0,
-      items: [
-        { url: "https://example.com/soup", state: "waiting" },
-        { url: "https://example.com/bread", state: "waiting" },
-        { url: "https://example.com/blog", state: "waiting" },
-      ],
     })
-    const going = await (await kyle.get("/api/recipes/import/links")).json()
-    expect(going.imports.map((i: { id: string }) => i.id)).toEqual([started.id])
+    expect((await status(started.id)).items).toMatchObject([
+      { label: "https://example.com/soup", state: "waiting" },
+      { label: "https://example.com/bread", state: "waiting" },
+      { label: "https://example.com/blog", state: "waiting" },
+    ])
 
     await jobs.drain()
     expect(await status(started.id)).toMatchObject({
@@ -168,10 +166,6 @@ describe("several links", () => {
     })
     const soup = await (await kyle.get("/api/recipes/tomato-soup")).json()
     expect(soup.tags).toContain("to try")
-    // Finished, so no longer listed.
-    expect(
-      (await (await kyle.get("/api/recipes/import/links")).json()).imports
-    ).toEqual([])
   })
 
   test("already in the library aren't added again, or tagged", async () => {
@@ -193,9 +187,9 @@ describe("several links", () => {
     const started = await start({
       urls: ["https://example.com/rice", "https://example.com/bread"],
     })
-    const res = await kyle.post(`/api/recipes/import/links/${started.id}/stop`)
+    const res = await kyle.post(`/api/imports/${started.id}/stop`)
     expect(res.status).toBe(200)
-    expect(await res.json()).toMatchObject({
+    expect(await status(started.id)).toMatchObject({
       status: "cancelled",
       stopped: 2,
       items: [{ state: "stopped" }, { state: "stopped" }],
@@ -282,7 +276,7 @@ describe("several links", () => {
     await expect
       .poll(async () => (await status(started.id)).items[0].state)
       .toBe("adding")
-    await kyle.post(`/api/recipes/import/links/${started.id}/stop`)
+    await kyle.post(`/api/imports/${started.id}/stop`)
     await draining
 
     expect(await status(started.id)).toMatchObject({
@@ -297,7 +291,7 @@ describe("several links", () => {
     const started = await start({ urls: ["https://example.com/salad"] })
     const draining = jobs.drain()
     await expect.poll(() => photoAsked).toBe(true)
-    await kyle.post(`/api/recipes/import/links/${started.id}/stop`)
+    await kyle.post(`/api/imports/${started.id}/stop`)
     await draining
 
     expect(await status(started.id)).toMatchObject({
@@ -315,11 +309,8 @@ describe("several links", () => {
     expect(res.status).toBe(400)
     expect((await res.json()).error.code).toBe("no_links")
     expect(
-      (
-        await kyle.get(
-          "/api/recipes/import/links/0d0a3d6e-6f8b-4bd2-9a3f-0c4b2d1e5f60"
-        )
-      ).status
+      (await kyle.get("/api/imports/0d0a3d6e-6f8b-4bd2-9a3f-0c4b2d1e5f60"))
+        .status
     ).toBe(404)
   })
 })
@@ -336,7 +327,7 @@ describe("sharing several links", () => {
       message: "Adding 2 recipes to Merran.",
       recipe: null,
       importId: expect.any(String),
-      url: `${TEST_ORIGIN}/recipes/import/${shared.importId}`,
+      url: `${TEST_ORIGIN}/recipes/imports/${shared.importId}`,
     })
     await jobs.drain()
     expect(await status(shared.importId)).toMatchObject({
@@ -382,9 +373,7 @@ describe("with an API key", () => {
     const res = await withKey(importer, "/api/recipes/import/links", body)
     expect(res.status).toBe(202)
     const { id } = await res.json()
-    expect(
-      (await withKey(importer, `/api/recipes/import/links/${id}`)).status
-    ).toBe(200)
+    expect((await withKey(importer, `/api/imports/${id}`)).status).toBe(200)
     await jobs.drain()
   })
 })

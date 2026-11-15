@@ -5,7 +5,12 @@ import type { QueryKey } from "@tanstack/react-query"
  * again when the live stream says the job moved.
  */
 const JOB_REFRESH: Record<string, QueryKey[]> = {
-  "recipes.importLinks": [["link-imports"]],
+  // Imports, on the Imports page and the Recipes banner.
+  "recipes.importLinks": [["imports"]],
+  "recipes.importFromApp": [["imports"]],
+  "recipes.importLink": [["imports"]],
+  "recipes.importVideo": [["imports"]],
+  "household.import": [["imports"]],
   "recipes.tidy": [["review", "runs"]],
   "recipes.nutrition": [["recipes", "nutrition"]],
   "recipes.photos": [["recipes", "photos"]],

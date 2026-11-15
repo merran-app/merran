@@ -1,13 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 
-import { LinkImportPage } from "@/features/recipes/link-import-page"
-
-/** How an import of several links is going. */
+/**
+ * Where a link import's page used to be, as old share answers and webhooks
+ * link it: an import's id is its job's, so it opens on the Imports page.
+ */
 export const Route = createFileRoute("/_app/recipes/import/$importId")({
-  component: LinkImportRoute,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: "/recipes/imports/$importId",
+      params: { importId: params.importId },
+      replace: true,
+    })
+  },
 })
-
-function LinkImportRoute() {
-  const { importId } = Route.useParams()
-  return <LinkImportPage importId={importId} />
-}

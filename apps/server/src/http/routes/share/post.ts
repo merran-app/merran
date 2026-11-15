@@ -67,7 +67,7 @@ const ShareOutcomeSchema = z
     }),
     importId: z.string().nullable().openapi({
       description:
-        "Several links: the import, to follow at /recipes/import/links/{importId}.",
+        "Several links, or one link taking a while: the import, to follow at /imports/{importId}.",
     }),
     url: z
       .string()

@@ -293,6 +293,16 @@ describe("the Imports page", () => {
     expect(await tx.count(Import, { id: other }, { filters: false })).toBe(1)
   })
 
+  test("replaces the routes that only followed several links", async () => {
+    const id = await startLinks(["https://example.com/soup"])
+    await jobs.drain()
+    expect((await kyle.get("/api/recipes/import/links")).status).toBe(404)
+    expect((await kyle.get(`/api/recipes/import/links/${id}`)).status).toBe(404)
+    expect(
+      (await kyle.post(`/api/recipes/import/links/${id}/stop`)).status
+    ).toBe(404)
+  })
+
   test("needs imports:read for an API key", async () => {
     const keyFor = async (permissions: object) =>
       (

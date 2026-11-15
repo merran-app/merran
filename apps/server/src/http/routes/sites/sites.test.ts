@@ -439,7 +439,7 @@ describe("starter collections", () => {
     const res = await kyle.post("/api/collections/soups/import")
     expect(res.status).toBe(202)
     const started = await res.json()
-    expect(started.items).toHaveLength(4)
+    expect(started).toMatchObject({ kind: "collection", total: 4 })
     // Its record says which collection it was.
     const record = await database.em
       .fork()

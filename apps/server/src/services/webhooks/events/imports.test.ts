@@ -140,9 +140,7 @@ describe("a batch of links", () => {
       "https://soups.example/pea-soup",
     ])
     const sent = await finishedBy(async () => {
-      const res = await kyle.post(
-        `/api/recipes/import/links/${started.id}/stop`
-      )
+      const res = await kyle.post(`/api/imports/${started.id}/stop`)
       expect(res.status).toBe(200)
       await jobs.drain()
     })
@@ -250,8 +248,10 @@ describe("another app's files", () => {
       "application/zip",
       "POST"
     )
-    expect(checked.status).toBe(200)
+    // Checked in the background; only its import is started here.
+    expect(checked.status).toBe(202)
     const file = await checked.json()
+    await jobs.drain()
 
     const sent = await eventsFrom(database, home, async () => {
       const started = await kyle.post(

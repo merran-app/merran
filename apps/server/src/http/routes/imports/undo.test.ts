@@ -92,8 +92,9 @@ async function imported(names: string[]) {
   return { id: id as string, ids }
 }
 
-const undo = (id: string, recipeIds: string[]) =>
-  kyle.post(`/api/imports/${id}/undo`, { recipeIds })
+/** Undoes an import, keeping the recipes given. */
+const undo = (id: string, keep: string[] = []) =>
+  kyle.post(`/api/imports/${id}/undo`, { keep })
 
 const inRecentlyDeleted = async () =>
   (await (await kyle.get("/api/recipes/deleted")).json()).map(
@@ -103,9 +104,10 @@ const inRecentlyDeleted = async () =>
 describe("undoing an import", () => {
   test("moves what it brought in to Recently deleted, keeping the ones unticked", async () => {
     const { id, ids } = await imported(["Apple", "Bean", "Carrot"])
-    const res = await undo(id, [ids.Apple!, ids.Bean!])
+    const res = await undo(id, [ids.Carrot!])
     expect(res.status).toBe(200)
-    expect(await res.json()).toMatchObject({ status: "undone" })
+    // It says how many went, not how many came in.
+    expect(await res.json()).toMatchObject({ status: "undone", undone: 2 })
 
     expect(await inRecentlyDeleted()).toEqual(
       expect.arrayContaining([slug("Apple"), slug("Bean")])
@@ -115,14 +117,13 @@ describe("undoing an import", () => {
 
   test("never touches recipes it didn't bring in", async () => {
     const { id } = await imported(["Date"])
-    const mine = await (
-      await kyle.post("/api/recipes", {
-        name: "My Own Stew",
-        ingredients: ["1 potato"],
-        steps: ["Stew it."],
-      })
-    ).json()
-    await undo(id, [mine.id])
+    await kyle.post("/api/recipes", {
+      name: "My Own Stew",
+      ingredients: ["1 potato"],
+      steps: ["Stew it."],
+    })
+    // Keeping none: still only what it brought in goes.
+    await undo(id)
     expect((await kyle.get("/api/recipes/my-own-stew")).status).toBe(200)
   })
 
@@ -132,8 +133,10 @@ describe("undoing an import", () => {
     await kyle.delete(`/api/recipes/${slug("Fig")}`)
     await kyle.delete(`/api/recipes/deleted/${ids.Fig}`)
 
-    const res = await undo(id, [ids.Egg!, ids.Fig!, ids.Grape!])
+    const res = await undo(id)
     expect(res.status).toBe(200)
+    // Only Grape went: Egg was there already, and Fig is gone.
+    expect(await res.json()).toMatchObject({ undone: 1 })
     expect(await inRecentlyDeleted()).toEqual(
       expect.arrayContaining([slug("Egg"), slug("Grape")])
     )
@@ -141,7 +144,7 @@ describe("undoing an import", () => {
     // Restore brings back what Undo moved, not what was deleted before it.
     const restored = await kyle.post(`/api/imports/${id}/restore`)
     expect(restored.status).toBe(200)
-    expect(await restored.json()).toMatchObject({ status: "done" })
+    expect(await restored.json()).toMatchObject({ status: "done", undone: 0 })
     expect((await kyle.get(`/api/recipes/${slug("Grape")}`)).status).toBe(200)
     expect(await inRecentlyDeleted()).toContain(slug("Egg"))
   })
@@ -155,9 +158,8 @@ describe("undoing an import", () => {
     await expect
       .poll(async () => (await kyle.get(`/api/recipes/${slug("Ham")}`)).status)
       .toBe(200)
-    const ham = await (await kyle.get(`/api/recipes/${slug("Ham")}`)).json()
 
-    const undone = await undo(id, [ham.id])
+    const undone = await undo(id)
     expect(undone.status).toBe(200)
     await draining
     expect(await undone.json()).toMatchObject({ status: "undone" })
@@ -166,7 +168,7 @@ describe("undoing an import", () => {
 
   test("restore after a recipe was emptied from Recently deleted brings back the rest", async () => {
     const { id, ids } = await imported(["Iced"])
-    await undo(id, [ids.Iced!])
+    await undo(id)
     await kyle.delete(`/api/recipes/deleted/${ids.Iced}`)
 
     const restored = await kyle.post(`/api/imports/${id}/restore`)

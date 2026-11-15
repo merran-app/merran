@@ -164,7 +164,7 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
               setOpen(false)
               setView("link")
               void navigate({
-                to: "/recipes/import/$importId",
+                to: "/recipes/imports/$importId",
                 params: { importId },
               })
             }}

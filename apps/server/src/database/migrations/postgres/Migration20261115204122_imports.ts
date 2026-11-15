@@ -5,7 +5,7 @@ export class Migration20261115204122_imports extends Migration {
   override name = 'Migration20261115204122_imports';
 
   override up(): void | Promise<void> {
-    this.addSql(`create table "imports" ("id" uuid not null, "household_id" uuid not null, "kind" text not null, "source" text null, "listed" boolean not null default true, "status" text not null default 'queued', "total" int not null default 0, "added" int not null default 0, "already" int not null default 0, "failed" int not null default 0, "tag" varchar(255) null, "retry" jsonb null, "error" text null, "created_by_id" uuid null, "created_at" timestamptz not null, "finished_at" timestamptz null, "undone_at" timestamptz null, primary key ("id"));`);
+    this.addSql(`create table "imports" ("id" uuid not null, "household_id" uuid not null, "kind" text not null, "source" text null, "listed" boolean not null default true, "status" text not null default 'queued', "total" int not null default 0, "added" int not null default 0, "already" int not null default 0, "failed" int not null default 0, "tag" varchar(255) null, "retry" jsonb null, "error" text null, "created_by_id" uuid null, "created_at" timestamptz not null, "finished_at" timestamptz null, "undone_at" timestamptz null, "undone" int not null default 0, primary key ("id"));`);
     this.addSql(`create index "imports_household_id_index" on "imports" ("household_id");`);
     this.addSql(`create index "imports_created_by_id_index" on "imports" ("created_by_id");`);
     this.addSql(`create index "imports_household_id_listed_created_at_index" on "imports" ("household_id", "listed", "created_at");`);

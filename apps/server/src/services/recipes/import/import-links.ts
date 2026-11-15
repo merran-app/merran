@@ -3,7 +3,6 @@ import { z } from "zod"
 import { AppError } from "../../../core/errors.ts"
 import { Import, ImportItem, Recipe } from "../../../database/entities/index.ts"
 import { inHouseholdTransaction } from "../../../database/transactions.ts"
-import { linkItems } from "../../imports/describe.ts"
 import {
   asImport,
   cancelWaitingImport,
@@ -27,27 +26,6 @@ const KIND = "recipes.importLinks"
 
 /** The most links one import takes. */
 export const MAX_LINKS = 100
-
-/**
- * Where each link has got to. "adding" and "stopped" are only ever shown:
- * the first waiting link while it runs, and any waiting once it's finished.
- */
-export type LinkState =
-  "waiting" | "adding" | "added" | "already" | "failed" | "stopped"
-
-export type LinkItem = {
-  url: string
-  state: LinkState
-  /** The recipe it made, or was already. */
-  recipe: {
-    id: string
-    slug: string
-    name: string
-    photo: string | null
-  } | null
-  /** Why it wasn't added. */
-  error: string | null
-}
 
 const Payload = z.object({
   urls: z.array(z.string()).max(MAX_LINKS),
@@ -142,53 +120,6 @@ export async function startLinkImport(
 }
 
 /** Whether an import has finished, one way or another. */
-/** A link import's record, as its page shows it. */
-export async function describeLinkImport(em: EntityManager, importId: string) {
-  const found = await em.findOne(Import, { id: importId })
-  if (!found || (found.kind !== "links" && found.kind !== "collection")) {
-    throw new AppError(
-      "not_found",
-      "import_not_found",
-      "There's no such import."
-    )
-  }
-  const items: LinkItem[] = (await linkItems(em, found)).map((item) => ({
-    url: item.label,
-    state: item.state,
-    recipe: item.recipe,
-    error: item.error,
-  }))
-  const count = (state: LinkState) =>
-    items.filter((item) => item.state === state).length
-  return {
-    id: found.id,
-    status: found.status,
-    tag: found.tag ?? null,
-    total: items.length,
-    done: items.length - count("waiting") - count("adding") - count("stopped"),
-    added: count("added"),
-    already: count("already"),
-    failed: count("failed"),
-    stopped: count("stopped"),
-    items,
-    createdAt: found.createdAt.toISOString(),
-    finishedAt: found.finishedAt?.toISOString() ?? null,
-  }
-}
-
-/** The household's link imports still going, newest first. */
-export async function activeLinkImports(em: EntityManager) {
-  const going = await em.find(
-    Import,
-    {
-      kind: { $in: ["links", "collection"] },
-      status: { $in: ["queued", "running"] },
-    },
-    { orderBy: { createdAt: "desc" } }
-  )
-  return Promise.all(going.map((found) => describeLinkImport(em, found.id)))
-}
-
 /** Tags a recipe the import made. */
 function tagRecipe(
   em: EntityManager,

@@ -11,16 +11,16 @@ import { WITH_DELETED_RECIPES } from "./describe.ts"
 // still there. Each recipe goes as deleting it would, so webhooks hear.
 
 /**
- * Moves the chosen recipes the import brought in to Recently deleted. Any
- * id it didn't bring in is left alone, as is a recipe already in Recently
- * deleted or deleted for good.
+ * Moves every recipe the import brought in to Recently deleted but the
+ * ones to keep, which someone unticked. A recipe already in Recently
+ * deleted or deleted for good is left as it is.
  */
 export async function undoImport(
   em: EntityManager,
   record: Import,
-  recipeIds: readonly string[]
+  keep: readonly string[]
 ) {
-  const chosen = new Set(recipeIds)
+  const kept = new Set(keep)
   await inHouseholdTransaction(em, record.household.id, async (tx) => {
     const items = await tx.find(
       ImportItem,
@@ -28,7 +28,7 @@ export async function undoImport(
       WITH_DELETED_RECIPES
     )
     const wanted = items.filter(
-      (item) => item.recipe && chosen.has(item.recipe.id)
+      (item) => item.recipe && !kept.has(item.recipe.id)
     )
     const recipes = await tx.find(
       Recipe,
@@ -36,14 +36,17 @@ export async function undoImport(
       WITH_DELETED_RECIPES
     )
     const here = new Map(recipes.map((recipe) => [recipe.id, recipe]))
+    let moved = 0
     for (const item of wanted) {
       const recipe = here.get(item.recipe!.id)
       if (!recipe || recipe.deletedAt) continue
       await moveToDeleted(tx, recipe.id)
       item.undone = true
+      moved += 1
     }
     const found = await tx.findOneOrFail(Import, { id: record.id })
     found.undoneAt = new Date()
+    found.undone = moved
     await tx.flush()
   })
 }
@@ -83,6 +86,7 @@ export async function restoreImport(em: EntityManager, record: Import) {
     }
     const found = await tx.findOneOrFail(Import, { id: record.id })
     found.undoneAt = null
+    found.undone = 0
     await tx.flush()
   })
 }

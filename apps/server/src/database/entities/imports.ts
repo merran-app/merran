@@ -79,6 +79,11 @@ export const Import = defineEntity({
     finishedAt: p.datetime().nullable(),
     /** When Undo moved what it brought in to Recently deleted. */
     undoneAt: p.datetime().nullable(),
+    /**
+     * How many recipes Undo moved, which can be fewer than came in: some
+     * kept, some already in Recently deleted.
+     */
+    undone: p.integer().default(0),
   },
   indexes: [
     // The Imports page: a household's listed imports, newest first.

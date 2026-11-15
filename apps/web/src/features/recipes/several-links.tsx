@@ -28,7 +28,7 @@ import { useCapability } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
 
-import { linkLabel } from "./link-imports"
+import { linkLabel } from "@/features/imports/link-label"
 import { tagsQuery } from "./queries"
 
 /** The text, once it's stopped changing for a moment. */
@@ -106,7 +106,7 @@ export function SeveralLinks({
           },
         })
       )
-      await queryClient.invalidateQueries({ queryKey: ["link-imports"] })
+      await queryClient.invalidateQueries({ queryKey: ["imports"] })
       onStarted(made.id)
     } catch (err) {
       if (!(err instanceof ApiError)) throw err

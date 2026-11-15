@@ -62,8 +62,10 @@ export function importSummary(record: Import) {
     added: record.added,
     already: record.already,
     failed: record.failed,
+    undone: record.undone,
     // What it never got to, once it's finished.
     stopped: finished(record) ? Math.max(0, record.total - done) : 0,
+    error: record.error ?? null,
     startedBy: user ? { id: user.id, name: user.name } : null,
     createdAt: record.createdAt.toISOString(),
     finishedAt: record.finishedAt?.toISOString() ?? null,

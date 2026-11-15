@@ -163,7 +163,7 @@ const EXAMPLES = {
     added: 11,
     skipped: 1,
     failed: 0,
-    url: `https://merran.example.com/recipes/import/${IDS.job}`,
+    url: `https://merran.example.com/recipes/imports/${IDS.job}`,
   },
   "tidy.ready": {
     count: 12,

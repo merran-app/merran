@@ -1,15 +1,14 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
-import {
-  describeLinkImport,
-  startLinkImport,
-} from "../../../../../services/recipes/import/import-links.ts"
+import { startLinkImport } from "../../../../../services/recipes/import/import-links.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
-import type { Router } from "../../../../router.ts"
 import {
-  LinkImportRequestSchema,
-  LinkImportSchema,
-} from "../../../../schemas/imports.ts"
+  findImport,
+  importSummary,
+} from "../../../../../services/imports/describe.ts"
+import { ImportSchema } from "../../../../schemas/import-history.ts"
+import type { Router } from "../../../../router.ts"
+import { LinkImportRequestSchema } from "../../../../schemas/imports.ts"
 import {
   errorResponse,
   jsonResponse,
@@ -23,7 +22,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Add recipes from several links",
   description:
-    "Up to 100 links, imported one at a time in the background: follow along at /recipes/import/links/{importId}, which says how each link went. A link the library has already gives back that recipe rather than a new one.",
+    "Up to 100 links, imported one at a time in the background: follow along at /imports/{importId}, which says how each link went. A link the library has already gives back that recipe rather than a new one.",
   ...openToKeys("imports", "write"),
   request: {
     body: {
@@ -32,7 +31,10 @@ const route = createRoute({
     },
   },
   responses: {
-    202: jsonResponse(LinkImportSchema, "Importing."),
+    202: jsonResponse(
+      ImportSchema,
+      "Importing: follow it at /imports/{importId}."
+    ),
     400: errorResponse("None of them is a link Merran can fetch."),
     ...SIGNED_IN_ERRORS,
   },
@@ -48,6 +50,6 @@ export default (router: Router, _deps: AppDeps) => {
       urls,
       tag,
     })
-    return c.json(await describeLinkImport(em, started.id), 202)
+    return c.json(importSummary(await findImport(em, started.id)), 202)
   })
 }

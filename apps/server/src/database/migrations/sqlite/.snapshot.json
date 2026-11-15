@@ -5093,6 +5093,23 @@
           "enumItems": [],
           "mappedType": "integer"
         },
+        "undone": {
+          "name": "undone",
+          "type": "integer",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "0",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
         "undone_at": {
           "name": "undone_at",
           "type": "datetime",

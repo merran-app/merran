@@ -5,45 +5,44 @@ import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { useRefreshRecipes } from "@/features/recipes/queries"
 
-import { activeLinkImportsQuery } from "./link-imports"
-import { useRefreshRecipes } from "./queries"
+import { useImportTitle, useSummaryText } from "./imports-list"
+import { importsQuery, isGoing } from "./queries"
 
 /**
- * On Recipes, while links are being imported: how far it's got, and the
- * way to its page. When it's finished, its recipes show.
+ * On Recipes, while an import is going: how far it's got, and the way to
+ * its page. When it's finished, its recipes show.
  */
-export function LinkImportsBanner() {
+export function ImportsBanner() {
   const { t } = useTranslation()
   const refreshRecipes = useRefreshRecipes()
-  const { data } = useQuery(activeLinkImportsQuery)
-  const imports = data?.imports ?? []
+  const titleOf = useImportTitle()
+  const summaryOf = useSummaryText()
+  const { data } = useQuery(importsQuery)
+  const going = (data?.imports ?? []).filter(isGoing)
 
-  const going = imports.map((linkImport) => linkImport.id).join(",")
-  const before = React.useRef(going)
+  const ids = going.map((found) => found.id).join(",")
+  const before = React.useRef(ids)
   React.useEffect(() => {
-    if (before.current && before.current !== going) void refreshRecipes()
-    before.current = going
-  }, [going, refreshRecipes])
+    if (before.current && before.current !== ids) void refreshRecipes()
+    before.current = ids
+  }, [ids, refreshRecipes])
 
-  const latest = imports[0]
+  const latest = going[0]
   if (!latest) return null
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-2xl border bg-card px-4 py-3 text-sm">
       <Spinner />
       <span className="min-w-0 flex-1" aria-live="polite">
-        {t("recipes.links.banner", {
-          count: latest.total,
-          total: latest.total,
-          done: latest.done,
-        })}
+        {titleOf(latest).title}: {summaryOf(latest)}
       </span>
       <Button
         variant="outline"
         size="sm"
         render={
           <Link
-            to="/recipes/import/$importId"
+            to="/recipes/imports/$importId"
             params={{ importId: latest.id }}
           />
         }

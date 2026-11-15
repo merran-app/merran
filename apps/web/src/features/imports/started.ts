@@ -31,7 +31,7 @@ export function useStartedNotice() {
           label: t("imports.view"),
           onClick: () => {
             void navigate({
-              to: "/recipes/import/$importId",
+              to: "/recipes/imports/$importId",
               params: { importId },
             })
           },

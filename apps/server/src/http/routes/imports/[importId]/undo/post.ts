@@ -29,7 +29,7 @@ const route = createRoute({
   tags: ["Imports"],
   summary: "Undo an import",
   description:
-    "Moves the recipes it brought in to Recently deleted, where they stay for 30 days, keeping any left out of `recipeIds`. A running import is stopped first. For a Merran export, only its recipes: the household settings it brought stay.",
+    "Moves the recipes it brought in to Recently deleted, where they stay for 30 days, but any in `keep`. A running import is stopped first. For a Merran export, only its recipes: the household settings it brought stay.",
   ...openToKeys("recipes", "write"),
   request: {
     params: ImportParam,
@@ -54,7 +54,7 @@ export default (router: Router, { jobs }: AppDeps) => {
       await jobs.cancel(em, await findJob(em, record.id, householdId))
       await jobs.waitFor(record.id, STOP_WAIT_MS)
     }
-    await undoImport(em, record, c.req.valid("json").recipeIds)
+    await undoImport(em, record, c.req.valid("json").keep)
     // Changed elsewhere since it was read: read it again.
     em.clear()
     return c.json(importSummary(await findImport(em, importId)), 200)
