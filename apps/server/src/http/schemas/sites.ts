@@ -105,23 +105,36 @@ const SUGGESTION = {
   description: "Bright, seasonal vegetarian cooking.",
 }
 
+const SuggestedSitesSchema = z
+  .array(
+    z.object({
+      name: z.string(),
+      url: z.string().openapi({ description: "Follow it with this." }),
+      description: z.string(),
+    })
+  )
+  .openapi({
+    description: "Sites that work well with Merran, not followed yet.",
+  })
+
 export const SiteListSchema = z
   .object({
     sites: z.array(FollowedSiteSchema),
-    suggestions: z
-      .array(
-        z.object({
-          name: z.string(),
-          url: z.string().openapi({ description: "Follow it with this." }),
-          description: z.string(),
-        })
-      )
-      .openapi({
-        description: "Sites that work well with Merran, not followed yet.",
-      }),
+    suggestions: SuggestedSitesSchema,
   })
   .openapi("SiteList", {
     example: { sites: [FOLLOWED], suggestions: [SUGGESTION] },
+  })
+
+export const SiteSuggestionsSchema = z
+  .object({
+    following: z.number().openapi({
+      description: "How many sites the household follows.",
+    }),
+    suggestions: SuggestedSitesSchema,
+  })
+  .openapi("SiteSuggestions", {
+    example: { following: 0, suggestions: [SUGGESTION] },
   })
 
 export const FollowSiteSchema = z

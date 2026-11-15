@@ -2859,7 +2859,7 @@ export interface paths {
         put?: never;
         /**
          * Add a recipe from a link
-         * @description Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. Video links can't be imported yet. With an API key, it needs the `recipes: write` permission.
+         * @description Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. A TikTok, YouTube, Instagram or Facebook link is imported from its video (its captions, or what's said in it, read by AI), when the server has video import on. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["importRecipe"];
         delete?: never;
@@ -2903,7 +2903,7 @@ export interface paths {
         put?: never;
         /**
          * Find the links in some text
-         * @description The links in pasted text, up to 100, tidied, with which are in the library already and which are videos (which can't be imported yet). Nothing is imported. With an API key, it needs the `recipes: read` permission.
+         * @description The links in pasted text, up to 100, tidied, with which are in the library already and which are videos. Nothing is imported. The app leaves videos out of importing several links at once: each is imported on its own (POST /api/recipes/import). With an API key, it needs the `recipes: read` permission.
          */
         post: operations["checkLinks"];
         delete?: never;
@@ -4128,6 +4128,26 @@ export interface paths {
          * @description A small copy, as WebP, fetched once through Merran so browsing doesn't load photos from other sites. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["getSiteRecipePhoto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sites/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Suggested recipe sites
+         * @description How many recipe sites the household follows, and suggested sites it doesn't follow yet, without their recipes: a lighter GET /api/sites for asking whether to suggest some. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["listSiteSuggestions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -15345,7 +15365,7 @@ export interface components {
         LinkCheck: {
             links: {
                 url: string;
-                /** @description A video link, which can't be imported yet. */
+                /** @description A TikTok, YouTube, Instagram or Facebook link, imported from its video, on its own. */
                 video: boolean;
                 /** @description In the library already: it's skipped. */
                 existing: {
@@ -17063,6 +17083,29 @@ export interface components {
          */
         SiteRecipes: {
             recipes: components["schemas"]["ShelfRecipe"][];
+        };
+        /**
+         * @example {
+         *       "following": 0,
+         *       "suggestions": [
+         *         {
+         *           "name": "Love and Lemons",
+         *           "url": "https://www.loveandlemons.com/",
+         *           "description": "Bright, seasonal vegetarian cooking."
+         *         }
+         *       ]
+         *     }
+         */
+        SiteSuggestions: {
+            /** @description How many sites the household follows. */
+            following: number;
+            /** @description Sites that work well with Merran, not followed yet. */
+            suggestions: {
+                name: string;
+                /** @description Follow it with this. */
+                url: string;
+                description: string;
+            }[];
         };
         /**
          * @example {
@@ -26503,7 +26546,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description The page has no recipe data and no AI to read it, AI found no recipe on it, or it's a video. */
+            /** @description The page has no recipe data and no AI to read it, AI found no recipe on it, or it's a video and this server can't import videos. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -30701,6 +30744,44 @@ export interface operations {
             };
             /** @description No such recipe, or no photo that loads. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listSiteSuggestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its suggestions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteSuggestions"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { useAiFor } from "@/features/ai/needs-ai"
 import { Search } from "@/features/find/discover-tab"
-import { collectionQuery } from "@/features/find/queries"
+import { collectionQuery, discoveryQuery } from "@/features/find/queries"
 import { ShelfRecipeCard } from "@/features/find/shelf-recipe-card"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
@@ -69,7 +69,25 @@ function CollectionPage() {
     }
   }
 
-  const finding = collection?.found?.status === "searching"
+  // While Find more searches, ask after the search alone; once it's done,
+  // the collection comes in again, once, with what it found.
+  const found = collection?.found ?? null
+  const searching = found?.status === "searching"
+  const { data: progress } = useQuery({
+    ...discoveryQuery(found?.id ?? ""),
+    enabled: searching,
+  })
+  const search = searching && progress ? progress : found
+  const finding = search?.status === "searching"
+  const finished = Boolean(
+    searching && progress && progress.status !== "searching"
+  )
+  React.useEffect(() => {
+    if (!finished) return
+    void queryClient.invalidateQueries({
+      queryKey: collectionQuery(id).queryKey,
+    })
+  }, [finished, id, queryClient])
 
   return (
     <>
@@ -152,14 +170,12 @@ function CollectionPage() {
                         data-icon="inline-start"
                       />
                     )}
-                    {collection.found
+                    {search
                       ? t("find.collections.findAgain")
                       : t("find.collections.findMore")}
                   </Button>
                 </div>
-                {collection.found && (
-                  <Search search={collection.found} hideTheme />
-                )}
+                {search && <Search search={search} hideTheme />}
               </section>
             )}
           </div>

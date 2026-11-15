@@ -12610,7 +12610,7 @@
                 },
                 "video": {
                   "type": "boolean",
-                  "description": "A video link, which can't be imported yet."
+                  "description": "A TikTok, YouTube, Instagram or Facebook link, imported from its video, on its own."
                 },
                 "existing": {
                   "type": [
@@ -15867,6 +15867,53 @@
                 "name": "Lemon Chicken"
               },
               "suits": true
+            }
+          ]
+        }
+      },
+      "SiteSuggestions": {
+        "type": "object",
+        "properties": {
+          "following": {
+            "type": "number",
+            "description": "How many sites the household follows."
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "description": "Follow it with this."
+                },
+                "description": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "url",
+                "description"
+              ]
+            },
+            "description": "Sites that work well with Merran, not followed yet."
+          }
+        },
+        "required": [
+          "following",
+          "suggestions"
+        ],
+        "example": {
+          "following": 0,
+          "suggestions": [
+            {
+              "name": "Love and Lemons",
+              "url": "https://www.loveandlemons.com/",
+              "description": "Bright, seasonal vegetarian cooking."
             }
           ]
         }
@@ -30320,7 +30367,7 @@
           "Recipes"
         ],
         "summary": "Add a recipe from a link",
-        "description": "Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. Video links can't be imported yet. With an API key, it needs the `recipes: write` permission.",
+        "description": "Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. A TikTok, YouTube, Instagram or Facebook link is imported from its video (its captions, or what's said in it, read by AI), when the server has video import on. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -30412,7 +30459,7 @@
             }
           },
           "422": {
-            "description": "The page has no recipe data and no AI to read it, AI found no recipe on it, or it's a video.",
+            "description": "The page has no recipe data and no AI to read it, AI found no recipe on it, or it's a video and this server can't import videos.",
             "content": {
               "application/json": {
                 "schema": {
@@ -30577,7 +30624,7 @@
           "Recipes"
         ],
         "summary": "Find the links in some text",
-        "description": "The links in pasted text, up to 100, tidied, with which are in the library already and which are videos (which can't be imported yet). Nothing is imported. With an API key, it needs the `recipes: read` permission.",
+        "description": "The links in pasted text, up to 100, tidied, with which are in the library already and which are videos. Nothing is imported. The app leaves videos out of importing several links at once: each is imported on its own (POST /api/recipes/import). With an API key, it needs the `recipes: read` permission.",
         "security": [
           {
             "session": []
@@ -36454,6 +36501,60 @@
           },
           "404": {
             "description": "No such recipe, or no photo that loads.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sites/suggestions": {
+      "get": {
+        "operationId": "listSiteSuggestions",
+        "tags": [
+          "Sites"
+        ],
+        "summary": "Suggested recipe sites",
+        "description": "How many recipe sites the household follows, and suggested sites it doesn't follow yet, without their recipes: a lighter GET /api/sites for asking whether to suggest some. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "responses": {
+          "200": {
+            "description": "Its suggestions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSuggestions"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
             "content": {
               "application/json": {
                 "schema": {
