@@ -20,9 +20,14 @@ const media: MediaMakers = {
   image: async (target, prompt) => {
     asked.push({ target, prompt })
     if (hang) {
-      // As the real maker does: it ends with the job's reason.
+      // As the real maker does: it ends with the job's reason, at once if
+      // the job was stopped before it got here.
       return new Promise((_resolve, reject) => {
         const stop = stopSignal()
+        if (stop?.aborted) {
+          reject(stop.reason)
+          return
+        }
         stop?.addEventListener("abort", () => reject(stop.reason))
       })
     }
@@ -175,6 +180,7 @@ describe("AI photos", () => {
     // Made by themselves again, which the library's test turned off.
     await kyle.patch("/api/settings/server", { "photos.auto": true })
     hang = true
+    const before = asked.length
     await addRecipe("Bean Salad")
     const photoJob = () =>
       database.em
@@ -185,7 +191,9 @@ describe("AI photos", () => {
           { orderBy: { createdAt: "desc" } }
         )
     jobs.wake()
-    await expect.poll(async () => (await photoJob()).status).toBe("running")
+    // Stopped while it waits for the picture, not on its way there: a job
+    // marked running may not have asked yet.
+    await expect.poll(() => asked.length, { timeout: 3_000 }).toBe(before + 1)
     await jobs.stop()
 
     const job = await photoJob()
