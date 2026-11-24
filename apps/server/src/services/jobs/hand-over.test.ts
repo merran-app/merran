@@ -10,7 +10,7 @@ import {
   throwIfFailure,
   waitThenHandOver,
 } from "./hand-over.ts"
-import { enqueue } from "./jobs.ts"
+import { describeJob, enqueue } from "./jobs.ts"
 import { JobRunner, type JobDeps, type JobHandler } from "./runner.ts"
 
 // Waiting for any job, and handing it over when it takes too long.
@@ -152,6 +152,12 @@ describe("waiting for a job, then handing it over", () => {
     })
 
     expect(result).toEqual({ done: { recipeId: "r2" } })
+  })
+
+  test("a job just made says it hasn't been handed over", async () => {
+    const job = await enqueue(em(), { kind: "fresh" })
+
+    expect(describeJob(job).handedOver).toBe(false)
   })
 
   test("throwIfFailure lets an ordinary result through", () => {
