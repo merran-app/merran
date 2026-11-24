@@ -48,7 +48,7 @@ export function usePhotoActions(recipe: Recipe) {
       } else {
         // The photo goes on being made in the background, and the person
         // hears when it's done.
-        markWorking(queryClient, recipe.slug, "photo")
+        markWorking(queryClient, recipe.id, "photo")
       }
     } catch (error) {
       if (!(error instanceof ApiError)) throw error

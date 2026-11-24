@@ -58,7 +58,7 @@ export function NutritionSection({
       } else {
         // Past the wait the server answers with the job, not the recipe. It
         // goes on in the background and says when it's done.
-        markWorking(queryClient, recipe.slug, "nutrition")
+        markWorking(queryClient, recipe.id, "nutrition")
       }
     } catch (err) {
       if (!(err instanceof ApiError)) throw err
