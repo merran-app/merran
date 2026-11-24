@@ -1,9 +1,11 @@
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../app.ts"
-import { Job } from "../../../../database/entities/index.ts"
+import { Job, WebhookEvent } from "../../../../database/entities/index.ts"
 import type { Database } from "../../../../database/orm.ts"
+import { forHousehold } from "../../../../database/scope.ts"
 import type { MediaMakers } from "../../../../services/ai/media.ts"
+import { AppError } from "../../../../core/errors.ts"
 import type { AiTarget } from "../../../../services/ai/providers.ts"
 import type { JobRunner } from "../../../../services/jobs/runner.ts"
 import { stopSignal } from "../../../../services/jobs/stop.ts"
@@ -15,10 +17,17 @@ const asked: { target: AiTarget; prompt: string }[] = []
 let picture: Buffer
 /** Pictures that never come, until the job asking is stopped. */
 let hang = false
+/** An error the image maker throws, once, when a test sets one. */
+let failWith: AppError | null = null
 
 const media: MediaMakers = {
   image: async (target, prompt) => {
     asked.push({ target, prompt })
+    if (failWith) {
+      const err = failWith
+      failWith = null
+      throw err
+    }
     if (hang) {
       // As the real maker does: it ends with the job's reason, at once if
       // the job was stopped before it got here.
@@ -61,6 +70,19 @@ beforeAll(async () => {
     key: GOOD_KEYS.openai,
   })
   expect(key.status, await key.clone().text()).toBe(201)
+  // Nothing is delivered: the events recorded are what's read.
+  const network = await kyle.patch("/api/settings/server", {
+    "webhooks.homeNetwork": "all",
+  })
+  expect(network.status, await network.clone().text()).toBe(200)
+  const hook = await kyle.post("/api/households/current/webhooks", {
+    name: "All",
+    address: "http://127.0.0.1:9/h",
+    events: [],
+    everything: true,
+    headers: [],
+  })
+  expect(hook.status, await hook.clone().text()).toBe(201)
   // Off until the server admin turns them on.
   const on = await kyle.patch("/api/settings/server", {
     "photos.enabled": true,
@@ -136,6 +158,73 @@ describe("AI photos", () => {
     const res = await kyle.post("/api/recipes/lemon-chicken/photo/make")
     expect(res.status).toBe(409)
     expect((await res.json()).error.code).toBe("has_photo")
+  })
+
+  test("a photo made within the wait answers with the recipe", async () => {
+    const { slug } = await addRecipe("Quick Soup")
+    await jobs.drain()
+    const res = await kyle.post(`/api/recipes/${slug}/photo/make`)
+    expect(res.status, await res.clone().text()).toBe(200)
+    expect(await res.json()).toMatchObject({
+      slug,
+      photoByAi: true,
+      working: [],
+    })
+  })
+
+  test("a recipe with a real photo still answers 409 at once", async () => {
+    const { slug } = await addRecipe("Real Photo Soup")
+    await jobs.drain()
+    const real = await sharp({
+      create: { width: 900, height: 900, channels: 3, background: "#4a6" },
+    })
+      .png()
+      .toBuffer()
+    await kyle.upload(`/api/recipes/${slug}/photo`, real, "image/png")
+    const before = await database.em.fork().count(Job, {
+      kind: "recipes.makePhoto",
+    })
+    const res = await kyle.post(`/api/recipes/${slug}/photo/make`)
+    expect(res.status).toBe(409)
+    expect((await res.json()).error.code).toBe("has_photo")
+    expect(
+      await database.em.fork().count(Job, { kind: "recipes.makePhoto" })
+    ).toBe(before)
+  })
+
+  test("an error from the image maker reaches the request with its own status", async () => {
+    const { slug } = await addRecipe("Out Of Credit Soup")
+    await jobs.drain()
+    failWith = new AppError(
+      "rate_limited",
+      "ai_out_of_credit",
+      "The AI key is out of credit."
+    )
+    const res = await kyle.post(`/api/recipes/${slug}/photo/make`)
+    expect(res.status).toBe(429)
+    expect((await res.json()).error.code).toBe("ai_out_of_credit")
+  })
+
+  test("the photo's webhook says who asked for it", async () => {
+    const { slug } = await addRecipe("Webhook Soup")
+    await jobs.drain()
+    const home = (await (await kyle.get("/api/households/current")).json()).id
+    const em = () => forHousehold(database.em, home)
+    const before = (await em().find(WebhookEvent, {})).length
+    const res = await kyle.post(`/api/recipes/${slug}/photo/make`)
+    expect(res.status, await res.clone().text()).toBe(200)
+    const sent = (
+      await em().find(WebhookEvent, {}, { orderBy: { id: "asc" } })
+    ).slice(before)
+    const photo = sent
+      .map((row) => ({ type: row.type, ...row.payload }) as Record<string, any>)
+      .find((event) => event.parts?.includes("photo"))
+    expect(photo).toMatchObject({
+      type: "recipe.updated",
+      parts: ["photo"],
+      by: { name: "Kyle" },
+      via: "app",
+    })
   })
 
   test("makes them for the whole library, when asked", async () => {

@@ -19,6 +19,8 @@ const KEYED: { working: WorkingOn; prefixes: string[] }[] = [
     working: "nutrition",
     prefixes: ["recipes.workOutNutrition", "nutrition"],
   },
+  // `photos:<household id>`, the library run's, is another prefix.
+  { working: "photo", prefixes: ["recipes.makePhoto", "photo"] },
 ]
 
 const keyOf = (prefix: string, recipeId: string) => `${prefix}:${recipeId}`

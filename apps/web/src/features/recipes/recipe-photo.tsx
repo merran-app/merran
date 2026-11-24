@@ -29,12 +29,20 @@ export function usePhotoActions(recipe: Recipe) {
   const [making, setMaking] = React.useState(false)
   const aiPhotos = useAiPhotos()
 
-  async function run(work: () => Promise<Recipe>, done: string) {
+  async function run(work: () => Promise<Recipe | object>, done: string) {
     setBusy(true)
     try {
-      queryClient.setQueryData(recipeQuery(recipe.slug).queryKey, await work())
-      await refresh()
-      toast.success(done)
+      const updated = await work()
+      // Past the wait, making a photo answers with the job, not the recipe;
+      // the recipe has its photo once the job's done.
+      if ("slug" in updated) {
+        queryClient.setQueryData(
+          recipeQuery(recipe.slug).queryKey,
+          updated as Recipe
+        )
+        await refresh()
+        toast.success(done)
+      }
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       toast.error(error.message)

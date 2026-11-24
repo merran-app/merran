@@ -34703,7 +34703,7 @@
           "Recipes"
         ],
         "summary": "Make a photo with AI",
-        "description": "A photo of the finished dish in the household's style, on its OpenAI or Google key: for a recipe without a photo, or in place of one made by AI before. It takes up to a minute. With an API key, it needs the `recipes: write` permission.",
+        "description": "A photo of the finished dish in the household's style, on its OpenAI or Google key: for a recipe without a photo, or in place of one made by AI before. It waits up to 10 seconds; past that it answers 202 with the job, and the recipe has its photo once the job's done. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -34736,6 +34736,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Still being made: the recipe has its photo once this job is done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
                 }
               }
             }

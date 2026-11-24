@@ -3584,7 +3584,7 @@ export interface paths {
         put?: never;
         /**
          * Make a photo with AI
-         * @description A photo of the finished dish in the household's style, on its OpenAI or Google key: for a recipe without a photo, or in place of one made by AI before. It takes up to a minute. With an API key, it needs the `recipes: write` permission.
+         * @description A photo of the finished dish in the household's style, on its OpenAI or Google key: for a recipe without a photo, or in place of one made by AI before. It waits up to 10 seconds; past that it answers 202 with the job, and the recipe has its photo once the job's done. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["makeRecipePhoto"];
         delete?: never;
@@ -29426,6 +29426,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description Still being made: the recipe has its photo once this job is done. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
                 };
             };
             /** @description Not signed in. */
