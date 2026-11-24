@@ -68,6 +68,23 @@ describe("the API reference", () => {
     expect(ids.filter((id, i) => ids.indexOf(id) !== i)).toEqual([])
   })
 
+  test("a route that waits on a job says what the job can answer", async () => {
+    // A job stopped or failed while the request waits answers 409
+    // `job_stopped` or 502 `job_failed`, as well as the route's own errors.
+    const waiting: Record<string, string[]> = {
+      "POST /api/recipes/{recipe}/nutrition": ["202", "409", "502"],
+      "POST /api/recipes/{recipe}/photo/make": ["202", "409", "429", "502"],
+      "POST /api/stores/kroger/prices": ["202", "409", "502"],
+      // Discarded as it's read, too.
+      "POST /api/pantry/receipts": ["202", "404", "409", "502"],
+    }
+    const operations = await published()
+    for (const [name, codes] of Object.entries(waiting)) {
+      const declared = Object.keys(operations[name]?.responses ?? {})
+      expect(declared, name).toEqual(expect.arrayContaining(codes))
+    }
+  })
+
   test("every JSON body and answer has an example", async () => {
     const missing: string[] = []
     for (const [name, operation] of Object.entries(await published())) {

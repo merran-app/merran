@@ -28,9 +28,14 @@ const route = createRoute({
       JobSchema,
       "Still checking: the stores say it's checking until this job is done."
     ),
+    409: errorResponse(
+      "The check was stopped before it finished (`job_stopped`)."
+    ),
     422: errorResponse("Kroger isn't set up, or there's no store picked."),
     429: errorResponse("Kroger's daily limit for the app is used up."),
-    502: errorResponse("Kroger didn't answer."),
+    502: errorResponse(
+      "Kroger didn't answer, or the check didn't finish (`job_failed`)."
+    ),
     ...SIGNED_IN_ERRORS,
   },
 })

@@ -11,9 +11,9 @@ const route = createRoute({
   path: "/pantry/receipts",
   operationId: "listReceipts",
   tags: ["Pantry"],
-  summary: "Receipts waiting for a look",
+  summary: "The household's receipts",
   description:
-    "Scanned, shared or sent to the assistant, and not added or discarded yet, newest first. Each is forgotten after a day.",
+    "Scanned, shared or sent to the assistant, and not added or discarded yet, newest first, whatever their `status`: still being read, waiting for a look, or not read (a recipe, no receipt in it, or failed). Each is forgotten after a day.",
   ...openToKeys("pantry", "read"),
   responses: {
     200: jsonResponse(ReceiptListSchema, "The receipts."),

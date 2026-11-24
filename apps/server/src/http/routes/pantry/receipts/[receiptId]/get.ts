@@ -18,9 +18,9 @@ const route = createRoute({
   path: "/pantry/receipts/{receiptId}",
   operationId: "getReceipt",
   tags: ["Pantry"],
-  summary: "A receipt waiting for a look",
+  summary: "A receipt",
   description:
-    "One scanned, shared or sent to the assistant, and not added or discarded yet.",
+    "One scanned, shared or sent to the assistant, and not added or discarded yet, whatever its `status`: still being read, waiting for a look, or not read.",
   ...openToKeys("pantry", "read"),
   request: { params: ReceiptParam },
   responses: {

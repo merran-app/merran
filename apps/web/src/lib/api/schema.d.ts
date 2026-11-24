@@ -2294,8 +2294,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Receipts waiting for a look
-         * @description Scanned, shared or sent to the assistant, and not added or discarded yet, newest first. Each is forgotten after a day. With an API key, it needs the `pantry: read` permission.
+         * The household's receipts
+         * @description Scanned, shared or sent to the assistant, and not added or discarded yet, newest first, whatever their `status`: still being read, waiting for a look, or not read (a recipe, no receipt in it, or failed). Each is forgotten after a day. With an API key, it needs the `pantry: read` permission.
          */
         get: operations["listReceipts"];
         put?: never;
@@ -2318,15 +2318,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * A receipt waiting for a look
-         * @description One scanned, shared or sent to the assistant, and not added or discarded yet. With an API key, it needs the `pantry: read` permission.
+         * A receipt
+         * @description One scanned, shared or sent to the assistant, and not added or discarded yet, whatever its `status`: still being read, waiting for a look, or not read. With an API key, it needs the `pantry: read` permission.
          */
         get: operations["getReceipt"];
         put?: never;
         post?: never;
         /**
          * Discard a receipt
-         * @description Forgets it, with its photos, without adding anything. With an API key, it needs the `pantry: write` permission.
+         * @description Forgets it, with its photos, without adding anything. One still being read (`reading`) stops being read. With an API key, it needs the `pantry: write` permission.
          */
         delete: operations["discardReceipt"];
         options?: never;
@@ -25391,6 +25391,24 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description It was discarded as it was read (`receipt_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Its read was stopped, or it was discarded, before it was read (`job_stopped`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description The files are too big. */
             413: {
                 headers: {
@@ -25411,6 +25429,15 @@ export interface operations {
             };
             /** @description This month's AI limit is reached. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The AI didn't answer, or reading it didn't finish (`job_failed`). */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -28628,6 +28655,15 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description It was stopped before it was worked out (`job_stopped`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description No USDA key on the server, and no AI for the household. */
             422: {
                 headers: {
@@ -28639,6 +28675,15 @@ export interface operations {
             };
             /** @description USDA's limit for the hour, or this month's AI limit. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description USDA or the AI didn't answer, or working it out didn't finish (`job_failed`). */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -29487,7 +29532,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description It has a real photo, which an AI one never replaces. */
+            /** @description It has a real photo, which an AI one never replaces (`has_photo`), or it was stopped before it was made (`job_stopped`). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -29498,6 +29543,24 @@ export interface operations {
             };
             /** @description AI photos are off on the server, or the household has no key for them. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The key's provider is busy or out of credit, or this month's AI limit is reached. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The image provider didn't answer, or making it didn't finish (`job_failed`). */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -32484,6 +32547,15 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description The check was stopped before it finished (`job_stopped`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description Kroger isn't set up, or there's no store picked. */
             422: {
                 headers: {
@@ -32502,7 +32574,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Kroger didn't answer. */
+            /** @description Kroger didn't answer, or the check didn't finish (`job_failed`). */
             502: {
                 headers: {
                     [name: string]: unknown;

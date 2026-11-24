@@ -15,7 +15,8 @@ const route = createRoute({
   operationId: "discardReceipt",
   tags: ["Pantry"],
   summary: "Discard a receipt",
-  description: "Forgets it, with its photos, without adding anything.",
+  description:
+    "Forgets it, with its photos, without adding anything. One still being read (`reading`) stops being read.",
   ...openToKeys("pantry", "write"),
   request: { params: ReceiptParam },
   responses: {

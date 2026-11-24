@@ -28464,8 +28464,8 @@
         "tags": [
           "Pantry"
         ],
-        "summary": "Receipts waiting for a look",
-        "description": "Scanned, shared or sent to the assistant, and not added or discarded yet, newest first. Each is forgotten after a day. With an API key, it needs the `pantry: read` permission.",
+        "summary": "The household's receipts",
+        "description": "Scanned, shared or sent to the assistant, and not added or discarded yet, newest first, whatever their `status`: still being read, waiting for a look, or not read (a recipe, no receipt in it, or failed). Each is forgotten after a day. With an API key, it needs the `pantry: read` permission.",
         "security": [
           {
             "session": []
@@ -28602,6 +28602,26 @@
               }
             }
           },
+          "404": {
+            "description": "It was discarded as it was read (`receipt_not_found`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Its read was stopped, or it was discarded, before it was read (`job_stopped`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
           "413": {
             "description": "The files are too big.",
             "content": {
@@ -28631,6 +28651,16 @@
                 }
               }
             }
+          },
+          "502": {
+            "description": "The AI didn't answer, or reading it didn't finish (`job_failed`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -28641,8 +28671,8 @@
         "tags": [
           "Pantry"
         ],
-        "summary": "A receipt waiting for a look",
-        "description": "One scanned, shared or sent to the assistant, and not added or discarded yet. With an API key, it needs the `pantry: read` permission.",
+        "summary": "A receipt",
+        "description": "One scanned, shared or sent to the assistant, and not added or discarded yet, whatever its `status`: still being read, waiting for a look, or not read. With an API key, it needs the `pantry: read` permission.",
         "security": [
           {
             "session": []
@@ -28715,7 +28745,7 @@
           "Pantry"
         ],
         "summary": "Discard a receipt",
-        "description": "Forgets it, with its photos, without adding anything. With an API key, it needs the `pantry: write` permission.",
+        "description": "Forgets it, with its photos, without adding anything. One still being read (`reading`) stops being read. With an API key, it needs the `pantry: write` permission.",
         "security": [
           {
             "session": []
@@ -33482,6 +33512,16 @@
               }
             }
           },
+          "409": {
+            "description": "It was stopped before it was worked out (`job_stopped`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
           "422": {
             "description": "No USDA key on the server, and no AI for the household.",
             "content": {
@@ -33494,6 +33534,16 @@
           },
           "429": {
             "description": "USDA's limit for the hour, or this month's AI limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "USDA or the AI didn't answer, or working it out didn't finish (`job_failed`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -34821,7 +34871,7 @@
             }
           },
           "409": {
-            "description": "It has a real photo, which an AI one never replaces.",
+            "description": "It has a real photo, which an AI one never replaces (`has_photo`), or it was stopped before it was made (`job_stopped`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -34832,6 +34882,26 @@
           },
           "422": {
             "description": "AI photos are off on the server, or the household has no key for them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The key's provider is busy or out of credit, or this month's AI limit is reached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The image provider didn't answer, or making it didn't finish (`job_failed`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -39058,6 +39128,16 @@
               }
             }
           },
+          "409": {
+            "description": "The check was stopped before it finished (`job_stopped`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Kroger isn't set up, or there's no store picked.",
             "content": {
@@ -39079,7 +39159,7 @@
             }
           },
           "502": {
-            "description": "Kroger didn't answer.",
+            "description": "Kroger didn't answer, or the check didn't finish (`job_failed`).",
             "content": {
               "application/json": {
                 "schema": {

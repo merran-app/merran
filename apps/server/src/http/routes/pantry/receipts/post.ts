@@ -68,11 +68,20 @@ const route = createRoute({
       "Still being read (`status` `reading`); it carries on in the background."
     ),
     400: errorResponse("Nothing to read, or a file Merran can't read."),
+    404: errorResponse(
+      "It was discarded as it was read (`receipt_not_found`)."
+    ),
+    409: errorResponse(
+      "Its read was stopped, or it was discarded, before it was read (`job_stopped`)."
+    ),
     413: errorResponse("The files are too big."),
     422: errorResponse(
       "It isn't a receipt (`receipt_is_recipe` when it's a recipe), or the model can't read photos or PDFs."
     ),
     429: errorResponse("This month's AI limit is reached."),
+    502: errorResponse(
+      "The AI didn't answer, or reading it didn't finish (`job_failed`)."
+    ),
     ...SIGNED_IN_ERRORS,
   },
 })

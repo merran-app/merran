@@ -754,7 +754,10 @@ export async function scanReceipt(
   )
 }
 
-/** Receipts waiting for a look, newest first: shared ones, say. */
+/**
+ * The household's receipts of the last day, newest first, whatever became
+ * of them: still being read, waiting for a look, or not read.
+ */
 export async function listReceipts(em: EntityManager) {
   const receipts = await em.find(
     Receipt,

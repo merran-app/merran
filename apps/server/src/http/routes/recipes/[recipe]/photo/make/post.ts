@@ -29,9 +29,17 @@ const route = createRoute({
       "Still being made: the recipe has its photo once this job is done."
     ),
     404: errorResponse("No such recipe."),
-    409: errorResponse("It has a real photo, which an AI one never replaces."),
+    409: errorResponse(
+      "It has a real photo, which an AI one never replaces (`has_photo`), or it was stopped before it was made (`job_stopped`)."
+    ),
     422: errorResponse(
       "AI photos are off on the server, or the household has no key for them."
+    ),
+    429: errorResponse(
+      "The key's provider is busy or out of credit, or this month's AI limit is reached."
+    ),
+    502: errorResponse(
+      "The image provider didn't answer, or making it didn't finish (`job_failed`)."
     ),
     ...SIGNED_IN_ERRORS,
   },
