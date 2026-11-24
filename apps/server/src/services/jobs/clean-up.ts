@@ -16,6 +16,7 @@ export const KEEP_FINISHED_DAYS = 30
  */
 export const cleanUpJobsJob: JobHandler = {
   kind: "jobs.cleanUp",
+  lane: "quick",
   async run({ em, deps }) {
     await clearExpiredInvitationTokens(em)
     await cleanUpPasswordResets(em)

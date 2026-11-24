@@ -97,6 +97,7 @@ const jobs = new JobRunner({
   },
   handlers: JOB_HANDLERS,
   schedules: JOB_SCHEDULES,
+  lanes: { long: config.jobsLong },
 })
 
 const app = createApp({

@@ -56,6 +56,7 @@ async function purgeExpired(em: EntityManager, files: FileStore) {
 /** The daily job that empties every household's Recently deleted of old recipes. */
 export const purgeDeletedJob: JobHandler = {
   kind: "recipes.purgeDeleted",
+  lane: "long",
   async run({ em, deps }) {
     const expired = await em.find(
       Recipe,

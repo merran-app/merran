@@ -293,6 +293,55 @@ describe("live updates", () => {
     await listeners(0)
   })
 
+  test("say how the household's jobs are going, to whoever can read their area", async () => {
+    const key = (
+      await (
+        await kyle.post("/api/auth/api-keys", {
+          name: "Shopping list screen",
+          permissions: { list: "read" },
+          expiresInDays: 30,
+        })
+      ).json()
+    ).key
+    const stream = await listen(kyle)
+    const keyStream = await listen({ key })
+    await listeners(2)
+
+    events.job(home, "household", {
+      id: "job-1",
+      kind: "household.import",
+      status: "running",
+      progress: { done: 1, total: 4 },
+    })
+    events.job(home, "list", {
+      id: "job-2",
+      kind: "stores.checkPrices",
+      status: "done",
+      progress: null,
+    })
+    expect(await stream.next()).toEqual({
+      event: "job",
+      data: {
+        id: "job-1",
+        kind: "household.import",
+        status: "running",
+        progress: { done: 1, total: 4 },
+      },
+    })
+    expect(await stream.next()).toMatchObject({
+      event: "job",
+      data: { id: "job-2", status: "done" },
+    })
+    // Not the household's import, which it can't read about.
+    expect(await keyStream.next()).toMatchObject({
+      event: "job",
+      data: { id: "job-2" },
+    })
+    stream.close()
+    keyStream.close()
+    await listeners(0)
+  })
+
   test("end when the server stops", async () => {
     const stream = await listen(kyle)
     await listeners(1)

@@ -341,6 +341,7 @@ async function cancelCloseJob(em: EntityManager, sessionId: string) {
  */
 export const closeSessionJob: JobHandler = {
   kind: CLOSE_SESSION_JOB,
+  lane: "quick",
   async run({ em, payload, householdId }) {
     const sessionId = String(payload.sessionId)
     if (!householdId) {

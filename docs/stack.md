@@ -110,10 +110,12 @@ The REFERENCE app runs a dozen `setInterval` checks (autoplan every 5 minutes, p
 The well-known queues each need one particular store: pg-boss and Graphile Worker only run on Postgres, and BullMQ needs Redis. So Merran has a small runner of its own (a few hundred lines) on a `jobs` table, which works the same on both databases:
 
 - jobs added in the same transaction as the change that needs them
-- retries with backoff, a limit per kind ("two library runs at a time"), one at a time per key ("one nutrition run per recipe"), and a fair share per household; a kind at its limit is left out when looking for due work, so a pile of one kind can't keep the others waiting
+- retries with backoff, a limit per kind ("two library runs at a time"), a limit per household for a kind ("one import at a time"), one at a time per key ("one nutrition run per recipe"), and a fair share per household; a kind or household at its limit is left out when looking for due work, so a pile of one kind can't keep the others waiting
+- two lanes (November 15, 2026): quick jobs (emails, webhook deliveries, housekeeping) never wait behind long ones (imports, library runs, Discover), and the long lane's size is a setting
+- a job's Stop reaches every fetch and AI call it makes, kept for the length of its run like who made a change, and every AI call has a time limit
 - schedules with `croner` (cron expressions in each household's time zone)
-- work that survives restarts without each feature writing its own "carry on at startup" code
-- on Postgres, jobs are claimed with `SKIP LOCKED`; SQLite has a single writer, so a plain transaction does
+- work that survives restarts without each feature writing its own "carry on at startup" code; a job sees what it saved so far, so it can carry on from where it was
+- jobs are taken by a conditional update (queued to running only if still queued), which is all one process needs on either database. This said `SKIP LOCKED` on Postgres until November 15, 2026; that's for several processes taking work from one table, which Merran doesn't do
 
 Merran runs as one process on either database, so the runner and the live event stream don't need to coordinate across servers. The same table holds what people see: "Importing 6 of 10", a library run's progress, Stop and Try again.
 

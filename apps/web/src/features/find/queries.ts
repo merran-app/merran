@@ -1,5 +1,6 @@
 import { queryOptions, useQueryClient } from "@tanstack/react-query"
 
+import { followEvery } from "@/features/live/state"
 import { api, unwrap, type Schemas } from "@/lib/api/client"
 
 import { stillOpening } from "./opening"
@@ -62,7 +63,7 @@ export const discoveryQuery = (id: string) =>
         })
       ),
     refetchInterval: (query) =>
-      query.state.data?.status === "searching" ? 2000 : false,
+      query.state.data?.status === "searching" ? followEvery(2000) : false,
   })
 
 /** Refreshes everything from the recipe sites. */

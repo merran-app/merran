@@ -4,6 +4,7 @@ import { AppError } from "../../../core/errors.ts"
 import { FLARESOLVERR } from "../../../modules/flaresolverr/settings.ts"
 import { solvePage } from "../../fetch/flaresolverr.ts"
 import type { Fetcher } from "../../fetch/public-fetch.ts"
+import { throwIfStopped } from "../../jobs/stop.ts"
 import { MAX_PHOTO_BYTES, removePhoto, storePhoto } from "../photos/photos.ts"
 import { createRecipe, loadRecipe, type AfterSaveDeps } from "../recipes.ts"
 import { tidyAfterImport } from "../review/tidy-run.ts"
@@ -51,6 +52,9 @@ export async function downloadPhoto(
         fallback = { body: photo.body, side }
       }
     } catch {
+      // A photo that won't come is skipped, but a stopped import stops: the
+      // recipe isn't saved without the photo it was fetching.
+      throwIfStopped()
       continue
     }
   }

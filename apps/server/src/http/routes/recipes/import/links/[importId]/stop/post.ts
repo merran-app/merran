@@ -1,6 +1,5 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../../../core/context.ts"
-import { cancelJob } from "../../../../../../../services/jobs/jobs.ts"
 import {
   describeLinkImport,
   findLinkImport,
@@ -24,7 +23,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Stop a link import",
   description:
-    "The recipes it added stay. The link it's on finishes first, so the answer may still say it's running.",
+    "The recipes it added stay. The link it's on is cut off and shows as stopped; it takes a moment, so the answer may still say it's running.",
   ...openToKeys("imports", "write"),
   request: { params: LinkImportParam },
   responses: {
@@ -43,7 +42,7 @@ export default (router: Router, { jobs }: AppDeps) => {
       c.req.valid("param").importId,
       householdId
     )
-    await cancelJob(em, job, (id) => jobs.stopJob(id))
+    await jobs.cancel(em, job)
     return c.json(describeLinkImport(job), 200)
   })
 }

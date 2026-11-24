@@ -4,6 +4,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query"
 
+import { followEvery } from "@/features/live/state"
 import { api, unwrap, type Schemas } from "@/lib/api/client"
 
 export type Proposal = Schemas["Proposal"]
@@ -20,7 +21,7 @@ export const tidyRunsQuery = queryOptions({
   queryKey: ["review", "runs"],
   queryFn: () => unwrap(api.GET("/api/recipes/tidy")),
   refetchInterval: (query) =>
-    query.state.data?.runs.some(isGoing) ? 2000 : false,
+    query.state.data?.runs.some(isGoing) ? followEvery(2000) : false,
 })
 
 /** The run going, if there is one. */

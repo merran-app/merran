@@ -40,6 +40,12 @@ const FRESH_WHILE_LIVE_MS = 5 * 60_000
 /** How long any other query stays fresh. */
 const FRESH_MS = 30_000
 
+/**
+ * How often a job that's going is asked about while the live stream says
+ * when it moves: only in case a word went missing.
+ */
+const FOLLOW_WHILE_LIVE_MS = 30_000
+
 let lastHeard: number | null = null
 
 /** A message came over the live stream, pings included. */
@@ -77,6 +83,14 @@ export function freshFor(queryKey: QueryKey, now = Date.now()) {
   return coveredByLive(queryKey) && liveConnected(now)
     ? FRESH_WHILE_LIVE_MS
     : FRESH_MS
+}
+
+/**
+ * How often to ask about a job that's going: every `ms`, as before, unless
+ * the live stream is working, which says when it moves.
+ */
+export function followEvery(ms: number, now = Date.now()) {
+  return liveConnected(now) ? FOLLOW_WHILE_LIVE_MS : ms
 }
 
 /** Whether coming back to the app fetches a query again, once it's stale. */

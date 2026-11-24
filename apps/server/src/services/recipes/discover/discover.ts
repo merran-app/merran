@@ -173,6 +173,8 @@ async function askForPicks(
       userId: options.userId,
       task: "discover",
       needs: ["tools", "webSearch"],
+      // Searching the web as it goes takes longer than reading a page.
+      timeLimitMs: 5 * 60_000,
     },
     async (model, { webSearch }) => {
       if (!webSearch || Object.keys(webSearch).length === 0) {
@@ -344,8 +346,11 @@ const Payload = z.object({
 
 export const discoverJob: JobHandler = {
   kind: KIND,
+  lane: "long",
+  area: "recipes",
+  perHousehold: 1,
   concurrency: 2,
-  async run({ em, householdId, payload, deps, logger }) {
+  async run({ em, householdId, payload, signal, deps, logger }) {
     if (!householdId) throw new Error("A search needs a household.")
     const { discoveryId, userId, avoid } = Payload.parse(payload)
     const discovery = await findDiscovery(em, discoveryId)
@@ -383,6 +388,8 @@ export const discoverJob: JobHandler = {
           ? "Nothing turned up that Merran could open. Try another theme."
           : null
     } catch (err) {
+      // Stopped, or Merran is shutting down: the search didn't fail.
+      if (signal.aborted) throw err
       discovery.status = "failed"
       discovery.error =
         err instanceof AppError

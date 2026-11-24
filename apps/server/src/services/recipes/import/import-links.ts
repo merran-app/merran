@@ -73,6 +73,29 @@ const waiting = (url: string): LinkItem => ({
   error: null,
 })
 
+/** Whether a link has been dealt with: added, already there, or failed. */
+const isDone = (item: LinkItem) =>
+  item.state === "added" || item.state === "already" || item.state === "failed"
+
+/**
+ * Each link, as far as the import got before a restart cut it off, when
+ * what it saved is for these links; otherwise each waiting. A link it was
+ * adding is tried again: one it finished just before the restart shows as
+ * already there, which is rare and harmless.
+ */
+function carriedOn(urls: readonly string[], saved: unknown): LinkItem[] {
+  const kept = SoFar.safeParse(saved)
+  const items = kept.data?.items
+  const same =
+    items !== undefined &&
+    items.length === urls.length &&
+    items.every((item, index) => item.url === urls[index])
+  if (!same) return urls.map(waiting)
+  return items.map((item) =>
+    item.state === "adding" ? waiting(item.url) : { ...item }
+  )
+}
+
 /** A link as Merran keeps it, or null if it isn't one it can fetch. */
 function tidy(raw: string) {
   try {
@@ -258,6 +281,9 @@ function tellWebhooks(
  */
 export const linkImportJob: JobHandler = {
   kind: KIND,
+  lane: "long",
+  area: "recipes",
+  perHousehold: 1,
   concurrency: 2,
   changes: ["recipes"],
   async run({
@@ -265,6 +291,7 @@ export const linkImportJob: JobHandler = {
     em,
     householdId,
     payload,
+    saved,
     progress,
     signal,
     logger,
@@ -272,13 +299,15 @@ export const linkImportJob: JobHandler = {
   }) {
     if (!householdId) throw new Error("An import needs a household.")
     const { urls, tag, userId, kind } = Payload.parse(payload)
-    const items = urls.map(waiting)
+    const items = carriedOn(urls, saved)
     const soFar = () => ({ tag, items })
-    let done = 0
+    let done = items.filter(isDone).length
 
     try {
       for (const item of items) {
         if (signal.aborted) throw new JobStopped()
+        // Done before a restart cut it off.
+        if (isDone(item)) continue
         item.state = "adding"
         await progress(done, items.length, soFar())
         try {
@@ -298,6 +327,8 @@ export const linkImportJob: JobHandler = {
             photo: recipe.photo?.card ?? null,
           }
         } catch (err) {
+          // Stopped while it was on this link, which didn't fail.
+          if (err instanceof JobStopped || signal.aborted) throw err
           item.state = "failed"
           item.error =
             err instanceof AppError

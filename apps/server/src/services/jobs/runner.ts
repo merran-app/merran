@@ -2,7 +2,7 @@ import type { EntityManager } from "@mikro-orm/sql"
 import { Cron } from "croner"
 import type { Logger } from "pino"
 import type { Config } from "../../core/config.ts"
-import { Job } from "../../database/entities/index.ts"
+import { Job, type JobStatus } from "../../database/entities/index.ts"
 import type { Database } from "../../database/orm.ts"
 import { forHousehold } from "../../database/scope.ts"
 import type { Module } from "../../modules/module.ts"
@@ -14,12 +14,14 @@ import type { Settings } from "../settings/settings.ts"
 import type { FileStore } from "../storage/files.ts"
 import type { VideoTools } from "../recipes/import/video/tools.ts"
 import { MERRAN, withActor } from "../webhooks/actor.ts"
-import { enqueue, onJobAdded } from "./jobs.ts"
+import { cancelJob, enqueue, onJobAdded } from "./jobs.ts"
+import { withStopSignal } from "./stop.ts"
 
 // Merran's job runner (docs/stack.md, "A job runner of our own"): one
 // process, on SQLite or Postgres, working through the `jobs` table. A job is
 // taken by a conditional update (queued → running), so it only runs once;
-// there's a limit per kind and a fair share per household; failures are
+// quick jobs and long ones wait in lanes of their own; there's a limit per
+// kind and a fair share per household; failures are
 // tried again with backoff; schedules come from croner; and jobs cut off by
 // a restart start again.
 
@@ -52,6 +54,11 @@ export type JobContext = {
   attempt: number
   /** How many tries it has in all, so a job can tell when this is the last. */
   maxAttempts: number
+  /**
+   * What it saved as it went (its result so far) as this try starts, so a
+   * job cut off by a restart can carry on from where it was. Null at first.
+   */
+  saved: Record<string, unknown> | null
   /** Its own entity manager: scoped to the job's household when it has one. */
   em: EntityManager
   /**
@@ -69,10 +76,28 @@ export type JobContext = {
   deps: JobDeps
 }
 
+/**
+ * Where a job waits for a place to run. Quick jobs call no AI, open no
+ * pages and finish in seconds, like emails and webhook deliveries, so they
+ * never wait behind long ones: imports, library runs, Discover.
+ */
+export type JobLane = "quick" | "long"
+
+/** How many jobs each lane runs at once, unless the runner's told otherwise. */
+const LANE_SIZES: Record<JobLane, number> = { quick: 4, long: 4 }
+
 export type JobHandler = {
   kind: string
+  /** Which lane it waits in; long unless it says. */
+  lane?: JobLane
   /** How many of this kind run at once. */
   concurrency?: number
+  /**
+   * How many of this kind one household runs at once, so two big imports
+   * from one household don't keep every other household's waiting. None
+   * means only the kind's own limit.
+   */
+  perHousehold?: number
   /**
    * How long to wait after each failed try, in milliseconds: the first after
    * try 1, and so on. Past its end, or without it, the wait doubles from 30
@@ -85,6 +110,12 @@ export type JobHandler = {
    * hear about it as the job moves on and when it ends.
    */
   changes?: readonly LiveArea[]
+  /**
+   * Who hears how a household's job of this kind is going, as it starts,
+   * moves on and ends: everyone who may read this area. None for kinds
+   * nobody follows.
+   */
+  area?: LiveArea
   run(ctx: JobContext): Promise<Record<string, unknown> | void>
 }
 
@@ -110,6 +141,7 @@ export class JobStopped extends Error {
 type Running = {
   controller: AbortController
   kind: string
+  lane: JobLane
   householdId: string | null
   /** Why it was stopped, if it was. */
   stopped?: "cancelled" | "shutdown"
@@ -125,11 +157,15 @@ const PROGRESS_EVERY_MS = 500
 
 const scheduleKey = (kind: string) => `schedule:${kind}`
 
+/** A household and a kind of job, to count what each household runs. */
+const householdKind = (householdId: string, kind: string) =>
+  `${householdId} ${kind}`
+
 export class JobRunner {
   readonly #deps: JobDeps
   readonly #handlers: Map<string, JobHandler>
   readonly #schedules: readonly JobSchedule[]
-  readonly #maxRunning: number
+  readonly #lanes: Record<JobLane, number>
   readonly #running = new Map<string, Running>()
   #timer: NodeJS.Timeout | null = null
   #ticking: Promise<void> | null = null
@@ -141,13 +177,18 @@ export class JobRunner {
     deps: JobDeps
     handlers: readonly JobHandler[]
     schedules?: readonly JobSchedule[]
-    /** At most this many jobs at once, of all kinds. */
-    maxRunning?: number
+    /** How many jobs each lane runs at once: 4 in each unless given. */
+    lanes?: Partial<Record<JobLane, number>>
   }) {
     this.#deps = options.deps
     this.#handlers = new Map(options.handlers.map((h) => [h.kind, h]))
     this.#schedules = options.schedules ?? []
-    this.#maxRunning = options.maxRunning ?? 4
+    this.#lanes = { ...LANE_SIZES, ...options.lanes }
+  }
+
+  /** The lane a kind waits in; one Merran doesn't know counts as long. */
+  #laneOf(kind: string): JobLane {
+    return this.#handlers.get(kind)?.lane ?? "long"
   }
 
   #em() {
@@ -216,6 +257,26 @@ export class JobRunner {
     await this.#ticking
   }
 
+  /**
+   * Stops a job, as `cancelJob` does. One waiting is cancelled at once, so
+   * its household is told here; one running says so itself as it ends.
+   */
+  async cancel(em: EntityManager, job: Job) {
+    const waiting = job.status === "queued"
+    await cancelJob(em, job, (id) => this.stopJob(id))
+    const householdId = job.forHousehold?.id
+    const area = this.#handlers.get(job.kind)?.area
+    if (waiting && householdId && area) {
+      this.#deps.events.job(householdId, area, {
+        id: job.id,
+        kind: job.kind,
+        status: job.status,
+        progress: job.progress ?? null,
+      })
+    }
+    return job
+  }
+
   /** Asks a running job to stop. */
   stopJob(jobId: string) {
     const running = this.#running.get(jobId)
@@ -250,22 +311,34 @@ export class JobRunner {
 
   async #tick() {
     if (this.#stopping) return
-    const free = this.#maxRunning - this.#running.size
-    if (free <= 0) return
+    const byLane = new Map<JobLane, number>()
     const byKind = new Map<string, number>()
     const byHousehold = new Map<string, number>()
+    const byHouseholdKind = new Map<string, number>()
     for (const running of this.#running.values()) {
+      byLane.set(running.lane, (byLane.get(running.lane) ?? 0) + 1)
       byKind.set(running.kind, (byKind.get(running.kind) ?? 0) + 1)
       const household = running.householdId ?? ""
       byHousehold.set(household, (byHousehold.get(household) ?? 0) + 1)
+      if (running.householdId) {
+        const key = householdKind(running.householdId, running.kind)
+        byHouseholdKind.set(key, (byHouseholdKind.get(key) ?? 0) + 1)
+      }
     }
+    const laneFull = (lane: JobLane) =>
+      (byLane.get(lane) ?? 0) >= this.#lanes[lane]
+    const allFull = () => laneFull("quick") && laneFull("long")
+    if (allFull()) return
     const em = this.#em()
-    const due = await this.#dueJobs(em, this.#kindsAtLimit(byKind))
+    const due = await this.#dueJobs(
+      em,
+      this.#kindsThatCantStart(byKind, laneFull),
+      this.#householdsAtLimit(byHouseholdKind)
+    )
 
-    let started = 0
     // A fair share: households with the least running go first.
     const queue = [...due]
-    while (started < free && queue.length > 0) {
+    while (queue.length > 0 && !allFull()) {
       queue.sort(
         (a, b) =>
           (byHousehold.get(a.forHousehold?.id ?? "") ?? 0) -
@@ -280,7 +353,18 @@ export class JobRunner {
         })
         continue
       }
+      const lane = this.#laneOf(job.kind)
+      if (laneFull(lane)) continue
       if ((byKind.get(job.kind) ?? 0) >= (handler.concurrency ?? 1)) continue
+      const household = job.forHousehold?.id ?? null
+      const ownKey = household ? householdKind(household, job.kind) : null
+      if (
+        ownKey &&
+        handler.perHousehold !== undefined &&
+        (byHouseholdKind.get(ownKey) ?? 0) >= handler.perHousehold
+      ) {
+        continue
+      }
       // Taken only if still queued, so it runs once.
       const taken = await em.nativeUpdate(
         Job,
@@ -288,70 +372,120 @@ export class JobRunner {
         { status: "running", startedAt: new Date(), attempts: job.attempts + 1 }
       )
       if (taken !== 1) continue
-      const household = job.forHousehold?.id ?? null
+      byLane.set(lane, (byLane.get(lane) ?? 0) + 1)
       byKind.set(job.kind, (byKind.get(job.kind) ?? 0) + 1)
       byHousehold.set(
         household ?? "",
         (byHousehold.get(household ?? "") ?? 0) + 1
       )
-      this.#run(handler, job, job.attempts + 1)
-      started++
+      if (ownKey) {
+        byHouseholdKind.set(ownKey, (byHouseholdKind.get(ownKey) ?? 0) + 1)
+      }
+      this.#run(handler, lane, job, job.attempts + 1)
     }
   }
 
-  /** The kinds running as many at once as they may. */
-  #kindsAtLimit(byKind: ReadonlyMap<string, number>) {
-    return [...byKind]
-      .filter(
-        ([kind, running]) =>
-          running >= (this.#handlers.get(kind)?.concurrency ?? 1)
-      )
-      .map(([kind]) => kind)
+  /** The households running as many of a kind at once as it lets one. */
+  #householdsAtLimit(byHouseholdKind: ReadonlyMap<string, number>) {
+    const atLimit: { kind: string; forHousehold: string }[] = []
+    for (const [key, running] of byHouseholdKind) {
+      const [householdId, kind] = key.split(" ") as [string, string]
+      const limit = this.#handlers.get(kind)?.perHousehold
+      if (limit !== undefined && running >= limit) {
+        atLimit.push({ kind, forHousehold: householdId })
+      }
+    }
+    return atLimit
+  }
+
+  /**
+   * The kinds that couldn't start now: those running as many at once as
+   * they may, and every kind of a lane that's full.
+   */
+  #kindsThatCantStart(
+    byKind: ReadonlyMap<string, number>,
+    laneFull: (lane: JobLane) => boolean
+  ) {
+    const kinds = new Set<string>()
+    for (const [kind, running] of byKind) {
+      if (running >= (this.#handlers.get(kind)?.concurrency ?? 1)) {
+        kinds.add(kind)
+      }
+    }
+    for (const handler of this.#handlers.values()) {
+      if (laneFull(handler.lane ?? "long")) kinds.add(handler.kind)
+    }
+    return [...kinds]
   }
 
   /**
    * The jobs that are due, oldest first, as many as one look takes in.
-   * Kinds at their limit are left out: they couldn't start anyway, and
-   * when more of one are due than a look takes in, as when deliveries pile
-   * up for a receiver that hangs, they'd keep every other kind waiting.
+   * Kinds that couldn't start are left out, and so is each household's
+   * kind it runs as many of as it may: when more of those are due than a
+   * look takes in, as when deliveries pile up for a receiver that hangs, or
+   * one household's big import queues a hundred nutrition jobs, they'd keep
+   * every other kind and household waiting.
    */
-  #dueJobs(em: EntityManager, kindsAtLimit: readonly string[]) {
+  #dueJobs(
+    em: EntityManager,
+    kindsThatCantStart: readonly string[],
+    householdsAtLimit: readonly { kind: string; forHousehold: string }[]
+  ) {
     return em.find(
       Job,
       {
         status: "queued",
         runAt: { $lte: new Date() },
-        ...(kindsAtLimit.length > 0 ? { kind: { $nin: kindsAtLimit } } : {}),
+        ...(kindsThatCantStart.length > 0
+          ? { kind: { $nin: kindsThatCantStart } }
+          : {}),
+        ...(householdsAtLimit.length > 0
+          ? { $not: { $or: [...householdsAtLimit] } }
+          : {}),
       },
       { orderBy: { runAt: "asc", createdAt: "asc" }, limit: 50 }
     )
   }
 
-  #run(handler: JobHandler, job: Job, attempt: number) {
+  #run(handler: JobHandler, lane: JobLane, job: Job, attempt: number) {
     const controller = new AbortController()
     const householdId = job.forHousehold?.id ?? null
     const logger = this.#deps.logger.child({ job: job.id, kind: job.kind })
     const running: Running = {
       controller,
       kind: job.kind,
+      lane,
       householdId,
       done: Promise.resolve(),
     }
     this.#running.set(job.id, running)
 
     let lastProgress = 0
+    let progressNow = job.progress ?? null
     const announce = () => {
       if (!householdId) return
       for (const area of handler.changes ?? []) {
         this.#deps.events.changed(householdId, { area, by: null, client: null })
       }
     }
+    /** Tells the household how its job is going, for kinds it follows. */
+    const tell = (status: JobStatus) => {
+      if (!householdId || !handler.area) return
+      this.#deps.events.job(householdId, handler.area, {
+        id: job.id,
+        kind: job.kind,
+        status,
+        progress: progressNow,
+      })
+    }
+    tell("running")
     const ctx: JobContext = {
       jobId: job.id,
       payload: job.payload,
       householdId,
       attempt,
       maxAttempts: job.maxAttempts,
+      saved: job.result ?? null,
       em: householdId
         ? forHousehold(this.#deps.database.em, householdId)
         : this.#em(),
@@ -364,7 +498,9 @@ export class JobRunner {
           { id: job.id },
           { progress: { done, total }, ...(soFar ? { result: soFar } : {}) }
         )
+        progressNow = { done, total }
         announce()
+        tell("running")
       },
       signal: controller.signal,
       logger,
@@ -375,20 +511,31 @@ export class JobRunner {
       try {
         // A job is Merran's own work, though adding it wakes the runner
         // from inside whichever request added it.
-        const result = await withActor(MERRAN, () => handler.run(ctx))
-        await this.#endTry(job.id, attempt, {
-          status: "done",
-          result: result ?? null,
-          error: null,
-          finishedAt: new Date(),
-        })
-      } catch (err) {
-        if (running.stopped === "cancelled") {
+        const result = await withActor(MERRAN, () =>
+          withStopSignal(controller.signal, () => handler.run(ctx))
+        )
+        // Stopped, though it ended as if it hadn't: a handler that catches
+        // each item's error caught the stop too, and its last item isn't
+        // done. It's cancelled, or runs again next start.
+        if (running.stopped) throw new JobStopped(running.stopped)
+        tell(
           await this.#endTry(job.id, attempt, {
-            status: "cancelled",
+            status: "done",
+            result: result ?? null,
+            error: null,
             finishedAt: new Date(),
           })
+        )
+      } catch (err) {
+        if (running.stopped === "cancelled") {
+          tell(
+            await this.#endTry(job.id, attempt, {
+              status: "cancelled",
+              finishedAt: new Date(),
+            })
+          )
         } else if (running.stopped === "shutdown") {
+          // Says nothing: it runs again next start, as if it hadn't stopped.
           // Runs again at the next start, without counting as a try.
           await this.#endTry(job.id, attempt, {
             status: "queued",
@@ -402,19 +549,23 @@ export class JobRunner {
             const wait =
               handler.retryDelays?.[attempt - 1] ??
               Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** (attempt - 1))
-            await this.#endTry(job.id, attempt, {
-              status: "queued",
-              runAt: new Date(Date.now() + wait),
-              error: message,
-              startedAt: null,
-            })
+            tell(
+              await this.#endTry(job.id, attempt, {
+                status: "queued",
+                runAt: new Date(Date.now() + wait),
+                error: message,
+                startedAt: null,
+              })
+            )
           } else {
             logger.error({ err }, "Job failed")
-            await this.#endTry(job.id, attempt, {
-              status: "failed",
-              error: message,
-              finishedAt: new Date(),
-            })
+            tell(
+              await this.#endTry(job.id, attempt, {
+                status: "failed",
+                error: message,
+                finishedAt: new Date(),
+              })
+            )
           }
         }
       } finally {
@@ -448,7 +599,7 @@ export class JobRunner {
    * Saves how a try ended, if the job is still on the try it was taken for.
    * One started over while it ran (`restartJob`) isn't: it goes back in the
    * queue with the fresh start it was given, to run again from its first
-   * try, whatever this one came to.
+   * try, whatever this one came to. Says which status the job has now.
    */
   async #endTry(
     jobId: string,
@@ -465,7 +616,7 @@ export class JobRunner {
         | "finishedAt"
       >
     >
-  ) {
+  ): Promise<JobStatus> {
     const em = this.#em()
     const saved = await em.nativeUpdate(
       Job,
@@ -478,7 +629,9 @@ export class JobRunner {
         { id: jobId },
         { status: "queued", startedAt: null }
       )
+      return "queued"
     }
+    return changes.status ?? "queued"
   }
 
   /** Makes sure a scheduled kind has its next run waiting. */

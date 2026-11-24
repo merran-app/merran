@@ -13,6 +13,24 @@ import { SIGNED_IN_ERRORS } from "../../schemas/responses.ts"
 /** Keeps the connection open through proxies, which close quiet ones. */
 const PING_MS = 25_000
 
+/** An event as the stream sends it: its name, and what it says. */
+function frameOf(event: LiveEvent) {
+  switch (event.type) {
+    case "changed":
+      return {
+        event: event.area,
+        data: JSON.stringify({ area: event.area, by: event.by }),
+      }
+    case "presence":
+      return {
+        event: "presence",
+        data: JSON.stringify({ page: event.page, people: event.people }),
+      }
+    case "job":
+      return { event: "job", data: JSON.stringify(event.job) }
+  }
+}
+
 const route = createRoute({
   method: "get",
   path: "/events",
@@ -25,6 +43,7 @@ const route = createRoute({
     "- `ready` when it's open, with the areas it hears about.",
     "- `plan`, `list`, `pantry`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.",
     "- `presence` with who has `page` open, when someone opens or leaves it.",
+    "- `job` when one of the household's jobs, like an import, starts, moves on or ends, with its `id`, `kind`, `status` and `progress`. Only about jobs in areas it hears about. Fetch what shows the job to see more, like the import or the run.",
     "- `ping` now and then, to keep the connection open.",
     "",
     "A device that sends the same `client` with its own changes (in the `X-Merran-Client` header) isn't told about them; your other devices are. An API key hears about the areas it can read.",
@@ -63,18 +82,9 @@ export default (router: Router, { events }: AppDeps) => {
       let open = true
       const send = (event: LiveEvent) => {
         if (!open) return
-        const { type, ...data } = event
-        const name = type === "changed" ? event.area : type
-        void stream
-          .writeSSE({
-            event: name,
-            data: JSON.stringify(
-              type === "changed" ? { area: event.area, by: event.by } : data
-            ),
-          })
-          .catch(() => {
-            open = false
-          })
+        void stream.writeSSE(frameOf(event)).catch(() => {
+          open = false
+        })
       }
       let wake: () => void = () => {}
       const hangUp = () => {

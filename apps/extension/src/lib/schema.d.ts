@@ -632,6 +632,7 @@ export interface paths {
          *     - `ready` when it's open, with the areas it hears about.
          *     - `plan`, `list`, `pantry`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.
          *     - `presence` with who has `page` open, when someone opens or leaves it.
+         *     - `job` when one of the household's jobs, like an import, starts, moves on or ends, with its `id`, `kind`, `status` and `progress`. Only about jobs in areas it hears about. Fetch what shows the job to see more, like the import or the run.
          *     - `ping` now and then, to keep the connection open.
          *
          *     A device that sends the same `client` with its own changes (in the `X-Merran-Client` header) isn't told about them; your other devices are. An API key hears about the areas it can read. With an API key, it needs the `any: read` permission.
@@ -1031,6 +1032,26 @@ export interface paths {
          * @description Household admins only. Queues a single-use, seven-day invitation bound to the recipient address. Requires configured SMTP and MERRAN_PUBLIC_URL. Limited to 20 email invitations or resends per household per hour. No link or token is returned.
          */
         post: operations["emailInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The household's jobs
+         * @description Household admins only. The household's jobs, newest first, up to 100: imports, library runs, Discover searches and the rest, with how each is going.
+         */
+        get: operations["listHouseholdJobs"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2943,7 +2964,7 @@ export interface paths {
         put?: never;
         /**
          * Stop a link import
-         * @description The recipes it added stay. The link it's on finishes first, so the answer may still say it's running. With an API key, it needs the `imports: write` permission.
+         * @description The recipes it added stay. The link it's on is cut off and shows as stopped; it takes a moment, so the answer may still say it's running. With an API key, it needs the `imports: write` permission.
          */
         post: operations["stopLinkImport"];
         delete?: never;
@@ -3047,7 +3068,7 @@ export interface paths {
         put?: never;
         /**
          * Stop working out nutrition
-         * @description What it worked out stays. The recipe it's on finishes first, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
+         * @description What it worked out stays. The recipe it's on is cut off, not counted as failed; it takes a moment, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["stopNutritionRun"];
         delete?: never;
@@ -3091,7 +3112,7 @@ export interface paths {
         put?: never;
         /**
          * Stop making AI photos
-         * @description The photos made stay. The one being made finishes first, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
+         * @description The photos made stay. The one being made is cut off, not counted as failed; it takes a moment, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["stopPhotoRun"];
         delete?: never;
@@ -3179,7 +3200,7 @@ export interface paths {
         put?: never;
         /**
          * Stop a tidy up run
-         * @description The suggestions it made stay in Review. The recipe it's on finishes first, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
+         * @description The suggestions it made stay in Review. The recipe it's on is cut off, not counted as failed; it takes a moment, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["stopTidyRun"];
         delete?: never;
@@ -11150,6 +11171,34 @@ export interface components {
         NewInviteLink: components["schemas"]["InviteLink"] & {
             /** Format: uri */
             link: string;
+        };
+        /**
+         * @example {
+         *       "jobs": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+         *           "kind": "household.import",
+         *           "status": "running",
+         *           "scheduled": false,
+         *           "householdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *           "progress": {
+         *             "done": 42,
+         *             "total": 128
+         *           },
+         *           "result": null,
+         *           "error": null,
+         *           "attempts": 1,
+         *           "maxAttempts": 3,
+         *           "runAt": "2026-10-15T18:30:00.000Z",
+         *           "startedAt": "2026-10-15T18:30:00.000Z",
+         *           "finishedAt": null,
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        HouseholdJobList: {
+            jobs: components["schemas"]["Job"][];
         };
         /**
          * @example {
@@ -21151,6 +21200,47 @@ export interface operations {
             };
             /** @description This household has reached its hourly invitation limit. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listHouseholdJobs: {
+        parameters: {
+            query?: {
+                /** @description Only jobs that are queued, running, done, failed or cancelled. */
+                status?: "queued" | "running" | "done" | "failed" | "cancelled";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The jobs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdJobList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

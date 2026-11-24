@@ -174,6 +174,7 @@ export async function resendInvitation(
 
 export const invitationEmailJob: JobHandler = {
   kind: "email.invitation",
+  lane: "quick",
   concurrency: 1,
   async run({ em, payload, householdId, jobId, signal, deps }) {
     if (!householdId || typeof payload.inviteId !== "string") return

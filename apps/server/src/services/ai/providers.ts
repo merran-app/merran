@@ -10,6 +10,7 @@ import {
 } from "ai"
 import { AppError } from "../../core/errors.ts"
 import { addressFetch, type Fetcher } from "../fetch/public-fetch.ts"
+import { timeLimit } from "../jobs/stop.ts"
 
 // The AI providers, behind one thin layer over AI SDK: listing what a key
 // can use (which is how a key is tested, at no cost), and the model to
@@ -44,6 +45,9 @@ export const TRANSCRIPTION_MODEL = "gpt-4o-mini-transcribe"
 /** OpenAI's price for it, per minute of sound, in US dollars. */
 export const TRANSCRIPTION_PER_MINUTE = 0.003
 
+/** Up to 30 minutes of sound, which takes a minute or two to read. */
+const TRANSCRIPTION_TIME_LIMIT_MS = 5 * 60_000
+
 export function createTranscriber(): Transcriber {
   return async (target, audio) => {
     if (target.provider !== "openai") {
@@ -58,6 +62,8 @@ export function createTranscriber(): Transcriber {
         target.model
       ),
       audio,
+      // Ends at the time limit, or as soon as the job calling it is stopped.
+      abortSignal: timeLimit(TRANSCRIPTION_TIME_LIMIT_MS),
     })
     return { text: result.text, seconds: result.durationInSeconds ?? null }
   }
