@@ -13,12 +13,14 @@ import {
 let app: App
 let close: () => Promise<void>
 let filesDir: string
+let drain: () => Promise<void>
 let kyle: TestClient
 let householdId: string
 
 beforeAll(async () => {
   const test = await createTestApp()
   ;({ app, close, filesDir } = test)
+  drain = () => test.jobs.drain()
   kyle = await setUpServer(app, test.setupCode)
   householdId = (await (await kyle.get("/api/households/current")).json()).id
 })
@@ -123,6 +125,8 @@ describe("a recipe's photo", () => {
     await kyle.delete("/api/recipes/stew")
     expect(storedPhotos()).toHaveLength(1)
     await kyle.delete(`/api/recipes/deleted/${stew.id}`)
+    // A job removes the photo after the request has answered.
+    await drain()
     expect(storedPhotos()).toEqual([])
   })
 

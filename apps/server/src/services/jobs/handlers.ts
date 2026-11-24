@@ -24,6 +24,7 @@ import { headsUpJob } from "../webhooks/heads-ups/schedule.ts"
 import { closeSessionJob } from "../cooking/sessions.ts"
 import { endQuietSessionJob } from "../cooking/quiet.ts"
 import { timerDoneJob } from "../cooking/timers.ts"
+import { removeFilesJob } from "../storage/remove-job.ts"
 import { cleanUpJobsJob } from "./clean-up.ts"
 import type { JobHandler, JobSchedule } from "./runner.ts"
 
@@ -34,6 +35,7 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
   invitationEmailJob,
   passwordResetEmailJob,
   purgeDeletedJob,
+  removeFilesJob,
   cleanUpJobsJob,
   sendTelemetryJob,
   importJob,

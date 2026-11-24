@@ -1,5 +1,4 @@
 import { createRoute } from "@hono/zod-openapi"
-import type { AppDeps } from "../../../../../core/context.ts"
 import { deleteForGood } from "../../../../../services/recipes/deleted.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
@@ -25,10 +24,10 @@ const route = createRoute({
   },
 })
 
-export default (router: Router, { files }: AppDeps) => {
+export default (router: Router) => {
   router.openapi(route, async (c) => {
     const { em } = inHousehold(c)
-    await deleteForGood(em, files, c.req.valid("param").recipeId)
+    await deleteForGood(em, c.req.valid("param").recipeId)
     return c.body(null, 204)
   })
 }

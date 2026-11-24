@@ -1,5 +1,4 @@
 import { createRoute } from "@hono/zod-openapi"
-import type { AppDeps } from "../../../../../core/context.ts"
 import { bulkDeleted } from "../../../../../services/recipes/deleted.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
@@ -35,12 +34,9 @@ const route = createRoute({
   },
 })
 
-export default (router: Router, { files }: AppDeps) => {
+export default (router: Router) => {
   router.openapi(route, async (c) => {
     const { em, householdId } = inHousehold(c)
-    return c.json(
-      await bulkDeleted(em, files, householdId, c.req.valid("json")),
-      200
-    )
+    return c.json(await bulkDeleted(em, householdId, c.req.valid("json")), 200)
   })
 }
