@@ -4246,7 +4246,7 @@ export interface paths {
         };
         /**
          * A site recipe's photo
-         * @description A small copy, as WebP, fetched once through Merran so browsing doesn't load photos from other sites. With an API key, it needs the `recipes: read` permission.
+         * @description A small copy, as WebP, kept by Merran so browsing doesn't load photos from other sites. Photos are fetched as sites are read; this fetches one only when it wasn't yet. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["getSiteRecipePhoto"];
         put?: never;
