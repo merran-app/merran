@@ -214,6 +214,9 @@ describe("a recipe's nutrition", () => {
 
   test("nutrition worked out within the wait answers with the recipe, as before", async () => {
     const recipe = await addRecipe("Quick Chicken")
+    // The save's own run first: a press now goes ahead of it, and the
+    // recipe would rightly say it's still being worked out.
+    await jobs.drain()
     const { status, body } = await workOut(recipe.id)
     expect(status, JSON.stringify(body)).toBe(200)
     expect(body.nutrition).toMatchObject({ source: "estimate", servings: 4 })

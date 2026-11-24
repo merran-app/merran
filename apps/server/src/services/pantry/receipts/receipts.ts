@@ -666,11 +666,10 @@ async function forget(
  * many files, a PDF that's too big) fails here at once, with no receipt
  * or job made. Otherwise a receipt is made, reading, with its uploads
  * (the files, and any pasted text) kept for the job, which reads it while
- * the request waits. A receipt in
- * within the wait is answered as it is, ready; one that was a recipe or
- * had no receipt in it, or couldn't be read, is removed and fails as it
- * always did. One that takes longer is answered as reading, and the job
- * goes on in the background.
+ * the request waits. A receipt in within the wait is answered as it is,
+ * ready; one that was a recipe or had no receipt in it, or couldn't be
+ * read, is removed and fails as it always did. One that takes longer is
+ * answered as reading, and the job goes on in the background.
  */
 export async function scanReceipt(
   em: EntityManager,
