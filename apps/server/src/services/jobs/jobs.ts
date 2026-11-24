@@ -94,6 +94,7 @@ export function describeJob(job: Job) {
     runAt: job.runAt.toISOString(),
     startedAt: job.startedAt?.toISOString() ?? null,
     finishedAt: job.finishedAt?.toISOString() ?? null,
+    handedOver: job.handedOverAt !== null,
     createdAt: job.createdAt.toISOString(),
   }
 }

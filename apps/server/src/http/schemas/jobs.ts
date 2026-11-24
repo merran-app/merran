@@ -32,6 +32,10 @@ export const JobSchema = z
     runAt: z.iso.datetime().openapi({ description: "Not before then." }),
     startedAt: z.iso.datetime().nullable(),
     finishedAt: z.iso.datetime().nullable(),
+    handedOver: z.boolean().openapi({
+      description:
+        "A request waiting for it gave up and left it to run in the background, so whoever started it hears when it ends.",
+    }),
     createdAt: z.iso.datetime(),
   })
   .openapi("Job", { example: JOB })

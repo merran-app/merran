@@ -140,6 +140,7 @@ export const JOB = {
   runAt: TIMES.now,
   startedAt: TIMES.now,
   finishedAt: null,
+  handedOver: false,
   createdAt: TIMES.now,
 }
 

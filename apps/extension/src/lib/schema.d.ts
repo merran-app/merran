@@ -1087,7 +1087,7 @@ export interface paths {
         };
         /**
          * One of the household's jobs
-         * @description Household admins only. How a job for this household, like an import, is getting on.
+         * @description Household admins, and whoever started it. How a job for this household, like an import, is getting on.
          */
         get: operations["getHouseholdJob"];
         put?: never;
@@ -11126,6 +11126,7 @@ export interface components {
          *       "runAt": "2026-10-15T18:30:00.000Z",
          *       "startedAt": "2026-10-15T18:30:00.000Z",
          *       "finishedAt": null,
+         *       "handedOver": false,
          *       "createdAt": "2026-10-15T18:30:00.000Z"
          *     }
          */
@@ -11163,6 +11164,8 @@ export interface components {
             startedAt: string | null;
             /** Format: date-time */
             finishedAt: string | null;
+            /** @description A request waiting for it gave up and left it to run in the background, so whoever started it hears when it ends. */
+            handedOver: boolean;
             /** Format: date-time */
             createdAt: string;
         };
@@ -11319,6 +11322,7 @@ export interface components {
          *           "runAt": "2026-10-15T18:30:00.000Z",
          *           "startedAt": "2026-10-15T18:30:00.000Z",
          *           "finishedAt": null,
+         *           "handedOver": false,
          *           "createdAt": "2026-10-15T18:30:00.000Z"
          *         }
          *       ]
@@ -11770,6 +11774,7 @@ export interface components {
          *         "runAt": "2026-10-15T18:30:00.000Z",
          *         "startedAt": null,
          *         "finishedAt": null,
+         *         "handedOver": false,
          *         "createdAt": "2026-10-15T18:30:00.000Z"
          *       }
          *     }
@@ -16952,6 +16957,7 @@ export interface components {
          *           "runAt": "2026-10-15T18:30:00.000Z",
          *           "startedAt": "2026-10-15T18:30:00.000Z",
          *           "finishedAt": null,
+         *           "handedOver": false,
          *           "createdAt": "2026-10-15T18:30:00.000Z",
          *           "householdName": "The Riveras"
          *         }
@@ -16979,6 +16985,7 @@ export interface components {
          *       "runAt": "2026-10-15T18:30:00.000Z",
          *       "startedAt": "2026-10-15T18:30:00.000Z",
          *       "finishedAt": null,
+         *       "handedOver": false,
          *       "createdAt": "2026-10-15T18:30:00.000Z",
          *       "householdName": "The Riveras"
          *     }
@@ -21651,7 +21658,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description No such job in this household. */
+            /** @description No such job in this household, or one the person didn't start. */
             404: {
                 headers: {
                     [name: string]: unknown;

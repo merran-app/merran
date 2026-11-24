@@ -4035,6 +4035,10 @@
             ],
             "format": "date-time"
           },
+          "handedOver": {
+            "type": "boolean",
+            "description": "A request waiting for it gave up and left it to run in the background, so whoever started it hears when it ends."
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -4054,6 +4058,7 @@
           "runAt",
           "startedAt",
           "finishedAt",
+          "handedOver",
           "createdAt"
         ],
         "example": {
@@ -4073,6 +4078,7 @@
           "runAt": "2026-10-15T18:30:00.000Z",
           "startedAt": "2026-10-15T18:30:00.000Z",
           "finishedAt": null,
+          "handedOver": false,
           "createdAt": "2026-10-15T18:30:00.000Z"
         }
       },
@@ -4387,6 +4393,7 @@
               "runAt": "2026-10-15T18:30:00.000Z",
               "startedAt": "2026-10-15T18:30:00.000Z",
               "finishedAt": null,
+              "handedOver": false,
               "createdAt": "2026-10-15T18:30:00.000Z"
             }
           ]
@@ -5356,6 +5363,7 @@
             "runAt": "2026-10-15T18:30:00.000Z",
             "startedAt": null,
             "finishedAt": null,
+            "handedOver": false,
             "createdAt": "2026-10-15T18:30:00.000Z"
           }
         }
@@ -15379,6 +15387,7 @@
               "runAt": "2026-10-15T18:30:00.000Z",
               "startedAt": "2026-10-15T18:30:00.000Z",
               "finishedAt": null,
+              "handedOver": false,
               "createdAt": "2026-10-15T18:30:00.000Z",
               "householdName": "The Riveras"
             }
@@ -15422,6 +15431,7 @@
           "runAt": "2026-10-15T18:30:00.000Z",
           "startedAt": "2026-10-15T18:30:00.000Z",
           "finishedAt": null,
+          "handedOver": false,
           "createdAt": "2026-10-15T18:30:00.000Z",
           "householdName": "The Riveras"
         }
@@ -23108,7 +23118,7 @@
           "Households"
         ],
         "summary": "One of the household's jobs",
-        "description": "Household admins only. How a job for this household, like an import, is getting on.",
+        "description": "Household admins, and whoever started it. How a job for this household, like an import, is getting on.",
         "security": [
           {
             "session": []
@@ -23156,7 +23166,7 @@
             }
           },
           "404": {
-            "description": "No such job in this household.",
+            "description": "No such job in this household, or one the person didn't start.",
             "content": {
               "application/json": {
                 "schema": {

@@ -1,7 +1,7 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { z } from "zod"
 import type { AppDeps } from "../../../core/context.ts"
-import { AppError, type AppErrorKind } from "../../../core/errors.ts"
+import { AppError } from "../../../core/errors.ts"
 import { Import, Job } from "../../../database/entities/index.ts"
 import {
   beginImport,
@@ -10,6 +10,7 @@ import {
   finishImport,
   settleItem,
 } from "../../imports/imports.ts"
+import { failureOf, HANDOVER_MS, throwIfFailure } from "../../jobs/hand-over.ts"
 import { JobStopped, type JobHandler } from "../../jobs/runner.ts"
 import { loadRecipe } from "../recipes.ts"
 import {
@@ -30,9 +31,6 @@ import { videoImportPossible } from "./video/import.ts"
 
 const LINK_KIND = "recipes.importLink"
 const VIDEO_KIND = "recipes.importVideo"
-
-/** How long the request waits before handing over. */
-export const HANDOVER_MS = 10_000
 
 const Payload = z.object({
   url: z.string(),
@@ -141,10 +139,8 @@ async function finishedInTime(
       "Something went wrong with that link. Try again in a moment."
     )
   }
-  if ("error" in outcome.data) {
-    const { kind, code, message, fields } = outcome.data.error
-    throw new AppError(kind as AppErrorKind, code, message, fields)
-  }
+  throwIfFailure(outcome.data)
+  if ("error" in outcome.data) throw new Error("Unreachable: thrown above.")
   const { recipeId, duplicate } = outcome.data
   return { done: { recipe: await loadRecipe(em, recipeId), duplicate } }
 }
@@ -228,14 +224,7 @@ async function importTheLink(
     // a request still waiting.
     await settleItem(em, jobId, 0, { state: "failed", error: err.message })
     await finishImport(em, jobId, { status: "failed", error: err.message })
-    return {
-      error: {
-        kind: err.kind,
-        code: err.code,
-        message: err.message,
-        ...(err.fields ? { fields: err.fields } : {}),
-      },
-    }
+    return failureOf(err)
   }
 }
 
