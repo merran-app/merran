@@ -457,7 +457,7 @@ export interface paths {
         put?: never;
         /**
          * Import a whole collection
-         * @description Its recipes not in the library yet, in the background, as several links are: follow along at /recipes/import/links/{importId}. With an API key, it needs the `imports: write` permission.
+         * @description Its recipes not in the library yet, in the background, as several links are: follow along at /imports/{importId}. With an API key, it needs the `imports: write` permission.
          */
         post: operations["importCollection"];
         delete?: never;
@@ -632,7 +632,7 @@ export interface paths {
          *     - `ready` when it's open, with the areas it hears about.
          *     - `plan`, `list`, `pantry`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.
          *     - `presence` with who has `page` open, when someone opens or leaves it.
-         *     - `job` when one of the household's jobs, like an import, starts, moves on or ends, with its `id`, `kind`, `status` and `progress`. Only about jobs in areas it hears about. Fetch what shows the job to see more, like the import or the run.
+         *     - `job` when one of the household's jobs, like an import, starts, moves on or ends, with its `id`, `kind`, `status`, `progress` and `startedBy` (the user who started it, or null). Only about jobs in areas it hears about. Fetch what shows the job to see more, like the import or the run.
          *     - `ping` now and then, to keep the connection open.
          *
          *     A device that sends the same `client` with its own changes (in the `X-Merran-Client` header) isn't told about them; your other devices are. An API key hears about the areas it can read. With an API key, it needs the `any: read` permission.
@@ -885,9 +885,29 @@ export interface paths {
         put?: never;
         /**
          * Check a file from another app
-         * @description Household admins only. The body is the file: a Mealie backup, or recipes exported from Mealie. It's kept, and what's in it is said, so its import can be started at /households/current/import/files/{fileId}/start. A file not started is cleared away after a week.
+         * @description Household admins only. The body is the file: a Mealie backup, recipes exported from Mealie, or a Paprika export. It's kept, and read in the background: follow its check at /households/current/import/files/{fileId} until it says what's in it, then start its import at /households/current/import/files/{fileId}/start. A small file is often checked by the time this answers. A file not started is cleared away after a week.
          */
         post: operations["checkImportFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/import/files/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How a file's check is going
+         * @description Household admins only. Checking while Merran reads it, then what's in it, or why it can't be imported.
+         */
+        get: operations["getImportFile"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1424,6 +1444,130 @@ export interface paths {
          * @description Server admins only, as for starting any household. The body is the export's zip. A household is made with the export's name and details, you become its owner, and it becomes the one in use on this device; its recipes are imported in the background: follow the job at /households/current/jobs/{jobId}.
          */
         post: operations["importHousehold"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The household's imports
+         * @description Every import the household made in the last 90 days, newest first: several links, starter collections, other apps, Merran exports, and a single link or video that went on in the background. Everyone who can add recipes sees them all. With an API key, it needs the `imports: read` permission.
+         */
+        get: operations["listImports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{importId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One of the household's imports
+         * @description How it's going or went: its links in order, for several links or a collection, and the recipes it brought in, what was already there and what didn't come in and why, 100 of each at a time. With an API key, it needs the `imports: read` permission.
+         */
+        get: operations["getImport"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an import's record
+         * @description Only the record goes: the recipes it brought in stay. To delete those, use Undo, or delete them as any other recipe. With an API key, it needs the `recipes: write` permission.
+         */
+        delete: operations["deleteImport"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{importId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put back an undone import
+         * @description Puts back the recipes Undo moved to Recently deleted, those still there. One deleted for good since is gone. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["restoreImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{importId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Try an import again
+         * @description Starts a new import of just what didn't come in: the links that failed or were never reached, or another app's recipes that failed. A file import needs its file still kept (a week) and a household admin; Mealie through its API needs its token again and the server admin; a Merran export starts again, skipping what's in. With an API key, it needs the `imports: write` permission.
+         */
+        post: operations["retryImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{importId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop an import
+         * @description What it brought in stays. The link or recipe it's on is cut off and shows as stopped; it takes a moment, so the answer may still say it's running. With an API key, it needs the `imports: write` permission.
+         */
+        post: operations["stopImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{importId}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo an import
+         * @description Moves the recipes it brought in to Recently deleted, where they stay for 30 days, but any in `keep`. A running import is stopped first. For a Merran export, only its recipes: the household settings it brought stay. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["undoImport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2880,7 +3024,7 @@ export interface paths {
         put?: never;
         /**
          * Add a recipe from a link
-         * @description Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. A TikTok, YouTube, Instagram or Facebook link is imported from its video (its captions, or what's said in it, read by AI), when the server has video import on. With an API key, it needs the `recipes: write` permission.
+         * @description Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. A TikTok, YouTube, Instagram or Facebook link is imported from its video (its captions, or what's said in it, read by AI), when the server has video import on. It waits about 10 seconds for the recipe; a link that takes longer, and any video, goes on in the background and answers 202 with its import, on the Imports page. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["importRecipe"];
         delete?: never;
@@ -2896,15 +3040,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * The household's link imports still going
-         * @description Newest first. Finished ones aren't listed. With an API key, it needs the `imports: read` permission.
-         */
-        get: operations["listLinkImports"];
+        get?: never;
         put?: never;
         /**
          * Add recipes from several links
-         * @description Up to 100 links, imported one at a time in the background: follow along at /recipes/import/links/{importId}, which says how each link went. A link the library has already gives back that recipe rather than a new one. With an API key, it needs the `imports: write` permission.
+         * @description Up to 100 links, imported one at a time in the background: follow along at /imports/{importId}, which says how each link went. A link the library has already gives back that recipe rather than a new one. With an API key, it needs the `imports: write` permission.
          */
         post: operations["importLinks"];
         delete?: never;
@@ -2924,49 +3064,9 @@ export interface paths {
         put?: never;
         /**
          * Find the links in some text
-         * @description The links in pasted text, up to 100, tidied, with which are in the library already and which are videos. Nothing is imported. The app leaves videos out of importing several links at once: each is imported on its own (POST /api/recipes/import). With an API key, it needs the `recipes: read` permission.
+         * @description The links in pasted text, up to 100, tidied, with which are in the library already and which are videos. Nothing is imported. Videos come in with the rest when the server has video import on; the app leaves them out when it doesn't. With an API key, it needs the `recipes: read` permission.
          */
         post: operations["checkLinks"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/recipes/import/links/{importId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * How a link import is going
-         * @description Each link, and where it's got to. With an API key, it needs the `imports: read` permission.
-         */
-        get: operations["getLinkImport"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/recipes/import/links/{importId}/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Stop a link import
-         * @description The recipes it added stay. The link it's on is cut off and shows as stopped; it takes a moment, so the answer may still say it's running. With an API key, it needs the `imports: write` permission.
-         */
-        post: operations["stopLinkImport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2984,7 +3084,7 @@ export interface paths {
         put?: never;
         /**
          * Add a recipe from a page already open
-         * @description For the browser extension: a page as the person's own browser shows it, for sites that turn Merran's server away or only show a recipe to someone signed in. Its recipe data and photo, or its text read by AI when the household has AI for importing. A video's page (YouTube, TikTok, Instagram, Facebook) is imported as the video, as `POST /recipes/import` does. A page imported before gives back that recipe. With an API key, it needs the `imports: write` permission.
+         * @description For the browser extension: a page as the person's own browser shows it, for sites that turn Merran's server away or only show a recipe to someone signed in. Its recipe data and photo, or its text read by AI when the household has AI for importing. A video's page (YouTube, TikTok, Instagram, Facebook) is imported as the video, as `POST /recipes/import` does. A page imported before gives back that recipe. As there, it waits about 10 seconds; one that takes longer, and any video, goes on in the background and answers 202 with its import. With an API key, it needs the `imports: write` permission.
          */
         post: operations["importReadPage"];
         delete?: never;
@@ -6125,7 +6225,7 @@ export interface webhooks {
                          *       "added": 11,
                          *       "skipped": 1,
                          *       "failed": 0,
-                         *       "url": "https://merran.example.com/recipes/import/0199e8b0-5a10-7a01-8b00-00000000000b"
+                         *       "url": "https://merran.example.com/recipes/imports/0199e8b0-5a10-7a01-8b00-00000000000b"
                          *     }
                          */
                         data: {
@@ -10092,70 +10192,73 @@ export interface components {
         };
         /**
          * @example {
-         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
-         *       "status": "running",
+         *       "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff15",
+         *       "kind": "links",
+         *       "source": null,
          *       "tag": "to try",
-         *       "total": 2,
-         *       "done": 1,
-         *       "added": 1,
+         *       "listed": true,
+         *       "status": "done",
+         *       "total": 3,
+         *       "done": 3,
+         *       "added": 2,
          *       "already": 0,
-         *       "failed": 0,
+         *       "failed": 1,
+         *       "undone": 0,
          *       "stopped": 0,
-         *       "items": [
-         *         {
-         *           "url": "https://example.com/garlic-rice",
-         *           "state": "added",
-         *           "recipe": {
-         *             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
-         *             "slug": "garlic-rice",
-         *             "name": "Garlic Rice",
-         *             "photo": null
-         *           },
-         *           "error": null
-         *         },
-         *         {
-         *           "url": "https://example.com/lemon-chicken",
-         *           "state": "adding",
-         *           "recipe": null,
-         *           "error": null
-         *         }
-         *       ],
-         *       "createdAt": "2026-10-15T18:30:00.000Z",
-         *       "finishedAt": null
+         *       "error": null,
+         *       "startedBy": {
+         *         "id": "01a1e0f0-e730-7501-bbce-f5e6ead7106d",
+         *         "name": "Kyle"
+         *       },
+         *       "createdAt": "2026-11-15T18:02:11.000Z",
+         *       "finishedAt": "2026-11-15T18:02:40.000Z",
+         *       "undoneAt": null
          *     }
          */
-        LinkImport: {
-            /** @description The import's job. */
+        Import: {
             id: string;
-            /** @enum {string} */
-            status: "queued" | "running" | "done" | "failed" | "cancelled";
+            /**
+             * @description What brought recipes in: one link or a video that went on in the background, several links, a starter collection, Mealie, Paprika or a Merran export.
+             * @enum {string}
+             */
+            kind: "link" | "video" | "links" | "collection" | "mealie" | "paprika" | "merran";
+            /** @description What it was: the link, Mealie's address or the collection's name. None for several links or a file. */
+            source: string | null;
+            /** @description Added to every recipe it brought in, like "to try". */
             tag: string | null;
+            /** @description Whether the Imports page lists it. A single link is listed only once it goes on in the background; one that came in while someone waited isn't. */
+            listed: boolean;
+            /**
+             * @description How it's going or went. Undone once Undo moved what it brought in to Recently deleted.
+             * @enum {string}
+             */
+            status: "queued" | "running" | "done" | "failed" | "cancelled" | "undone";
+            /** @description How many links or recipes it has, once it knows. */
             total: number;
+            /** @description How many it's dealt with: "Importing 12 of 52". */
             done: number;
             added: number;
+            /** @description Already in the household's recipes, so not added again. */
             already: number;
+            /** @description Didn't come in. */
             failed: number;
+            /** @description How many recipes Undo moved to Recently deleted: fewer than came in when some were kept or deleted already. 0 when it isn't undone. */
+            undone: number;
+            /** @description Never got to, once it was stopped or failed. */
             stopped: number;
-            items: {
-                url: string;
-                /**
-                 * @description Where the link has got to: added, already in the library, failed (see error), or stopped before it was reached.
-                 * @enum {string}
-                 */
-                state: "waiting" | "adding" | "added" | "already" | "failed" | "stopped";
-                /** @description The recipe it made, or was already. */
-                recipe: {
-                    id: string;
-                    slug: string;
-                    name: string;
-                    photo: string | null;
-                } | null;
-                error: string | null;
-            }[];
+            /** @description Why the whole import stopped, when it failed. */
+            error: string | null;
+            /** @description Who started it; none for Merran. */
+            startedBy: {
+                id: string;
+                name: string;
+            } | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
             finishedAt: string | null;
+            /** Format: date-time */
+            undoneAt: string | null;
         };
         /**
          * @example {
@@ -11066,6 +11169,30 @@ export interface components {
         /**
          * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-000000000018",
+         *       "status": "checking",
+         *       "file": null,
+         *       "error": null
+         *     }
+         */
+        ImportFileCheck: {
+            /** @description The file: follow its check at /households/current/import/files/{fileId}. */
+            id: string;
+            /**
+             * @description Checking while Merran reads it, then ready with what's in it, or failed with why it can't be imported.
+             * @enum {string}
+             */
+            status: "checking" | "ready" | "failed";
+            file: components["schemas"]["ImportFile"];
+            /** @description Why it can't be imported, once it failed. */
+            error: {
+                code: string;
+                message: string;
+            } | null;
+        };
+        /**
+         * @description What's in it, once it's ready.
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000018",
          *       "app": "mealie",
          *       "what": "backup",
          *       "recipes": 312,
@@ -11103,7 +11230,7 @@ export interface components {
                 name: string;
                 recipes: number;
             }[];
-        };
+        } | null;
         /**
          * @example {
          *       "group": "0199e8b0-5a10-7a01-8b00-000000000019"
@@ -11650,6 +11777,211 @@ export interface components {
         HouseholdImport: {
             household: components["schemas"]["Household"];
             job: components["schemas"]["Job"];
+        };
+        /**
+         * @example {
+         *       "imports": [
+         *         {
+         *           "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff15",
+         *           "kind": "links",
+         *           "source": null,
+         *           "tag": "to try",
+         *           "listed": true,
+         *           "status": "done",
+         *           "total": 3,
+         *           "done": 3,
+         *           "added": 2,
+         *           "already": 0,
+         *           "failed": 1,
+         *           "undone": 0,
+         *           "stopped": 0,
+         *           "error": null,
+         *           "startedBy": {
+         *             "id": "01a1e0f0-e730-7501-bbce-f5e6ead7106d",
+         *             "name": "Kyle"
+         *           },
+         *           "createdAt": "2026-11-15T18:02:11.000Z",
+         *           "finishedAt": "2026-11-15T18:02:40.000Z",
+         *           "undoneAt": null
+         *         }
+         *       ]
+         *     }
+         */
+        ImportList: {
+            imports: components["schemas"]["Import"][];
+        };
+        /**
+         * @example {
+         *       "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff15",
+         *       "kind": "links",
+         *       "source": null,
+         *       "tag": "to try",
+         *       "listed": true,
+         *       "status": "done",
+         *       "total": 3,
+         *       "done": 3,
+         *       "added": 2,
+         *       "already": 0,
+         *       "failed": 1,
+         *       "undone": 0,
+         *       "stopped": 0,
+         *       "error": null,
+         *       "startedBy": {
+         *         "id": "01a1e0f0-e730-7501-bbce-f5e6ead7106d",
+         *         "name": "Kyle"
+         *       },
+         *       "createdAt": "2026-11-15T18:02:11.000Z",
+         *       "finishedAt": "2026-11-15T18:02:40.000Z",
+         *       "undoneAt": null,
+         *       "items": [
+         *         {
+         *           "position": 0,
+         *           "label": "https://example.com/lemon-chicken",
+         *           "state": "added",
+         *           "recipe": {
+         *             "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff16",
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken",
+         *             "photo": null
+         *           },
+         *           "error": null
+         *         },
+         *         {
+         *           "position": 1,
+         *           "label": "https://example.com/broken",
+         *           "state": "failed",
+         *           "recipe": null,
+         *           "error": "Couldn't reach that site."
+         *         }
+         *       ],
+         *       "cameIn": {
+         *         "items": [
+         *           {
+         *             "position": 0,
+         *             "recipe": {
+         *               "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff16",
+         *               "slug": "lemon-chicken",
+         *               "name": "Lemon Chicken",
+         *               "photo": null,
+         *               "deleted": false,
+         *               "changed": false,
+         *               "planned": true,
+         *               "cooked": false,
+         *               "undone": false
+         *             }
+         *           }
+         *         ],
+         *         "more": false
+         *       },
+         *       "alreadyHere": {
+         *         "items": [],
+         *         "more": false
+         *       },
+         *       "didntComeIn": {
+         *         "items": [
+         *           {
+         *             "position": 1,
+         *             "label": "https://example.com/broken",
+         *             "error": "Couldn't reach that site."
+         *           }
+         *         ],
+         *         "more": false
+         *       }
+         *     }
+         */
+        ImportDetail: components["schemas"]["Import"] & {
+            /** @description Several links' or a collection's links, in order, as it goes. Empty for other imports. */
+            items: {
+                position: number;
+                /** @description The link. */
+                label: string;
+                /**
+                 * @description Where the link has got to: waiting, being added, added, already in the recipes, failed (see error), or stopped before it was reached.
+                 * @enum {string}
+                 */
+                state: "waiting" | "adding" | "added" | "already" | "failed" | "stopped";
+                recipe: {
+                    id: string;
+                    slug: string;
+                    name: string;
+                    /** @description Its card photo. */
+                    photo: string | null;
+                } | null;
+                error: string | null;
+            }[];
+            /** @description The recipes it brought in, 100 at a time. */
+            cameIn: {
+                items: {
+                    position: number;
+                    recipe: {
+                        id: string;
+                        slug: string;
+                        name: string;
+                        /** @description Its card photo. */
+                        photo: string | null;
+                        /** @description In Recently deleted. */
+                        deleted: boolean;
+                        /** @description Changed since it came in. */
+                        changed: boolean;
+                        /** @description On the plan. */
+                        planned: boolean;
+                        /** @description Cooked since it came in. */
+                        cooked: boolean;
+                        /** @description Moved to Recently deleted by Undo. */
+                        undone: boolean;
+                    };
+                }[];
+                /** @description Whether there are more: ask again from further on. */
+                more: boolean;
+            };
+            /** @description What was already in the household's recipes, 100 at a time. */
+            alreadyHere: {
+                items: {
+                    position: number;
+                    label: string;
+                    /** @description The recipe that's there. */
+                    recipe: {
+                        id: string;
+                        slug: string;
+                        name: string;
+                        /** @description Its card photo. */
+                        photo: string | null;
+                    } | null;
+                }[];
+                /** @description Whether there are more: ask again from further on. */
+                more: boolean;
+            };
+            /** @description What didn't come in and why, 100 at a time. */
+            didntComeIn: {
+                items: {
+                    position: number;
+                    /** @description The link, or the recipe's name. */
+                    label: string;
+                    /** @description Why it didn't come in. */
+                    error: string;
+                }[];
+                /** @description Whether there are more: ask again from further on. */
+                more: boolean;
+            };
+        };
+        /** @example {} */
+        RetryImportRequest: {
+            /** @description Mealie's API token, for an import from Mealie through its API: it isn't kept once an import finishes. */
+            token?: string;
+        };
+        /**
+         * @example {
+         *       "keep": [
+         *         "01a1e0f0-e739-758e-85c2-c9e3cd06ff16"
+         *       ]
+         *     }
+         */
+        UndoImportRequest: {
+            /**
+             * @description Recipes it brought in to keep, which someone unticked: every other one it brought in goes to Recently deleted.
+             * @default []
+             */
+            keep: string[];
         };
         /**
          * @example {
@@ -14676,13 +15008,15 @@ export interface components {
          *             "text": "Roast skin side up for 40 minutes, until crisp."
          *           }
          *         ]
-         *       }
+         *       },
+         *       "import": null
          *     }
          */
         ApplyResult: {
             proposal: components["schemas"]["Proposal"];
             /** @description The recipe it changed or made, if it did. */
             recipe: components["schemas"]["Recipe"] | null;
+            import: components["schemas"]["Import"] & (Record<string, never> | null);
         };
         /**
          * @example {
@@ -15338,44 +15672,33 @@ export interface components {
         };
         /**
          * @example {
-         *       "imports": [
-         *         {
-         *           "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
-         *           "status": "running",
-         *           "tag": "to try",
-         *           "total": 2,
-         *           "done": 1,
-         *           "added": 1,
-         *           "already": 0,
-         *           "failed": 0,
-         *           "stopped": 0,
-         *           "items": [
-         *             {
-         *               "url": "https://example.com/garlic-rice",
-         *               "state": "added",
-         *               "recipe": {
-         *                 "id": "0199e8b0-5a10-7a01-8b00-000000000007",
-         *                 "slug": "garlic-rice",
-         *                 "name": "Garlic Rice",
-         *                 "photo": null
-         *               },
-         *               "error": null
-         *             },
-         *             {
-         *               "url": "https://example.com/lemon-chicken",
-         *               "state": "adding",
-         *               "recipe": null,
-         *               "error": null
-         *             }
-         *           ],
-         *           "createdAt": "2026-10-15T18:30:00.000Z",
-         *           "finishedAt": null
-         *         }
-         *       ]
+         *       "import": {
+         *         "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff15",
+         *         "kind": "link",
+         *         "source": "https://example.com/lemon-chicken",
+         *         "tag": null,
+         *         "listed": true,
+         *         "status": "running",
+         *         "total": 1,
+         *         "done": 0,
+         *         "added": 0,
+         *         "already": 0,
+         *         "failed": 0,
+         *         "undone": 0,
+         *         "stopped": 0,
+         *         "error": null,
+         *         "startedBy": {
+         *           "id": "01a1e0f0-e730-7501-bbce-f5e6ead7106d",
+         *           "name": "Kyle"
+         *         },
+         *         "createdAt": "2026-11-15T18:02:11.000Z",
+         *         "finishedAt": null,
+         *         "undoneAt": null
+         *       }
          *     }
          */
-        LinkImportList: {
-            imports: components["schemas"]["LinkImport"][];
+        ImportStarted: {
+            import: components["schemas"]["Import"] & unknown;
         };
         /**
          * @example {
@@ -16846,7 +17169,7 @@ export interface components {
             } | null;
             /** @description A receipt: the one to look over, at /pantry/receipts/{receiptId}. */
             receiptId: string | null;
-            /** @description Several links: the import, to follow at /recipes/import/links/{importId}. */
+            /** @description Several links, or one link taking a while: the import, to follow at /imports/{importId}. */
             importId: string | null;
             /** @description The recipe's page, or the import's. */
             url: string | null;
@@ -19526,13 +19849,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Importing. */
+            /** @description Importing: follow it at /imports/{importId}. */
             202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LinkImport"];
+                    "application/json": components["schemas"]["Import"];
                 };
             };
             /** @description Not signed in. */
@@ -20703,22 +21026,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description What's in it. */
-            200: {
+            /** @description Kept, and being checked. */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportFile"];
-                };
-            };
-            /** @description Merran can't read that file. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
+                    "application/json": components["schemas"]["ImportFileCheck"];
                 };
             };
             /** @description Not signed in. */
@@ -20741,6 +21055,55 @@ export interface operations {
             };
             /** @description The file is too big. */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getImportFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The check. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportFileCheck"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The file isn't here any more. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -22448,6 +22811,396 @@ export interface operations {
             };
             /** @description The file is too big. */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listImports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The imports. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getImport: {
+        parameters: {
+            query?: {
+                /** @description Where the recipes it brought in start: 100 for the next page. */
+                cameIn?: number | null;
+                /** @description Where what was already here starts. */
+                alreadyHere?: number | null;
+                /** @description Where what didn't come in starts. */
+                didntComeIn?: number | null;
+            };
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The import. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportDetail"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It's still going: stop it first. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    restoreImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Put back. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It hasn't been undone. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    retryImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RetryImportRequest"];
+            };
+        };
+        responses: {
+            /** @description The new import, started. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Nothing to try again, or the file it needs isn't kept any more. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Mealie's token is needed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    stopImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stopped, or stopping. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It has already finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    undoImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UndoImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Undone. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Import"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -26609,6 +27362,15 @@ export interface operations {
                     "application/json": components["schemas"]["ImportResult"];
                 };
             };
+            /** @description Going on in the background. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportStarted"];
+                };
+            };
             /** @description Not a link Merran can fetch. */
             400: {
                 headers: {
@@ -26665,44 +27427,6 @@ export interface operations {
             };
         };
     };
-    listLinkImports: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The imports. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LinkImportList"];
-                };
-            };
-            /** @description Not signed in. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Not allowed. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
     importLinks: {
         parameters: {
             query?: never;
@@ -26716,13 +27440,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Importing. */
+            /** @description Importing: follow it at /imports/{importId}. */
             202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LinkImport"];
+                    "application/json": components["schemas"]["Import"];
                 };
             };
             /** @description None of them is a link Merran can fetch. */
@@ -26796,113 +27520,6 @@ export interface operations {
             };
         };
     };
-    getLinkImport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                importId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The import. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LinkImport"];
-                };
-            };
-            /** @description Not signed in. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Not allowed. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description No such import in this household. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
-    stopLinkImport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                importId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Stopped, or stopping. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LinkImport"];
-                };
-            };
-            /** @description Not signed in. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Not allowed. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description No such import in this household. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description It has already finished. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
     importReadPage: {
         parameters: {
             query?: never;
@@ -26932,6 +27549,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+            /** @description Going on in the background. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportStarted"];
                 };
             };
             /** @description Not a link Merran can keep. */

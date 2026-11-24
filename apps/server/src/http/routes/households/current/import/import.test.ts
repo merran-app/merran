@@ -1,8 +1,20 @@
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import yauzl from "yauzl"
-import { RecipeIngredient } from "../../../../../database/entities/index.ts"
-import { HOUSEHOLD_FILTER } from "../../../../../database/scope.ts"
+import {
+  Import,
+  ImportItem,
+  Recipe,
+  RecipeIngredient,
+} from "../../../../../database/entities/index.ts"
+import {
+  forHousehold,
+  HOUSEHOLD_FILTER,
+} from "../../../../../database/scope.ts"
+import {
+  addItem,
+  beginImport,
+} from "../../../../../services/imports/imports.ts"
 import type { JobRunner } from "../../../../../services/jobs/runner.ts"
 import {
   account,
@@ -207,6 +219,88 @@ describe("importing an export", () => {
       await kyleThere.get("/api/recipes/tomato-soup/pairings")
     ).json()
     expect(pairings.pairings).toHaveLength(2)
+  })
+
+  test("keeps a record of the recipes each import brought in", async () => {
+    const em = second.database.em.fork()
+    const records = await em.find(
+      Import,
+      { kind: "merran" },
+      { filters: false, orderBy: { createdAt: "asc" } }
+    )
+    expect(
+      records.map((record) => [
+        record.status,
+        record.added,
+        record.already,
+        record.failed,
+      ])
+    ).toEqual([
+      ["done", 2, 0, 0],
+      ["done", 0, 2, 0],
+    ])
+    const items = await em.find(
+      ImportItem,
+      { import: records[0]!.id },
+      { filters: false, orderBy: { position: "asc" }, populate: ["recipe"] }
+    )
+    expect(
+      items.map((item) => [item.state, item.recipe?.getEntity().slug])
+    ).toEqual([
+      ["added", "tomato-soup"],
+      ["added", "pesto"],
+    ])
+  })
+
+  test("cut off by a restart, carries on without counting what came in as already here", async () => {
+    const third = await createTestApp()
+    try {
+      const kyleHere = await setUpServer(third.app, third.setupCode)
+      const res = await kyleHere.upload(
+        "/api/households/current/import",
+        exported,
+        "application/zip",
+        "POST"
+      )
+      const { id } = await res.json()
+
+      // What the record says when a restart cuts it off after Tomato Soup.
+      const home = (
+        await (await kyleHere.get("/api/households/current")).json()
+      ).id
+      const em = forHousehold(third.database.em, home)
+      em.create(Recipe, {
+        id: ids.soup,
+        household: home,
+        slug: "tomato-soup",
+        name: "Tomato Soup",
+        origin: "merran",
+      })
+      await em.flush()
+      await beginImport(em, id)
+      await addItem(em, id, {
+        label: "Tomato Soup",
+        ref: ids.soup!,
+        state: "added",
+        recipeId: ids.soup,
+      })
+
+      await third.jobs.drain()
+      const record = await (await kyleHere.get(`/api/imports/${id}`)).json()
+      expect(record).toMatchObject({
+        status: "done",
+        total: 2,
+        added: 2,
+        already: 0,
+      })
+      // What goes with what comes with the recipes from before the restart.
+      const pairings = await (
+        await kyleHere.get("/api/recipes/tomato-soup/pairings")
+      ).json()
+      expect(pairings.pairings).toHaveLength(2)
+    } finally {
+      await third.close()
+    }
   })
 
   test("as a new household, with new ids where another has them", async () => {

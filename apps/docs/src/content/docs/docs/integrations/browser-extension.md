@@ -66,6 +66,8 @@ The extension receives a household-scoped API key automatically. It can read hou
 3. Choose **Add this recipe**. You can close the popup while the background action continues.
 4. Use **Open it in Merran**, then review ingredients, quantities, servings, steps, and attribution.
 
+A page that takes Merran more than about ten seconds, such as one it reads with AI, or a video, carries on in the background: the extension says **Still importing. Merran will finish it.**, and **Open it in Merran** opens the import's page on the Imports page instead. Merran tells you in the app when it's in.
+
 Structured recipe data can import without AI. If the page has no usable recipe data, the fallback needs [configured AI](../../run/ai-setup/). Video links need the [video module](../optional-modules/#video-imports) as well. Being able to view a page does not guarantee it contains an extractable recipe.
 
 You can also right-click a page or link to import it, or select shopping text such as `2 lemons` and use Merran's context-menu action. Importing the open page supplies its readable content; importing a link can still require the server to retrieve the destination.

@@ -39,7 +39,7 @@ const CHANGES: [RegExp, LiveArea[]][] = [
   [/^\/api\/recipes(\/|$)/, ["recipes", "plan", "list", "pantry"]],
   // Shared to Merran, sites followed, a collection imported, a search for
   // more: recipes, and the shelf and searches kept with them.
-  [/^\/api\/(share|sites|collections|discover)(\/|$)/, ["recipes"]],
+  [/^\/api\/(share|sites|collections|discover|imports)(\/|$)/, ["recipes"]],
   // Applying a suggestion can add a recipe, meals, things for the list or
   // tastes; applying or dismissing one changes Review.
   [/^\/api\/proposals(\/|$)/, ["recipes", "plan", "list", "household"]],

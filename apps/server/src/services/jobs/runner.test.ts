@@ -1,6 +1,6 @@
 import { pino } from "pino"
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
-import { Household, Job } from "../../database/entities/index.ts"
+import { Household, Job, User } from "../../database/entities/index.ts"
 import type { Database } from "../../database/orm.ts"
 import { createTestDatabase } from "../../test/database.ts"
 import { createEventBus, LIVE_AREAS, type LiveEvent } from "../events/events.ts"
@@ -287,8 +287,33 @@ describe("the job runner", () => {
       ])
       expect(heard[0]).toMatchObject({
         area: "recipes",
-        job: { id: job.id, kind: "import" },
+        job: { id: job.id, kind: "import", startedBy: null },
       })
+    })
+
+    test("says who started it, so the app can tell them when it ends", async () => {
+      const setup = em()
+      const jamie = setup.create(User, {
+        name: "Jamie",
+        email: "jamie@example.com",
+        username: "jamie",
+        displayUsername: "jamie",
+      })
+      await setup.flush()
+      const { jobs, heard } = following([
+        { kind: "import", area: "recipes", run: async () => {} },
+      ])
+      await enqueue(em(), {
+        kind: "import",
+        householdId: home,
+        createdBy: jamie.id,
+      })
+      await jobs.drain()
+
+      expect(heard.map((event) => event.job.startedBy)).toEqual([
+        jamie.id,
+        jamie.id,
+      ])
     })
 
     test("says it's queued when it'll be tried again, and nothing when Merran shuts down", async () => {
@@ -682,6 +707,25 @@ describe("the job runner", () => {
       status: "queued",
       attempts: 0,
     })
+  })
+
+  test("waitFor says how a job ended, or nothing if it takes too long", async () => {
+    let letItGo!: () => void
+    const held = new Promise<void>((resolve) => (letItGo = resolve))
+    const jobs = runner([
+      { kind: "quick", run: async () => {} },
+      { kind: "held", run: () => held },
+    ])
+    const quick = await enqueue(em(), { kind: "quick" })
+    const slow = await enqueue(em(), { kind: "held" })
+    const quickEnds = jobs.waitFor(quick.id, 5_000)
+    const draining = jobs.drain()
+    expect(await quickEnds).toBe("done")
+    expect(await jobs.waitFor(slow.id, 50)).toBeNull()
+    letItGo()
+    await draining
+    // One already over says how it ended at once.
+    expect(await jobs.waitFor(quick.id, 50)).toBe("done")
   })
 
   test("everything a job calls sees its stop signal", async () => {

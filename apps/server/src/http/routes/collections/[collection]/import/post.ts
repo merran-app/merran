@@ -1,15 +1,16 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { AppError } from "../../../../../core/errors.ts"
-import {
-  describeLinkImport,
-  startLinkImport,
-} from "../../../../../services/recipes/import/import-links.ts"
+import { startLinkImport } from "../../../../../services/recipes/import/import-links.ts"
 import { getCollection } from "../../../../../services/recipes/discover/sites/collections.ts"
 import { languageOf } from "../../../../../services/recipes/discover/sites/sites.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
+import {
+  findImport,
+  importSummary,
+} from "../../../../../services/imports/describe.ts"
+import { ImportSchema } from "../../../../schemas/import-history.ts"
 import type { Router } from "../../../../router.ts"
-import { LinkImportSchema } from "../../../../schemas/imports.ts"
 import {
   errorResponse,
   jsonResponse,
@@ -24,11 +25,14 @@ const route = createRoute({
   tags: ["Collections"],
   summary: "Import a whole collection",
   description:
-    "Its recipes not in the library yet, in the background, as several links are: follow along at /recipes/import/links/{importId}.",
+    "Its recipes not in the library yet, in the background, as several links are: follow along at /imports/{importId}.",
   ...openToKeys("imports", "write"),
   request: { params: CollectionParam },
   responses: {
-    202: jsonResponse(LinkImportSchema, "Importing."),
+    202: jsonResponse(
+      ImportSchema,
+      "Importing: follow it at /imports/{importId}."
+    ),
     404: errorResponse("No such collection."),
     409: errorResponse("Every recipe in it is in the library already."),
     ...SIGNED_IN_ERRORS,
@@ -54,12 +58,13 @@ export default (router: Router, _deps: AppDeps) => {
         "Every recipe in it is in your library already."
       )
     }
-    const job = await startLinkImport(em, {
+    const started = await startLinkImport(em, {
       householdId,
       userId,
       urls,
       kind: "collection",
+      source: collection.title,
     })
-    return c.json(describeLinkImport(job), 202)
+    return c.json(importSummary(await findImport(em, started.id)), 202)
   })
 }

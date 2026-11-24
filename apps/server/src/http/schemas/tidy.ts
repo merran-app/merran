@@ -7,6 +7,7 @@ import {
 } from "@merran/shared"
 import { JOB_STATUSES, PROPOSAL_KINDS } from "../../database/entities/index.ts"
 import { IDS, RECIPE, TIMES } from "./examples.ts"
+import { ImportSchema } from "./import-history.ts"
 import { RecipeSchema } from "./recipes.ts"
 
 export const TidySectionSchema = z.enum(TIDY_SECTIONS).openapi("TidySection", {
@@ -185,11 +186,16 @@ export const ApplyResultSchema = z
     recipe: z.union([RecipeSchema, z.null()]).openapi({
       description: "The recipe it changed or made, if it did.",
     }),
+    import: ImportSchema.nullable().openapi({
+      description:
+        "An import that's taking a while, going on in the background, on the Imports page.",
+    }),
   })
   .openapi("ApplyResult", {
     example: {
       proposal: { ...PROPOSAL, status: "applied", resolvedAt: TIMES.now },
       recipe: RECIPE,
+      import: null,
     },
   })
 

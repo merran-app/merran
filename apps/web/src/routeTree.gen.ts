@@ -49,6 +49,8 @@ import { Route as AppRecipesSlugEditRouteImport } from './routes/_app/recipes/$s
 import { Route as AppRecipesFindIndexRouteImport } from './routes/_app/recipes/find/index'
 import { Route as AppRecipesFindCollectionRouteImport } from './routes/_app/recipes/find/$collection'
 import { Route as AppRecipesImportImportIdRouteImport } from './routes/_app/recipes/import/$importId'
+import { Route as AppRecipesImportsIndexRouteImport } from './routes/_app/recipes/imports/index'
+import { Route as AppRecipesImportsImportIdRouteImport } from './routes/_app/recipes/imports/$importId'
 import { Route as AppSettingsAiIndexRouteImport } from './routes/_app/settings/ai/index'
 import { Route as AppSettingsAiServerRouteImport } from './routes/_app/settings/ai/server'
 import { Route as AppSettingsAppsIndexRouteImport } from './routes/_app/settings/apps/index'
@@ -268,6 +270,17 @@ const AppRecipesImportImportIdRoute =
     path: '/recipes/import/$importId',
     getParentRoute: () => AppRoute,
   } as any)
+const AppRecipesImportsIndexRoute = AppRecipesImportsIndexRouteImport.update({
+  id: '/recipes/imports/',
+  path: '/recipes/imports/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecipesImportsImportIdRoute =
+  AppRecipesImportsImportIdRouteImport.update({
+    id: '/recipes/imports/$importId',
+    path: '/recipes/imports/$importId',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppSettingsAiIndexRoute = AppSettingsAiIndexRouteImport.update({
   id: '/ai/',
   path: '/ai/',
@@ -399,6 +412,7 @@ export interface FileRoutesByFullPath {
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
   '/recipes/find/$collection': typeof AppRecipesFindCollectionRoute
   '/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
+  '/recipes/imports/$importId': typeof AppRecipesImportsImportIdRoute
   '/settings/ai/server': typeof AppSettingsAiServerRoute
   '/settings/apps/server': typeof AppSettingsAppsServerRoute
   '/settings/household/server': typeof AppSettingsHouseholdServerRoute
@@ -411,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/pantry/receipts/': typeof AppPantryReceiptsIndexRoute
   '/recipes/$slug/': typeof AppRecipesSlugIndexRoute
   '/recipes/find/': typeof AppRecipesFindIndexRoute
+  '/recipes/imports/': typeof AppRecipesImportsIndexRoute
   '/settings/ai/': typeof AppSettingsAiIndexRoute
   '/settings/apps/': typeof AppSettingsAppsIndexRoute
   '/settings/household/': typeof AppSettingsHouseholdIndexRoute
@@ -455,6 +470,7 @@ export interface FileRoutesByTo {
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
   '/recipes/find/$collection': typeof AppRecipesFindCollectionRoute
   '/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
+  '/recipes/imports/$importId': typeof AppRecipesImportsImportIdRoute
   '/settings/ai/server': typeof AppSettingsAiServerRoute
   '/settings/apps/server': typeof AppSettingsAppsServerRoute
   '/settings/household/server': typeof AppSettingsHouseholdServerRoute
@@ -467,6 +483,7 @@ export interface FileRoutesByTo {
   '/pantry/receipts': typeof AppPantryReceiptsIndexRoute
   '/recipes/$slug': typeof AppRecipesSlugIndexRoute
   '/recipes/find': typeof AppRecipesFindIndexRoute
+  '/recipes/imports': typeof AppRecipesImportsIndexRoute
   '/settings/ai': typeof AppSettingsAiIndexRoute
   '/settings/apps': typeof AppSettingsAppsIndexRoute
   '/settings/household': typeof AppSettingsHouseholdIndexRoute
@@ -515,6 +532,7 @@ export interface FileRoutesById {
   '/_app/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
   '/_app/recipes/find/$collection': typeof AppRecipesFindCollectionRoute
   '/_app/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
+  '/_app/recipes/imports/$importId': typeof AppRecipesImportsImportIdRoute
   '/_app/settings/ai/server': typeof AppSettingsAiServerRoute
   '/_app/settings/apps/server': typeof AppSettingsAppsServerRoute
   '/_app/settings/household/server': typeof AppSettingsHouseholdServerRoute
@@ -527,6 +545,7 @@ export interface FileRoutesById {
   '/_app/pantry/receipts/': typeof AppPantryReceiptsIndexRoute
   '/_app/recipes/$slug/': typeof AppRecipesSlugIndexRoute
   '/_app/recipes/find/': typeof AppRecipesFindIndexRoute
+  '/_app/recipes/imports/': typeof AppRecipesImportsIndexRoute
   '/_app/settings/ai/': typeof AppSettingsAiIndexRoute
   '/_app/settings/apps/': typeof AppSettingsAppsIndexRoute
   '/_app/settings/household/': typeof AppSettingsHouseholdIndexRoute
@@ -574,6 +593,7 @@ export interface FileRouteTypes {
     | '/recipes/$slug/edit'
     | '/recipes/find/$collection'
     | '/recipes/import/$importId'
+    | '/recipes/imports/$importId'
     | '/settings/ai/server'
     | '/settings/apps/server'
     | '/settings/household/server'
@@ -586,6 +606,7 @@ export interface FileRouteTypes {
     | '/pantry/receipts/'
     | '/recipes/$slug/'
     | '/recipes/find/'
+    | '/recipes/imports/'
     | '/settings/ai/'
     | '/settings/apps/'
     | '/settings/household/'
@@ -630,6 +651,7 @@ export interface FileRouteTypes {
     | '/recipes/$slug/edit'
     | '/recipes/find/$collection'
     | '/recipes/import/$importId'
+    | '/recipes/imports/$importId'
     | '/settings/ai/server'
     | '/settings/apps/server'
     | '/settings/household/server'
@@ -642,6 +664,7 @@ export interface FileRouteTypes {
     | '/pantry/receipts'
     | '/recipes/$slug'
     | '/recipes/find'
+    | '/recipes/imports'
     | '/settings/ai'
     | '/settings/apps'
     | '/settings/household'
@@ -689,6 +712,7 @@ export interface FileRouteTypes {
     | '/_app/recipes/$slug/edit'
     | '/_app/recipes/find/$collection'
     | '/_app/recipes/import/$importId'
+    | '/_app/recipes/imports/$importId'
     | '/_app/settings/ai/server'
     | '/_app/settings/apps/server'
     | '/_app/settings/household/server'
@@ -701,6 +725,7 @@ export interface FileRouteTypes {
     | '/_app/pantry/receipts/'
     | '/_app/recipes/$slug/'
     | '/_app/recipes/find/'
+    | '/_app/recipes/imports/'
     | '/_app/settings/ai/'
     | '/_app/settings/apps/'
     | '/_app/settings/household/'
@@ -1008,6 +1033,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecipesImportImportIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/recipes/imports/': {
+      id: '/_app/recipes/imports/'
+      path: '/recipes/imports'
+      fullPath: '/recipes/imports/'
+      preLoaderRoute: typeof AppRecipesImportsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recipes/imports/$importId': {
+      id: '/_app/recipes/imports/$importId'
+      path: '/recipes/imports/$importId'
+      fullPath: '/recipes/imports/$importId'
+      preLoaderRoute: typeof AppRecipesImportsImportIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings/ai/': {
       id: '/_app/settings/ai/'
       path: '/ai'
@@ -1202,9 +1241,11 @@ interface AppRouteChildren {
   AppRecipesSlugEditRoute: typeof AppRecipesSlugEditRoute
   AppRecipesFindCollectionRoute: typeof AppRecipesFindCollectionRoute
   AppRecipesImportImportIdRoute: typeof AppRecipesImportImportIdRoute
+  AppRecipesImportsImportIdRoute: typeof AppRecipesImportsImportIdRoute
   AppPantryReceiptsIndexRoute: typeof AppPantryReceiptsIndexRoute
   AppRecipesSlugIndexRoute: typeof AppRecipesSlugIndexRoute
   AppRecipesFindIndexRoute: typeof AppRecipesFindIndexRoute
+  AppRecipesImportsIndexRoute: typeof AppRecipesImportsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -1227,9 +1268,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppRecipesSlugEditRoute: AppRecipesSlugEditRoute,
   AppRecipesFindCollectionRoute: AppRecipesFindCollectionRoute,
   AppRecipesImportImportIdRoute: AppRecipesImportImportIdRoute,
+  AppRecipesImportsImportIdRoute: AppRecipesImportsImportIdRoute,
   AppPantryReceiptsIndexRoute: AppPantryReceiptsIndexRoute,
   AppRecipesSlugIndexRoute: AppRecipesSlugIndexRoute,
   AppRecipesFindIndexRoute: AppRecipesFindIndexRoute,
+  AppRecipesImportsIndexRoute: AppRecipesImportsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

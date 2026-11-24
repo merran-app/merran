@@ -3,6 +3,7 @@ import {
   Compass01Icon,
   CookBookIcon,
   Copy01Icon,
+  Download04Icon,
   Delete02Icon,
   MoreHorizontalIcon,
   Tag01Icon,
@@ -40,7 +41,7 @@ import {
   DeleteRecipesDialog,
   TagRecipesDialog,
 } from "@/features/recipes/bulk-dialogs"
-import { LinkImportsBanner } from "@/features/recipes/link-imports-banner"
+import { ImportsBanner } from "@/features/imports/imports-banner"
 import { useRefreshReview } from "@/features/recipes/tidy/queries"
 import { ReviewBanner } from "@/features/recipes/tidy/tidy-runs"
 import { useCapability } from "@/features/capabilities/queries"
@@ -213,6 +214,10 @@ function RecipesPage() {
                     <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} />
                     {t("recipes.duplicates.title")}
                   </DropdownMenuItem>
+                  <DropdownMenuItem render={<Link to="/recipes/imports" />}>
+                    <HugeiconsIcon icon={Download04Icon} strokeWidth={2} />
+                    {t("imports.title")}
+                  </DropdownMenuItem>
                   <DropdownMenuItem render={<Link to="/recipes/deleted" />}>
                     <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
                     {t("recipes.deleted.title")}
@@ -226,7 +231,7 @@ function RecipesPage() {
       <ManageTagsDialog open={managingTags} onOpenChange={setManagingTags} />
 
       <div className="space-y-6">
-        <LinkImportsBanner />
+        <ImportsBanner />
         <ReviewBanner />
         <RecipeFilters search={search} onChange={setSearch} />
         <SitesSpotlight folded={filtered || selection.selecting} />

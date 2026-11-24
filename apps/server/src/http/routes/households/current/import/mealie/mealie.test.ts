@@ -1,7 +1,11 @@
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { AppError } from "../../../../../../core/errors.ts"
-import { Job } from "../../../../../../database/entities/index.ts"
+import {
+  Import,
+  ImportItem,
+  Job,
+} from "../../../../../../database/entities/index.ts"
 import type { Database } from "../../../../../../database/orm.ts"
 import type { Fetcher } from "../../../../../../services/fetch/public-fetch.ts"
 import type { JobRunner } from "../../../../../../services/jobs/runner.ts"
@@ -247,6 +251,31 @@ describe("importing from Mealie", () => {
     // The token is forgotten once it's finished.
     const stored = await database.em.fork().findOneOrFail(Job, { id })
     expect(stored.payload).toMatchObject({ url: MEALIE, token: null })
+
+    // Its record says where it came from and what didn't come in, and why.
+    const record = await database.em
+      .fork()
+      .findOneOrFail(Import, { id }, { filters: false })
+    expect(record).toMatchObject({
+      kind: "mealie",
+      source: MEALIE,
+      status: "done",
+      added: 2,
+      failed: 1,
+      retry: { from: "mealie", url: MEALIE },
+    })
+    const broken = await database.em
+      .fork()
+      .findOneOrFail(
+        ImportItem,
+        { import: id, state: "failed" },
+        { filters: false }
+      )
+    expect(broken).toMatchObject({
+      label: "Broken Pie",
+      error: "Mealie answered with an error (500).",
+    })
+    expect(broken.ref).toMatch(/^mealie:/)
 
     const soup = await (await kyle.get("/api/recipes/tomato-soup")).json()
     expect(soup).toMatchObject({

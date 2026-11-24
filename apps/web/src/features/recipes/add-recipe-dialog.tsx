@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog"
 import { Spinner } from "@/components/ui/spinner"
 import { useCapability } from "@/features/capabilities/queries"
+import { importStarted, useStartedNotice } from "@/features/imports/started"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { FromPhotos } from "./import/from-photos"
@@ -62,11 +63,19 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
   } | null>(null)
   const form = useForm<Form>({ defaultValues: { url: "" } })
   const { errors, isSubmitting } = form.formState
+  const startedNotice = useStartedNotice()
 
   async function importLink(url: string, force = false) {
     const result = await unwrap(
       api.POST("/api/recipes/import", { body: { url, force } })
     )
+    // Taking a while, or a video: it goes on in the background.
+    if (importStarted(result)) {
+      setOpen(false)
+      setAlready(null)
+      startedNotice(result)
+      return
+    }
     if (result.duplicate) {
       setAlready({ recipe: result.recipe, url })
       return
@@ -155,7 +164,7 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
               setOpen(false)
               setView("link")
               void navigate({
-                to: "/recipes/import/$importId",
+                to: "/recipes/imports/$importId",
                 params: { importId },
               })
             }}

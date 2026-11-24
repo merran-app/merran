@@ -74,9 +74,17 @@ const reply = (call: MockCall) => {
       items: [],
     })
   }
-  asked = prompt
+  // The recipe's reading: not the nutrition and tidy-up after it's saved.
+  if (typeof first === "string" && first.startsWith("You read recipes")) {
+    asked = prompt
+    readers.push(lastTarget())
+  }
   return answer()
 }
+
+/** Which model read each recipe, newest last. */
+const readers: string[] = []
+const lastTarget = () => targets.at(-1)?.model ?? ""
 
 /** What the model was told, and what it was given to read. */
 const system = () => asked.find((m) => m.role === "system")?.content as string
@@ -360,19 +368,20 @@ describe("with AI", () => {
     expect(part!.text).toContain("4 chicken thighs\n2 lemons, juiced")
     expect(part!.text).not.toMatch(/do not read|Home · Recipes|©/)
 
-    // And a second time, it's the same recipe, with no AI spent.
-    const calls = targets.length
+    // And a second time, it's the same recipe, with no AI spent reading it.
+    const read = readers.length
     const again = await kyle.post("/api/recipes/import", {
       url: "https://cooking.example/grandmas-chicken",
     })
     expect(again.status).toBe(200)
-    expect(targets.length).toBe(calls)
+    expect(readers.length).toBe(read)
   })
 })
 
 describe("with a model for photos and PDFs", () => {
   const picks = { large: null, small: null, tasks: {}, monthlyLimit: null }
-  const lastModel = () => targets.at(-1)!.model
+  // The model that read the last recipe, not one a job used after.
+  const lastModel = () => readers.at(-1)!
 
   beforeAll(async () => {
     const res = await kyle.put("/api/households/current/ai", {

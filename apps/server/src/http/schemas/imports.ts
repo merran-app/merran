@@ -47,6 +47,34 @@ export const ImportFileSchema = z
     },
   })
 
+/** A file's check, with what's in it once it's read. */
+export const ImportFileCheckSchema = z
+  .object({
+    id: z.string().openapi({
+      description:
+        "The file: follow its check at /households/current/import/files/{fileId}.",
+    }),
+    status: z.enum(["checking", "ready", "failed"]).openapi({
+      description:
+        "Checking while Merran reads it, then ready with what's in it, or failed with why it can't be imported.",
+    }),
+    file: ImportFileSchema.nullable().openapi({
+      description: "What's in it, once it's ready.",
+    }),
+    error: z
+      .object({ code: z.string(), message: z.string() })
+      .nullable()
+      .openapi({ description: "Why it can't be imported, once it failed." }),
+  })
+  .openapi("ImportFileCheck", {
+    example: {
+      id: IDS.importFile,
+      status: "checking",
+      file: null,
+      error: null,
+    },
+  })
+
 export const ImportFileParam = z.object({
   fileId: z.uuid().openapi({ param: { name: "fileId", in: "path" } }),
 })
@@ -95,13 +123,6 @@ export const MealieCheckSchema = z
   })
 
 // Several links at once.
-
-const LinkStateSchema = z
-  .enum(["waiting", "adding", "added", "already", "failed", "stopped"])
-  .openapi({
-    description:
-      "Where the link has got to: added, already in the library, failed (see error), or stopped before it was reached.",
-  })
 
 export const LinkCheckRequestSchema = z
   .object({
@@ -176,76 +197,3 @@ export const LinkImportRequestSchema = z
       tag: "to try",
     },
   })
-
-const LINK_IMPORT_EXAMPLE = {
-  id: IDS.job,
-  status: "running" as const,
-  tag: "to try",
-  total: 2,
-  done: 1,
-  added: 1,
-  already: 0,
-  failed: 0,
-  stopped: 0,
-  items: [
-    {
-      url: "https://example.com/garlic-rice",
-      state: "added" as const,
-      recipe: {
-        id: IDS.garlicRice,
-        slug: "garlic-rice",
-        name: "Garlic Rice",
-        photo: null,
-      },
-      error: null,
-    },
-    {
-      url: "https://example.com/lemon-chicken",
-      state: "adding" as const,
-      recipe: null,
-      error: null,
-    },
-  ],
-  createdAt: TIMES.now,
-  finishedAt: null,
-}
-
-export const LinkImportSchema = z
-  .object({
-    id: z.string().openapi({ description: "The import's job." }),
-    status: z.enum(JOB_STATUSES),
-    tag: z.string().nullable(),
-    total: z.number().int(),
-    done: z.number().int(),
-    added: z.number().int(),
-    already: z.number().int(),
-    failed: z.number().int(),
-    stopped: z.number().int(),
-    items: z.array(
-      z.object({
-        url: z.string(),
-        state: LinkStateSchema,
-        recipe: z
-          .object({
-            id: z.string(),
-            slug: z.string(),
-            name: z.string(),
-            photo: z.string().nullable(),
-          })
-          .nullable()
-          .openapi({ description: "The recipe it made, or was already." }),
-        error: z.string().nullable(),
-      })
-    ),
-    createdAt: z.iso.datetime(),
-    finishedAt: z.iso.datetime().nullable(),
-  })
-  .openapi("LinkImport", { example: LINK_IMPORT_EXAMPLE })
-
-export const LinkImportListSchema = z
-  .object({ imports: z.array(LinkImportSchema) })
-  .openapi("LinkImportList", { example: { imports: [LINK_IMPORT_EXAMPLE] } })
-
-export const LinkImportParam = z.object({
-  importId: z.uuid().openapi({ param: { name: "importId", in: "path" } }),
-})

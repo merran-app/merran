@@ -39,6 +39,8 @@ import { FoodPlacement } from "./food_placements.ts"
 import { HouseholdMember } from "./household_members.ts"
 import { HouseholdSetting } from "./household_settings.ts"
 import { Household } from "./households.ts"
+import { ImportItem } from "./import_items.ts"
+import { Import } from "./imports.ts"
 import { InviteLink } from "./invite_links.ts"
 import { PasswordReset } from "./password_resets.ts"
 import { Job } from "./jobs.ts"
@@ -96,6 +98,8 @@ export * from "./food_placements.ts"
 export * from "./household_members.ts"
 export * from "./household_settings.ts"
 export * from "./households.ts"
+export * from "./import_items.ts"
+export * from "./imports.ts"
 export * from "./invite_links.ts"
 export * from "./password_resets.ts"
 export * from "./jobs.ts"
@@ -164,6 +168,8 @@ export const entities = [
   Household,
   HouseholdMember,
   HouseholdSetting,
+  Import,
+  ImportItem,
   InviteLink,
   PasswordReset,
   Job,

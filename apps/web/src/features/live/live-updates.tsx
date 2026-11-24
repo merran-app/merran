@@ -3,6 +3,8 @@ import { useRouterState } from "@tanstack/react-router"
 import * as React from "react"
 
 import { useMe } from "@/features/auth/use-me"
+import { noticeFor, type JobMoved } from "@/features/imports/notices"
+import { useImportNotice } from "@/features/imports/use-import-notice"
 import { CLIENT_ID } from "@/lib/api/client"
 
 import { gatherChanges } from "./gather"
@@ -61,6 +63,12 @@ export function LiveUpdates({ children }: { children: React.ReactNode }) {
   // list connects again, and changes gathered just before still go.
   const [changes] = React.useState(() => gatherChanges(refresh))
   React.useEffect(() => () => changes.stop(), [changes])
+  // The latest, without connecting again when the language changes.
+  const importNotice = useImportNotice()
+  const noticeImport = React.useRef(importNotice)
+  React.useEffect(() => {
+    noticeImport.current = importNotice
+  }, [importNotice])
 
   React.useEffect(() => {
     if (typeof EventSource === "undefined") return
@@ -86,7 +94,12 @@ export function LiveUpdates({ children }: { children: React.ReactNode }) {
       })
       source.addEventListener("job", (message) => {
         heardFromLive()
-        changes.addJob(JSON.parse(message.data) as { id: string; kind: string })
+        const job = JSON.parse(message.data) as JobMoved
+        changes.addJob(job)
+        if (noticeFor(job, me.id)) {
+          // A record deleted meanwhile has nothing to tell.
+          noticeImport.current(job.id).catch(() => {})
+        }
       })
       source.addEventListener("ping", () => heardFromLive())
       source.addEventListener("ready", () => {

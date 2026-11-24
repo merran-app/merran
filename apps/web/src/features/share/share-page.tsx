@@ -112,7 +112,7 @@ export function SharePage({ search }: { search: ShareSearch }) {
         if (result.outcome === "importing" && result.importId) {
           // Several links: on to their import, going in the background.
           await navigate({
-            to: "/recipes/import/$importId",
+            to: "/recipes/imports/$importId",
             params: { importId: result.importId },
             replace: true,
           })

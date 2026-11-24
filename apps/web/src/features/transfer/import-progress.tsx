@@ -159,6 +159,18 @@ export function ImportProgress({
                 {t("settings.transfer.progress.seeRecipes")}
               </Button>
             )}
+            {/* Its record, on the Imports page: an import's id is its job's. */}
+            <Button
+              variant="outline"
+              onClick={() =>
+                void navigate({
+                  to: "/recipes/imports/$importId",
+                  params: { importId: jobId },
+                })
+              }
+            >
+              {t("settings.transfer.progress.seeImport")}
+            </Button>
             <Button variant="outline" onClick={onAgain}>
               {t("settings.transfer.progress.another")}
             </Button>

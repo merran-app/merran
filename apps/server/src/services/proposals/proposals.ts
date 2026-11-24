@@ -19,8 +19,10 @@ import {
 import { addTyped } from "../list/list.ts"
 import { addEntries } from "../plan/plan.ts"
 import { getTastes, saveTastes } from "../households/tastes.ts"
+import { findImport, importSummary } from "../imports/describe.ts"
+import type { JobRunner } from "../jobs/runner.ts"
 import type { VideoDeps } from "../recipes/import/video/import.ts"
-import { importLink } from "../recipes/import/import-link.ts"
+import { importOne } from "../recipes/import/import-one.ts"
 import {
   createRecipe,
   findRecipe,
@@ -207,7 +209,7 @@ function resolve(
  */
 export async function applyProposal(
   em: EntityManager,
-  deps: AfterSaveDeps & VideoDeps,
+  deps: AfterSaveDeps & VideoDeps & { jobs: JobRunner },
   options: {
     householdId: string
     userId: string | null
@@ -216,16 +218,24 @@ export async function applyProposal(
   }
 ) {
   const proposal = await findPending(em, options.proposalId)
-  const recipe = await applyKind(em, deps, proposal, options)
+  const applied = await applyKind(em, deps, proposal, options)
+  // An import that takes a while goes on in the background.
+  const started = applied && "started" in applied ? applied.started : null
   resolve(em, proposal, "applied", options.userId)
   await em.flush()
-  return { proposal: describeProposal(proposal), recipe }
+  return {
+    proposal: describeProposal(proposal),
+    recipe: started
+      ? null
+      : (applied as Exclude<typeof applied, { started: unknown }>),
+    import: started ? importSummary(await findImport(em, started.id)) : null,
+  }
 }
 
 /** What applying each kind of suggestion does; the recipe it made or changed. */
 async function applyKind(
   em: EntityManager,
-  deps: AfterSaveDeps & VideoDeps,
+  deps: AfterSaveDeps & VideoDeps & { jobs: JobRunner },
   proposal: Proposal,
   options: {
     householdId: string
@@ -300,12 +310,8 @@ async function applyKind(
     }
     case "import": {
       const { url } = ImportPayload.parse(payload)
-      const { recipe } = await importLink(em, deps, {
-        householdId,
-        userId,
-        url,
-      })
-      return recipe
+      const result = await importOne(em, deps, { householdId, userId, url })
+      return "started" in result ? result : result.done.recipe
     }
   }
 }

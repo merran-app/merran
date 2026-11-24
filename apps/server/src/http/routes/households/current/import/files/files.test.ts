@@ -1,7 +1,19 @@
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import yazl from "yazl"
+import {
+  Import,
+  ImportItem,
+  Recipe,
+} from "../../../../../../database/entities/index.ts"
+import type { Database } from "../../../../../../database/orm.ts"
+import { forHousehold } from "../../../../../../database/scope.ts"
+import {
+  addItem,
+  beginImport,
+} from "../../../../../../services/imports/imports.ts"
 import type { JobRunner } from "../../../../../../services/jobs/runner.ts"
+import { mealieRef } from "../../../../../../services/recipes/import/apps/mealie/recipe.ts"
 import {
   account,
   createTestApp,
@@ -15,6 +27,8 @@ import {
 // made here the way Mealie writes them.
 
 let close: () => Promise<void>
+/** Merran's database, not Mealie's. */
+let db: Database
 let jobs: JobRunner
 let kyle: TestClient
 let jamie: TestClient
@@ -204,13 +218,29 @@ async function backup(extra?: Parameters<typeof database>[0]) {
   })
 }
 
-const check = (client: TestClient, zip: Uint8Array) =>
-  client.upload(
+/**
+ * Sends a file to be checked and waits for its check, answering as the
+ * check used to: 200 with what's in it, or 400 with why not.
+ */
+async function check(client: TestClient, zip: Uint8Array) {
+  const sent = await client.upload(
     "/api/households/current/import/files",
     zip,
     "application/zip",
     "POST"
   )
+  if (sent.status !== 202) return sent
+  const { id } = await sent.json()
+  await jobs.drain()
+  const checked = await (
+    await client.get(`/api/households/current/import/files/${id}`)
+  ).json()
+  const ready = checked.status === "ready"
+  return {
+    status: ready ? 200 : 400,
+    json: async () => (ready ? checked.file : { error: checked.error }),
+  }
+}
 
 async function importFile(
   client: TestClient,
@@ -236,7 +266,7 @@ async function importFile(
 
 beforeAll(async () => {
   const test = await createTestApp()
-  ;({ close, jobs } = test)
+  ;({ close, jobs, database: db } = test)
   kyle = await setUpServer(test.app, test.setupCode)
   jamie = await join(
     test.app,
@@ -248,6 +278,29 @@ beforeAll(async () => {
 afterAll(() => close())
 
 describe("a Mealie backup", () => {
+  test("is checked in the background, and then says what's in it", async () => {
+    const sent = await kyle.upload(
+      "/api/households/current/import/files",
+      await backup(),
+      "application/zip",
+      "POST"
+    )
+    expect(sent.status).toBe(202)
+    const { id, status } = await sent.json()
+    // Checked at once here, or soon after on a busy server.
+    expect(["checking", "ready"]).toContain(status)
+    await jobs.drain()
+    const checked = await (
+      await kyle.get(`/api/households/current/import/files/${id}`)
+    ).json()
+    expect(checked).toMatchObject({
+      id,
+      status: "ready",
+      file: { id, app: "mealie", what: "backup", recipes: 2 },
+      error: null,
+    })
+  })
+
   test("is checked before it's imported", async () => {
     const res = await check(kyle, await backup())
     expect(res.status).toBe(200)
@@ -343,6 +396,91 @@ describe("a Mealie backup", () => {
     const { file, job } = await importFile(kyle, await backup(extra))
     expect(file).toMatchObject({ recipes: 3, alreadyHere: 2 })
     expect(job.result).toMatchObject({ recipes: 1, skipped: 2, failed: 0 })
+  })
+
+  test("keeps a record of each recipe and what came of it", async () => {
+    const { job } = await importFile(kyle, await backup())
+    const em = db.em.fork()
+    const record = await em.findOneOrFail(
+      Import,
+      { id: job.id },
+      { filters: false }
+    )
+    expect(record).toMatchObject({ kind: "mealie", status: "done", failed: 0 })
+    // The backup's two came in earlier, or now.
+    expect(record.added + record.already).toBe(2)
+    const items = await em.find(
+      ImportItem,
+      { import: job.id },
+      { filters: false, orderBy: { position: "asc" }, populate: ["recipe"] }
+    )
+    expect(items.map((item) => item.recipe?.getEntity().name).sort()).toEqual(
+      expect.arrayContaining([expect.any(String), expect.any(String)])
+    )
+    expect(items.every((item) => item.ref?.startsWith("mealie:"))).toBe(true)
+  })
+
+  test("cut off by a restart, carries on without counting what came in as already here", async () => {
+    const BARLEY = "f15c1294d8a84f91a09114854680dc81"
+    const RYE = "f25c1294d8a84f91a09114854680dc82"
+    const extra = {
+      recipes: [
+        {
+          id: BARLEY,
+          group_id: GROUP,
+          name: "Barley Stew",
+          created_at: "2024-02-01T00:00:00",
+        },
+        {
+          id: RYE,
+          group_id: GROUP,
+          name: "Rye Loaf",
+          created_at: "2024-02-02T00:00:00",
+        },
+      ],
+    }
+    const checked = await check(kyle, await backup(extra))
+    const file = await checked.json()
+    const started = await kyle.post(
+      `/api/households/current/import/files/${file.id}/start`,
+      {}
+    )
+    const { id } = await started.json()
+
+    // What the record says when a restart cuts it off after Barley Stew.
+    const home = (await (await kyle.get("/api/households/current")).json()).id
+    const em = forHousehold(db.em, home)
+    const barley = em.create(Recipe, {
+      household: home,
+      slug: "barley-stew",
+      name: "Barley Stew",
+      origin: "mealie",
+      importedFrom: mealieRef(BARLEY),
+    })
+    await em.flush()
+    await beginImport(em, id)
+    await addItem(em, id, {
+      label: "Barley Stew",
+      ref: mealieRef(BARLEY),
+      state: "added",
+      recipeId: barley.id,
+    })
+
+    await jobs.drain()
+    // Four recipes, each once: Barley Stew as it came in before the
+    // restart, not again as already here. The backup's own two came in
+    // earlier or now.
+    const record = await (await kyle.get(`/api/imports/${id}`)).json()
+    expect(record).toMatchObject({ status: "done", total: 4 })
+    expect(record.added + record.already).toBe(4)
+    expect(
+      record.cameIn.items.map(
+        (item: { recipe: { name: string } }) => item.recipe.name
+      )
+    ).toEqual(expect.arrayContaining(["Barley Stew", "Rye Loaf"]))
+    expect(
+      record.alreadyHere.items.map((item: { label: string }) => item.label)
+    ).not.toContain("Barley Stew")
   })
 
   test("with more than one group, imports the one chosen", async () => {

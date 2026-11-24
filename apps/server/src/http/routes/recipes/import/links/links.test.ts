@@ -2,8 +2,13 @@ import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../../app.ts"
 import { AppError } from "../../../../../core/errors.ts"
 import type { Fetcher } from "../../../../../services/fetch/public-fetch.ts"
-import { Job } from "../../../../../database/entities/index.ts"
+import { Import, ImportItem } from "../../../../../database/entities/index.ts"
 import type { Database } from "../../../../../database/orm.ts"
+import { forHousehold } from "../../../../../database/scope.ts"
+import {
+  settleItem,
+  beginImport,
+} from "../../../../../services/imports/imports.ts"
 import type { JobRunner } from "../../../../../services/jobs/runner.ts"
 import { stopSignal } from "../../../../../services/jobs/stop.ts"
 import {
@@ -33,6 +38,8 @@ const PAGES: Record<string, string> = {
   "https://example.com/blog": "<html><body>Ten kitchen tips</body></html>",
   "https://example.com/pasta": recipePage("Lemon Pasta", "200 g spaghetti"),
   "https://example.com/stew": recipePage("Bean Stew", "2 cans beans"),
+  "https://example.com/curry": recipePage("Green Curry", "1 can coconut milk"),
+  "https://example.com/tacos": recipePage("Fish Tacos", "8 tortillas"),
 }
 
 /** A site that never answers, until the job fetching it is stopped. */
@@ -75,11 +82,13 @@ let close: () => Promise<void>
 let database: Database
 let jobs: JobRunner
 let kyle: TestClient
+let home: string
 
 beforeAll(async () => {
   const test = await createTestApp({ fetcher })
   ;({ app, close, database, jobs } = test)
   kyle = await setUpServer(app, test.setupCode)
+  home = (await (await kyle.get("/api/households/current")).json()).id
 })
 
 afterAll(() => close())
@@ -90,7 +99,7 @@ const start = async (body: unknown) => {
   return res.json()
 }
 const status = async (id: string) =>
-  (await kyle.get(`/api/recipes/import/links/${id}`)).json()
+  (await kyle.get(`/api/imports/${id}`)).json()
 
 describe("several links", () => {
   test("are checked, tidied and counted before importing", async () => {
@@ -126,14 +135,12 @@ describe("several links", () => {
       tag: "to try",
       total: 3,
       done: 0,
-      items: [
-        { url: "https://example.com/soup", state: "waiting" },
-        { url: "https://example.com/bread", state: "waiting" },
-        { url: "https://example.com/blog", state: "waiting" },
-      ],
     })
-    const going = await (await kyle.get("/api/recipes/import/links")).json()
-    expect(going.imports.map((i: { id: string }) => i.id)).toEqual([started.id])
+    expect((await status(started.id)).items).toMatchObject([
+      { label: "https://example.com/soup", state: "waiting" },
+      { label: "https://example.com/bread", state: "waiting" },
+      { label: "https://example.com/blog", state: "waiting" },
+    ])
 
     await jobs.drain()
     expect(await status(started.id)).toMatchObject({
@@ -159,10 +166,6 @@ describe("several links", () => {
     })
     const soup = await (await kyle.get("/api/recipes/tomato-soup")).json()
     expect(soup.tags).toContain("to try")
-    // Finished, so no longer listed.
-    expect(
-      (await (await kyle.get("/api/recipes/import/links")).json()).imports
-    ).toEqual([])
   })
 
   test("already in the library aren't added again, or tagged", async () => {
@@ -184,9 +187,9 @@ describe("several links", () => {
     const started = await start({
       urls: ["https://example.com/rice", "https://example.com/bread"],
     })
-    const res = await kyle.post(`/api/recipes/import/links/${started.id}/stop`)
+    const res = await kyle.post(`/api/imports/${started.id}/stop`)
     expect(res.status).toBe(200)
-    expect(await res.json()).toMatchObject({
+    expect(await status(started.id)).toMatchObject({
       status: "cancelled",
       stopped: 2,
       items: [{ state: "stopped" }, { state: "stopped" }],
@@ -203,30 +206,10 @@ describe("several links", () => {
     const started = await start({
       urls: ["https://example.com/pasta", "https://example.com/stew"],
     })
-    await database.em.fork().nativeUpdate(
-      Job,
-      { id: started.id },
-      {
-        progress: { done: 1, total: 2 },
-        result: {
-          tag: null,
-          items: [
-            {
-              url: "https://example.com/pasta",
-              state: "added",
-              recipe: pasta,
-              error: null,
-            },
-            {
-              url: "https://example.com/stew",
-              state: "waiting",
-              recipe: null,
-              error: null,
-            },
-          ],
-        },
-      }
-    )
+    // What its record says when a restart cuts it off after the first.
+    const em = forHousehold(database.em, home)
+    await settleItem(em, started.id, 0, { state: "added", recipeId: pasta.id })
+    await beginImport(em, started.id)
 
     await jobs.drain()
     expect(await status(started.id)).toMatchObject({
@@ -240,13 +223,60 @@ describe("several links", () => {
     })
   })
 
+  test("each link's outcome is in the import's record", async () => {
+    const started = await start({
+      urls: [
+        "https://example.com/curry",
+        "https://example.com/tacos",
+        "https://example.com/nowhere",
+      ],
+      tag: "weeknight",
+    })
+    await jobs.drain()
+
+    const em = forHousehold(database.em, home)
+    const record = await em.findOneOrFail(Import, { id: started.id })
+    expect(record).toMatchObject({
+      kind: "links",
+      source: null,
+      listed: true,
+      status: "done",
+      total: 3,
+      added: 2,
+      already: 0,
+      failed: 1,
+    })
+    const items = await em.find(
+      ImportItem,
+      { import: started.id },
+      { orderBy: { position: "asc" }, populate: ["recipe"] }
+    )
+    expect(
+      items.map((item) => [
+        item.label,
+        item.state,
+        item.recipe?.getEntity().slug ?? null,
+        item.error,
+      ])
+    ).toEqual([
+      ["https://example.com/curry", "added", "green-curry", null],
+      ["https://example.com/tacos", "added", "fish-tacos", null],
+      [
+        "https://example.com/nowhere",
+        "failed",
+        null,
+        "Couldn't reach that site.",
+      ],
+    ])
+  })
+
   test("stopped while a link is fetched show it as stopped, not failed", async () => {
     const started = await start({ urls: [SLOW, "https://example.com/soup"] })
     const draining = jobs.drain()
     await expect
       .poll(async () => (await status(started.id)).items[0].state)
       .toBe("adding")
-    await kyle.post(`/api/recipes/import/links/${started.id}/stop`)
+    await kyle.post(`/api/imports/${started.id}/stop`)
     await draining
 
     expect(await status(started.id)).toMatchObject({
@@ -261,7 +291,7 @@ describe("several links", () => {
     const started = await start({ urls: ["https://example.com/salad"] })
     const draining = jobs.drain()
     await expect.poll(() => photoAsked).toBe(true)
-    await kyle.post(`/api/recipes/import/links/${started.id}/stop`)
+    await kyle.post(`/api/imports/${started.id}/stop`)
     await draining
 
     expect(await status(started.id)).toMatchObject({
@@ -279,11 +309,8 @@ describe("several links", () => {
     expect(res.status).toBe(400)
     expect((await res.json()).error.code).toBe("no_links")
     expect(
-      (
-        await kyle.get(
-          "/api/recipes/import/links/0d0a3d6e-6f8b-4bd2-9a3f-0c4b2d1e5f60"
-        )
-      ).status
+      (await kyle.get("/api/imports/0d0a3d6e-6f8b-4bd2-9a3f-0c4b2d1e5f60"))
+        .status
     ).toBe(404)
   })
 })
@@ -300,7 +327,7 @@ describe("sharing several links", () => {
       message: "Adding 2 recipes to Merran.",
       recipe: null,
       importId: expect.any(String),
-      url: `${TEST_ORIGIN}/recipes/import/${shared.importId}`,
+      url: `${TEST_ORIGIN}/recipes/imports/${shared.importId}`,
     })
     await jobs.drain()
     expect(await status(shared.importId)).toMatchObject({
@@ -346,9 +373,7 @@ describe("with an API key", () => {
     const res = await withKey(importer, "/api/recipes/import/links", body)
     expect(res.status).toBe(202)
     const { id } = await res.json()
-    expect(
-      (await withKey(importer, `/api/recipes/import/links/${id}`)).status
-    ).toBe(200)
+    expect((await withKey(importer, `/api/imports/${id}`)).status).toBe(200)
     await jobs.drain()
   })
 })

@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../app.ts"
 import type { AiTarget } from "../../../../services/ai/providers.ts"
 import type { Fetcher } from "../../../../services/fetch/public-fetch.ts"
+import type { JobRunner } from "../../../../services/jobs/runner.ts"
 import {
   ytDlpError,
   type VideoInfo,
@@ -41,9 +42,15 @@ const LEMON = {
 
 let given: Part[] = []
 const reply = (call: MockCall) => {
-  given = (call.prompt as Prompt)
+  const parts = (call.prompt as Prompt)
     .filter((m) => m.role === "user")
-    .flatMap((m) => m.content as Part[])
+    .flatMap((m) =>
+      typeof m.content === "string"
+        ? [{ type: "text", text: m.content }]
+        : m.content
+    )
+  // The video's reading: not the nutrition and tidy-up that follow it.
+  if (parts.some((part) => part.text?.includes("Video:"))) given = parts
   return JSON.stringify(LEMON)
 }
 
@@ -112,6 +119,7 @@ const fetcher: Fetcher = async (url, options) => {
 let app: App
 let close: () => Promise<void>
 let kyle: TestClient
+let jobs: JobRunner
 
 beforeAll(async () => {
   frame = await sharp({
@@ -133,7 +141,7 @@ beforeAll(async () => {
       return { text: "two cups of flour and a pinch of salt", seconds: 90 }
     },
   })
-  ;({ app, close } = test)
+  ;({ app, close, jobs } = test)
   kyle = await setUpServer(app, test.setupCode)
   const key = await kyle.post("/api/settings/server/ai/keys", {
     provider: "anthropic",
@@ -144,9 +152,35 @@ beforeAll(async () => {
 
 afterAll(() => close())
 
+/**
+ * Imports a link. A video goes on in the background (202), so it's followed
+ * to its end, and what came of it answered as the link import did: 201 with
+ * the recipe, 200 with the one already in, or "failed" with why.
+ */
 const importLink = async (url: string) => {
   const res = await kyle.post("/api/recipes/import", { url })
-  return { status: res.status, body: await res.json() }
+  const body = await res.json()
+  if (res.status !== 202)
+    return { status: res.status as number | "failed", body }
+  await jobs.drain()
+  const found = await (await kyle.get(`/api/imports/${body.import.id}`)).json()
+  const recipeAt = async (slug: string) =>
+    (await kyle.get(`/api/recipes/${slug}`)).json()
+  const cameIn = found.cameIn.items[0]
+  if (cameIn) {
+    return { status: 201, body: { recipe: await recipeAt(cameIn.recipe.slug) } }
+  }
+  const already = found.alreadyHere.items[0]
+  if (already) {
+    return {
+      status: 200,
+      body: { duplicate: true, recipe: await recipeAt(already.recipe.slug) },
+    }
+  }
+  return {
+    status: "failed" as const,
+    body: { error: { message: found.didntComeIn.items[0]?.error } },
+  }
 }
 
 describe("a video link", () => {
@@ -217,11 +251,8 @@ describe("a video link", () => {
     const { status, body } = await importLink(
       "https://www.tiktok.com/@sam/video/1"
     )
-    expect(status).toBe(422)
-    expect(body.error).toMatchObject({
-      code: "video_nothing_to_read",
-      message: expect.stringContaining("With an OpenAI key"),
-    })
+    expect(status).toBe("failed")
+    expect(body.error.message).toContain("With an OpenAI key")
   })
 
   test("without captions is listened to, on an OpenAI key", async () => {
@@ -267,8 +298,10 @@ describe("a video link", () => {
     const { status, body } = await importLink(
       "https://www.youtube.com/watch?v=gone"
     )
-    expect(status).toBe(422)
-    expect(body.error.code).toBe("video_unavailable")
+    expect(status).toBe("failed")
+    expect(body.error.message).toBe(
+      "That video isn't available. It may be private or deleted."
+    )
   })
 
   test("reads a video's frames with the model for photos and PDFs", async () => {
@@ -315,8 +348,8 @@ describe("a video link", () => {
     const { status, body } = await importLink(
       "https://www.youtube.com/shorts/soup"
     )
-    expect(status, JSON.stringify(body)).toBe(403)
-    expect(body.error.code).toBe("ai_noKey")
+    expect(status, JSON.stringify(body)).toBe("failed")
+    expect(body.error.message).toMatch(/key/i)
     expect(downloads).toEqual([])
     await kyle.put("/api/households/current/ai", picks)
   })

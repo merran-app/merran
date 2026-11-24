@@ -116,6 +116,11 @@ export type JobHandler = {
    * nobody follows.
    */
   area?: LiveArea
+  /**
+   * Called when a job of this kind is cancelled while it's still waiting,
+   * so never ran: for a kind that keeps a record of its own, like imports.
+   */
+  cancelledWaiting?(em: EntityManager, job: Job): Promise<void>
   run(ctx: JobContext): Promise<Record<string, unknown> | void>
 }
 
@@ -157,6 +162,10 @@ const PROGRESS_EVERY_MS = 500
 
 const scheduleKey = (kind: string) => `schedule:${kind}`
 
+/** Whether a job has ended, one way or another. */
+const isFinal = (status: JobStatus) =>
+  status === "done" || status === "failed" || status === "cancelled"
+
 /** A household and a kind of job, to count what each household runs. */
 const householdKind = (householdId: string, kind: string) =>
   `${householdId} ${kind}`
@@ -167,6 +176,8 @@ export class JobRunner {
   readonly #schedules: readonly JobSchedule[]
   readonly #lanes: Record<JobLane, number>
   readonly #running = new Map<string, Running>()
+  /** Who's waiting for each job to end (`waitFor`). */
+  readonly #waiting = new Map<string, Set<(status: JobStatus) => void>>()
   #timer: NodeJS.Timeout | null = null
   #ticking: Promise<void> | null = null
   #again = false
@@ -265,16 +276,57 @@ export class JobRunner {
     const waiting = job.status === "queued"
     await cancelJob(em, job, (id) => this.stopJob(id))
     const householdId = job.forHousehold?.id
-    const area = this.#handlers.get(job.kind)?.area
+    const handler = this.#handlers.get(job.kind)
+    if (waiting && householdId) {
+      await handler?.cancelledWaiting?.(
+        forHousehold(this.#deps.database.em, householdId),
+        job
+      )
+    }
+    if (waiting) this.#ended(job.id, "cancelled")
+    const area = handler?.area
     if (waiting && householdId && area) {
       this.#deps.events.job(householdId, area, {
         id: job.id,
         kind: job.kind,
         status: job.status,
         progress: job.progress ?? null,
+        startedBy: job.createdBy?.id ?? null,
       })
     }
     return job
+  }
+
+  /**
+   * How a job ended (done, failed or cancelled), once it has, or null if
+   * `ms` passes first: for a request that waits a while for its job and
+   * then hands over.
+   */
+  async waitFor(jobId: string, ms: number): Promise<JobStatus | null> {
+    let settle!: (status: JobStatus | null) => void
+    const settled = new Promise<JobStatus | null>((resolve) => {
+      settle = resolve
+    })
+    // Listening before looking, so an end in between isn't missed.
+    const waiters = this.#waiting.get(jobId) ?? new Set()
+    waiters.add(settle)
+    this.#waiting.set(jobId, waiters)
+    const timer = setTimeout(() => settle(null), ms)
+    try {
+      const found = await this.#em().findOne(Job, { id: jobId })
+      if (!found) settle(null)
+      else if (isFinal(found.status)) settle(found.status)
+      return await settled
+    } finally {
+      clearTimeout(timer)
+      waiters.delete(settle)
+      if (waiters.size === 0) this.#waiting.delete(jobId)
+    }
+  }
+
+  /** A job ended: whoever's waiting for it hears how. */
+  #ended(jobId: string, status: JobStatus) {
+    for (const waiter of this.#waiting.get(jobId) ?? []) waiter(status)
   }
 
   /** Asks a running job to stop. */
@@ -468,14 +520,19 @@ export class JobRunner {
         this.#deps.events.changed(householdId, { area, by: null, client: null })
       }
     }
-    /** Tells the household how its job is going, for kinds it follows. */
+    /**
+     * Tells the household how its job is going, for kinds it follows, and
+     * whoever's waiting for it once it ends.
+     */
     const tell = (status: JobStatus) => {
+      if (isFinal(status)) this.#ended(job.id, status)
       if (!householdId || !handler.area) return
       this.#deps.events.job(householdId, handler.area, {
         id: job.id,
         kind: job.kind,
         status,
         progress: progressNow,
+        startedBy: job.createdBy?.id ?? null,
       })
     }
     tell("running")

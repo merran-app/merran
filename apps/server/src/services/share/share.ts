@@ -1,8 +1,9 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
 import { MAX_PHOTOS } from "../recipes/import/ai-reader.ts"
-import { importLink } from "../recipes/import/import-link.ts"
+import type { JobRunner } from "../jobs/runner.ts"
 import { MAX_LINKS, startLinkImport } from "../recipes/import/import-links.ts"
+import { importOne } from "../recipes/import/import-one.ts"
 import { importPhotos, importText } from "../recipes/import/import-with-ai.ts"
 import { MAX_RECEIPT_FILES, readReceipt } from "../pantry/receipts/receipts.ts"
 import type { VideoDeps } from "../recipes/import/video/import.ts"
@@ -35,7 +36,7 @@ export type ShareOutcome = Base &
         outcome: "importing"
         code: null
         recipe: null
-        /** The import, to follow at /recipes/import/links/{importId}. */
+        /** The import, to follow at /imports/{importId}. */
         importId: string
         receiptId: null
         /** Its page. */
@@ -177,7 +178,7 @@ async function readShared(
 /** Works out what was shared, and adds it. */
 export async function shareToMerran(
   em: EntityManager,
-  deps: AfterSaveDeps & VideoDeps,
+  deps: AfterSaveDeps & VideoDeps & { jobs: JobRunner },
   options: {
     householdId: string
     userId: string
@@ -195,7 +196,7 @@ export async function shareToMerran(
 
   try {
     if (links.length > 1) {
-      const job = await startLinkImport(em, {
+      const started = await startLinkImport(em, {
         householdId: options.householdId,
         userId: options.userId,
         urls: links,
@@ -206,18 +207,30 @@ export async function shareToMerran(
         code: null,
         message: `Adding ${count} recipes to Merran.`,
         recipe: null,
-        importId: job.id,
+        importId: started.id,
         receiptId: null,
-        url: `${options.baseUrl}/recipes/import/${job.id}`,
+        url: `${options.baseUrl}/recipes/imports/${started.id}`,
       }
     }
 
-    const { recipe, duplicate } = await importLink(em, deps, {
+    const result = await importOne(em, deps, {
       householdId: options.householdId,
       userId: options.userId,
       url: links[0]!,
     })
-    return added(recipe, duplicate, options.baseUrl)
+    if ("started" in result) {
+      // Taking a while, or a video: it goes on in the background.
+      return {
+        outcome: "importing",
+        code: null,
+        message: "Adding the recipe to Merran. It'll be in your recipes soon.",
+        recipe: null,
+        importId: result.started.id,
+        receiptId: null,
+        url: `${options.baseUrl}/recipes/imports/${result.started.id}`,
+      }
+    }
+    return added(result.done.recipe, result.done.duplicate, options.baseUrl)
   } catch (err) {
     // Why the link couldn't come in, as the link import says it.
     if (err instanceof AppError) return failed(err.code, err.message)

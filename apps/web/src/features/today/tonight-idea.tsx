@@ -45,7 +45,10 @@ export function TonightIdea({
   const { t } = useTranslation()
   const actions = usePlanActions()
   const whyText = useWhyText()
-  const importRecipe = useImportRecipe()
+  // One that goes on in the background can't be planned yet: it says so.
+  const importRecipe = useImportRecipe({
+    stillImporting: t("today.idea.stillImporting"),
+  })
   const id = React.useId()
   // Ideas already shown, so Another idea is another.
   const [seen, setSeen] = React.useState<string[]>([])

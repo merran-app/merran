@@ -121,6 +121,36 @@ export function AppImportCard() {
   )
 }
 
+/** How often a file's check is asked about while Merran reads it. */
+const CHECK_EVERY_MS = 1_000
+
+/**
+ * Sends a file to be checked and waits while Merran reads it, which a big
+ * file takes a while to do: what's in it, or an error saying why not.
+ */
+async function checkedFile(file: File, onChecking: () => void) {
+  let check = await unwrap(
+    api.POST("/api/households/current/import/files", asFileBody(file))
+  )
+  if (check.status === "checking") onChecking()
+  while (check.status === "checking") {
+    await new Promise((resolve) => setTimeout(resolve, CHECK_EVERY_MS))
+    check = await unwrap(
+      api.GET("/api/households/current/import/files/{fileId}", {
+        params: { path: { fileId: check.id } },
+      })
+    )
+  }
+  if (check.status === "failed" || !check.file) {
+    throw new ApiError(
+      400,
+      check.error?.code ?? "check_failed",
+      check.error?.message ?? ""
+    )
+  }
+  return check.file
+}
+
 /** A file from another app: checked first, then imported. */
 function FileImport({ chooser, onStarted }: FormProps) {
   const { t } = useTranslation()
@@ -129,13 +159,15 @@ function FileImport({ chooser, onStarted }: FormProps) {
     null
   )
   const [group, setGroup] = React.useState<string | null>(null)
+  // Uploaded, and being read: the button says so.
+  const [checking, setChecking] = React.useState(false)
   const { busy, error, call } = useCall()
 
   async function check() {
     if (!file) return
-    const found = await call(() =>
-      unwrap(api.POST("/api/households/current/import/files", asFileBody(file)))
-    )
+    setChecking(false)
+    const found = await call(() => checkedFile(file, () => setChecking(true)))
+    setChecking(false)
     if (!found) return
     setChecked(found)
     // The group with the most recipes, which is likely the household's.
@@ -261,7 +293,9 @@ function FileImport({ chooser, onStarted }: FormProps) {
           <Button disabled={!file || busy} onClick={() => void check()}>
             {busy && <Spinner data-icon="inline-start" />}
             {busy
-              ? t("settings.transfer.apps.uploading")
+              ? checking
+                ? t("settings.transfer.apps.checking")
+                : t("settings.transfer.apps.uploading")
               : t("settings.transfer.apps.check")}
           </Button>
         )}

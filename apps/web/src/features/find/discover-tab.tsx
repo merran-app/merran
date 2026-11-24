@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { NeedsAi, useAiFor } from "@/features/ai/needs-ai"
+import { importStarted, useStartedNotice } from "@/features/imports/started"
 import { followEvery } from "@/features/live/state"
 import { useRefreshRecipes } from "@/features/recipes/queries"
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
@@ -201,6 +202,7 @@ export function Search({
 function FoundCard({ found }: { found: Found }) {
   const { t } = useTranslation()
   const refresh = useRefreshRecipes()
+  const startedNotice = useStartedNotice()
   const [busy, setBusy] = React.useState(false)
   const [imported, setImported] = React.useState<string | null>(null)
 
@@ -210,6 +212,10 @@ function FoundCard({ found }: { found: Found }) {
       const result = await unwrap(
         api.POST("/api/recipes/import", { body: { url: found.url } })
       )
+      if (importStarted(result)) {
+        startedNotice(result)
+        return
+      }
       setImported(result.recipe.slug)
       await refresh()
       toast.success(t("recipes.import.added", { name: result.recipe.name }))

@@ -92,7 +92,9 @@ async function open(path: string): Promise<Found> {
 
   const { size } = await stat(path)
   const paprika =
-    size <= MAX_SINGLE_FILE_BYTES ? readPaprikaFile(await readFile(path)) : null
+    size <= MAX_SINGLE_FILE_BYTES
+      ? await readPaprikaFile(await readFile(path))
+      : null
   if (!paprika) throw notRecognized()
   return {
     app: "paprika",

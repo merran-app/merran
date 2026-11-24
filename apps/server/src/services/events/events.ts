@@ -26,6 +26,8 @@ export type JobMoved = {
   kind: string
   status: JobStatus
   progress: { done: number; total: number } | null
+  /** Who started it, so their app can tell them when it ends. */
+  startedBy: string | null
 }
 
 export type LiveEvent =

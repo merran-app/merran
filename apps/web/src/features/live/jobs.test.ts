@@ -6,7 +6,7 @@ import { jobRefresh } from "./jobs.ts"
 test("a job's own query, and what shows its kind", () => {
   assert.deepEqual(jobRefresh({ id: "j1", kind: "recipes.importLinks" }), [
     ["jobs", "j1"],
-    ["link-imports"],
+    ["imports"],
   ])
   assert.deepEqual(jobRefresh({ id: "j2", kind: "recipes.tidy" }), [
     ["jobs", "j2"],
