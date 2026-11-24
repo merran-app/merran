@@ -11777,6 +11777,7 @@
             "notes": "Bone-in thighs work too: give them 10 minutes more.",
             "dietOverrides": {},
             "needs": [],
+            "working": [],
             "nutrition": {
               "source": "calculated",
               "calories": 412,
@@ -11925,6 +11926,17 @@
               "nutrition": {
                 "$ref": "#/components/schemas/Nutrition"
               },
+              "working": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "nutrition",
+                    "photo"
+                  ]
+                },
+                "description": "What Merran is doing for it in the background: working out its nutrition, making its photo."
+              },
               "ingredients": {
                 "type": "array",
                 "items": {
@@ -11949,6 +11961,7 @@
               "dietOverrides",
               "needs",
               "nutrition",
+              "working",
               "ingredients",
               "steps"
             ]
@@ -11988,6 +12001,7 @@
           "notes": "Bone-in thighs work too: give them 10 minutes more.",
           "dietOverrides": {},
           "needs": [],
+          "working": [],
           "nutrition": {
             "source": "calculated",
             "calories": 412,
@@ -12978,6 +12992,7 @@
             "notes": "Bone-in thighs work too: give them 10 minutes more.",
             "dietOverrides": {},
             "needs": [],
+            "working": [],
             "nutrition": {
               "source": "calculated",
               "calories": 412,
@@ -13962,6 +13977,7 @@
           "notes": "Bone-in thighs work too: give them 10 minutes more.",
           "dietOverrides": {},
           "needs": [],
+          "working": [],
           "nutrition": {
             "source": "calculated",
             "calories": 412,
@@ -14457,6 +14473,7 @@
             "notes": "Bone-in thighs work too: give them 10 minutes more.",
             "dietOverrides": {},
             "needs": [],
+            "working": [],
             "nutrition": {
               "source": "calculated",
               "calories": 412,
@@ -33338,7 +33355,7 @@
           "Recipes"
         ],
         "summary": "Work out a recipe's nutrition",
-        "description": "Per serving, from the ingredients: added up from USDA FoodData Central when the server has a key (AI picking each ingredient's food and weighing what USDA's portions can't), else, or when too much couldn't be counted, estimated by AI. Replaces what it had, from the site too. A recipe's nutrition is worked out by itself after it's saved; this is for doing it again now. With an API key, it needs the `recipes: write` permission.",
+        "description": "Per serving, from the ingredients: added up from USDA FoodData Central when the server has a key (AI picking each ingredient's food and weighing what USDA's portions can't), else, or when too much couldn't be counted, estimated by AI. Replaces what it had, from the site too. A recipe's nutrition is worked out by itself after it's saved; this is for doing it again now. It waits up to 10 seconds; past that it answers 202 with the job, and the recipe has it once the job's done. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -33371,6 +33388,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Still working it out: the recipe has it once this job is done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
                 }
               }
             }

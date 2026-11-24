@@ -203,6 +203,10 @@ export const RecipeSchema = RecipeSummarySchema.extend({
   nutrition: NutritionSchema.nullable().openapi({
     description: "Per serving, when it's known.",
   }),
+  working: z.array(z.enum(["nutrition", "photo"])).openapi({
+    description:
+      "What Merran is doing for it in the background: working out its nutrition, making its photo.",
+  }),
   ingredients: z.array(IngredientSchema),
   steps: z.array(StepSchema),
 }).openapi("Recipe", { example: RECIPE })

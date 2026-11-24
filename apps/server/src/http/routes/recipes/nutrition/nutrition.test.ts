@@ -212,6 +212,14 @@ describe("a recipe's nutrition", () => {
     expect(asked.at(-1)).toBe("estimate")
   })
 
+  test("nutrition worked out within the wait answers with the recipe, as before", async () => {
+    const recipe = await addRecipe("Quick Chicken")
+    const { status, body } = await workOut(recipe.id)
+    expect(status, JSON.stringify(body)).toBe(200)
+    expect(body.nutrition).toMatchObject({ source: "estimate", servings: 4 })
+    expect(body.working).toEqual([])
+  })
+
   test("with a USDA key, is added up from USDA's data, the foods Merran knows from their own", async () => {
     const saved = await kyle.patch("/api/settings/server", {
       "nutrition.usdaKey": USDA_KEY,
@@ -256,6 +264,9 @@ describe("a recipe's nutrition", () => {
       ["1 lb goat shoulder", "1 tbsp olive oil"],
       2
     )
+    // Saving it started its own nutrition job: let that finish, so the two
+    // don't both search USDA at once.
+    await jobs.drain()
     const { body } = await workOut(recipe.id)
     expect(body.nutrition).toMatchObject({
       source: "calculated",
@@ -317,6 +328,29 @@ describe("a recipe's nutrition", () => {
     const { status, body } = await workOut((await noServings.json()).id)
     expect(status).toBe(400)
     expect(body.error.code).toBe("no_servings")
+  })
+
+  test("no servings still answers at once, with no job made", async () => {
+    const noServings = await kyle.post("/api/recipes", {
+      name: "Servingless Soup",
+      // No ingredients, so the library's count of recipes lacking servings
+      // doesn't include it.
+      ingredients: [],
+      steps: [],
+    })
+    const id = (await noServings.json()).id as string
+    const { status, body } = await workOut(id)
+    expect(status).toBe(400)
+    expect(body.error.code).toBe("no_servings")
+    expect(
+      await database.em
+        .fork()
+        .count(
+          Job,
+          { key: `recipes.workOutNutrition:${id}` },
+          { filters: false }
+        )
+    ).toBe(0)
   })
 })
 

@@ -200,6 +200,7 @@ export const RECIPE = {
   notes: "Bone-in thighs work too: give them 10 minutes more.",
   dietOverrides: {},
   needs: [],
+  working: [],
   nutrition: {
     source: "calculated" as const,
     calories: 412,

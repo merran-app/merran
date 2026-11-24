@@ -3348,7 +3348,7 @@ export interface paths {
         put?: never;
         /**
          * Work out a recipe's nutrition
-         * @description Per serving, from the ingredients: added up from USDA FoodData Central when the server has a key (AI picking each ingredient's food and weighing what USDA's portions can't), else, or when too much couldn't be counted, estimated by AI. Replaces what it had, from the site too. A recipe's nutrition is worked out by itself after it's saved; this is for doing it again now. With an API key, it needs the `recipes: write` permission.
+         * @description Per serving, from the ingredients: added up from USDA FoodData Central when the server has a key (AI picking each ingredient's food and weighing what USDA's portions can't), else, or when too much couldn't be counted, estimated by AI. Replaces what it had, from the site too. A recipe's nutrition is worked out by itself after it's saved; this is for doing it again now. It waits up to 10 seconds; past that it answers 202 with the job, and the recipe has it once the job's done. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["workOutNutrition"];
         delete?: never;
@@ -14938,6 +14938,7 @@ export interface components {
          *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *         "dietOverrides": {},
          *         "needs": [],
+         *         "working": [],
          *         "nutrition": {
          *           "source": "calculated",
          *           "calories": 412,
@@ -15058,6 +15059,7 @@ export interface components {
          *       "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *       "dietOverrides": {},
          *       "needs": [],
+         *       "working": [],
          *       "nutrition": {
          *         "source": "calculated",
          *         "calories": 412,
@@ -15149,6 +15151,8 @@ export interface components {
             /** @description Foods the household said it can't do without: a dislike that's usually left out of recipes rules this one out instead. */
             needs: string[];
             nutrition: components["schemas"]["Nutrition"];
+            /** @description What Merran is doing for it in the background: working out its nutrition, making its photo. */
+            working: ("nutrition" | "photo")[];
             ingredients: components["schemas"]["Ingredient"][];
             steps: components["schemas"]["Step"][];
         };
@@ -15591,6 +15595,7 @@ export interface components {
          *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *         "dietOverrides": {},
          *         "needs": [],
+         *         "working": [],
          *         "nutrition": {
          *           "source": "calculated",
          *           "calories": 412,
@@ -16137,6 +16142,7 @@ export interface components {
          *       "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *       "dietOverrides": {},
          *       "needs": [],
+         *       "working": [],
          *       "nutrition": {
          *         "source": "calculated",
          *         "calories": 412,
@@ -16446,6 +16452,7 @@ export interface components {
          *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *         "dietOverrides": {},
          *         "needs": [],
+         *         "working": [],
          *         "nutrition": {
          *           "source": "calculated",
          *           "calories": 412,
@@ -28551,6 +28558,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description Still working it out: the recipe has it once this job is done. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
                 };
             };
             /** @description No servings, or no ingredients. */

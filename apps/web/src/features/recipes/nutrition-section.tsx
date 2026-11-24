@@ -48,8 +48,12 @@ export function NutritionSection({
           params: { path: { recipe: recipe.id } },
         })
       )
-      queryClient.setQueryData(recipeQuery(updated.slug).queryKey, updated)
-      toast.success(t("recipes.nutrition.workedOut"))
+      // Past the wait the server answers with the job, not the recipe; the
+      // recipe has its nutrition once the job's done.
+      if ("slug" in updated) {
+        queryClient.setQueryData(recipeQuery(updated.slug).queryKey, updated)
+        toast.success(t("recipes.nutrition.workedOut"))
+      }
     } catch (err) {
       if (!(err instanceof ApiError)) throw err
       toast.error(err.message)

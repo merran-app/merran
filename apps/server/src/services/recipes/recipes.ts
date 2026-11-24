@@ -49,6 +49,7 @@ import {
 import { photoUrls, removePhoto, storePhoto } from "./photos/photos.ts"
 import { uniqueSlug } from "./slugs.ts"
 import { pruneTags, setTags, tagKey, tagsOf } from "./tags.ts"
+import { workingOn, type WorkingOn } from "./working.ts"
 import { saveVersion, type VersionSource } from "./versions.ts"
 import { recipeRef, type RecipePart } from "../webhooks/payloads.ts"
 import { changedParts } from "../webhooks/recipe-parts.ts"
@@ -121,6 +122,9 @@ export function describeRecipe(recipe: Recipe, tags: string[]) {
     dietOverrides: overridesOf(recipe),
     nutrition: recipe.nutrition ?? null,
     needs: recipe.needs ?? [],
+    // Only a loaded recipe knows (`loadRecipe`); one described for a
+    // version or a variant isn't kept by a page.
+    working: [] as WorkingOn[],
     ingredients: recipe.ingredients.getItems().map((line) => ({
       id: line.id,
       section: line.section ?? null,
@@ -140,10 +144,16 @@ export function describeRecipe(recipe: Recipe, tags: string[]) {
   }
 }
 
+/** A recipe as loaded for an answer: what's in it, and what's being done for it. */
+export type LoadedRecipe = Awaited<ReturnType<typeof loadRecipe>>
+
 export async function loadRecipe(em: EntityManager, idOrSlug: string) {
   const recipe = await findRecipe(em, idOrSlug)
   const tags = await tagsOf(em, [recipe.id])
-  return describeRecipe(recipe, tags.get(recipe.id) ?? [])
+  return {
+    ...describeRecipe(recipe, tags.get(recipe.id) ?? []),
+    working: await workingOn(em, recipe.id),
+  }
 }
 
 /** A recipe as editor lines, for a version or to edit. */
