@@ -161,4 +161,19 @@ describe("working out nutrition now", () => {
       jobsBefore
     )
   })
+
+  test("nutrition a save queues counts as being worked out until it's done", async () => {
+    // The key the test before removed, so saving queues the job.
+    const restored = await kyle.patch("/api/settings/server", {
+      "nutrition.usdaKey": USDA_KEY,
+    })
+    expect(restored.status, await restored.clone().text()).toBe(200)
+    holdUsda()
+    const id = await addRecipe("Saved Lemons", "100 g lemon")
+    expect((await loadRecipe(em(), id)).working).toEqual(["nutrition"])
+
+    releaseUsda()
+    await jobs.drain()
+    expect((await loadRecipe(em(), id)).working).toEqual([])
+  })
 })

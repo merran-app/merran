@@ -8,10 +8,20 @@ import { ACTIVE } from "../jobs/jobs.ts"
 
 export type WorkingOn = "nutrition" | "photo"
 
-/** Job keys, by what they do for a recipe, as `<kind>:<recipe id>`. */
-const KEYED: { working: WorkingOn; kind: string }[] = [
-  { working: "nutrition", kind: "recipes.workOutNutrition" },
+/**
+ * The job keys that mean each kind of work, as `<prefix>:<recipe id>`: the
+ * button's job, and the one a save queues by itself. The library run's key
+ * (`nutrition:<household id>`) shares the save's prefix, which is fine: the
+ * lookup is by this recipe's id, so it never matches.
+ */
+const KEYED: { working: WorkingOn; prefixes: string[] }[] = [
+  {
+    working: "nutrition",
+    prefixes: ["recipes.workOutNutrition", "nutrition"],
+  },
 ]
+
+const keyOf = (prefix: string, recipeId: string) => `${prefix}:${recipeId}`
 
 /** Which of the recipe's keyed jobs are queued or running. */
 export async function workingOn(
@@ -21,13 +31,17 @@ export async function workingOn(
   const jobs = await em.find(
     Job,
     {
-      key: { $in: KEYED.map(({ kind }) => `${kind}:${recipeId}`) },
+      key: {
+        $in: KEYED.flatMap(({ prefixes }) =>
+          prefixes.map((prefix) => keyOf(prefix, recipeId))
+        ),
+      },
       status: { $in: [...ACTIVE] },
     },
     { fields: ["key"] }
   )
   const keys = new Set(jobs.map((job) => job.key))
-  return KEYED.filter(({ kind }) => keys.has(`${kind}:${recipeId}`)).map(
-    ({ working }) => working
-  )
+  return KEYED.filter(({ prefixes }) =>
+    prefixes.some((prefix) => keys.has(keyOf(prefix, recipeId)))
+  ).map(({ working }) => working)
 }
