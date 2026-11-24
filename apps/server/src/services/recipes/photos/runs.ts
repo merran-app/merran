@@ -165,6 +165,8 @@ const OnePayload = z.object({
 export const makePhotoJob: JobHandler = {
   kind: ONE_KIND,
   lane: "long",
+  // Pressed, and waited on before handing over.
+  waitedOn: true,
   area: "recipes",
   concurrency: 2,
   perHousehold: 1,

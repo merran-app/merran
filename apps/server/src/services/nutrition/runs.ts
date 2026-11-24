@@ -310,6 +310,8 @@ const OnePayload = z.object({
 export const workOutNutritionJob: JobHandler = {
   kind: ONE_KIND,
   lane: "long",
+  // Pressed, and waited on before handing over.
+  waitedOn: true,
   area: "recipes",
   concurrency: 3,
   perHousehold: 2,

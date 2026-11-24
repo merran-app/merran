@@ -514,6 +514,8 @@ export const readReceiptJob: JobHandler = {
     await em.flush()
   },
   lane: "long",
+  // Scanned, and waited on before handing over.
+  waitedOn: true,
   area: "pantry",
   concurrency: 2,
   perHousehold: 2,

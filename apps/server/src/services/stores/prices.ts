@@ -447,6 +447,10 @@ const NowPayload = z.object({
 export const checkPricesJob: JobHandler = {
   kind: CHECK_PRICES,
   lane: "long",
+  // Check prices now is waited on before handing over. The checks the
+  // half-hourly look queues share the kind, so they go first too: one per
+  // household, they're few.
+  waitedOn: true,
   area: "list",
   perHousehold: 1,
   concurrency: 2,

@@ -148,7 +148,7 @@ async function finishedInTime(
 /** The job for one link or one video, which keeps its record's one item. */
 function oneLinkJob(
   kind: string,
-  limits: { concurrency: number; perHousehold: number }
+  limits: { concurrency: number; perHousehold: number; waitedOn?: boolean }
 ): JobHandler {
   return {
     kind,
@@ -228,10 +228,14 @@ async function importTheLink(
   }
 }
 
-/** One link: a page, which most often comes in within a few seconds. */
+/**
+ * One link: a page, which most often comes in within a few seconds, so
+ * the request waits on it before handing over. A video hands over at once.
+ */
 export const importLinkJob = oneLinkJob(LINK_KIND, {
   concurrency: 3,
   perHousehold: 2,
+  waitedOn: true,
 })
 
 /**

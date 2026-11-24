@@ -282,7 +282,10 @@ describe("the job runner", () => {
 
   describe("how a household's job is going", () => {
     /** A runner whose household events are kept, and the job events heard. */
-    function following(handlers: JobHandler[]) {
+    function following(
+      handlers: JobHandler[],
+      options: Partial<ConstructorParameters<typeof JobRunner>[0]> = {}
+    ) {
       const events = createEventBus()
       const heard: Extract<LiveEvent, { type: "job" }>[] = []
       events.subscribe(home, {
@@ -300,7 +303,7 @@ describe("the job runner", () => {
         database,
         events,
       } as unknown as JobDeps
-      return { jobs: new JobRunner({ deps, handlers }), heard }
+      return { jobs: new JobRunner({ ...options, deps, handlers }), heard }
     }
     const said = (heard: Extract<LiveEvent, { type: "job" }>[]) =>
       heard.map((event) => [event.job.status, event.job.progress])
@@ -392,6 +395,52 @@ describe("the job runner", () => {
       await held
       await jobs.stop()
       expect(said(heard)).toEqual([["running", null]])
+    })
+
+    test("a job changed after the look for work found it runs as it is when it's taken", async () => {
+      // As Check prices now joins a check waiting its turn: what it does and
+      // who started it change after the runner found it, before it took it.
+      const setup = em()
+      const sam = setup.create(User, {
+        name: "Sam",
+        email: "sam@example.com",
+        username: "sam",
+        displayUsername: "sam",
+      })
+      await setup.flush()
+      const seen: unknown[] = []
+      const { jobs, heard } = following(
+        [
+          {
+            kind: "check",
+            area: "recipes",
+            run: async ({ payload }) => {
+              seen.push(payload)
+            },
+          },
+        ],
+        {
+          beforeTaking: async (jobId) => {
+            await em().nativeUpdate(
+              Job,
+              { id: jobId },
+              { payload: { now: true }, createdBy: sam.id }
+            )
+          },
+        }
+      )
+      await enqueue(em(), {
+        kind: "check",
+        householdId: home,
+        payload: { now: false },
+      })
+      await jobs.drain()
+
+      expect(seen).toEqual([{ now: true }])
+      expect(heard.map((event) => event.job.startedBy)).toEqual([
+        sam.id,
+        sam.id,
+      ])
     })
 
     test("is told when a waiting job is cancelled", async () => {
@@ -609,6 +658,52 @@ describe("the job runner", () => {
       letThemGo()
       await draining
     }
+  })
+
+  test("a job someone's waiting on takes the next place ahead of older background work", async () => {
+    // A big import's nutrition jobs, say: more than one look takes in, and
+    // older, with the lane's one place taken, when someone presses Work out
+    // nutrition and waits.
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    const started: string[] = []
+    const jobs = runner(
+      [
+        {
+          kind: "backlog",
+          concurrency: 5,
+          run: async () => {
+            started.push("backlog")
+            await held
+          },
+        },
+        {
+          kind: "pressed",
+          waitedOn: true,
+          run: async () => {
+            started.push("pressed")
+          },
+        },
+      ],
+      { lanes: { long: 1 } }
+    )
+    const tx = em()
+    const longAgo = new Date(Date.now() - 60 * 60_000)
+    for (let i = 0; i < 60; i++) {
+      tx.create(Job, { kind: "backlog", payload: {}, runAt: longAgo })
+    }
+    await tx.flush()
+
+    const draining = jobs.drain()
+    try {
+      await expect.poll(() => started.length).toBe(1)
+      await enqueue(em(), { kind: "pressed" })
+    } finally {
+      // The place frees.
+      letThemGo()
+      await draining
+    }
+    expect(started.slice(0, 2)).toEqual(["backlog", "pressed"])
   })
 
   test("one household's jobs of a kind wait their turn without holding up another's", async () => {
