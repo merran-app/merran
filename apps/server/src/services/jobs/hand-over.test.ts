@@ -157,6 +157,10 @@ describe("waiting for a job, then handing it over", () => {
     })
 
     expect(result).toEqual({ done: { recipeId: "r2" } })
+    // Its mark is cleared, so the starter, answered already, isn't told
+    // again by a notice.
+    const saved = await em().findOneOrFail(Job, { id: job.id })
+    expect(saved.handedOverAt).toBeNull()
   })
 
   test("a job just made says it hasn't been handed over", async () => {

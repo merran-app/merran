@@ -522,7 +522,9 @@ export async function checkPricesNow(
     maxAttempts: 1,
   })
   await joinWaitingCheck(em, job, input)
-  // Adding it woke the runner already, except where nothing listens (tests).
+  // A check just added woke the runner already (except where nothing
+  // listens, in tests); one joined wasn't added, so it's this wake that
+  // starts it at once rather than at the runner's next look.
   deps.jobs.wake()
   const answer = await waitThenHandOver(em, deps.jobs, job.id, {
     ms: options.handoverMs ?? HANDOVER_MS,
