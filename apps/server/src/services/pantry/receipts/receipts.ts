@@ -7,6 +7,7 @@ import { z } from "zod"
 import type { AppDeps } from "../../../core/context.ts"
 import { AppError } from "../../../core/errors.ts"
 import {
+  Job,
   Purchase,
   Receipt,
   ShoppingItem,
@@ -20,7 +21,7 @@ import {
   HANDOVER_MS,
   waitThenHandOver,
 } from "../../jobs/hand-over.ts"
-import { enqueue } from "../../jobs/jobs.ts"
+import { ACTIVE, enqueue } from "../../jobs/jobs.ts"
 import { JobStopped, type JobHandler } from "../../jobs/runner.ts"
 import { currentActor, withActor, type Actor } from "../../webhooks/actor.ts"
 import { useAi, type AiDeps } from "../../ai/run.ts"
@@ -466,6 +467,14 @@ const READ_KIND = "pantry.readReceipt"
 const uploadKey = (householdId: string, receiptId: string, index: number) =>
   `receipts/${householdId}/${receiptId}/upload/${index}`
 
+/**
+ * Where a scan's pasted text waits for its job: with the uploads, so it
+ * goes with them once the receipt's read, rather than staying in the job's
+ * payload for the 30 days a job is kept.
+ */
+const pastedKey = (householdId: string, receiptId: string) =>
+  `receipts/${householdId}/${receiptId}/upload/text`
+
 /** What a receipt says when its read was stopped. */
 const STOPPED = "It was stopped before it was read."
 
@@ -486,8 +495,8 @@ const ReadPayload = z.object({
   userId: z.string().nullable(),
   /** Who scanned it, so what it changes says they did, not Merran. */
   actor: z.custom<Actor>(),
-  /** The pasted text; the files are in the file store. */
-  text: z.string().nullable(),
+  /** Whether text was pasted; it's in the file store with the files. */
+  pasted: z.boolean(),
   /** Each upload's type, in order. */
   types: z.array(z.string()),
 })
@@ -522,7 +531,8 @@ export const readReceiptJob: JobHandler = {
   changes: ["pantry"],
   async run({ em, householdId, payload, deps, signal }) {
     if (!householdId) throw new Error("Receipts need a household.")
-    const { receiptId, userId, actor, text, types } = ReadPayload.parse(payload)
+    const { receiptId, userId, actor, pasted, types } =
+      ReadPayload.parse(payload)
     const folder = `receipts/${householdId}/${receiptId}/upload`
 
     // The receipt as it is now: it may have been discarded while it was read.
@@ -559,6 +569,19 @@ export const readReceiptJob: JobHandler = {
         })
       )
 
+    const readPasted = async () => {
+      if (!pasted) return null
+      const body = await deps.files.read(pastedKey(householdId, receiptId))
+      if (!body) {
+        throw new AppError(
+          "not_found",
+          "file_not_found",
+          "Merran lost the text of that receipt. Paste it again."
+        )
+      }
+      return body.toString("utf8")
+    }
+
     return withActor(actor, async () => {
       const waiting = await current()
       // Discarded, or forgotten, before it was started.
@@ -574,7 +597,7 @@ export const readReceiptJob: JobHandler = {
         const { what, read } = await readLines(em, deps, {
           householdId,
           userId,
-          input: { files: await readUploads(), text },
+          input: { files: await readUploads(), text: await readPasted() },
         })
         if (!read) {
           const status = what === "recipe" ? "recipe" : "none"
@@ -642,7 +665,8 @@ async function forget(
  * Scans a receipt: what's wrong with what was sent (nothing to read, too
  * many files, a PDF that's too big) fails here at once, with no receipt
  * or job made. Otherwise a receipt is made, reading, with its uploads
- * kept for the job, which reads it while the request waits. A receipt in
+ * (the files, and any pasted text) kept for the job, which reads it while
+ * the request waits. A receipt in
  * within the wait is answered as it is, ready; one that was a recipe or
  * had no receipt in it, or couldn't be read, is removed and fails as it
  * always did. One that takes longer is answered as reading, and the job
@@ -667,11 +691,18 @@ export async function scanReceipt(
   await em.flush()
   const receiptId = receipt.id
   try {
-    await Promise.all(
-      input.files.map((file, index) =>
-        deps.files.put(uploadKey(householdId, receiptId, index), file.body)
-      )
+    const uploads = input.files.map((file, index) =>
+      deps.files.put(uploadKey(householdId, receiptId, index), file.body)
     )
+    if (input.text) {
+      uploads.push(
+        deps.files.put(
+          pastedKey(householdId, receiptId),
+          Buffer.from(input.text, "utf8")
+        )
+      )
+    }
+    await Promise.all(uploads)
   } catch (err) {
     await forget(em, deps.files, householdId, receiptId)
     throw err
@@ -683,7 +714,7 @@ export async function scanReceipt(
       receiptId,
       userId,
       actor: currentActor(),
-      text: input.text,
+      pasted: Boolean(input.text),
       types: input.files.map((file) => file.type),
     },
     createdBy: userId,
@@ -770,15 +801,37 @@ export async function readReceiptFile(
   return { body, mediaType: file.mediaType }
 }
 
-/** Forgets a receipt without adding anything. */
+/**
+ * Forgets a receipt without adding anything. One still being read has its
+ * read stopped too, so the model isn't asked (and paid) for a receipt
+ * nobody wants: the receipt goes first, so the stopped job finds nothing
+ * left to mark.
+ */
 export async function discardReceipt(
   em: EntityManager,
-  files: FileStore,
+  deps: Pick<AppDeps, "jobs" | "files">,
   options: { householdId: string; receiptId: string }
 ) {
   const receipt = await findReceipt(em, options.receiptId)
+  const reading = receipt.status === "reading"
   await em.remove(receipt).flush()
-  await files.remove(`receipts/${options.householdId}/${receipt.id}`)
+  if (reading) await stopRead(em, deps.jobs, options.householdId, receipt.id)
+  await deps.files.remove(`receipts/${options.householdId}/${receipt.id}`)
+}
+
+/** Stops a receipt's read, if it's still waiting or running. */
+async function stopRead(
+  em: EntityManager,
+  jobs: AppDeps["jobs"],
+  householdId: string,
+  receiptId: string
+) {
+  const job = await em.findOne(Job, {
+    key: `${READ_KIND}:${receiptId}`,
+    forHousehold: householdId,
+    status: { $in: [...ACTIVE] },
+  })
+  if (job) await jobs.cancel(em, job)
 }
 
 /**

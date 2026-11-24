@@ -25,10 +25,10 @@ const route = createRoute({
   },
 })
 
-export default (router: Router, { files }: AppDeps) => {
+export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId } = inHousehold(c)
-    await discardReceipt(em, files, {
+    await discardReceipt(em, deps, {
       householdId,
       receiptId: c.req.valid("param").receiptId,
     })

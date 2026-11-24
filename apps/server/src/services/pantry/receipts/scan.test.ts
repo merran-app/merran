@@ -12,7 +12,13 @@ import { JobRunner } from "../../jobs/runner.ts"
 import { stopSignal } from "../../jobs/stop.ts"
 import { MERRAN } from "../../webhooks/actor.ts"
 import { LocalFileStore } from "../../storage/files.ts"
-import { addReceipt, listReceipts, scanReceipt } from "./receipts.ts"
+import {
+  addReceipt,
+  discardReceipt,
+  listReceipts,
+  scanReceipt,
+  type ReceiptInput,
+} from "./receipts.ts"
 
 // A scanned receipt as a job: read while the request waits, or handed over,
 // with the receipt saying it's being read until it is.
@@ -52,6 +58,9 @@ const releaseModel = () => {
 /** How many times the model has been asked. */
 let asked = 0
 
+/** What the model was last asked, to see what it read. */
+let lastPrompt = ""
+
 /**
  * Waits at the gate, as a slow model does. A job that's stopped meanwhile
  * ends with its reason, as the real call does.
@@ -76,6 +85,7 @@ const models: AiModels = (target) => {
   const generate = model.doGenerate
   model.doGenerate = async (...args: Parameters<typeof generate>) => {
     asked++
+    lastPrompt = JSON.stringify(args[0].prompt)
     await atTheGate()
     return generate.apply(model, args)
   }
@@ -110,6 +120,9 @@ beforeAll(async () => {
 const uploadOf = (home: string, receiptId: string, index = 0) =>
   `receipts/${home}/${receiptId}/upload/${index}`
 
+const pastedOf = (home: string, receiptId: string) =>
+  `receipts/${home}/${receiptId}/upload/text`
+
 describe("scanning a receipt as a job", () => {
   let database: Database
   let close: () => Promise<void>
@@ -122,7 +135,10 @@ describe("scanning a receipt as a job", () => {
 
   const scan = (
     handoverMs: number,
-    input = { files: [{ body: jpeg, type: "image/jpeg" }], text: null as null }
+    input: ReceiptInput = {
+      files: [{ body: jpeg, type: "image/jpeg" }],
+      text: null,
+    }
   ) =>
     scanReceipt(
       em(),
@@ -192,6 +208,28 @@ describe("scanning a receipt as a job", () => {
     expect(
       await files.read(`receipts/${home}/${result.started.id}/0`)
     ).not.toBe(null)
+  })
+
+  test("pasted text waits with the uploads, not in the job, and goes with them once read", async () => {
+    holdModel()
+    const result = await scan(50, { files: [], text: "GV WHL MLK 1GAL 3.48" })
+    expect("started" in result).toBe(true)
+    if (!("started" in result)) return
+    const receiptId = result.started.id
+
+    // A receipt is forgotten after a day; a job is kept for 30.
+    const pasted = await files.read(pastedOf(home, receiptId))
+    expect(pasted?.toString("utf8")).toBe("GV WHL MLK 1GAL 3.48")
+    const job = await em().findOneOrFail(Job, {
+      key: `pantry.readReceipt:${receiptId}`,
+    })
+    expect(JSON.stringify(job.payload)).not.toContain("GV WHL MLK")
+
+    releaseModel()
+    await jobs.drain()
+    expect(lastPrompt).toContain("GV WHL MLK 1GAL 3.48")
+    expect(await load(receiptId)).toMatchObject({ status: "ready" })
+    expect(await files.read(pastedOf(home, receiptId))).toBeNull()
   })
 
   test("a recipe found after the wait says so on the receipt", async () => {
@@ -327,7 +365,7 @@ describe("scanning a receipt as a job", () => {
         receiptId: receipt.id,
         userId,
         actor: MERRAN,
-        text: "milk",
+        pasted: true,
         types: [],
       },
       runAt: new Date(Date.now() + 60_000),
@@ -339,6 +377,36 @@ describe("scanning a receipt as a job", () => {
       status: "failed",
       error: "It was stopped before it was read.",
     })
+  })
+
+  test("discarding a receipt while it's read stops the read", async () => {
+    holdModel()
+    const before = asked
+    const result = await scan(50)
+    expect("started" in result).toBe(true)
+    if (!("started" in result)) return
+    const receiptId = result.started.id
+    await expect.poll(() => asked, { timeout: 3_000 }).toBeGreaterThan(before)
+
+    await discardReceipt(
+      em(),
+      { jobs, files },
+      { householdId: home, receiptId }
+    )
+    // The model answers now: a read still going would carry on and be
+    // paid for.
+    releaseModel()
+    await jobs.drain()
+
+    const job = await em().findOneOrFail(
+      Job,
+      { key: `pantry.readReceipt:${receiptId}` },
+      { refresh: true }
+    )
+    expect(job.status).toBe("cancelled")
+    expect(await em().count(Receipt, {})).toBe(0)
+    expect(await files.read(uploadOf(home, receiptId))).toBeNull()
+    expect(await files.read(`receipts/${home}/${receiptId}/0`)).toBeNull()
   })
 
   test("a receipt discarded while it's read leaves nothing behind", async () => {
@@ -374,13 +442,18 @@ describe("a receipt cut off by a restart", () => {
     const em = () => forHousehold(database.em, home)
     read = MILK
     holdModel()
+    // The other tests' asks are counted too, so only this one's count.
+    const before = asked
     const result = await scanReceipt(
       em(),
       { jobs, files },
       {
         householdId: home,
         userId,
-        input: { files: [{ body: jpeg, type: "image/jpeg" }], text: null },
+        input: {
+          files: [{ body: jpeg, type: "image/jpeg" }],
+          text: "GV WHL MLK 1GAL",
+        },
       },
       { handoverMs: 50 }
     )
@@ -389,10 +462,11 @@ describe("a receipt cut off by a restart", () => {
     const receiptId = result.started.id
 
     // Stopped while the model has it, not on its way there.
-    await expect.poll(() => asked, { timeout: 3_000 }).toBeGreaterThan(0)
+    await expect.poll(() => asked, { timeout: 3_000 }).toBeGreaterThan(before)
     await jobs.stop()
 
-    // Cut off: not failed, not saved, and its photo still there to read.
+    // Cut off: not failed, not saved, and its photo and text still there
+    // to read.
     const cut = await em().findOneOrFail(
       Receipt,
       { id: receiptId },
@@ -400,6 +474,7 @@ describe("a receipt cut off by a restart", () => {
     )
     expect(cut).toMatchObject({ status: "reading", error: null })
     expect(await files.read(uploadOf(home, receiptId))).not.toBeNull()
+    expect(await files.read(pastedOf(home, receiptId))).not.toBeNull()
     const job = await em().findOneOrFail(
       Job,
       { kind: "pantry.readReceipt" },
@@ -409,6 +484,7 @@ describe("a receipt cut off by a restart", () => {
 
     // The next start: a new runner picks it up.
     releaseModel()
+    lastPrompt = ""
     const next = new JobRunner({ deps: jobDeps, handlers: jobHandlers })
     await next.drain()
     expect(
@@ -417,7 +493,9 @@ describe("a receipt cut off by a restart", () => {
       status: "ready",
       lines: [{ name: "whole milk" }],
     })
+    expect(lastPrompt).toContain("GV WHL MLK 1GAL")
     expect(await files.read(uploadOf(home, receiptId))).toBeNull()
+    expect(await files.read(pastedOf(home, receiptId))).toBeNull()
     expect(await files.read(`receipts/${home}/${receiptId}/0`)).not.toBeNull()
   })
 })
