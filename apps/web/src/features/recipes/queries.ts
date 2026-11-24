@@ -1,6 +1,7 @@
 import { DIETS, type Diet } from "@merran/shared"
 import {
   infiniteQueryOptions,
+  keepPreviousData,
   queryOptions,
   useQueryClient,
 } from "@tanstack/react-query"
@@ -93,6 +94,8 @@ export const recipesQuery = (search: RecipeSearch) =>
       const loaded = pages.reduce((n, page) => n + page.recipes.length, 0)
       return loaded < last.total ? loaded : undefined
     },
+    // The last results stay, dimmed, while a new search or filter loads.
+    placeholderData: keepPreviousData,
   })
 
 export const recipeQuery = (slug: string) =>

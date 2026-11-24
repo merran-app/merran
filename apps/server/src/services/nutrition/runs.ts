@@ -3,6 +3,7 @@ import { z } from "zod"
 import { AppError } from "../../core/errors.ts"
 import { Job, Recipe } from "../../database/entities/index.ts"
 import { forHousehold } from "../../database/scope.ts"
+import type { AiDeps } from "../ai/run.ts"
 import { ACTIVE, enqueue } from "../jobs/jobs.ts"
 import { JobStopped, type JobHandler } from "../jobs/runner.ts"
 import { nutritionAbilities, workOutNutrition } from "./nutrition.ts"
@@ -153,12 +154,18 @@ export const nutritionRunJob: JobHandler = {
   },
 }
 
-/** A recipe just saved: its nutrition worked out in the background. */
+/**
+ * A recipe just saved: its nutrition worked out in the background, when
+ * there's a way to. The job looks again, for a key removed while it waits.
+ */
 export async function nutritionAfterSave(
+  deps: AiDeps,
   em: EntityManager,
   options: { householdId: string; userId: string | null; recipeId: string }
 ) {
   try {
+    const can = await nutritionAbilities(deps, em, options.householdId)
+    if (!can.usdaKey && !can.ai) return
     await enqueue(em, {
       kind: KIND,
       householdId: options.householdId,

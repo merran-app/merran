@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
 import { Household, Job } from "../../database/entities/index.ts"
 import type { Database } from "../../database/orm.ts"
 import { createTestDatabase } from "../../test/database.ts"
+import { createEventBus, LIVE_AREAS, type LiveEvent } from "../events/events.ts"
 import {
   currentActor,
   MERRAN,
@@ -183,6 +184,59 @@ describe("the job runner", () => {
     })
 
     expect(actor).toEqual(MERRAN)
+  })
+
+  test("tells the household's pages what a kind changes, as it goes and when it ends", async () => {
+    const events = createEventBus()
+    const heard: LiveEvent[] = []
+    events.subscribe(home, {
+      person: null,
+      client: null,
+      page: null,
+      areas: new Set(LIVE_AREAS),
+      send: (event) => heard.push(event),
+      close: () => {},
+    })
+    const deps = {
+      logger: pino({ level: "silent" }),
+      database,
+      events,
+    } as unknown as JobDeps
+    const jobs = new JobRunner({
+      deps,
+      handlers: [
+        {
+          kind: "bring-in",
+          changes: ["recipes"],
+          run: async ({ progress, payload }) => {
+            await progress(1, 2)
+            if (payload.fail) throw new Error("The second one didn't come")
+          },
+        },
+        { kind: "quiet", run: async () => {} },
+      ],
+    })
+
+    await enqueue(em(), { kind: "bring-in", householdId: home })
+    await jobs.drain()
+    expect(heard).toEqual([
+      { type: "changed", area: "recipes", by: null, client: null },
+      { type: "changed", area: "recipes", by: null, client: null },
+    ])
+
+    // One that fails may have brought some in; one that says nothing, nothing.
+    heard.length = 0
+    await enqueue(em(), {
+      kind: "bring-in",
+      householdId: home,
+      payload: { fail: true },
+      maxAttempts: 1,
+    })
+    await enqueue(em(), { kind: "quiet", householdId: home })
+    await jobs.drain()
+    expect(
+      heard.map((event) => event.type === "changed" && event.area)
+    ).toEqual(["recipes", "recipes"])
   })
 
   test("runs one of a kind at a time, unless it says more", async () => {

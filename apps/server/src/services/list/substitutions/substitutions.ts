@@ -22,7 +22,11 @@ import { loadMealLines } from "../../plan/meal-lines.ts"
 import { snapshotOf, type EntrySnapshot } from "../../plan/snapshots.ts"
 import { recipeForMeal } from "../../plan/recipe-variants.ts"
 import { getTastes } from "../../households/tastes.ts"
-import { findRecipe, updateRecipe } from "../../recipes/recipes.ts"
+import {
+  findRecipe,
+  updateRecipe,
+  type AfterSaveDeps,
+} from "../../recipes/recipes.ts"
 import { inHouseholdTransaction } from "../../../database/transactions.ts"
 import { saveSwap } from "../../recipes/swaps.ts"
 import { versionSnapshot } from "../../recipes/versions.ts"
@@ -100,6 +104,7 @@ export async function shoppingSwapTargets(em: EntityManager, itemId: string) {
 }
 
 export async function applyShoppingSwap(
+  deps: AfterSaveDeps,
   em: EntityManager,
   householdId: string,
   userId: string | null,
@@ -250,6 +255,7 @@ export async function applyShoppingSwap(
         throw changed()
       const replacement = matched[0]!.replacement
       const saved = await saveSwap(tx, {
+        deps,
         householdId,
         userId,
         recipe: replacement.recipeId!,
@@ -283,6 +289,7 @@ export async function applyShoppingSwap(
 
 /** Undo is conditional, so another shopper's edits cannot be overwritten. */
 export async function undoShoppingSwap(
+  deps: AfterSaveDeps,
   em: EntityManager,
   householdId: string,
   userId: string | null,
@@ -342,6 +349,7 @@ export async function undoShoppingSwap(
         throw changed()
       const input = await versionSnapshot(tx, recipe.id, undo.library.versionId)
       await updateRecipe(tx, {
+        deps,
         householdId,
         userId,
         recipe: recipe.id,

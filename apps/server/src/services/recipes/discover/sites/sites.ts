@@ -188,16 +188,31 @@ export async function listSites(
   for (const row of followed) {
     sites.push(await describeFollowed(em, householdId, row))
   }
+  return { sites, suggestions: suggestionsBesides(language, followed) }
+}
+
+/** Sites that work well with Merran, in a language, but those followed. */
+function suggestionsBesides(language: string, followed: FollowedSite[]) {
   const following = new Set(followed.map((row) => row.site.getEntity().feedUrl))
+  return dataFor(language)
+    .sites.filter((site) => !following.has(site.feedUrl))
+    .map((site) => ({
+      name: site.name,
+      url: site.url,
+      description: site.description,
+    }))
+}
+
+/**
+ * How many sites the household follows, and the sites it might follow,
+ * without reading any of their recipes: for the pages that only ask
+ * whether to suggest some.
+ */
+export async function siteSuggestions(em: EntityManager, language: string) {
+  const followed = await em.find(FollowedSite, {}, { populate: ["site"] })
   return {
-    sites,
-    suggestions: dataFor(language)
-      .sites.filter((site) => !following.has(site.feedUrl))
-      .map((site) => ({
-        name: site.name,
-        url: site.url,
-        description: site.description,
-      })),
+    following: followed.length,
+    suggestions: suggestionsBesides(language, followed),
   }
 }
 

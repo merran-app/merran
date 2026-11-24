@@ -20,7 +20,7 @@ export const EmailInvitation = defineEntity({
     status: p.string().default("pending"),
     expiresAt: p.datetime(),
     createdAt: createdAt(),
-    inviter: () => p.manyToOne(User).ref().deleteRule("cascade"),
+    inviter: () => p.manyToOne(User).ref().deleteRule("cascade").index(),
   },
   filters: householdFilter,
 })

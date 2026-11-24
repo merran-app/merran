@@ -1,7 +1,5 @@
 import * as React from "react"
-import { driver, type Driver, type DriveStep } from "driver.js"
-import "driver.js/dist/driver.css"
-import "./tours.css"
+import type { Driver, DriveStep } from "driver.js"
 import { useRouterState } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -32,6 +30,8 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   })
   const current = tourForPath(pathname)
   const instance = React.useRef<Driver | null>(null)
+  // A tour whose code is still loading, so a second one doesn't start too.
+  const loading = React.useRef(false)
   const interrupted = React.useRef(false)
   const [active, setActive] = React.useState(false)
   React.useEffect(
@@ -46,7 +46,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const start = React.useCallback(
     (id: TourId | undefined = current ?? undefined, quiet = false) => {
       if (!id || pathname.includes("/cook")) return false
-      if (instance.current?.isActive()) return false
+      if (loading.current || instance.current?.isActive()) return false
       if (document.querySelector('[role="dialog"], [role="alertdialog"]')) {
         if (!quiet) toast.info(t("help.closeDialog"))
         return false
@@ -91,46 +91,63 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         document.activeElement instanceof HTMLElement
           ? document.activeElement
           : null
-      const tour = driver({
-        steps,
-        animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-        smoothScroll: false,
-        allowKeyboardControl: true,
-        showProgress: true,
-        popoverClass: "merran-tour",
-        disableActiveInteraction: true,
-        nextBtnText: t("help.next"),
-        prevBtnText: t("help.previous"),
-        doneBtnText: t("help.done"),
-        onNextClick: (_element, _step, { driver: activeDriver }) => {
-          if (activeDriver.hasNextStep()) activeDriver.moveNext()
-          else activeDriver.destroy()
-        },
-        onPopoverRender: (popover, { driver: activeDriver }) => {
-          popover.closeButton.setAttribute("aria-label", t("help.skip"))
-          popover.closeButton.title = t("help.skip")
-          const disable = document.createElement("button")
-          disable.type = "button"
-          disable.className = "merran-tour-disable"
-          disable.textContent = t("help.disable")
-          disable.onclick = () => {
-            void update({ toursDisabled: true })
-            activeDriver.destroy()
-          }
-          popover.wrapper.insertBefore(disable, popover.title)
-        },
-        onDestroyed: () => {
-          setActive(false)
-          if (!interrupted.current) {
-            void update({ tour: { id, version: TOUR_VERSION } })
-            restoreFocus?.focus()
-          }
-          instance.current = null
-        },
-      })
-      instance.current = tour
+
+      const drive = (driver: typeof import("driver.js").driver) => {
+        const tour = driver({
+          steps,
+          animate: !window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches,
+          smoothScroll: false,
+          allowKeyboardControl: true,
+          showProgress: true,
+          popoverClass: "merran-tour",
+          disableActiveInteraction: true,
+          nextBtnText: t("help.next"),
+          prevBtnText: t("help.previous"),
+          doneBtnText: t("help.done"),
+          onNextClick: (_element, _step, { driver: activeDriver }) => {
+            if (activeDriver.hasNextStep()) activeDriver.moveNext()
+            else activeDriver.destroy()
+          },
+          onPopoverRender: (popover, { driver: activeDriver }) => {
+            popover.closeButton.setAttribute("aria-label", t("help.skip"))
+            popover.closeButton.title = t("help.skip")
+            const disable = document.createElement("button")
+            disable.type = "button"
+            disable.className = "merran-tour-disable"
+            disable.textContent = t("help.disable")
+            disable.onclick = () => {
+              void update({ toursDisabled: true })
+              activeDriver.destroy()
+            }
+            popover.wrapper.insertBefore(disable, popover.title)
+          },
+          onDestroyed: () => {
+            setActive(false)
+            if (!interrupted.current) {
+              void update({ tour: { id, version: TOUR_VERSION } })
+              restoreFocus?.focus()
+            }
+            instance.current = null
+          },
+        })
+        instance.current = tour
+        tour.drive()
+      }
+
+      // Shown as started while its code loads, so nothing else opens over it.
+      loading.current = true
       setActive(true)
-      tour.drive()
+      import("./tour-driver")
+        .then((module) => {
+          // The page or the person changed while it loaded.
+          if (interrupted.current) setActive(false)
+          else drive(module.driver)
+        })
+        .catch(() => setActive(false))
+        .finally(() => {
+          loading.current = false
+        })
       return true
     },
     [current, pathname, me.serverAdmin, ai, t, update]

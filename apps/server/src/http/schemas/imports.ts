@@ -121,7 +121,8 @@ export const LinkCheckSchema = z
       z.object({
         url: z.string(),
         video: z.boolean().openapi({
-          description: "A video link, which can't be imported yet.",
+          description:
+            "A TikTok, YouTube, Instagram or Facebook link, imported from its video, on its own.",
         }),
         existing: z
           .object({ slug: z.string(), name: z.string() })

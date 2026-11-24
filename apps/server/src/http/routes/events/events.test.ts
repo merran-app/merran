@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../app.ts"
+import type { Database } from "../../../database/orm.ts"
+import { forHousehold } from "../../../database/scope.ts"
 import type { EventBus } from "../../../services/events/events.ts"
+import { createProposal } from "../../../services/proposals/proposals.ts"
 import {
   account,
   createTestApp,
@@ -16,6 +19,7 @@ import {
 
 let app: App
 let events: EventBus
+let database: Database
 let close: () => Promise<void>
 let kyle: TestClient
 let jamie: TestClient
@@ -104,7 +108,7 @@ const typeItem = (who: TestClient, text: string) =>
 
 beforeAll(async () => {
   const test = await createTestApp()
-  ;({ app, events, close } = test)
+  ;({ app, events, close, database } = test)
   kyle = await setUpServer(app, test.setupCode)
   home = (await (await kyle.get("/api/households/current")).json()).id
   jamie = await join(app, await inviteToken(kyle), account("jamie", "Jamie"))
@@ -187,6 +191,52 @@ describe("live updates", () => {
     expect(await stream.next()).toMatchObject({ event: "list" })
     expect(await stream.next()).toMatchObject({ event: "pantry" })
     stream.close()
+    await listeners(0)
+  })
+
+  test("say what following a site, inviting someone and dealing with a suggestion change", async () => {
+    // Pages trust the stream to say when these change, so each must.
+    const stream = await listen(jamie)
+    const followed = await kyle.post("/api/sites", {
+      url: "https://www.recipetineats.com/",
+    })
+    expect(followed.status).toBe(201)
+    expect(await stream.next()).toMatchObject({ event: "recipes" })
+
+    await kyle.post("/api/households/current/invites", { role: "member" })
+    expect(await stream.next()).toMatchObject({ event: "household" })
+
+    const proposal = await createProposal(forHousehold(database.em, home), {
+      householdId: home,
+      userId: null,
+      kind: "recipe",
+      summary: "A soup",
+      payload: { recipe: { name: "Soup" } },
+    })
+    const dismissed = await kyle.post(`/api/proposals/${proposal.id}/dismiss`)
+    expect(dismissed.status).toBe(200)
+    expect(await stream.next()).toMatchObject({ event: "recipes" })
+
+    stream.close()
+    await listeners(0)
+  })
+
+  test("aren't compressed, so each one arrives as it's sent", async () => {
+    const headers = kyle.headers()
+    headers.set("accept-encoding", "gzip, deflate, br")
+    const controller = new AbortController()
+    const res = await app.request(`${TEST_ORIGIN}/api/events`, {
+      headers,
+      signal: controller.signal,
+    })
+    expect(res.status).toBe(200)
+    expect(res.headers.get("content-encoding")).toBeNull()
+    // The first event can be read as it is, as a browser would.
+    const reader = res.body!.getReader()
+    const { value } = await reader.read()
+    expect(new TextDecoder().decode(value)).toContain("event: ready")
+    void reader.cancel()
+    controller.abort()
     await listeners(0)
   })
 

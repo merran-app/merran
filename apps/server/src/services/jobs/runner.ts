@@ -6,7 +6,7 @@ import { Job } from "../../database/entities/index.ts"
 import type { Database } from "../../database/orm.ts"
 import { forHousehold } from "../../database/scope.ts"
 import type { Module } from "../../modules/module.ts"
-import type { EventBus } from "../events/events.ts"
+import type { EventBus, LiveArea } from "../events/events.ts"
 import type { MediaMakers } from "../ai/media.ts"
 import type { AiModels, Transcriber } from "../ai/providers.ts"
 import type { Fetcher } from "../fetch/public-fetch.ts"
@@ -79,6 +79,12 @@ export type JobHandler = {
    * seconds up to 30 minutes.
    */
   retryDelays?: readonly number[]
+  /**
+   * What a household's job of this kind changes, for kinds that don't say
+   * so themselves as they go: the household's open pages and other devices
+   * hear about it as the job moves on and when it ends.
+   */
+  changes?: readonly LiveArea[]
   run(ctx: JobContext): Promise<Record<string, unknown> | void>
 }
 
@@ -334,6 +340,12 @@ export class JobRunner {
     this.#running.set(job.id, running)
 
     let lastProgress = 0
+    const announce = () => {
+      if (!householdId) return
+      for (const area of handler.changes ?? []) {
+        this.#deps.events.changed(householdId, { area, by: null, client: null })
+      }
+    }
     const ctx: JobContext = {
       jobId: job.id,
       payload: job.payload,
@@ -352,6 +364,7 @@ export class JobRunner {
           { id: job.id },
           { progress: { done, total }, ...(soFar ? { result: soFar } : {}) }
         )
+        announce()
       },
       signal: controller.signal,
       logger,
@@ -406,6 +419,8 @@ export class JobRunner {
         }
       } finally {
         this.#running.delete(job.id)
+        // However it ended, it may have changed something on the way.
+        if (running.stopped !== "shutdown") announce()
         const schedule = this.#schedules.find((s) => s.kind === job.kind)
         if (schedule && job.key === scheduleKey(job.kind)) {
           await this.#ensureScheduled(this.#em(), schedule).catch(

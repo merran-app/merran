@@ -36,11 +36,12 @@ const route = createRoute({
     ...SIGNED_IN_ERRORS,
   },
 })
-export default (router: Router, _deps: AppDeps) => {
+export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
     return c.json(
       await applyShoppingSwap(
+        deps,
         em,
         householdId,
         userId,

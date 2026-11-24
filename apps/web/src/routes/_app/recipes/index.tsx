@@ -45,6 +45,7 @@ import { useRefreshReview } from "@/features/recipes/tidy/queries"
 import { ReviewBanner } from "@/features/recipes/tidy/tidy-runs"
 import { useCapability } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { cn } from "@/lib/utils"
 import { ManageTagsDialog } from "@/features/recipes/manage-tags-dialog"
 import {
   RECIPE_SORTS,
@@ -290,7 +291,13 @@ function RecipesPage() {
             <p className="text-sm text-muted-foreground" aria-live="polite">
               {t("recipes.count", { count: total })}
             </p>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div
+              aria-busy={recipes.isPlaceholderData}
+              className={cn(
+                "grid gap-4 transition-opacity sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+                recipes.isPlaceholderData && "opacity-60"
+              )}
+            >
               {items.map((recipe) => {
                 const card = (
                   <RecipeCard
@@ -324,7 +331,10 @@ function RecipesPage() {
                 <Button
                   variant="outline"
                   onClick={() => recipes.fetchNextPage()}
-                  disabled={recipes.isFetchingNextPage}
+                  // The pages shown belong to the last search until the new one's in.
+                  disabled={
+                    recipes.isFetchingNextPage || recipes.isPlaceholderData
+                  }
                 >
                   {recipes.isFetchingNextPage && <Spinner />}
                   {t("recipes.showMore")}

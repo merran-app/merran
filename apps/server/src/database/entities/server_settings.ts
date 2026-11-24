@@ -15,9 +15,11 @@ export const ServerSetting = defineEntity({
     key: p.string().primary(),
     value: p.json<unknown>().nullable(),
     /** Where a secret setting's value is kept instead. */
-    secret: () => p.manyToOne(Secret).ref().nullable().deleteRule("set null"),
+    secret: () =>
+      p.manyToOne(Secret).ref().nullable().deleteRule("set null").index(),
     updatedAt: updatedAt(),
-    updatedBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    updatedBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
   },
 })
 export type ServerSetting = InferEntity<typeof ServerSetting>

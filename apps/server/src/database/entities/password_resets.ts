@@ -16,8 +16,9 @@ export const PasswordReset = defineEntity({
       p.manyToOne(User).ref().nullable().deleteRule("cascade").index(),
     credentialVersion: p.string().length(64).nullable(),
     /** Sealed recipient and token, covered by server-secret rotation. */
-    delivery: () => p.manyToOne(Secret).ref().nullable().deleteRule("set null"),
-    job: () => p.manyToOne(Job).ref().nullable().deleteRule("set null"),
+    delivery: () =>
+      p.manyToOne(Secret).ref().nullable().deleteRule("set null").index(),
+    job: () => p.manyToOne(Job).ref().nullable().deleteRule("set null").index(),
     expiresAt: p.datetime().index(),
     sentAt: p.datetime().nullable(),
     usedAt: p.datetime().nullable(),

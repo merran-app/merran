@@ -18,7 +18,8 @@ export const RecipeNotDuplicate = defineEntity({
     household: () => householdRef(),
     first: () => recipeRef(),
     second: () => p.manyToOne(Recipe).ref().deleteRule("cascade").index(),
-    createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    createdBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     createdAt: createdAt(),
   },
   uniques: [{ properties: ["first", "second"] }],

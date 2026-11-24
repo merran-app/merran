@@ -40,7 +40,8 @@ export const Receipt = defineEntity({
   properties: {
     id: id(),
     household: () => householdRef(),
-    user: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    user: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     store: p.string().nullable(),
     /** The day on the receipt. */
     date: day().nullable(),

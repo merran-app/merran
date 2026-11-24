@@ -20,7 +20,7 @@ export const FoodPlacement = defineEntity({
     foodKey: foodKey(),
     aisle: () => aisleRef(),
     list: () =>
-      p.manyToOne(ShoppingList).ref().nullable().deleteRule("set null"),
+      p.manyToOne(ShoppingList).ref().nullable().deleteRule("set null").index(),
     storedIn: p.enum(STORAGE_PLACES).nullable(),
     updatedAt: updatedAt(),
   },

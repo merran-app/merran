@@ -17,7 +17,11 @@ import { formatMinutes } from "@/features/recipes/format"
 import { formatRelativeDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
-import { siteRecipesQuery, sitesQuery, type ShelfRecipe } from "./queries"
+import {
+  siteRecipesQuery,
+  siteSuggestionsQuery,
+  type ShelfRecipe,
+} from "./queries"
 import { useImportRecipe } from "./shelf-recipe-card"
 import { Suggestions } from "./sites-tab"
 
@@ -294,8 +298,8 @@ export function SitesSpotlight({ folded }: { folded: boolean }) {
 export function SitesStart() {
   const { t } = useTranslation()
   const sitesOn = useCapability("sites")
-  const { data } = useQuery({ ...sitesQuery, enabled: sitesOn })
-  if (!sitesOn || !data || data.sites.length > 0) return null
+  const { data } = useQuery({ ...siteSuggestionsQuery, enabled: sitesOn })
+  if (!sitesOn || !data || data.following > 0) return null
   if (data.suggestions.length === 0) return null
 
   return (

@@ -17,7 +17,8 @@ import { Spinner } from "@/components/ui/spinner"
 import { meQuery } from "@/features/auth/queries"
 import { useCapability } from "@/features/capabilities/queries"
 import { ApiError } from "@/lib/api/client"
-import { authClient, safeReturnTo } from "@/features/auth/client"
+import { authClient } from "@/features/auth/client"
+import { safeReturnTo } from "@/features/auth/return-to"
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } =>

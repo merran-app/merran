@@ -90,8 +90,9 @@ export const Recipe = defineEntity({
     /** When tidy up last looked at it, whatever it found: library runs skip it. */
     tidiedAt: p.datetime().nullable(),
     /** Set while the recipe is in Recently deleted. */
-    deletedAt: p.datetime().nullable().index(),
-    createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    deletedAt: p.datetime().nullable(),
+    createdBy: () =>
+      p.manyToOne(User).ref().nullable().deleteRule("set null").index(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     // Replacing a recipe's lines deletes the ones it no longer has.
@@ -112,6 +113,10 @@ export const Recipe = defineEntity({
   indexes: [
     { properties: ["household", "sourceUrl"] },
     { properties: ["household", "importedFrom"] },
+    // Recently deleted, and emptying it: only the few recipes in it.
+    { properties: ["deletedAt"], where: { deletedAt: { $ne: null } } },
+    // The library, newest first, without the recipes in Recently deleted.
+    { properties: ["household", "createdAt"], where: { deletedAt: null } },
   ],
   filters: { ...householdFilter, ...notDeletedFilter },
 })

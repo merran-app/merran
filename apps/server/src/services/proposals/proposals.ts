@@ -9,7 +9,6 @@ import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
 import { Proposal, User } from "../../database/entities/index.ts"
 import { RecipeInputSchema } from "../../http/schemas/recipes.ts"
-import type { AiDeps } from "../ai/run.ts"
 import {
   ImportPayload,
   ListPayload,
@@ -20,10 +19,14 @@ import {
 import { addTyped } from "../list/list.ts"
 import { addEntries } from "../plan/plan.ts"
 import { getTastes, saveTastes } from "../households/tastes.ts"
-import type { FileStore } from "../storage/files.ts"
 import type { VideoDeps } from "../recipes/import/video/import.ts"
 import { importLink } from "../recipes/import/import-link.ts"
-import { createRecipe, findRecipe, updateRecipe } from "../recipes/recipes.ts"
+import {
+  createRecipe,
+  findRecipe,
+  updateRecipe,
+  type AfterSaveDeps,
+} from "../recipes/recipes.ts"
 import { saveSwap } from "../recipes/swaps.ts"
 import { describeProposal } from "./views.ts"
 import { detailsOf, reviewSnapshot } from "../recipes/review/snapshot.ts"
@@ -204,7 +207,7 @@ function resolve(
  */
 export async function applyProposal(
   em: EntityManager,
-  deps: AiDeps & VideoDeps & { files: FileStore },
+  deps: AfterSaveDeps & VideoDeps,
   options: {
     householdId: string
     userId: string | null
@@ -222,7 +225,7 @@ export async function applyProposal(
 /** What applying each kind of suggestion does; the recipe it made or changed. */
 async function applyKind(
   em: EntityManager,
-  deps: AiDeps & VideoDeps & { files: FileStore },
+  deps: AfterSaveDeps & VideoDeps,
   proposal: Proposal,
   options: {
     householdId: string
@@ -237,12 +240,14 @@ async function applyKind(
     case "note":
     case "edit":
       return applySections(em, proposal, {
+        deps,
         householdId,
         userId,
         sections: options.sections ?? [],
       })
     case "recipe":
       return createRecipe(em, {
+        deps,
         householdId,
         userId,
         input: RecipeInputSchema.parse(payload.recipe),
@@ -283,6 +288,7 @@ async function applyKind(
       // Saved to the recipe; using it this time is the web app's own.
       const swap = SwapPayload.parse(payload)
       const { recipe } = await saveSwap(em, {
+        deps,
         householdId,
         userId,
         recipe: proposal.recipe!.id,
@@ -309,6 +315,7 @@ async function applySections(
   em: EntityManager,
   proposal: Proposal,
   options: {
+    deps: AfterSaveDeps
     householdId: string
     userId: string | null
     sections: readonly ProposalSection[]
@@ -367,6 +374,7 @@ async function applySections(
     : undefined
 
   return updateRecipe(em, {
+    deps: options.deps,
     householdId: options.householdId,
     userId: options.userId,
     recipe: recipe.id,
