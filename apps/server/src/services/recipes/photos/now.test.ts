@@ -110,6 +110,8 @@ const makeOne = (handoverMs: number, recipe: string) =>
 describe("making a photo now", () => {
   test("one that takes longer hands over, and the recipe says it's being made", async () => {
     const id = await addRecipe("Slow Lemons")
+    // The save queued its nutrition: let it finish, so only the photo is timed.
+    await jobs.drain()
     holdImages()
     const result = await makeOne(50, id)
     expect("started" in result).toBe(true)
@@ -128,6 +130,8 @@ describe("making a photo now", () => {
 
   test("pressing it twice makes one photo", async () => {
     const id = await addRecipe("Pressed Lemons")
+    // The save queued its nutrition: let it finish, so only the photo is timed.
+    await jobs.drain()
     const before = made
     holdImages()
     const first = await makeOne(50, id)
@@ -149,6 +153,8 @@ describe("making a photo now", () => {
 
   test("a photo made within the wait answers with the recipe", async () => {
     const id = await addRecipe("Quick Lemons")
+    // The save queued its nutrition: let it finish, so only the photo is timed.
+    await jobs.drain()
     holdImages()
     releaseImages()
     const result = await makeOne(5000, id)
