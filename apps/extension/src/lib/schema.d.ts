@@ -2301,7 +2301,7 @@ export interface paths {
         put?: never;
         /**
          * Scan a receipt
-         * @description Reads a receipt into a draft to look over before anything goes in the pantry: photos of a paper one, screenshots or a PDF of an emailed one (up to 6 files, one `file` field each), or its `text`. Each line says what it is, how much, and the shopping list item it was bought for. Add it with `POST /pantry/receipts/{receiptId}/add`; it's forgotten after a day. Uses the household's model for receipts, which must be able to read photos or PDFs if those are sent, and counts towards its AI spend. With an API key, it needs the `pantry: write` permission.
+         * @description Reads a receipt into a draft to look over before anything goes in the pantry: photos of a paper one, screenshots or a PDF of an emailed one (up to 6 files, one `file` field each), or its `text`. Each line says what it is, how much, and the shopping list item it was bought for. Add it with `POST /pantry/receipts/{receiptId}/add`; it's forgotten after a day. Reading takes a while, so it answers 201 with the receipt (`status` `ready`) if it's read within about 10 seconds, and 202 with the receipt `reading` if not: it carries on in the background, and `GET /pantry/receipts/{receiptId}` says when it's `ready`. Uses the household's model for receipts, which must be able to read photos or PDFs if those are sent, and counts towards its AI spend. With an API key, it needs the `pantry: write` permission.
          */
         post: operations["scanReceipt"];
         delete?: never;
@@ -13667,6 +13667,8 @@ export interface components {
          *           "store": "Walmart",
          *           "date": "2026-10-14",
          *           "total": 48.12,
+         *           "status": "ready",
+         *           "error": null,
          *           "lines": [
          *             {
          *               "id": "0d1b5c2a9e44",
@@ -13702,6 +13704,8 @@ export interface components {
          *       "store": "Walmart",
          *       "date": "2026-10-14",
          *       "total": 48.12,
+         *       "status": "ready",
+         *       "error": null,
          *       "lines": [
          *         {
          *           "id": "0d1b5c2a9e44",
@@ -13732,6 +13736,13 @@ export interface components {
             /** @description The day on it. */
             date: string | null;
             total: number | null;
+            /**
+             * @description `reading` while it's being read (it has no lines yet); `ready` once it's read and waiting for a look; `recipe` when it turned out to be a recipe, `none` when there was no receipt in it, and `failed` when it couldn't be read (`error` says why).
+             * @enum {string}
+             */
+            status: "reading" | "ready" | "recipe" | "none" | "failed";
+            /** @description Why it couldn't be read, when `status` is `failed`. */
+            error: string | null;
             lines: components["schemas"]["ReceiptLine"][];
             /** @description The receipt's photos or PDF, to compare with. */
             files: {
@@ -25337,6 +25348,15 @@ export interface operations {
         responses: {
             /** @description Read, waiting for a look. */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Receipt"];
+                };
+            };
+            /** @description Still being read (`status` `reading`); it carries on in the background. */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };

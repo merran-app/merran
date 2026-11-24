@@ -238,6 +238,25 @@ describe("scanning a receipt", () => {
     const notPhoto = await scan([["file", new File(["hello"], "a.bin")]])
     expect(notPhoto.status).toBe(400)
   })
+
+  test("a receipt read within the wait answers 201, ready, as before", async () => {
+    const receipt = await scanned()
+    expect(receipt).toMatchObject({ status: "ready", error: null })
+    expect(receipt.lines.length).toBeGreaterThan(0)
+    await kyle.delete(`/api/pantry/receipts/${receipt.id}`)
+  })
+
+  test("too many files still answers 400 at once, with no receipt or job made", async () => {
+    const before = await (await kyle.get("/api/pantry/receipts")).json()
+    const res = await scan(
+      Array.from({ length: 7 }, (_, i) => photo(jpeg, `page-${i}.jpg`))
+    )
+    expect(res.status).toBe(400)
+    expect((await res.json()).error.code).toBe("too_many_files")
+    expect(await (await kyle.get("/api/pantry/receipts")).json()).toEqual(
+      before
+    )
+  })
 })
 
 describe("adding a receipt", () => {

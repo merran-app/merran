@@ -15,6 +15,7 @@ import { nutritionRunJob, workOutNutritionJob } from "../nutrition/runs.ts"
 import { autoplanJob } from "../plan/autoplan.ts"
 import { readSitesJob } from "../recipes/discover/sites/read-job.ts"
 import { checkPricesJob } from "../stores/prices.ts"
+import { readReceiptJob } from "../pantry/receipts/receipts.ts"
 import { importJob } from "../transfer/import.ts"
 import { rekeyFoodsJob } from "../list/rekey.ts"
 import { webhookDeliveryJob } from "../webhooks/deliver.ts"
@@ -51,6 +52,7 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
   readSitesJob,
   aiPhotoRunJob,
   checkPricesJob,
+  readReceiptJob,
   rekeyFoodsJob,
   checkUpdatesJob,
   webhookDeliveryJob,

@@ -1,5 +1,8 @@
 import { z } from "@hono/zod-openapi"
-import { RECEIPT_KINDS } from "../../database/entities/index.ts"
+import {
+  RECEIPT_KINDS,
+  RECEIPT_STATUSES,
+} from "../../database/entities/index.ts"
 import { IDS, TIMES } from "./examples.ts"
 
 const LINE = {
@@ -45,6 +48,8 @@ const RECEIPT = {
   store: "Walmart",
   date: "2026-10-14",
   total: 48.12,
+  status: "ready",
+  error: null,
   lines: [LINE],
   files: [
     {
@@ -61,6 +66,13 @@ export const ReceiptSchema = z
     store: z.string().nullable(),
     date: z.string().nullable().openapi({ description: "The day on it." }),
     total: z.number().nullable(),
+    status: z.enum(RECEIPT_STATUSES).openapi({
+      description:
+        "`reading` while it's being read (it has no lines yet); `ready` once it's read and waiting for a look; `recipe` when it turned out to be a recipe, `none` when there was no receipt in it, and `failed` when it couldn't be read (`error` says why).",
+    }),
+    error: z.string().nullable().openapi({
+      description: "Why it couldn't be read, when `status` is `failed`.",
+    }),
     lines: z.array(ReceiptLineSchema),
     files: z
       .array(
