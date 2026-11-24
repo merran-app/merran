@@ -32,9 +32,10 @@ const goneAt = (deletedAt: Date) =>
  * for a network call per photo, and the photos go only if the recipes do.
  */
 async function deleteRecipes(em: EntityManager, recipes: Recipe[]) {
-  if (recipes.length === 0) return
+  const [first] = recipes
+  if (!first) return
   // The recipes are all one household's, which the entity manager is scoped to.
-  const householdId = recipes[0].household.id
+  const householdId = first.household.id
   const folders = recipes
     .filter((recipe) => recipe.image)
     .map((recipe) => photoFolder(householdId, recipe.image!))
