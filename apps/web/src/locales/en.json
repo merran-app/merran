@@ -903,6 +903,7 @@
         "leanHint": "How much Fill the week and the weekly autoplan pick recipes with real deals. Prices are checked each morning.",
         "checked": "Prices checked {{when}}, and each morning. Only real deals count, not sales barely off the usual price.",
         "checkNow": "Check prices now",
+        "checkingNow": "Checking prices…",
         "checkedNow_one": "Prices checked: {{count}} deal in your recipes.",
         "checkedNow_other": "Prices checked: {{count}} deals in your recipes.",
         "budget": "Weekly budget",
@@ -1522,6 +1523,23 @@
     "notAdded": "That wasn't added",
     "addRecipe": "Add a recipe",
     "toRecipes": "Go to recipes"
+  },
+  "jobs": {
+    "notice": {
+      "view": "View",
+      "nutrition": "{{name}}'s nutrition is worked out.",
+      "nutritionFailed": "Couldn't work out {{name}}'s nutrition. {{why}}",
+      "photo": "{{name}} has a new photo.",
+      "photoFailed": "Couldn't make a photo for {{name}}. {{why}}",
+      "prices_one": "Prices checked: {{count}} deal.",
+      "prices_other": "Prices checked: {{count}} deals.",
+      "pricesFailed": "Couldn't check prices. {{why}}",
+      "receipt": "Your receipt from {{store}} is ready to look over.",
+      "receiptNoStore": "Your receipt is ready to look over.",
+      "receiptNot": "That wasn't a receipt Merran could read.",
+      "receiptFailed": "Couldn't read your receipt. {{why}}",
+      "failed": "Something Merran was working on didn't finish. {{why}}"
+    }
   },
   "imports": {
     "started": "Still importing. It'll be in your recipes soon.",
@@ -2206,6 +2224,7 @@
       "workOut": "Work out nutrition",
       "again": "Work it out again",
       "workedOut": "Nutrition worked out.",
+      "working": "Working out nutrition…",
       "notYet": "Not worked out yet.",
       "needsServings": "Say how many servings it makes, and Merran can work it out.",
       "nutrients": {

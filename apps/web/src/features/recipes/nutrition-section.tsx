@@ -10,6 +10,7 @@ import { useCapability } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { recipeQuery, type Recipe } from "./queries"
+import { markWorking } from "./working"
 
 /**
  * What a serving has: calories, protein and the rest, where it came from,
@@ -29,6 +30,9 @@ export function NutritionSection({
   const ai = useCapability("ai", !guest)
   const [busy, setBusy] = React.useState(false)
   const nutrition = recipe.nutrition
+  // Whether it's being worked out now: by the button, or by the save that
+  // queued it. Pressing again would pay for a second run.
+  const working = busy || recipe.working.includes("nutrition")
   const canWorkOut = usda || ai
   if (!nutrition && !canWorkOut) return null
 
@@ -48,11 +52,13 @@ export function NutritionSection({
           params: { path: { recipe: recipe.id } },
         })
       )
-      // Past the wait the server answers with the job, not the recipe; the
-      // recipe has its nutrition once the job's done.
       if ("slug" in updated) {
         queryClient.setQueryData(recipeQuery(updated.slug).queryKey, updated)
         toast.success(t("recipes.nutrition.workedOut"))
+      } else {
+        // Past the wait the server answers with the job, not the recipe. It
+        // goes on in the background and says when it's done.
+        markWorking(queryClient, recipe.slug, "nutrition")
       }
     } catch (err) {
       if (!(err instanceof ApiError)) throw err
@@ -72,16 +78,21 @@ export function NutritionSection({
           <Button
             variant="ghost"
             size="sm"
-            disabled={busy}
+            disabled={working}
             onClick={() => void workOut()}
           >
-            {busy && <Spinner data-icon="inline-start" />}
+            {working && <Spinner data-icon="inline-start" />}
             {nutrition
               ? t("recipes.nutrition.again")
               : t("recipes.nutrition.workOut")}
           </Button>
         )}
       </div>
+      {working && (
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {t("recipes.nutrition.working")}
+        </p>
+      )}
       {nutrition && shown.length > 0 ? (
         <>
           <dl className="grid grid-cols-4 gap-2 sm:grid-cols-7">
@@ -117,11 +128,13 @@ export function NutritionSection({
           )}
         </>
       ) : (
-        <p className="text-sm text-muted-foreground">
-          {recipe.servings
-            ? t("recipes.nutrition.notYet")
-            : t("recipes.nutrition.needsServings")}
-        </p>
+        !working && (
+          <p className="text-sm text-muted-foreground">
+            {recipe.servings
+              ? t("recipes.nutrition.notYet")
+              : t("recipes.nutrition.needsServings")}
+          </p>
+        )
       )}
     </section>
   )

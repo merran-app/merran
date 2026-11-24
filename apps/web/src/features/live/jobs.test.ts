@@ -23,3 +23,14 @@ test("a kind the app doesn't show only refreshes the job itself", () => {
     ["jobs", "j4"],
   ])
 })
+
+test("prices and receipts refresh what shows them", () => {
+  assert.deepEqual(jobRefresh({ id: "j5", kind: "stores.prices" }), [
+    ["jobs", "j5"],
+    ["stores"],
+  ])
+  assert.deepEqual(jobRefresh({ id: "j6", kind: "pantry.readReceipt" }), [
+    ["jobs", "j6"],
+    ["pantry", "receipts"],
+  ])
+})

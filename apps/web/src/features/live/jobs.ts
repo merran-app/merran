@@ -15,6 +15,10 @@ const JOB_REFRESH: Record<string, QueryKey[]> = {
   "recipes.nutrition": [["recipes", "nutrition"]],
   "recipes.photos": [["recipes", "photos"]],
   "discover.search": [["recipes", "discover"]],
+  // Nutrition and photos show through the recipe's own changes. A price
+  // check shows on the stores card, and a receipt in the waiting list.
+  "stores.prices": [["stores"]],
+  "pantry.readReceipt": [["pantry", "receipts"]],
 }
 
 /** What to fetch again when one of the household's jobs moves. */
