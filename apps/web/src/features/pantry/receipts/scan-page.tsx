@@ -78,12 +78,20 @@ export function ScanReceiptPage() {
   })
 
   // Reading it here, so a notice that it's done would only repeat what
-  // they're looking at. Once they leave, the notice comes as usual.
+  // they're looking at. The watch is held until they leave the page, not
+  // released when the follow ends: the job event and the receipt's refetch
+  // race, and a notice checked just after must still be skipped.
+  const stopWatching = React.useRef<(() => void)[]>([])
   const followedId = following?.receiptId
   React.useEffect(() => {
-    if (!followedId) return
-    return watchReceipt(followedId)
+    if (followedId) stopWatching.current.push(watchReceipt(followedId))
   }, [followedId])
+  React.useEffect(() => {
+    const stops = stopWatching.current
+    return () => {
+      for (const stop of stops) stop()
+    }
+  }, [])
 
   // Open the receipt once it's read, or say why it can't be.
   React.useEffect(() => {

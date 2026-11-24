@@ -2,6 +2,8 @@ import { queryOptions, useQueryClient } from "@tanstack/react-query"
 
 import { api, unwrap, type Schemas } from "@/lib/api/client"
 
+import { receiptsRefetchInterval } from "./following"
+
 export type Receipt = Schemas["Receipt"]
 export type ReceiptLine = Receipt["lines"][number]
 
@@ -11,6 +13,7 @@ export type ReceiptLine = Receipt["lines"][number]
 export const receiptsQuery = queryOptions({
   queryKey: ["pantry", "receipts"],
   queryFn: () => unwrap(api.GET("/api/pantry/receipts")),
+  refetchInterval: (query) => receiptsRefetchInterval(query.state.data),
 })
 
 export const receiptQuery = (receiptId: string) =>
