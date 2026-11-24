@@ -7,8 +7,10 @@ import { ACROSS_HOUSEHOLDS, forHousehold } from "../../../database/scope.ts"
 import { fakeAiFetcher, GOOD_KEYS, mockAiModels } from "../../../test/ai.ts"
 import { createTestApp, setUpServer } from "../../../test/app.ts"
 import type { AiModels } from "../../ai/providers.ts"
+import { enqueue } from "../../jobs/jobs.ts"
 import { JobRunner } from "../../jobs/runner.ts"
 import { stopSignal } from "../../jobs/stop.ts"
+import { MERRAN } from "../../webhooks/actor.ts"
 import { LocalFileStore } from "../../storage/files.ts"
 import { addReceipt, listReceipts, scanReceipt } from "./receipts.ts"
 
@@ -284,6 +286,59 @@ describe("scanning a receipt as a job", () => {
 
     expect(await em().count(Receipt, {})).toBe(0)
     expect(await jobsBefore()).toBe(before)
+  })
+
+  test("a read that's stopped while it runs says so on the receipt", async () => {
+    holdModel()
+    const before = asked
+    const result = await scan(50)
+    expect("started" in result).toBe(true)
+    if (!("started" in result)) return
+    await expect.poll(() => asked, { timeout: 3_000 }).toBeGreaterThan(before)
+
+    const job = await em().findOneOrFail(Job, {
+      kind: "pantry.readReceipt",
+      status: "running",
+    })
+    await jobs.cancel(em(), job)
+    await jobs.drain()
+    expect(await load(result.started.id)).toMatchObject({
+      status: "failed",
+      error: "It was stopped before it was read.",
+      lines: [],
+    })
+    expect(await files.read(uploadOf(home, result.started.id))).toBeNull()
+  })
+
+  test("a read that's stopped before it starts says so on the receipt", async () => {
+    // As a receipt whose job is still waiting its turn.
+    const scoped = em()
+    const receipt = scoped.create(Receipt, {
+      household: home,
+      lines: [],
+      files: [],
+      status: "reading",
+    })
+    await scoped.flush()
+    const waiting = await enqueue(em(), {
+      kind: "pantry.readReceipt",
+      householdId: home,
+      payload: {
+        receiptId: receipt.id,
+        userId,
+        actor: MERRAN,
+        text: "milk",
+        types: [],
+      },
+      runAt: new Date(Date.now() + 60_000),
+      maxAttempts: 1,
+    })
+
+    await jobs.cancel(em(), waiting)
+    expect(await load(receipt.id)).toMatchObject({
+      status: "failed",
+      error: "It was stopped before it was read.",
+    })
   })
 
   test("a receipt discarded while it's read leaves nothing behind", async () => {

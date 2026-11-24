@@ -21,7 +21,7 @@ import {
   waitThenHandOver,
 } from "../../jobs/hand-over.ts"
 import { enqueue } from "../../jobs/jobs.ts"
-import type { JobHandler } from "../../jobs/runner.ts"
+import { JobStopped, type JobHandler } from "../../jobs/runner.ts"
 import { currentActor, withActor, type Actor } from "../../webhooks/actor.ts"
 import { useAi, type AiDeps } from "../../ai/run.ts"
 import { householdToday } from "../../households/clock.ts"
@@ -466,6 +466,21 @@ const READ_KIND = "pantry.readReceipt"
 const uploadKey = (householdId: string, receiptId: string, index: number) =>
   `receipts/${householdId}/${receiptId}/upload/${index}`
 
+/** What a receipt says when its read was stopped. */
+const STOPPED = "It was stopped before it was read."
+
+/** Merran is shutting down, so the job runs again next start. */
+const shuttingDown = (signal: AbortSignal) =>
+  signal.aborted &&
+  signal.reason instanceof JobStopped &&
+  signal.reason.why === "shutdown"
+
+/** Someone stopped the job. */
+const wasCancelled = (signal: AbortSignal) =>
+  signal.aborted &&
+  signal.reason instanceof JobStopped &&
+  signal.reason.why === "cancelled"
+
 const ReadPayload = z.object({
   receiptId: z.string(),
   userId: z.string().nullable(),
@@ -486,6 +501,18 @@ const ReadPayload = z.object({
  */
 export const readReceiptJob: JobHandler = {
   kind: READ_KIND,
+  // Cancelled before it started: nothing will read it, so it says so. Its
+  // uploads go with the receipt, when it's discarded or forgotten.
+  cancelledWaiting: async (em, job) => {
+    const { receiptId } = ReadPayload.pick({ receiptId: true }).parse(
+      job.payload
+    )
+    const receipt = await em.findOne(Receipt, { id: receiptId })
+    if (receipt?.status !== "reading") return
+    receipt.status = "failed"
+    receipt.error = STOPPED
+    await em.flush()
+  },
   lane: "long",
   area: "pantry",
   concurrency: 2,
@@ -572,10 +599,16 @@ export const readReceiptJob: JobHandler = {
           await markAs("failed", err.message)
           return { ...failureOf(err), receiptId, status: "failed" }
         }
-        // A stop is a restart: it runs again, with its uploads, and isn't
-        // marked. Anything else won't be tried again, so it's said.
-        if (!signal.aborted) {
-          await markAs("failed", "That didn't work. Scan it again in a moment.")
+        // Merran shutting down: it runs again next start, with its uploads,
+        // and isn't marked. A cancel or anything else won't be tried again,
+        // so the receipt says so, rather than staying as reading.
+        if (!shuttingDown(signal)) {
+          await markAs(
+            "failed",
+            wasCancelled(signal)
+              ? STOPPED
+              : "That didn't work. Scan it again in a moment."
+          )
         }
         throw err
       }
