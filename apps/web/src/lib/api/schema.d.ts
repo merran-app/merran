@@ -4636,7 +4636,7 @@ export interface paths {
         put?: never;
         /**
          * Check prices now
-         * @description Household admins only. What's done each morning by itself: today's prices for the products the household keeps, and a look at the store for foods its recipes use, for their sales.
+         * @description Household admins only. What's done each morning by itself: today's prices for the products the household keeps, and a look at the store for foods its recipes use, for their sales. It waits up to 10 seconds; past that it answers 202 with the job, and the check goes on in the background.
          */
         post: operations["checkKrogerPrices"];
         delete?: never;
@@ -17511,6 +17511,7 @@ export interface components {
          *         },
          *         "needsRelink": false,
          *         "pricesCheckedAt": null,
+         *         "checkingPrices": false,
          *         "leanOnSales": "some",
          *         "weeklyBudget": 120
          *       }
@@ -17540,6 +17541,8 @@ export interface components {
                  * @description When its prices and sales were last checked.
                  */
                 pricesCheckedAt: string | null;
+                /** @description A price check is going now. */
+                checkingPrices: boolean;
                 /**
                  * @description How much Fill the week and the autoplan lean on deals: the household setting `stores.leanOnSales`.
                  * @enum {string}
@@ -32432,6 +32435,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PriceCheck"];
+                };
+            };
+            /** @description Still checking: the stores say it's checking until this job is done. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
                 };
             };
             /** @description Not signed in. */

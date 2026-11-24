@@ -181,7 +181,8 @@ export function StoresCard() {
     const check = await attempt("check", () =>
       unwrap(api.POST("/api/stores/kroger/prices"))
     )
-    if (!check) return
+    // Past the wait it answers with the job, which goes on by itself.
+    if (!check || !("deals" in check)) return
     setStores({
       kroger: { ...kroger, pricesCheckedAt: new Date().toISOString() },
     })

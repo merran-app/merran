@@ -16536,6 +16536,10 @@
                 "format": "date-time",
                 "description": "When its prices and sales were last checked."
               },
+              "checkingPrices": {
+                "type": "boolean",
+                "description": "A price check is going now."
+              },
               "leanOnSales": {
                 "type": "string",
                 "enum": [
@@ -16560,6 +16564,7 @@
               "linked",
               "needsRelink",
               "pricesCheckedAt",
+              "checkingPrices",
               "leanOnSales",
               "weeklyBudget"
             ]
@@ -16585,6 +16590,7 @@
             },
             "needsRelink": false,
             "pricesCheckedAt": null,
+            "checkingPrices": false,
             "leanOnSales": "some",
             "weeklyBudget": 120
           }
@@ -38971,7 +38977,7 @@
           "Stores"
         ],
         "summary": "Check prices now",
-        "description": "Household admins only. What's done each morning by itself: today's prices for the products the household keeps, and a look at the store for foods its recipes use, for their sales.",
+        "description": "Household admins only. What's done each morning by itself: today's prices for the products the household keeps, and a look at the store for foods its recipes use, for their sales. It waits up to 10 seconds; past that it answers 202 with the job, and the check goes on in the background.",
         "security": [
           {
             "session": []
@@ -38984,6 +38990,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PriceCheck"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Still checking: the stores say it's checking until this job is done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
                 }
               }
             }
