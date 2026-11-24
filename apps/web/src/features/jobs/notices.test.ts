@@ -3,6 +3,7 @@ import { test } from "node:test"
 
 import {
   jobNoticeFor,
+  jobNoticeTarget,
   jobNoticeMessage,
   NOW_JOB_KINDS,
   type EndedJob,
@@ -149,4 +150,26 @@ test("a job that failed outright says so with its error", () => {
 test("nothing to say when they watched it finish", () => {
   const result = { recipeId: "r", name: "Lemon Chicken" }
   assert.equal(jobNoticeMessage(ended({ handedOver: false, result })), null)
+})
+
+test("View opens where the work shows", () => {
+  const ended = (kind: string, result: EndedJob["result"]): EndedJob => ({
+    kind,
+    status: "done",
+    handedOver: true,
+    result,
+    error: null,
+  })
+  assert.deepEqual(jobNoticeTarget(ended("stores.prices", { deals: 2 })), {
+    to: "/settings/shopping",
+  })
+  assert.deepEqual(
+    jobNoticeTarget(ended("recipes.makePhoto", { recipeId: "r1" })),
+    { to: "/recipes/$slug", params: { slug: "r1" } }
+  )
+  assert.deepEqual(
+    jobNoticeTarget(ended("pantry.readReceipt", { receiptId: "x1" })),
+    { to: "/pantry/receipts/$receiptId", params: { receiptId: "x1" } }
+  )
+  assert.equal(jobNoticeTarget(ended("pantry.readReceipt", {})), null)
 })

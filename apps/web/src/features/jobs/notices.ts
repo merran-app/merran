@@ -132,11 +132,11 @@ export function jobNoticeTarget(
   job: EndedJob
 ):
   | { to: "/recipes/$slug"; params: { slug: string } }
-  | { to: "/settings/household" }
+  | { to: "/settings/shopping" }
   | { to: "/pantry/receipts/$receiptId"; params: { receiptId: string } }
   | null {
   const result = job.result
-  if (job.kind === "stores.prices") return { to: "/settings/household" }
+  if (job.kind === "stores.prices") return { to: "/settings/shopping" }
   if (job.kind === "pantry.readReceipt") {
     const receiptId = result?.receiptId
     return typeof receiptId === "string"

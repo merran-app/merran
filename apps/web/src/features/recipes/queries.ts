@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query"
 
 import { api, unwrap, type Schemas } from "@/lib/api/client"
+import { followWork } from "@/features/live/follow-work"
 
 export type RecipeSummary = Schemas["RecipeSummary"]
 export type Recipe = Schemas["Recipe"]
@@ -107,6 +108,9 @@ export const recipeQuery = (slug: string) =>
           params: { path: { recipe: slug } },
         })
       ),
+    // The live stream says when its nutrition or photo is done; asking is
+    // for when it can't, so the page never stays on "working".
+    refetchInterval: (query) => followWork(!!query.state.data?.working.length),
   })
 
 export const versionsQuery = (slug: string) =>

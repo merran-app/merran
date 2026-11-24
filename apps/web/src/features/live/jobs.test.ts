@@ -34,3 +34,16 @@ test("prices and receipts refresh what shows them", () => {
     ["pantry", "receipts"],
   ])
 })
+
+test("a save's nutrition and photo runs refresh the recipe page", () => {
+  assert.deepEqual(jobRefresh({ id: "j7", kind: "recipes.nutrition" }), [
+    ["jobs", "j7"],
+    ["recipes", "nutrition"],
+    ["recipes", "detail"],
+  ])
+  assert.deepEqual(jobRefresh({ id: "j8", kind: "recipes.photos" }), [
+    ["jobs", "j8"],
+    ["recipes", "photos"],
+    ["recipes", "detail"],
+  ])
+})

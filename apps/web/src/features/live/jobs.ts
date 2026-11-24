@@ -12,8 +12,14 @@ const JOB_REFRESH: Record<string, QueryKey[]> = {
   "recipes.importVideo": [["imports"]],
   "household.import": [["imports"]],
   "recipes.tidy": [["review", "runs"]],
-  "recipes.nutrition": [["recipes", "nutrition"]],
-  "recipes.photos": [["recipes", "photos"]],
+  "recipes.nutrition": [
+    ["recipes", "nutrition"],
+    ["recipes", "detail"],
+  ],
+  "recipes.photos": [
+    ["recipes", "photos"],
+    ["recipes", "detail"],
+  ],
   "discover.search": [["recipes", "discover"]],
   // Nutrition and photos show through the recipe's own changes. A price
   // check shows on the stores card, and a receipt in the waiting list.
