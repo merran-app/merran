@@ -317,6 +317,14 @@ export const workOutNutritionJob: JobHandler = {
   async run({ em, householdId, payload, deps }) {
     if (!householdId) throw new Error("Nutrition needs a household.")
     const { recipeId, userId, actor } = OnePayload.parse(payload)
+    // The recipe's name, before the work: one moved to Recently deleted
+    // meanwhile can't be found again, and shouldn't turn an error into a
+    // different one.
+    const named = await em.findOne(
+      Recipe,
+      { id: recipeId },
+      { fields: ["name"] }
+    )
     return withActor(actor, async () => {
       try {
         const recipe = await workOutNutrition(deps, em, {
@@ -327,8 +335,7 @@ export const workOutNutritionJob: JobHandler = {
         return { recipeId, name: recipe.name }
       } catch (err) {
         if (!(err instanceof AppError)) throw err
-        const { name } = await em.findOneOrFail(Recipe, { id: recipeId })
-        return { ...failureOf(err), recipeId, name }
+        return { ...failureOf(err), recipeId, name: named?.name ?? null }
       }
     })
   },

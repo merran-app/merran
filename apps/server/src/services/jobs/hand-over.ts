@@ -102,11 +102,14 @@ const isOver = (job: Job) =>
 
 /** What a request answers for a job that has ended. */
 function answerFor(job: Job): { done: Record<string, unknown> | null } {
+  // The job's own error is what broke inside it (SQL, a file path), kept
+  // for the server admin's Jobs card and error tracking, not for whoever
+  // was waiting. An error that's theirs to see comes back as its result.
   if (job.status === "failed") {
     throw new AppError(
       "upstream",
       "job_failed",
-      job.error ?? "That didn't work. Try again in a moment."
+      "That didn't work. Try again in a moment."
     )
   }
   if (job.status === "cancelled") {

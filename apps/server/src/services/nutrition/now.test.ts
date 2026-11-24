@@ -4,10 +4,11 @@ import type { Database } from "../../database/orm.ts"
 import { forHousehold } from "../../database/scope.ts"
 import { createTestApp, setUpServer, type TestClient } from "../../test/app.ts"
 import type { Fetcher } from "../fetch/public-fetch.ts"
-import { ACTIVE } from "../jobs/jobs.ts"
+import { ACTIVE, enqueue } from "../jobs/jobs.ts"
 import type { JobRunner } from "../jobs/runner.ts"
 import { loadRecipe } from "../recipes/recipes.ts"
 import type { Settings } from "../settings/settings.ts"
+import { MERRAN } from "../webhooks/actor.ts"
 import { workOutNutritionNow } from "./runs.ts"
 
 // A recipe's nutrition as a job: done while the request waits, or handed
@@ -160,6 +161,36 @@ describe("working out nutrition now", () => {
     expect(await em().count(Job, { kind: "recipes.workOutNutrition" })).toBe(
       jobsBefore
     )
+  })
+
+  test("a recipe moved to Recently deleted while its job waits says so, not the database's words", async () => {
+    const id = await addRecipe("Gone Soup", "100 g carrot")
+    await jobs.drain()
+    const job = await enqueue(em(), {
+      kind: "recipes.workOutNutrition",
+      householdId: home,
+      payload: { recipeId: id, userId, actor: MERRAN },
+      createdBy: userId,
+      maxAttempts: 1,
+    })
+    const deleted = await kyle.delete(`/api/recipes/${id}`)
+    expect(deleted.status, await deleted.clone().text()).toBe(204)
+
+    await jobs.drain()
+    const ended = await em().findOneOrFail(
+      Job,
+      { id: job.id },
+      { refresh: true }
+    )
+    expect(ended).toMatchObject({
+      status: "done",
+      error: null,
+      result: {
+        error: { code: "recipe_not_found" },
+        recipeId: id,
+        name: null,
+      },
+    })
   })
 
   test("nutrition a save queues counts as being worked out until it's done", async () => {

@@ -1538,7 +1538,8 @@
       "receiptNoStore": "Your receipt is ready to look over.",
       "receiptNot": "That wasn't a receipt Merran could read.",
       "receiptFailed": "Couldn't read your receipt. {{why}}",
-      "failed": "Something Merran was working on didn't finish. {{why}}"
+      "receiptFailedNoReason": "Couldn't read your receipt.",
+      "failed": "Something Merran was working on didn't finish."
     }
   },
   "imports": {

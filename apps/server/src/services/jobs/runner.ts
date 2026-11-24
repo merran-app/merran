@@ -5,6 +5,7 @@ import type { Config } from "../../core/config.ts"
 import { Job, type JobStatus } from "../../database/entities/index.ts"
 import type { Database } from "../../database/orm.ts"
 import { forHousehold } from "../../database/scope.ts"
+import { reportError } from "../../modules/error-tracking/reporter.ts"
 import type { Module } from "../../modules/module.ts"
 import type { EventBus, LiveArea } from "../events/events.ts"
 import type { MediaMakers } from "../ai/media.ts"
@@ -616,6 +617,10 @@ export class JobRunner {
             )
           } else {
             logger.error({ err }, "Job failed")
+            // Failed for good: like an error a request didn't expect, it
+            // goes to error tracking. Its raw text stays on the job, for the
+            // server admin's Jobs card, and isn't shown to anyone else.
+            reportError(err)
             tell(
               await this.#endTry(job.id, attempt, {
                 status: "failed",

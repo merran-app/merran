@@ -1,5 +1,13 @@
 import { pino } from "pino"
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest"
 import { Household, Job, User } from "../../database/entities/index.ts"
 import type { Database } from "../../database/orm.ts"
 import { createTestDatabase } from "../../test/database.ts"
@@ -18,6 +26,10 @@ import {
   type JobHandler,
 } from "./runner.ts"
 import { stopSignal } from "./stop.ts"
+
+// What would go to error tracking, kept to look at instead.
+const reportError = vi.hoisted(() => vi.fn())
+vi.mock("../../modules/error-tracking/reporter.ts", () => ({ reportError }))
 
 let database: Database
 let close: () => Promise<void>
@@ -102,6 +114,34 @@ describe("the job runner", () => {
     const tx = em()
     await retryJob(tx, await tx.findOneOrFail(Job, { id: job.id }))
     expect(await load(job.id)).toMatchObject({ status: "queued", attempts: 0 })
+  })
+
+  test("a job that fails its last try goes to error tracking", async () => {
+    reportError.mockClear()
+    const broke = new Error("SQLITE_BUSY: database is locked")
+    const jobs = runner([
+      {
+        kind: "breaks",
+        run: async () => {
+          throw broke
+        },
+      },
+    ])
+    const job = await enqueue(em(), { kind: "breaks", maxAttempts: 2 })
+
+    // A try with another to come is only a warning.
+    await jobs.drain()
+    expect(reportError).not.toHaveBeenCalled()
+
+    await em().nativeUpdate(Job, { id: job.id }, { runAt: new Date() })
+    await jobs.drain()
+    expect(reportError).toHaveBeenCalledTimes(1)
+    expect(reportError).toHaveBeenCalledWith(broke)
+    // The raw error stays on the job, for the server admin's Jobs card.
+    expect(await load(job.id)).toMatchObject({
+      status: "failed",
+      error: "SQLITE_BUSY: database is locked",
+    })
   })
 
   test("a kind's own retry schedule sets each wait", async () => {

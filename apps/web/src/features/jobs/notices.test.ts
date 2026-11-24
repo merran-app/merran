@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 
 import {
+  isFailure,
   jobNoticeFor,
   jobNoticeTarget,
   jobNoticeMessage,
@@ -53,7 +54,6 @@ const ended = (more: Partial<EndedJob>): EndedJob => ({
   status: "done",
   handedOver: true,
   result: null,
-  error: null,
   ...more,
 })
 
@@ -140,11 +140,29 @@ test("a receipt that wasn't one, or couldn't be read", () => {
   )
 })
 
-test("a job that failed outright says so with its error", () => {
-  assert.deepEqual(
-    jobNoticeMessage(ended({ status: "failed", error: "It broke." })),
-    { key: "jobs.notice.failed", values: { why: "It broke." } }
+// What broke inside a job can be SQL or a file path: it's for the server
+// admin's Jobs card, never a notice.
+const broken = (more: Partial<EndedJob>) => ({
+  ...ended({ status: "failed", ...more }),
+  error: "SQLITE_BUSY: database is locked",
+})
+
+test("a receipt that couldn't be read says why only from its result", () => {
+  const kind = "pantry.readReceipt"
+  const message = jobNoticeMessage(
+    broken({ kind, result: { receiptId: "x", status: "failed" } })
   )
+  assert.deepEqual(message, {
+    key: "jobs.notice.receiptFailedNoReason",
+    values: {},
+  })
+  assert.equal(message && isFailure(message), true)
+})
+
+test("a job that failed outright says so, without what broke", () => {
+  const message = jobNoticeMessage(broken({}))
+  assert.deepEqual(message, { key: "jobs.notice.failed", values: {} })
+  assert.equal(message && isFailure(message), true)
 })
 
 test("nothing to say when they watched it finish", () => {
@@ -158,7 +176,6 @@ test("View opens where the work shows", () => {
     status: "done",
     handedOver: true,
     result,
-    error: null,
   })
   assert.deepEqual(jobNoticeTarget(ended("stores.prices", { deals: 2 })), {
     to: "/settings/shopping",

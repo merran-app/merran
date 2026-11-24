@@ -22,13 +22,16 @@ export function jobNoticeFor(job: JobMoved, meId: string): boolean {
   return job.startedBy === meId
 }
 
-/** A job as the server gives it, with what the notice needs. */
+/**
+ * A job as the server gives it, with what the notice needs. Not its
+ * `error`: that's what broke inside it (SQL, a file path), for the server
+ * admin's Jobs card. Why the person couldn't have it is in its result.
+ */
 export type EndedJob = {
   kind: string
   status: string
   handedOver: boolean
   result: { [key: string]: unknown } | null
-  error: string | null
 }
 
 /** What the notice says, as words to look up and their values. */
@@ -44,13 +47,17 @@ export type JobNoticeMessage = {
     | "jobs.notice.receiptNoStore"
     | "jobs.notice.receiptNot"
     | "jobs.notice.receiptFailed"
+    | "jobs.notice.receiptFailedNoReason"
     | "jobs.notice.failed"
   values: Record<string, string | number>
 }
 
-/** Whether the notice is bad news, for the toast's look. */
+/**
+ * Whether the notice is bad news, for the toast's look: each bad-news key
+ * says it failed.
+ */
 export function isFailure(message: JobNoticeMessage): boolean {
-  return message.key.endsWith("Failed") || message.key.endsWith("failed")
+  return /failed/i.test(message.key)
 }
 
 /** Why a job's result says it didn't work, when it does. */
@@ -102,10 +109,9 @@ export function jobNoticeMessage(job: EndedJob): JobNoticeMessage | null {
     }
     case "pantry.readReceipt": {
       if (result?.status === "failed") {
-        return {
-          key: "jobs.notice.receiptFailed",
-          values: { why: why ?? job.error ?? "" },
-        }
+        return why
+          ? { key: "jobs.notice.receiptFailed", values: { why } }
+          : { key: "jobs.notice.receiptFailedNoReason", values: {} }
       }
       if (result?.status === "recipe" || result?.status === "none") {
         return { key: "jobs.notice.receiptNot", values: {} }
@@ -120,9 +126,10 @@ export function jobNoticeMessage(job: EndedJob): JobNoticeMessage | null {
     }
   }
 
-  // The job itself failed (or ended without saying what it did).
+  // The job itself failed (or ended without saying what it did). What broke
+  // isn't said: it's for the server admin, not a notice.
   if (job.status === "failed") {
-    return { key: "jobs.notice.failed", values: { why: job.error ?? "" } }
+    return { key: "jobs.notice.failed", values: {} }
   }
   return null
 }

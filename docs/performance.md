@@ -137,6 +137,7 @@ Decided while building it (November 24, 2026):
 - **Following the work doesn't rely on the live stream alone:** pages showing work going on ask again every few seconds while the stream isn't working, since a stream that's down, or a save's own run that stops early, would otherwise leave "Working…" up.
 - **A stopped receipt read is marked failed, not left reading** ("It was stopped before it was read."); only a restart leaves it reading, to be read again.
 - **The photo removal job isn't limited per household,** runs one at a time, and stops between files.
+- **What broke inside a job isn't shown to people.** A job that fails for good answers a request still waiting with `job_failed`, "That didn't work. Try again in a moment.", and its notice says "Something Merran was working on didn't finish."; its raw error (SQL, a file path) stays on the job for the server admin's Jobs card and goes to error tracking, as an unexpected error in a request does. An error that's the person's to see comes back as the job's result, with its own status.
 
 ## Findings
 

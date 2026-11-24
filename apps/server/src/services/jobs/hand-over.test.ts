@@ -75,12 +75,14 @@ describe("waiting for a job, then handing it over", () => {
     await draining
   })
 
-  test("a job that failed throws, with the job's own words", async () => {
+  test("a job that failed throws, without what broke", async () => {
+    // What broke can be SQL or a file path: it's kept on the job for the
+    // server admin, not told to whoever was waiting.
     const jobs = runner([
       {
         kind: "broken",
         run: async () => {
-          throw new Error("The model fell over.")
+          throw new Error("SQLITE_BUSY: database is locked")
         },
       },
     ])
@@ -90,9 +92,12 @@ describe("waiting for a job, then handing it over", () => {
     await expect(waitThenHandOver(em(), jobs, job.id)).rejects.toMatchObject({
       kind: "upstream",
       code: "job_failed",
-      message: "The model fell over.",
+      message: "That didn't work. Try again in a moment.",
     })
     await draining
+    expect((await em().findOneOrFail(Job, { id: job.id })).error).toBe(
+      "SQLITE_BUSY: database is locked"
+    )
   })
 
   test("a job that was stopped throws that it was", async () => {
