@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { FilePreview, type Previewed } from "@/features/assistant/attachments"
 import { householdQuery } from "@/features/household/queries"
+import { followWork } from "@/features/live/follow-work"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
 
@@ -24,6 +25,7 @@ import {
   type Receipt,
   type ReceiptLine,
 } from "./queries"
+import { UnfinishedReceipt } from "./waiting-receipts"
 
 /** A receipt's day, like "Tue, Oct 14", in the app's language. */
 function useDay() {
@@ -49,7 +51,14 @@ function useMoney() {
 /** A receipt read and waiting: look it over, then add it to the pantry. */
 export function ReceiptPage({ receiptId }: { receiptId: string }) {
   const { t } = useTranslation()
-  const { data, error, isPending } = useQuery(receiptQuery(receiptId))
+  const navigate = useNavigate()
+  const { data, error, isPending } = useQuery({
+    ...receiptQuery(receiptId),
+    // One still being read comes ready on its own, with the live stream
+    // or, when that's down, a look every few seconds.
+    refetchInterval: (query) =>
+      followWork(query.state.data?.status === "reading"),
+  })
 
   return (
     <>
@@ -66,8 +75,20 @@ export function ReceiptPage({ receiptId }: { receiptId: string }) {
         />
         {t("nav.pantry")}
       </Button>
-      {data ? (
+      {data && data.status === "ready" ? (
         <Review receipt={data} />
+      ) : data ? (
+        <>
+          <PageHeader title={t("pantry.receipts.title")} />
+          <ul className="grid max-w-2xl gap-2">
+            <UnfinishedReceipt
+              receipt={data}
+              onDiscarded={() =>
+                void navigate({ to: "/pantry", replace: true })
+              }
+            />
+          </ul>
+        </>
       ) : isPending ? (
         <div className="grid max-w-2xl gap-3 pt-6">
           <Skeleton className="h-9 w-56" />

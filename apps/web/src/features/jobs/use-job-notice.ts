@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { api, unwrap } from "@/lib/api/client"
 
 import { isFailure, jobNoticeMessage, jobNoticeTarget } from "./notices"
+import { isWatchedRead } from "./watching"
 
 /**
  * Tells whoever started a slow piece of work (nutrition, a photo, a price
@@ -25,6 +26,8 @@ export function useJobNotice() {
           params: { path: { jobId } },
         })
       )
+      // They're watching it on the scan page, so it needs no telling.
+      if (isWatchedRead(job)) return
       const message = jobNoticeMessage(job)
       if (!message) return
 

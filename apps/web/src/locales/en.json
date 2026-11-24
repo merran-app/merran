@@ -3050,7 +3050,12 @@
       "addedOff_other": "Added {{count}} things to the pantry, and took {{off}} off the list.",
       "waiting": "A receipt to look over",
       "waitingFrom": "A receipt from {{store}} to look over",
-      "lookOver": "Look it over"
+      "lookOver": "Look it over",
+      "readingOne": "Reading…",
+      "readingStill": "Still reading the receipt. It carries on if you leave, and you'll hear when it's done.",
+      "wasRecipe": "That looks like a recipe, not a receipt.",
+      "noneFound": "Merran couldn't find a receipt in that. Try a clearer photo, or paste its text.",
+      "couldNotRead": "The receipt couldn't be read."
     }
   },
   "gestures": {

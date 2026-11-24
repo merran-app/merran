@@ -34,3 +34,16 @@ export function useRefreshAfterReceipt() {
       queryClient.invalidateQueries({ queryKey: ["list"] }),
     ])
 }
+
+/** Discards a receipt of any status: one that wasn't a receipt, say. */
+export function useDiscardReceipt() {
+  const refresh = useRefreshAfterReceipt()
+  return async (receiptId: string) => {
+    await unwrap(
+      api.DELETE("/api/pantry/receipts/{receiptId}", {
+        params: { path: { receiptId } },
+      })
+    )
+    await refresh()
+  }
+}
