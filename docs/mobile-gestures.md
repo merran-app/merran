@@ -4,10 +4,10 @@ Planned and built November 8, 2026. Merran is made for a phone on the kitchen co
 
 What's there already, and stays:
 
-- **A long press starts selecting** on things on the list, pantry items, meals on the plan and recipe cards (`useLongPress` in `features/select/use-selection.ts`). It gives up once a finger moves more than 10px, so it never fights a swipe.
+- **A long press opens the item's menu** on things on the list, pantry items, meals on the plan, recipe cards and Recently deleted, with **Select** in it (`useLongPress` in `hooks/use-long-press.ts`, used by `components/ui/context-menu.tsx`). It gives up once a finger moves more than 10px, so it never fights a swipe. Until November 25, 2026 it started selecting ([platform.md](platform.md#context-menus) says why that changed).
 - **Drawers close with a swipe down** ([platform.md](platform.md#mobile-overlays)).
 - **Cooking swipes between steps**, and **the plan drags meals** between days, each with its own pointer code.
-- **Right-click menus** ignore touch ([platform.md](platform.md#context-menus)).
+- **Right-click menus** open from a long press on touch ([platform.md](platform.md#context-menus)).
 
 ## What's in this round
 
@@ -65,7 +65,7 @@ The maths (which way a finger's going, how far is far enough, how fast is a flic
 ## Checking it
 
 - The tests for `swipe-math.ts`, added to the web app's `test` script.
-- By hand in the dev server with a phone-sized window and touch on, then on a real iPhone and Android phone, installed and in the browser: rows swipe and scroll, long presses still select, pull to refresh and the edge swipe only where they should be. The real-phone check is still to do: the build was checked with Chrome's touch emulation, which doesn't show how iOS bounces or hands a touch to its own scrolling. On an iPhone, November 9, 2026: rows that only needed a quick swipe worked, and long swipes were cancelled partway (fixed, above).
+- By hand in the dev server with a phone-sized window and touch on, then on a real iPhone and Android phone, installed and in the browser: rows swipe and scroll, long presses open the row's menu, pull to refresh and the edge swipe only where they should be. The real-phone check is still to do: the build was checked with Chrome's touch emulation, which doesn't show how iOS bounces or hands a touch to its own scrolling. On an iPhone, November 9, 2026: rows that only needed a quick swipe worked, and long swipes were cancelled partway (fixed, above).
 
 ## Keeping it current
 

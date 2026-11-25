@@ -24,7 +24,7 @@ export function useSelection() {
     return () => window.removeEventListener("keydown", onKey)
   }, [selecting, done])
 
-  /** Starts selecting, with this one picked when given (a long press). */
+  /** Starts selecting, with this one picked when given (Select in its menu). */
   const start = React.useCallback((id?: string) => {
     setSelecting(true)
     setPicked(id ? new Set([id]) : new Set())
@@ -87,57 +87,4 @@ export function useSelectionKeepOnly(
   React.useEffect(() => {
     keepOnly(key ? key.split(",") : [])
   }, [key, keepOnly])
-}
-
-/**
- * A long press (half a second, without moving) on a touch screen, which
- * starts selecting with that thing. A mouse uses the Select button.
- */
-export function useLongPress(onLongPress: () => void, enabled = true) {
-  const timer = React.useRef<number | null>(null)
-  const from = React.useRef<{ x: number; y: number } | null>(null)
-  const fired = React.useRef(false)
-
-  const cancel = () => {
-    if (timer.current !== null) window.clearTimeout(timer.current)
-    timer.current = null
-    from.current = null
-  }
-
-  if (!enabled) return {}
-  return {
-    onPointerDown: (event: React.PointerEvent) => {
-      if (event.pointerType === "mouse") return
-      fired.current = false
-      from.current = { x: event.clientX, y: event.clientY }
-      timer.current = window.setTimeout(() => {
-        fired.current = true
-        navigator.vibrate?.(10)
-        onLongPress()
-      }, 500)
-    },
-    onPointerMove: (event: React.PointerEvent) => {
-      if (!from.current) return
-      const moved =
-        Math.abs(event.clientX - from.current.x) +
-        Math.abs(event.clientY - from.current.y)
-      if (moved > 10) cancel()
-    },
-    onPointerUp: cancel,
-    onPointerCancel: cancel,
-    // Something else took the finger, like a row that swipes: from then on
-    // this sees no more moves and no lift, so it has to give up now.
-    onLostPointerCapture: cancel,
-    onContextMenu: (event: React.MouseEvent) => {
-      if (from.current || fired.current) event.preventDefault()
-    },
-    /** Swallows the click that ends a long press, so it doesn't open the thing. */
-    onClickCapture: (event: React.MouseEvent) => {
-      if (fired.current) {
-        event.preventDefault()
-        event.stopPropagation()
-        fired.current = false
-      }
-    },
-  }
 }

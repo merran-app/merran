@@ -53,7 +53,7 @@ const TONES = {
  * action's button, a long one or a flick does the action. Swipe towards the
  * end of the line for `start`, back for `end`: right and left in English,
  * the other way round in a right-to-left language. Scrolling stays the
- * phone's own, and a long press still starts selecting. Anywhere else, and
+ * phone's own, and a long press still opens the row's menu. Anywhere else, and
  * while `enabled` is false, it's the plain row it wraps.
  */
 export function SwipeRow({

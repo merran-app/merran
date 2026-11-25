@@ -78,7 +78,7 @@ For a destination picker, tap the handle or focus it and press Enter, then selec
 
 To change the order of a meal's dishes, drag one by its handle within the same meal: a line shows where it will go. Or open its menu and choose **Move up** or **Move down**. In **This week, any day**, dishes are ordered within each meal type.
 
-Use a meal's menu to **Move or change**, **Skip**, or **Remove** it. With a mouse or trackpad, right-click a meal for the same menu, with **Select** too. **Plan it again** reverses a skip. **Repeat last week** in the week's menu can reuse meals without replacing already planned slots. Review servings and dates after repeating.
+Use a meal's menu to **Move or change**, **Skip**, or **Remove** it. Right-click a meal, or press and hold it on a phone, for the same menu, with **Select** too. **Plan it again** reverses a skip. **Repeat last week** in the week's menu can reuse meals without replacing already planned slots. Review servings and dates after repeating.
 
 Choose **Mark cooked** when a planned meal has been made. This can consume its pantry stock. **Not cooked yet** reverses that status and restores recorded pantry deductions. Avoid marking meals cooked simply to hide them; use **Skip** when you did not make them.
 

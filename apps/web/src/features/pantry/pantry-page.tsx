@@ -55,7 +55,6 @@ import { SwipeRow, type SwipeAction } from "@/features/gestures/swipe-row"
 import { SelectMark } from "@/features/select/select-mark"
 import { SelectionBar, SelectionHeader } from "@/features/select/selection-bar"
 import {
-  useLongPress,
   useSelection,
   useSelectionKeepOnly,
   type Selection,
@@ -455,8 +454,8 @@ const TAG_TONES: Record<Tag["tone"], string> = {
 
 /**
  * Something at home: its name and how much (tap to change it), what it's
- * for and when to use it by, and Used up. A long press starts selecting,
- * and on a phone a swipe marks it used up or adds it to the list.
+ * for and when to use it by, and Used up. A long press opens its menu, and
+ * on a phone a swipe marks it used up or adds it to the list.
  */
 function PantryRow({
   item,
@@ -474,7 +473,6 @@ function PantryRow({
   const { today } = useHouseholdClock()
   const selecting = selection.selecting
   const picked = selection.isPicked(item.id)
-  const press = useLongPress(() => selection.start(item.id), !selecting)
 
   const tags: Tag[] = upcoming(item, today)
     .slice(0, 2)
@@ -536,7 +534,6 @@ function PantryRow({
       <button
         type="button"
         onClick={selecting ? () => selection.toggle(item.id) : onEdit}
-        {...(selecting ? {} : press)}
         aria-pressed={selecting ? picked : undefined}
         aria-label={
           selecting

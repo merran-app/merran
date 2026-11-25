@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { formatMinutes } from "@/features/recipes/format"
 import { SelectMark } from "@/features/select/select-mark"
-import { useLongPress, type Selection } from "@/features/select/use-selection"
+import type { Selection } from "@/features/select/use-selection"
 import { cn } from "@/lib/utils"
 
 import { ChangeMealDialog } from "./change-meal-dialog"
@@ -65,7 +65,8 @@ export const servingsOf = (entry: PlanEntry) =>
 
 /**
  * A planned meal: its photo, name and what's worth knowing, everything
- * else in its menu. A long press on a phone starts selecting with it.
+ * else in its menu. A right click, or a long press on a phone, opens the
+ * same menu with Select.
  */
 export function MealTile({
   entry,
@@ -80,10 +81,6 @@ export function MealTile({
   const { t } = useTranslation()
   const whyText = useWhyText()
   const { reasons, leaveOut } = splitWhy(entry.why)
-  const press = useLongPress(
-    () => selection.start(entry.id),
-    !selection.selecting
-  )
   const name = entry.recipe?.name ?? entry.note ?? ""
   const skipped = entry.status === "skipped"
   const cooked = entry.status === "cooked"
@@ -143,7 +140,6 @@ export function MealTile({
       <li
         data-meal-dish={entry.id}
         className="flex min-h-17 items-center gap-3 rounded-2xl bg-muted/50 p-2.5"
-        {...press}
       >
         <div className="relative shrink-0">
           {entry.recipe?.photo ? (
@@ -292,8 +288,9 @@ export function MealMenu({
 }
 
 /**
- * A right click on a meal: the same items as its "⋯" button, and Select.
- * The meal's own element is the area, so the plan's layout doesn't change.
+ * A right click or a long press on a meal: the same items as its "⋯"
+ * button, and Select. The meal's own element is the area, so the plan's
+ * layout doesn't change.
  */
 function MealContextMenu({
   entry,

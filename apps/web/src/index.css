@@ -73,6 +73,25 @@
 }
 
 /*
+ * Toasts come up above the phone's tab bar while it's there, and above
+ * select mode's bar, so an Undo never covers what's needed next. Elsewhere
+ * they keep Sonner's own place (see components/ui/sonner.tsx).
+ */
+@media (width < 48rem) {
+  :root:has([data-tab-bar]) {
+    --toast-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+  :root:has([data-selection-bar]) {
+    --toast-bottom: calc(8.75rem + env(safe-area-inset-bottom));
+  }
+}
+@media (width >= 48rem) {
+  :root:has([data-selection-bar]) {
+    --toast-bottom: 5.25rem;
+  }
+}
+
+/*
  * Color palettes. Tokens follow shadcn/ui, plus `highlight` for timers,
  * ratings and the current cook step. Sage is the default; the others apply
  * when <html data-palette="..."> is set. Every text/background pair is checked

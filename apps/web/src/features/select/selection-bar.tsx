@@ -62,7 +62,11 @@ export function SelectionBar({
   if (!selection.selecting) return null
   const none = selection.count === 0
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-3 md:bottom-6">
+    <div
+      // Toasts come up above it (index.css).
+      data-selection-bar
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-3 md:bottom-6"
+    >
       <div
         role="toolbar"
         aria-label={t("select.actions", { count: selection.count })}
