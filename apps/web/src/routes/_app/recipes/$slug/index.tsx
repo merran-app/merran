@@ -9,6 +9,7 @@ import {
   LeafIcon,
   LinkSquare02Icon,
   MoreHorizontalIcon,
+  ShoppingBasketAdd01Icon,
   Tick02Icon,
   Calendar03Icon,
   Time04Icon,
@@ -40,6 +41,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Spinner } from "@/components/ui/spinner"
 import { useAfterCooking } from "@/features/cook/after-cooking-context"
 import { tastesQuery } from "@/features/household/queries"
 import { CookNotes } from "@/features/recipes/cook-notes"
@@ -78,6 +80,7 @@ import { RecipeSuggestions } from "@/features/recipes/tidy/recipe-suggestions"
 import { VersionsDialog } from "@/features/recipes/versions-dialog"
 import { useCapability } from "@/features/capabilities/queries"
 import { useAssistantPage } from "@/features/assistant/assistant-context"
+import { useAddRecipeToList } from "@/features/list/use-add-recipe"
 import { PlanItDialog } from "@/features/plan/plan-it-dialog"
 import { ShareButton } from "@/features/sharing/share-button"
 import { SharedBadge } from "@/features/sharing/shared-badge"
@@ -237,6 +240,13 @@ function RecipeView({
   const afterCooking = useAfterCooking()
   const [marking, setMarking] = React.useState(false)
   const [planning, setPlanning] = React.useState(false)
+  const listing = useAddRecipeToList()
+  // Planning it or putting it on the list takes the servings shown, when
+  // they aren't the recipe's own.
+  const shownServings =
+    servings.changed && recipe.servings
+      ? Math.round(recipe.servings * servings.factor * 100) / 100
+      : null
 
   /** Cooks the meal it was opened from, or today's: says which. */
   async function cookMeal() {
@@ -465,15 +475,34 @@ function RecipeView({
               />
               {t("plan.planIt")}
             </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              disabled={listing.busy}
+              onClick={() =>
+                void listing.add({
+                  recipe,
+                  withRecipe: paired?.id ?? null,
+                  servings: shownServings,
+                })
+              }
+            >
+              {listing.busy ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <HugeiconsIcon
+                  icon={ShoppingBasketAdd01Icon}
+                  strokeWidth={2}
+                  data-icon="inline-start"
+                />
+              )}
+              {t("recipes.addToList")}
+            </Button>
             <ShareButton recipe={recipe} />
             {planning && (
               <PlanItDialog
                 recipe={recipe}
-                servings={
-                  servings.changed && recipe.servings
-                    ? Math.round(recipe.servings * servings.factor * 100) / 100
-                    : null
-                }
+                servings={shownServings}
                 withRecipe={paired ?? null}
                 open={planning}
                 onOpenChange={setPlanning}

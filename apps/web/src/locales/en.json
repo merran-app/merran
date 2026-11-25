@@ -1934,6 +1934,7 @@
     "original": "Original recipe: {{site}}",
     "startCooking": "Start cooking",
     "madeIt": "Made it",
+    "addToList": "Add to list",
     "markedMade": "Marked as made today.",
     "filters": "Filters",
     "new": "New",
@@ -2513,6 +2514,10 @@
       "title_one": "Move {{count}} thing to",
       "title_other": "Move {{count}} things to",
       "hint": "They go there next time too."
+    },
+    "recipe": {
+      "added": "Added {{name}} to the list.",
+      "onPlan": "It's on this week's plan, any day."
     },
     "plan": {
       "title": "Add from the plan",

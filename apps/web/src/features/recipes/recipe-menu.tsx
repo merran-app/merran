@@ -6,6 +6,7 @@ import {
   Edit02Icon,
   LinkSquare02Icon,
   Share08Icon,
+  ShoppingBasketAdd01Icon,
   Tag01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -22,6 +23,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { householdQuery } from "@/features/household/queries"
+import { useAddRecipeToList } from "@/features/list/use-add-recipe"
 import { PlanItDialog } from "@/features/plan/plan-it-dialog"
 import { ShareDialog } from "@/features/sharing/share-dialog"
 
@@ -48,6 +50,7 @@ export function RecipeMenu({
   const { t } = useTranslation()
   const [showing, setShowing] = React.useState<Showing>(null)
   const { data: household } = useQuery(householdQuery)
+  const listing = useAddRecipeToList()
 
   function closeWhenShut(open: boolean) {
     if (!open) setShowing(null)
@@ -82,6 +85,14 @@ export function RecipeMenu({
           <ContextMenuItem onClick={() => setShowing("plan")}>
             <HugeiconsIcon icon={Calendar03Icon} strokeWidth={2} />
             {t("plan.planIt")}
+          </ContextMenuItem>
+          {/* The recipe's own servings, and no side: a card shows neither. */}
+          <ContextMenuItem
+            disabled={listing.busy}
+            onClick={() => void listing.add({ recipe })}
+          >
+            <HugeiconsIcon icon={ShoppingBasketAdd01Icon} strokeWidth={2} />
+            {t("recipes.addToList")}
           </ContextMenuItem>
           <ContextMenuItem
             render={
