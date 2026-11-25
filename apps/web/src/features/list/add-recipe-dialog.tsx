@@ -53,12 +53,17 @@ export function AddRecipeDialog({
     onOpenChange(next)
   }
 
-  async function add() {
+  /**
+   * Onto the list. On the week's last day the buttons say whether it's for
+   * tonight, so it doesn't ask again in a second drawer over this one.
+   */
+  async function add(tonight?: boolean) {
     if (!picked) return
     const wanted = servings.trim() ? Number(servings) : null
     const added = await listing.add({
       recipe: picked,
       servings: wanted === picked.servings ? null : wanted,
+      tonight: listing.lastDay ? tonight : undefined,
     })
     if (added) changeOpen(false)
   }
@@ -75,7 +80,8 @@ export function AddRecipeDialog({
             className="grid gap-5"
             onSubmit={(event) => {
               event.preventDefault()
-              void add()
+              // On the week's last day, it waits for tonight or later.
+              if (!listing.lastDay) void add()
             }}
           >
             <FieldGroup>
@@ -120,12 +126,39 @@ export function AddRecipeDialog({
                 )}
               </Field>
             </FieldGroup>
-            <DialogFooter>
-              <Button type="submit" disabled={listing.busy}>
-                {listing.busy && <Spinner data-icon="inline-start" />}
-                {t("recipes.addToList")}
-              </Button>
-            </DialogFooter>
+            {listing.lastDay ? (
+              <Field>
+                <FieldLabel>{t("list.recipe.tonight.question")}</FieldLabel>
+                <FieldDescription>
+                  {t("list.recipe.tonight.description")}
+                </FieldDescription>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={listing.busy}
+                    onClick={() => void add(false)}
+                  >
+                    {t("list.recipe.tonight.no")}
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={listing.busy}
+                    onClick={() => void add(true)}
+                  >
+                    {listing.busy && <Spinner data-icon="inline-start" />}
+                    {t("list.recipe.tonight.yes")}
+                  </Button>
+                </DialogFooter>
+              </Field>
+            ) : (
+              <DialogFooter>
+                <Button type="submit" disabled={listing.busy}>
+                  {listing.busy && <Spinner data-icon="inline-start" />}
+                  {t("recipes.addToList")}
+                </Button>
+              </DialogFooter>
+            )}
           </form>
         ) : (
           <RecipePicker

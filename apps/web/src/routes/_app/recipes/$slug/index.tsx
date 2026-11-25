@@ -484,6 +484,7 @@ function RecipeView({
               {t("plan.planIt")}
             </Button>
             <ShareButton recipe={recipe} />
+            {listing.question}
             {planning && (
               <PlanItDialog
                 recipe={recipe}

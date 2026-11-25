@@ -283,6 +283,24 @@ describe("adding a recipe to the list", () => {
     }
   })
 
+  test("on the week's last day, made tonight, stays in this week's any-day meals", async () => {
+    const today = clockIn("UTC").today
+    const weekStartsOn = dayOfWeek(addDays(today, 1))
+    await kyle.patch("/api/households/current", { weekStartsOn })
+    try {
+      const done = await add({ recipe: "lemon-chicken", tonight: true })
+
+      expect(done.entry).toMatchObject({
+        anyDay: true,
+        date: weekStartOf(today, weekStartsOn),
+      })
+    } finally {
+      await kyle.patch("/api/households/current", {
+        weekStartsOn: WEEK_STARTS,
+      })
+    }
+  })
+
   test("lists the meal of it planned already, rather than making another", async () => {
     const pie = await plan({
       date: addDays(thisWeek(), 2),

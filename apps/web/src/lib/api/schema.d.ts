@@ -13517,6 +13517,8 @@ export interface components {
             /** @description None for the recipe's own servings. */
             servings?: number | null;
             meal?: components["schemas"]["Meal"] & unknown;
+            /** @description It's made today, so it goes in this week's any-day meals even on the week's last day, when it would otherwise go in next week's. */
+            tonight?: boolean;
         };
         /**
          * @example {

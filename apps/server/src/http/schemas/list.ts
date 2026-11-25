@@ -478,6 +478,10 @@ export const RecipeToListSchema = z
       description:
         "The meal in the week's pool it goes in: dinner if the household plans dinners, or its first meal, if not given.",
     }),
+    tonight: z.boolean().optional().openapi({
+      description:
+        "It's made today, so it goes in this week's any-day meals even on the week's last day, when it would otherwise go in next week's.",
+    }),
   })
   .openapi("RecipeToList", {
     example: {

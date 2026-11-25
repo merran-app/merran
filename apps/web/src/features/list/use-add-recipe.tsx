@@ -1,3 +1,4 @@
+import { addDays, weekStartOf } from "@merran/shared"
 import { useQueryClient } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
@@ -6,6 +7,8 @@ import { toast } from "sonner"
 import { formatDay } from "@/features/plan/format"
 import { useHouseholdClock } from "@/features/plan/queries"
 import { api, ApiError, unwrap, type Schemas } from "@/lib/api/client"
+
+import { TonightDialog } from "./tonight-dialog"
 
 /** How long Undo stays offered. */
 const UNDO_MS = 10_000
@@ -16,18 +19,45 @@ type RecipeToAdd = {
   withRecipe?: string | null
   /** None for the recipe's own servings. */
   servings?: number | null
+  /**
+   * Made tonight, on the week's last day: this week's plan rather than
+   * next week's. Asked for, when it isn't given and it's that day.
+   */
+  tonight?: boolean
 }
 
 /**
  * A recipe's ingredients onto the list without planning a day for it. The
  * server lists a meal of it planned already, or keeps it in a week's
  * any-day meals, so the list follows it; Undo puts that back as it was.
+ * On the week's last day it asks whether it's for tonight first: render
+ * `question` wherever `add` is used.
  */
 export function useAddRecipeToList() {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const clock = useHouseholdClock()
   const [busy, setBusy] = React.useState(false)
+  const [asking, setAsking] = React.useState<string | null>(null)
+  const answered = React.useRef<(tonight: boolean | null) => void>(null)
+
+  // Tomorrow starts a new week, so a meal could be for this week or next.
+  const tomorrow = addDays(clock.today, 1)
+  const lastDay = weekStartOf(tomorrow, clock.weekStartsOn) === tomorrow
+
+  /** Asks whether it's for tonight; null when the question's closed. */
+  function askTonight(name: string) {
+    return new Promise<boolean | null>((resolve) => {
+      answered.current = resolve
+      setAsking(name)
+    })
+  }
+
+  function answer(tonight: boolean | null) {
+    answered.current?.(tonight)
+    answered.current = null
+    setAsking(null)
+  }
 
   /** The list and the plan both changed. */
   function refresh() {
@@ -59,7 +89,14 @@ export function useAddRecipeToList() {
       : t("list.recipe.onPlan")
   }
 
-  async function add({ recipe, withRecipe, servings }: RecipeToAdd) {
+  async function add({ recipe, withRecipe, servings, tonight }: RecipeToAdd) {
+    let forTonight = tonight
+    if (forTonight === undefined && lastDay) {
+      const reply = await askTonight(recipe.name)
+      if (reply === null) return false
+      forTonight = reply
+    }
+
     setBusy(true)
     try {
       const done = await unwrap(
@@ -68,6 +105,7 @@ export function useAddRecipeToList() {
             recipe: recipe.id,
             withRecipe: withRecipe ?? null,
             servings: servings ?? null,
+            tonight: forTonight ?? false,
           },
         })
       )
@@ -90,5 +128,9 @@ export function useAddRecipeToList() {
     }
   }
 
-  return { add, busy }
+  // Only while it's asked, so a library of cards doesn't hold one each.
+  const question =
+    asking === null ? null : <TonightDialog name={asking} onAnswer={answer} />
+
+  return { add, busy, lastDay, question }
 }

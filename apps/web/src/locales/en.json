@@ -2525,7 +2525,14 @@
       "added": "Added {{name}} to the list.",
       "onPlan": "It's on this week's plan, any day.",
       "onNextWeek": "It's on next week's plan, any day.",
-      "plannedFor": "It was planned for {{day}}."
+      "plannedFor": "It was planned for {{day}}.",
+      "tonight": {
+        "title": "Are you making {{name}} tonight?",
+        "question": "Are you making it tonight?",
+        "description": "It's the last day of your week. Tonight keeps it on this week's plan; later puts it on next week's.",
+        "yes": "Yes, tonight",
+        "no": "No, later"
+      }
     },
     "plan": {
       "title": "Add from the plan",

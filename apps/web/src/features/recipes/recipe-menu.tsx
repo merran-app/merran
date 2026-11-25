@@ -129,6 +129,7 @@ export function RecipeMenu({
       </ContextMenu>
 
       {/* Only the one asked for is there, so a long library doesn't hold a dialog per card. */}
+      {listing.question}
       {showing === "plan" && (
         <PlanItDialog
           recipe={recipe}

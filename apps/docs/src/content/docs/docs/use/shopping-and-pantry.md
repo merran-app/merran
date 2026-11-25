@@ -71,7 +71,7 @@ For something you didn't plan, like a pie for tomorrow when the week's already o
 
 **Expected result:** the recipe's ingredients go on the list, added up with what's there, and the pantry and always-on-hand staples are left off, as **Add from plan** does. From a recipe's page, it uses the servings and side shown there. Every-week items aren't added.
 
-If the recipe is planned this week and not on the list yet, that meal goes on the list, with the servings you set, and the message says "It was planned for" its day. Otherwise the recipe goes on the plan under **This week, any day**, so you can move it to a day; that leaves the list as it is. On the last day of your week, it goes under next week instead, since you're shopping for the days coming. Taking it off the plan takes its ingredients off the list. **Undo** on the message takes them off too, and leaves a meal you'd planned already on the plan.
+If the recipe is planned this week and not on the list yet, that meal goes on the list, with the servings you set, and the message says "It was planned for" its day. Otherwise the recipe goes on the plan under **This week, any day**, so you can move it to a day; that leaves the list as it is. On the last day of your week, Merran asks whether you're making it tonight: **Yes, tonight** keeps it on this week's plan, and **No, later** puts it under next week. Taking it off the plan takes its ingredients off the list. **Undo** on the message takes them off too, and leaves a meal you'd planned already on the plan.
 
 ## Understand quantities and deductions
 

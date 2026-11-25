@@ -32,6 +32,8 @@ export type RecipeToList = {
   servings?: number | null
   /** The pool's meal it goes in; dinner, or the household's first, if not. */
   meal?: Meal
+  /** It's made today, so its week is this one, even on the week's last day. */
+  tonight?: boolean
 }
 
 /** What Undo needs: the meal, whether adding made it, and its servings before. */
@@ -131,8 +133,9 @@ async function listNew(
  * none: a meal of it planned already this week, with the servings asked
  * for, or else a new one in the week's any-day meals. The week is the one
  * with tomorrow in it, so on its last day it's for the days coming rather
- * than a pool that ends tonight. Every-week items don't come along: this
- * is a trip for one thing, not the week's shop.
+ * than a pool that ends tonight, unless it's made tonight: then it's this
+ * week, where Made it finds it. Every-week items don't come along: this is
+ * a trip for one thing, not the week's shop.
  */
 export async function addRecipeToList(
   em: EntityManager,
@@ -141,7 +144,8 @@ export async function addRecipeToList(
 ) {
   return inHouseholdTransaction(em, householdId, async (tx) => {
     const clock = await householdClock(tx, householdId)
-    const week = weekStartOf(addDays(clock.today, 1), clock.weekStartsOn)
+    const day = input.tonight ? clock.today : addDays(clock.today, 1)
+    const week = weekStartOf(day, clock.weekStartsOn)
     const recipe = await recipeFor(tx, input.recipe, "recipe")
     const waiting = await waitingMeal(tx, recipe.id, clock.today, week)
 
