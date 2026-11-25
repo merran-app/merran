@@ -457,7 +457,19 @@ export class JobRunner {
       // made while it waited, like Check prices now joining a waiting check
       // and making it the presser's, may have come in between.
       const current = await em.findOne(Job, { id: job.id }, { refresh: true })
-      if (!current) continue
+      // Shutting down stops only the jobs already running, and this one
+      // isn't yet: it goes back to wait for the next start, without
+      // counting as a try, rather than starting as Merran stops.
+      if (this.#stopping) {
+        await em.nativeUpdate(
+          Job,
+          { id: job.id, status: "running" },
+          { status: "queued", attempts: attempt - 1, startedAt: null }
+        )
+        return
+      }
+      // Cancelled between being taken and read again: it isn't run.
+      if (current?.status !== "running") continue
       byLane.set(lane, (byLane.get(lane) ?? 0) + 1)
       byKind.set(job.kind, (byKind.get(job.kind) ?? 0) + 1)
       byHousehold.set(

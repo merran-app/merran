@@ -980,6 +980,39 @@ describe("the job runner", () => {
     expect(await load(job.id)).toMatchObject({ status: "queued", attempts: 0 })
   })
 
+  test("leaves a job it was taking as shutdown began to run next time", async () => {
+    // Shutting down stops the jobs already running; one being taken at
+    // that moment isn't running yet, so it must not start after it.
+    let ran = false
+    let stopping: Promise<void> | null = null
+    const jobs: JobRunner = runner(
+      [
+        {
+          kind: "long",
+          run: async () => {
+            ran = true
+          },
+        },
+      ],
+      {
+        beforeTaking: async () => {
+          stopping = jobs.stop()
+        },
+      }
+    )
+    const job = await enqueue(em(), { kind: "long" })
+    await jobs.start()
+    await expect.poll(() => stopping !== null).toBe(true)
+    await stopping
+
+    expect(ran).toBe(false)
+    expect(await load(job.id)).toMatchObject({
+      status: "queued",
+      attempts: 0,
+      startedAt: null,
+    })
+  })
+
   test("a job started over while it runs runs again from its first try", async () => {
     // However the try under way ends: done, failing with tries left, or
     // failing its last.
