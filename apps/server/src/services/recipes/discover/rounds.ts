@@ -275,7 +275,10 @@ class Round {
 
   async #finish() {
     await this.#save(() => {
-      if (this.#endIfStopped()) return
+      // Defensive: every path here has just checked the signal, so a stop can
+      // only land in the gap before this change runs, which the round's seams
+      // don't reach in a test.
+      if (this.#markStoppedIfCancelled()) return
       const count = this.#discovery.recipes.length
       this.#discovery.status = "done"
       this.#discovery.progress = null
@@ -296,7 +299,7 @@ class Round {
     if (shuttingDown(this.#signal)) throw this.#signal.reason
     if (wasCancelled(this.#signal)) {
       await this.#save(() => {
-        this.#endIfStopped()
+        this.#markStoppedIfCancelled()
       })
       throw this.#signal.reason
     }
@@ -322,18 +325,18 @@ class Round {
     const total = this.#picks.length
     await this.#options.progress(done, total, this.#soFar())
     await this.#save(() => {
-      if (this.#endIfStopped()) return
+      if (this.#markStoppedIfCancelled()) return
       this.#discovery.progress = { done, total }
     })
   }
 
   /**
-   * When someone has stopped the round, makes the change that ends the
-   * search as stopped, keeping what it found, and says so. Each save of the
-   * round asks first, so one made as the stop arrives can't leave the
-   * search done, or still going, over a stop that's already saved.
+   * Within a save's change: when someone has stopped the round, sets the
+   * search as stopped, with no progress, and says so, so the change doesn't
+   * write progress or done over a stop that's saved. It doesn't end the
+   * round: the caller carries on, and the next check of the signal does.
    */
-  #endIfStopped() {
+  #markStoppedIfCancelled() {
     if (!wasCancelled(this.#signal)) return false
     this.#discovery.status = "stopped"
     this.#discovery.progress = null

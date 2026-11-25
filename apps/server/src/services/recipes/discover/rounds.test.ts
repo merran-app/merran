@@ -497,9 +497,36 @@ describe("a round of Discover", () => {
     })
   })
 
+  test("a progress save made as it's stopped doesn't write progress over the stop", async () => {
+    // One pick opens, and its progress is told as the stop arrives, while the
+    // others' pages wait. The search must say stopped, with no progress, at
+    // once: not "1 of 3" until the others finish and the round ends.
+    const rest = gate()
+    const picks = fromSites(3).map((pick, i) =>
+      i === 0 ? pick : recipe(pick.url, pick.name, { wait: rest.shut })
+    )
+    const { tx, search } = await searching()
+    const { options, controller } = roundOptions([picks])
+    options.progress = async (done: number) => {
+      if (done === 1) controller.abort(new JobStopped("cancelled"))
+    }
+
+    const round = runRound(deps, tx, search, options)
+    await expect
+      .poll(async () => {
+        const saved = await stored(search.id)
+        return [saved.status, saved.progress]
+      })
+      .toEqual(["stopped", null])
+    rest.open()
+
+    await expect(round).rejects.toBeInstanceOf(JobStopped)
+    expect((await stored(search.id)).recipes).toHaveLength(1)
+  })
+
   test("ends stopped, not done, when it's stopped as its last pick is tried", async () => {
     // The stop arrives as the last pick's progress is told, with nothing
-    // left to open: the round mustn't go on to save done over it.
+    // left to open. Which of the round's checks catches it isn't pinned here.
     const picks = fromSites(3)
     const { tx, search } = await searching()
     const { options, controller } = roundOptions([picks])

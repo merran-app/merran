@@ -2,7 +2,7 @@ import type { EntityManager } from "@mikro-orm/sql"
 import { generateText, hasToolCall, stepCountIs, tool } from "ai"
 import { z } from "zod"
 import { AppError } from "../../../core/errors.ts"
-import { Discovery, User } from "../../../database/entities/index.ts"
+import { Discovery, Job, User } from "../../../database/entities/index.ts"
 import { aiUnavailable, useAi, type AiDeps } from "../../ai/run.ts"
 import { resolveTask } from "../../ai/status.ts"
 import { tastesText } from "../../households/taste-text.ts"
@@ -26,6 +26,9 @@ const MOST_AVOIDED = 30
 
 /** The searches kept, newest first. */
 const KEPT = 12
+
+/** How long Stop waits for a running job to end, at most. */
+const STOP_WAIT_MS = 10_000
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -150,14 +153,26 @@ export async function stopDiscovery(
         throw err
       }
     )
-    if (job && ACTIVE.includes(job.status)) await jobs.cancel(em, job)
+    if (job && ACTIVE.includes(job.status)) {
+      await jobs.cancel(em, job)
+      // A running job is only asked to stop, and ends a moment later with a
+      // last save of its own. Waiting for it means that save lands first,
+      // and can't undo what's saved here, or a round started after this.
+      await jobs.waitFor(job.id, STOP_WAIT_MS)
+    }
   }
-  // The job running is cut off first, so a round ending as this is saved
-  // can't leave the search done over the stop.
   discovery.status = "stopped"
   discovery.progress = null
   await em.flush()
   return describeDiscovery(discovery)
+}
+
+function busy() {
+  return new AppError(
+    "conflict",
+    "discover_busy",
+    "A search is going already. It'll be done in a minute."
+  )
 }
 
 type NewSearch = { theme: string; collection: string | null }
@@ -179,12 +194,13 @@ async function startRound(
   }
 ) {
   const going = await em.findOne(Discovery, { status: "searching" })
-  if (going) {
-    throw new AppError(
-      "conflict",
-      "discover_busy",
-      "A search is going already. It'll be done in a minute."
-    )
+  if (going) throw busy()
+  // A search that's stopped, or just ended, may have its job finishing still:
+  // a new round beside it could be overwritten by its last save.
+  const previous = "id" in options.search ? options.search.jobId : null
+  if (previous) {
+    const job = await em.findOne(Job, { id: previous })
+    if (job && ACTIVE.includes(job.status)) throw busy()
   }
   const resolution = await resolveTask(
     deps,
@@ -208,8 +224,11 @@ async function startRound(
 
   // What the shelf already has for the theme shows at once, before the web
   // search finds more.
+  // Every name is kept from the shelf's matches: the cap is for what the AI
+  // is told, and a collection's own recipes mustn't drop out of the shelf's
+  // list as its search grows.
   const matches = await shelfMatches(em, options.householdId, discovery.theme, {
-    avoid: avoidedBy(discovery, options.given),
+    avoid: namesIn(discovery, options.given),
     skip: discovery.recipes.map((recipe) => recipe.url),
   })
   discovery.recipes = [...discovery.recipes, ...matches]
@@ -236,10 +255,15 @@ async function startRound(
   return describeDiscovery(discovery)
 }
 
-/** The names in a search, newest first, then those given: at most 30. */
+/** What the AI is told to find others than: those names, at most 30. */
 function avoidedBy(discovery: Discovery, given: readonly string[]) {
+  return namesIn(discovery, given).slice(0, MOST_AVOIDED)
+}
+
+/** The names in a search, newest first, then those given. */
+function namesIn(discovery: Discovery, given: readonly string[]) {
   const names = discovery.recipes.map((recipe) => recipe.name).reverse()
-  return [...names, ...given].slice(0, MOST_AVOIDED)
+  return [...names, ...given]
 }
 
 /**

@@ -218,6 +218,16 @@ async function finish(discoveryId: string) {
     { filters: false }
   )
   found.status = "done"
+  // Its job ends with it, or the search would wait on a job still going.
+  if (found.jobId) {
+    const job = await em.findOneOrFail(
+      Job,
+      { id: found.jobId },
+      { filters: false }
+    )
+    job.status = "done"
+    job.finishedAt = new Date()
+  }
   await em.flush()
 }
 
@@ -327,5 +337,59 @@ describe("finding more, and stopping", () => {
       .fork()
       .count(Discovery, { collection: "soups" }, { filters: false })
     expect(count).toBe(1)
+  })
+
+  test("a collection's own recipes aren't brought back as the search grows", async () => {
+    // The collection test before left its search going.
+    const going = await database.em
+      .fork()
+      .find(Discovery, { status: "searching" }, { filters: false })
+    for (const search of going) await finish(search.id)
+
+    const em = database.em.fork()
+    em.create(SiteRecipe, {
+      url: "https://shelf.example/garlic-pasta-noodles",
+      state: "recipe",
+      siteName: "Shelf",
+      name: "Garlic Pasta Noodles",
+      courses: ["main"],
+      keywords: [],
+      ingredients: ["1 cup water"],
+      diets: [],
+      publishedAt: new Date(),
+    } as never)
+    await em.flush()
+    const collection = await (await kyle.get("/api/collections/pasta")).json()
+    const own = collection.recipes.map(
+      (recipe: { name: string }) => recipe.name
+    )
+    expect(own).toContain("Garlic Pasta Noodles")
+
+    // The collection's last search has 30 dishes already: more than the AI
+    // is told about, which would push the collection's own names out.
+    const last = em.create(Discovery, {
+      household: await em.findOneOrFail(Household, { id: home }),
+      theme: collection.theme,
+      collection: "pasta",
+      status: "done",
+      recipes: Array.from({ length: 30 }, (_, i) => ({
+        url: `https://filler.example/dish-${i}`,
+        name: `Filler Dish ${i}`,
+        site: "filler.example",
+        minutes: null,
+        photo: null,
+        why: "",
+      })),
+    })
+    await em.flush()
+
+    const more = await kyle.post("/api/collections/pasta/find")
+    expect(more.status, await more.clone().text()).toBe(202)
+    const body = await more.json()
+    expect(body.id).toBe(last.id)
+    expect(body.recipes).toHaveLength(30)
+    // The AI is told 30 of them, the newest first.
+    const job = await jobFor(body.id)
+    expect(job.payload.avoid).toHaveLength(30)
   })
 })
