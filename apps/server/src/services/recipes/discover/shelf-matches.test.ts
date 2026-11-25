@@ -65,6 +65,12 @@ beforeAll(async () => {
     row("Leek Potato Soup", 6),
     row("Beef Stew", 0, { courses: ["main"] }),
     row("Pending Soup", 0, { state: "waiting" }),
+    // Five different salads, for the cap of four.
+    row("Cucumber Dill Salad", 1, { courses: ["salad"] }),
+    row("Arugula Pear Salad", 2, { courses: ["salad"] }),
+    row("Greek Chickpea Salad", 3, { courses: ["salad"] }),
+    row("Kale Apple Salad", 4, { courses: ["salad"] }),
+    row("Beet Orange Salad", 5, { courses: ["salad"] }),
   ]
   for (const data of shelf) em.create(SiteRecipe, data as never)
   // Leek Potato Soup is in the library already.
@@ -146,12 +152,17 @@ describe("shelf matches", () => {
     expect(found[1]).toMatchObject({ photo: null, why: "" })
   })
 
-  test("stops at four", async () => {
-    const found = await shelfMatches(em(), home, "soups", {
+  test("stops at four, the newest", async () => {
+    const found = await shelfMatches(em(), home, "salads", {
       avoid: [],
       skip: [],
     })
-    expect(found.length).toBeLessThanOrEqual(4)
+    expect(found.map((recipe) => recipe.name)).toEqual([
+      "Cucumber Dill Salad",
+      "Arugula Pear Salad",
+      "Greek Chickpea Salad",
+      "Kale Apple Salad",
+    ])
   })
 
   test("leaves out links in the search, and dishes it's told to avoid", async () => {
