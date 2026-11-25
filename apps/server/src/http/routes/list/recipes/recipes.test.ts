@@ -396,7 +396,8 @@ describe("adding a recipe to the list", () => {
     expect(res.status, await res.clone().text()).toBe(201)
 
     // Undo too, though taking a meal off the plan otherwise needs the plan.
-    const undone = await post("/list/recipes/undo", (await res.json()).undo)
+    const listed = (await res.json()) as Listed
+    const undone = await post("/list/recipes/undo", listed.undo)
     expect(undone.status, await undone.clone().text()).toBe(200)
   })
 })

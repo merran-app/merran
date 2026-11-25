@@ -30,13 +30,15 @@ Out of scope:
 
 ## Behaviour
 
-- **Adding.** In one transaction:
-  - A plan entry is made in the any-day pool of the household's current week, by its time zone and first day of the week.
+- **The week** is the one with tomorrow in it, by the household's time zone and first day of the week. On every day but the week's last, that's this week. On its last day it's next week, so shopping on a Sunday for the days coming doesn't leave the meal in a pool that ends that night, to be asked about ("Did you make these?") the next morning. Decided November 25, 2026, after review. Making it that same last day won't match **Made it**, which looks in this week's pool.
+- **A meal planned already goes on instead (decided November 25, 2026, after review).** If the recipe is planned, still to make and not on the list yet, from today to the end of that week or in that week's any-day meals, the first such meal is listed rather than a new one made. Otherwise a later **Add from plan** would list it too and buy for two. It takes the servings given, if they differ; its side stays as planned.
+- **Otherwise, adding makes a meal.** In one transaction:
+  - A plan entry is made in that week's any-day pool.
   - Its meal is the one given, or else dinner if the household plans dinners, or else its first planned meal. That's the same default **Plan it** starts on.
   - It gets the recipe, side and servings given. No servings means the recipe's own.
-  - Then it's listed with `listMeals`, exactly as Add from plan lists a meal. The lines are added up, always-on-hand is left off, what's at home is set aside, they're merged into lines waiting there, and `listedAt` is set.
-- **After that it's an ordinary any-day meal.** It shows in the week's pool. Moving it to a day changes nothing on the list. Changing its servings or side, skipping it or removing it changes the list the way any listed meal does. Cook view and marking it made work as usual.
-- **Undo** removes the meal (`DELETE /api/plan/entries/{id}`). That already takes its share off the list and frees what was set aside for it.
+- **Either way it's listed** with `listMeals`, exactly as Add from plan lists a meal. The lines are added up, always-on-hand is left off, what's at home is set aside, they're merged into lines waiting there, and `listedAt` is set.
+- **After that it's an ordinary meal.** A new one shows in the week's pool. Moving it to a day changes nothing on the list. Changing its servings or side, skipping it or removing it changes the list the way any listed meal does. Cook view and marking it made work as usual.
+- **Undo** (`POST /api/list/recipes/undo`, with the `undo` the add answered with) removes a meal it made, which takes its share off the list and frees what was set aside. A meal that was planned already stays on the plan, off the list again, with its servings as they were. The toast says which: "It's on this week's plan, any day.", "It's on next week's plan, any day." or "It was planned for Friday, Nov 27."
 - **The same recipe again.** Adding a recipe that's already planned and on the list this week adds a second share (two pies). It isn't blocked: the picker shows **Already planned** for this week, and the toast has Undo.
 - A recipe in Recently deleted, or one that doesn't exist, is "No such recipe", as for the plan.
 
@@ -47,10 +49,11 @@ Out of scope:
 - `operationId: addRecipeToList`, tag List, summary "Add a recipe to the list".
 - The description says it also puts the recipe in the week's any-day meals, and that the list follows that meal from then on.
 - Body: `recipe` (id, required), and optionally `withRecipe`, `servings` and `meal`.
-- Answers 201 with `entry` (the plan entry, as `PlanEntrySchema`), plus `added`, `merged`, `onHand` and `inPantry`, as Add from plan answers them.
+- Answers 201 with `entry` (the plan entry, as `PlanEntrySchema`), `made` (whether it made the meal), `undo` (`RecipeOnListUndo`: the meal, `made`, and its servings before), plus `added`, `merged`, `onHand` and `inPantry`, as Add from plan answers them.
 - 404 for no such recipe, 400 for a bad body.
-- **Permission: `list:write`** (my call). A route takes one permission. This one is asked for as a list change, and the plan entry is how the list keeps track of it. `/api/list/covered` made the same kind of call.
-- **Live updates:** it changes the list, the plan and the pantry, so it gets a line in `CHANGES` in `apps/server/src/http/middleware/live.ts`.
+- **`POST /api/list/recipes/undo`** (`undoRecipeOnList`) takes that `undo`. It refuses to remove a meal that isn't a pool meal still to make (400), so a list-only key can't use it to delete other meals.
+- **Permission: `list:write`** for both (my call). A route takes one permission. This one is asked for as a list change, and the plan entry is how the list keeps track of it. `/api/list/covered` made the same kind of call. Undo has its own route, rather than `DELETE /api/plan/entries/{id}`, because a meal planned already must stay, and so a key that could add can also undo.
+- **Live updates:** both change the list, the plan and the pantry, so they get a line in `CHANGES` in `apps/server/src/http/middleware/live.ts`.
 - Then `openapi.json` is regenerated, along with both `schema.d.ts` files (web and extension).
 
 ## The UI
