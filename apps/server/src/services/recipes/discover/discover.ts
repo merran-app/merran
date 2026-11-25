@@ -6,8 +6,8 @@ import { Discovery, User } from "../../../database/entities/index.ts"
 import { aiUnavailable, useAi, type AiDeps } from "../../ai/run.ts"
 import { resolveTask } from "../../ai/status.ts"
 import { tastesText } from "../../households/taste-text.ts"
-import { enqueue, wakeRunner } from "../../jobs/jobs.ts"
-import type { JobHandler } from "../../jobs/runner.ts"
+import { ACTIVE, enqueue, findJob, wakeRunner } from "../../jobs/jobs.ts"
+import type { JobHandler, JobRunner } from "../../jobs/runner.ts"
 import { getTastes } from "../../households/tastes.ts"
 import { removeFilesLater } from "../../storage/remove-job.ts"
 import { searchFolder } from "./photos.ts"
@@ -91,6 +91,93 @@ export async function startDiscovery(
     avoid?: readonly string[]
   }
 ) {
+  return startRound(deps, em, {
+    householdId: options.householdId,
+    userId: options.userId,
+    given: options.avoid ?? [],
+    search: { theme: options.theme, collection: options.collection ?? null },
+  })
+}
+
+/**
+ * Adds a round to a search that's over: up to four more from the shelf and
+ * up to eight more from the web, other than what it has.
+ */
+export async function findMore(
+  deps: AiDeps,
+  em: EntityManager,
+  options: {
+    householdId: string
+    userId: string
+    discoveryId: string
+    /** More dishes to find others than, after the search's own. */
+    avoid?: readonly string[]
+  }
+) {
+  const discovery = await findDiscovery(em, options.discoveryId)
+  return startRound(deps, em, {
+    householdId: options.householdId,
+    userId: options.userId,
+    given: options.avoid ?? [],
+    search: discovery,
+  })
+}
+
+/**
+ * Stops a search that's going, keeping what it found. It says so at once;
+ * its job, as it ends, leaves it stopped.
+ */
+export async function stopDiscovery(
+  jobs: JobRunner,
+  em: EntityManager,
+  householdId: string,
+  discoveryId: string
+) {
+  const discovery = await findDiscovery(em, discoveryId)
+  if (discovery.status !== "searching") {
+    throw new AppError(
+      "conflict",
+      "discover_finished",
+      "That search has already finished."
+    )
+  }
+  // A search from before its job was kept has none to stop.
+  if (discovery.jobId) {
+    const job = await findJob(em, discovery.jobId, householdId).catch(
+      (err: unknown) => {
+        // A job that's gone has nothing left to stop either.
+        if (err instanceof AppError && err.code === "job_not_found") return null
+        throw err
+      }
+    )
+    if (job && ACTIVE.includes(job.status)) await jobs.cancel(em, job)
+  }
+  // The job running is cut off first, so a round ending as this is saved
+  // can't leave the search done over the stop.
+  discovery.status = "stopped"
+  discovery.progress = null
+  await em.flush()
+  return describeDiscovery(discovery)
+}
+
+type NewSearch = { theme: string; collection: string | null }
+
+/**
+ * Starts a round for a new search, or for one that's over: refuses while a
+ * search is going, adds the round's matches from the shelf, and queues the
+ * job that finds the rest on the web.
+ */
+async function startRound(
+  deps: AiDeps,
+  em: EntityManager,
+  options: {
+    householdId: string
+    userId: string
+    /** Dishes to find others than, after the search's own. */
+    given: readonly string[]
+    search: Discovery | NewSearch
+  }
+) {
   const going = await em.findOne(Discovery, { status: "searching" })
   if (going) {
     throw new AppError(
@@ -107,33 +194,52 @@ export async function startDiscovery(
   )
   if (!resolution.ok) throw aiUnavailable(resolution.why)
 
-  const discovery = em.create(Discovery, {
-    household: options.householdId,
-    user: em.getReference(User, options.userId, { wrapped: true }),
-    theme: options.theme,
-    collection: options.collection ?? null,
-    status: "searching",
-    // What the shelf already has for the theme shows at once, before the
-    // web search finds more.
-    recipes: await shelfMatches(em, options.householdId, options.theme, {
-      avoid: options.avoid ?? [],
-      skip: [],
-    }),
+  const discovery =
+    "id" in options.search
+      ? options.search
+      : em.create(Discovery, {
+          household: options.householdId,
+          user: em.getReference(User, options.userId, { wrapped: true }),
+          theme: options.search.theme,
+          collection: options.search.collection,
+          status: "searching",
+          recipes: [],
+        })
+
+  // What the shelf already has for the theme shows at once, before the web
+  // search finds more.
+  const matches = await shelfMatches(em, options.householdId, discovery.theme, {
+    avoid: avoidedBy(discovery, options.given),
+    skip: discovery.recipes.map((recipe) => recipe.url),
   })
+  discovery.recipes = [...discovery.recipes, ...matches]
+  discovery.status = "searching"
+  discovery.progress = null
+  discovery.error = null
   await em.flush()
-  await enqueue(em, {
+
+  // Worked out once the shelf's matches are in, so the AI is told about them.
+  const job = await enqueue(em, {
     kind: KIND,
     householdId: options.householdId,
     payload: {
       discoveryId: discovery.id,
       userId: options.userId,
-      avoid: (options.avoid ?? []).slice(0, MOST_AVOIDED),
+      avoid: avoidedBy(discovery, options.given),
     },
     createdBy: options.userId,
     maxAttempts: 1,
   })
+  discovery.jobId = job.id
+  await em.flush()
   await removeOlderSearches(em, options.householdId)
   return describeDiscovery(discovery)
+}
+
+/** The names in a search, newest first, then those given: at most 30. */
+function avoidedBy(discovery: Discovery, given: readonly string[]) {
+  const names = discovery.recipes.map((recipe) => recipe.name).reverse()
+  return [...names, ...given].slice(0, MOST_AVOIDED)
 }
 
 /**

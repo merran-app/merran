@@ -477,7 +477,7 @@ export interface paths {
         put?: never;
         /**
          * Find more for a collection
-         * @description Searches the web for more recipes in the collection's theme that suit the household, as `POST /discover` does, and keeps them with the collection (its `found`). Needs a model that can search the web. With an API key, it needs the `recipes: write` permission.
+         * @description Adds to the collection's last search when it has one, and starts a search for its theme otherwise, as `POST /discover` does: matches from the shelf at once, and more from the web, kept with the collection (its `found`). Needs a model that can search the web. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["findMoreForCollection"];
         delete?: never;
@@ -589,7 +589,7 @@ export interface paths {
         put?: never;
         /**
          * Find new recipes online
-         * @description Searches the web for recipes that fit a theme ("cozy fall soups") and suit the household, in the background, with the household's model for finding recipes, which must be able to search the web. Merran opens each page and keeps those it can import. Follow it at `GET /discover/{discoveryId}`; one at a time for a household. With an API key, it needs the `recipes: write` permission.
+         * @description Answers at once with matches from the shelf of recipes Merran reads for a theme ("cozy fall soups"), and carries on in the background: the household's model for finding recipes, which must be able to search the web, finds more that suit the household, and Merran opens each page and saves the recipes it can import as each opens. Follow it at `GET /discover/{discoveryId}` or by the live `job` event; stop it at `POST /discover/{discoveryId}/stop`; add more at `POST /discover/{discoveryId}/more`. One search at a time for a household. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["startDiscovery"];
         delete?: never;
@@ -618,6 +618,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/discover/{discoveryId}/more": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find more for a search
+         * @description Adds a round to the search, which searches again: up to four more matches from the shelf of recipes Merran reads, which come back at once, and up to eight more from the web, saved as each page opens. It looks for other dishes than the search has. Follow it at `GET /discover/{discoveryId}`; one search at a time for a household. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["findMoreDiscoveries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/discover/{discoveryId}/photos/{photo}": {
         parameters: {
             query?: never;
@@ -632,6 +652,26 @@ export interface paths {
         get: operations["getDiscoveryPhoto"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/discover/{discoveryId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop a search
+         * @description What it has found stays, and its status becomes `stopped`. `POST /discover/{discoveryId}/more` carries on from there. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["stopDiscovery"];
         delete?: never;
         options?: never;
         head?: never;
@@ -20465,6 +20505,64 @@ export interface operations {
             };
         };
     };
+    findMoreDiscoveries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                discoveryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Searching again. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Discovery"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such search. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A search is going already. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     getDiscoveryPhoto: {
         parameters: {
             query?: never;
@@ -20506,6 +20604,64 @@ export interface operations {
             };
             /** @description No such search, or it has no such photo. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    stopDiscovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                discoveryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stopped. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Discovery"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such search. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It has already finished. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

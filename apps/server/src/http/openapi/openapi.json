@@ -20743,7 +20743,7 @@
           "Collections"
         ],
         "summary": "Find more for a collection",
-        "description": "Searches the web for more recipes in the collection's theme that suit the household, as `POST /discover` does, and keeps them with the collection (its `found`). Needs a model that can search the web. With an API key, it needs the `recipes: write` permission.",
+        "description": "Adds to the collection's last search when it has one, and starts a search for its theme otherwise, as `POST /discover` does: matches from the shelf at once, and more from the web, kept with the collection (its `found`). Needs a model that can search the web. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -21390,7 +21390,7 @@
           "Discover"
         ],
         "summary": "Find new recipes online",
-        "description": "Searches the web for recipes that fit a theme (\"cozy fall soups\") and suit the household, in the background, with the household's model for finding recipes, which must be able to search the web. Merran opens each page and keeps those it can import. Follow it at `GET /discover/{discoveryId}`; one at a time for a household. With an API key, it needs the `recipes: write` permission.",
+        "description": "Answers at once with matches from the shelf of recipes Merran reads for a theme (\"cozy fall soups\"), and carries on in the background: the household's model for finding recipes, which must be able to search the web, finds more that suit the household, and Merran opens each page and saves the recipes it can import as each opens. Follow it at `GET /discover/{discoveryId}` or by the live `job` event; stop it at `POST /discover/{discoveryId}/stop`; add more at `POST /discover/{discoveryId}/more`. One search at a time for a household. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -21532,6 +21532,91 @@
         "description": "With an API key, it needs the `recipes: read` permission."
       }
     },
+    "/api/discover/{discoveryId}/more": {
+      "post": {
+        "operationId": "findMoreDiscoveries",
+        "tags": [
+          "Discover"
+        ],
+        "summary": "Find more for a search",
+        "description": "Adds a round to the search, which searches again: up to four more matches from the shelf of recipes Merran reads, which come back at once, and up to eight more from the web, saved as each page opens. It looks for other dishes than the search has. Follow it at `GET /discover/{discoveryId}`; one search at a time for a household. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002d"
+            },
+            "required": true,
+            "name": "discoveryId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Searching again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Discovery"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such search.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A search is going already.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/discover/{discoveryId}/photos/{photo}": {
       "get": {
         "operationId": "getDiscoveryPhoto",
@@ -21606,6 +21691,91 @@
           },
           "404": {
             "description": "No such search, or it has no such photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/discover/{discoveryId}/stop": {
+      "post": {
+        "operationId": "stopDiscovery",
+        "tags": [
+          "Discover"
+        ],
+        "summary": "Stop a search",
+        "description": "What it has found stays, and its status becomes `stopped`. `POST /discover/{discoveryId}/more` carries on from there. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002d"
+            },
+            "required": true,
+            "name": "discoveryId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stopped.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Discovery"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such search.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It has already finished.",
             "content": {
               "application/json": {
                 "schema": {

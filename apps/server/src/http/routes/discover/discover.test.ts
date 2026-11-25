@@ -1,6 +1,11 @@
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import { Discovery, Household, Job } from "../../../database/entities/index.ts"
+import {
+  Discovery,
+  Household,
+  Job,
+  SiteRecipe,
+} from "../../../database/entities/index.ts"
 import type { Database } from "../../../database/orm.ts"
 import { forHousehold } from "../../../database/scope.ts"
 import { removeOlderSearches } from "../../../services/recipes/discover/discover.ts"
@@ -9,6 +14,7 @@ import {
   searchFolder,
 } from "../../../services/recipes/discover/photos.ts"
 import { LocalFileStore } from "../../../services/storage/files.ts"
+import { fakeAiFetcher, GOOD_KEYS, mockAiModels } from "../../../test/ai.ts"
 import { createTestApp, setUpServer, TestClient } from "../../../test/app.ts"
 
 const KEY = "a1b2c3d4e5f60718293a4b5c"
@@ -25,10 +31,19 @@ let theirs: Discovery
 let files: LocalFileStore
 
 beforeAll(async () => {
-  const test = await createTestApp()
+  const test = await createTestApp({
+    fetcher: fakeAiFetcher(),
+    ai: mockAiModels(),
+  })
   ;({ close, database } = test)
   files = new LocalFileStore(test.filesDir)
   kyle = await setUpServer(test.app, test.setupCode)
+  // Kyle, the server admin, is in Home, so the server's key pays for Discover.
+  const key = await kyle.post("/api/settings/server/ai/keys", {
+    provider: "anthropic",
+    key: GOOD_KEYS.anthropic,
+  })
+  expect(key.status).toBe(201)
 
   const em = database.em.fork()
   const household = await em.findOneOrFail(Household, { name: "Home" })
@@ -180,5 +195,137 @@ describe("older searches", () => {
     expect(jobs[0]!.payload).toEqual({
       paths: [searchFolder(busy.id, made[0]!.id)],
     })
+  })
+})
+
+/** The job that finds a search's recipes: the one its `jobId` names. */
+async function jobFor(discoveryId: string) {
+  const em = database.em.fork()
+  const discovery = await em.findOneOrFail(
+    Discovery,
+    { id: discoveryId },
+    { filters: false }
+  )
+  return em.findOneOrFail(Job, { id: discovery.jobId! }, { filters: false })
+}
+
+/** Ends a search by hand, as its job would. */
+async function finish(discoveryId: string) {
+  const em = database.em.fork()
+  const found = await em.findOneOrFail(
+    Discovery,
+    { id: discoveryId },
+    { filters: false }
+  )
+  found.status = "done"
+  await em.flush()
+}
+
+describe("finding more, and stopping", () => {
+  let going: string
+
+  beforeAll(async () => {
+    const em = database.em.fork()
+    // A shelf recipe that fits "soups", and one that's the search's already.
+    for (const [name, slug] of [
+      ["Tomato Soup", "tomato-soup"],
+      ["Lentil Soup", "lentil-soup"],
+    ] as const) {
+      em.create(SiteRecipe, {
+        url: `https://shelf.example/${slug}`,
+        state: "recipe",
+        siteName: "Shelf",
+        name,
+        courses: ["soup"],
+        keywords: [],
+        ingredients: ["1 cup water"],
+        diets: [],
+        publishedAt: new Date(),
+      } as never)
+    }
+    await em.flush()
+  })
+
+  test("Find more adds a round to the same search", async () => {
+    const more = await kyle.post(`/api/discover/${search.id}/more`)
+    expect(more.status, await more.clone().text()).toBe(202)
+    const body = await more.json()
+    going = body.id
+    expect(body.id).toBe(search.id)
+    expect(body.status).toBe("searching")
+    expect(body.progress).toBeNull()
+    // The shelf's Lentil Soup is the search's own, so only Tomato Soup is new.
+    expect(body.recipes.map((recipe: { name: string }) => recipe.name)).toEqual(
+      [NAME, "Tomato Soup"]
+    )
+    const job = await jobFor(search.id)
+    expect(job.status).toBe("queued")
+    expect(job.payload).toMatchObject({
+      discoveryId: search.id,
+      avoid: ["Tomato Soup", NAME],
+    })
+  })
+
+  test("Find more, and Start, wait for a search that's going", async () => {
+    const more = await kyle.post(`/api/discover/${going}/more`)
+    expect(more.status).toBe(409)
+    expect((await more.json()).error.code).toBe("discover_busy")
+    const start = await kyle.post("/api/discover", { theme: "stews" })
+    expect(start.status).toBe(409)
+  })
+
+  test("Find more and Stop need a search of the household's", async () => {
+    for (const path of ["more", "stop"]) {
+      const none = await kyle.post(`/api/discover/${theirs.id}/${path}`)
+      expect(none.status).toBe(404)
+      const bad = await kyle.post(`/api/discover/nonsense/${path}`)
+      expect(bad.status).toBe(404)
+    }
+  })
+
+  test("Stop ends a search whose job is waiting, keeping what it found", async () => {
+    const stopped = await kyle.post(`/api/discover/${going}/stop`)
+    expect(stopped.status, await stopped.clone().text()).toBe(200)
+    const body = await stopped.json()
+    expect(body).toMatchObject({ status: "stopped", progress: null })
+    expect(body.recipes).toHaveLength(2)
+    expect((await jobFor(going)).status).toBe("cancelled")
+    const again = await kyle.post(`/api/discover/${going}/stop`)
+    expect(again.status).toBe(409)
+    expect((await again.json()).error.code).toBe("discover_finished")
+    // Stopped is over: Find more carries on from it.
+    expect((await kyle.post(`/api/discover/${going}/more`)).status).toBe(202)
+    await kyle.post(`/api/discover/${going}/stop`)
+  })
+
+  test("Stop ends a search from before its job was kept", async () => {
+    const em = database.em.fork()
+    const old = em.create(Discovery, {
+      household: await em.findOneOrFail(Household, { id: home }),
+      theme: "salads",
+      collection: null,
+      status: "searching",
+      recipes: [],
+    })
+    await em.flush()
+    const stopped = await kyle.post(`/api/discover/${old.id}/stop`)
+    expect(stopped.status).toBe(200)
+    expect(await stopped.json()).toMatchObject({ status: "stopped" })
+  })
+
+  test("a collection's Find more adds to its last search", async () => {
+    const first = await kyle.post("/api/collections/soups/find")
+    expect(first.status, await first.clone().text()).toBe(202)
+    const started = await first.json()
+    expect(started.collection).toBe("soups")
+    await finish(started.id)
+
+    const again = await kyle.post("/api/collections/soups/find")
+    expect(again.status, await again.clone().text()).toBe(202)
+    expect((await again.json()).id).toBe(started.id)
+    const count = await database.em
+      .fork()
+      .count(Discovery, { collection: "soups" }, { filters: false })
+    expect(count).toBe(1)
   })
 })

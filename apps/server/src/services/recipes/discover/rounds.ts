@@ -275,6 +275,7 @@ class Round {
 
   async #finish() {
     await this.#save(() => {
+      if (this.#endIfStopped()) return
       const count = this.#discovery.recipes.length
       this.#discovery.status = "done"
       this.#discovery.progress = null
@@ -295,8 +296,7 @@ class Round {
     if (shuttingDown(this.#signal)) throw this.#signal.reason
     if (wasCancelled(this.#signal)) {
       await this.#save(() => {
-        this.#discovery.status = "stopped"
-        this.#discovery.progress = null
+        this.#endIfStopped()
       })
       throw this.#signal.reason
     }
@@ -322,8 +322,22 @@ class Round {
     const total = this.#picks.length
     await this.#options.progress(done, total, this.#soFar())
     await this.#save(() => {
+      if (this.#endIfStopped()) return
       this.#discovery.progress = { done, total }
     })
+  }
+
+  /**
+   * When someone has stopped the round, makes the change that ends the
+   * search as stopped, keeping what it found, and says so. Each save of the
+   * round asks first, so one made as the stop arrives can't leave the
+   * search done, or still going, over a stop that's already saved.
+   */
+  #endIfStopped() {
+    if (!wasCancelled(this.#signal)) return false
+    this.#discovery.status = "stopped"
+    this.#discovery.progress = null
+    return true
   }
 
   /**

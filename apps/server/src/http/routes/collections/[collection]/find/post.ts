@@ -1,6 +1,9 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
-import { startDiscovery } from "../../../../../services/recipes/discover/discover.ts"
+import {
+  findMore,
+  startDiscovery,
+} from "../../../../../services/recipes/discover/discover.ts"
 import { getCollection } from "../../../../../services/recipes/discover/sites/collections.ts"
 import { languageOf } from "../../../../../services/recipes/discover/sites/sites.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
@@ -20,7 +23,7 @@ const route = createRoute({
   tags: ["Collections"],
   summary: "Find more for a collection",
   description:
-    "Searches the web for more recipes in the collection's theme that suit the household, as `POST /discover` does, and keeps them with the collection (its `found`). Needs a model that can search the web.",
+    "Adds to the collection's last search when it has one, and starts a search for its theme otherwise, as `POST /discover` does: matches from the shelf at once, and more from the web, kept with the collection (its `found`). Needs a model that can search the web.",
   ...openToKeys("recipes", "write"),
   request: { params: CollectionParam },
   responses: {
@@ -40,13 +43,22 @@ export default (router: Router, deps: AppDeps) => {
       await languageOf(em, userId),
       c.req.valid("param").collection
     )
-    const discovery = await startDiscovery(deps, em, {
-      householdId,
-      userId,
-      theme: collection.theme,
-      collection: collection.id,
-      avoid: collection.recipes.map((recipe) => recipe.name),
-    })
+    const avoid = collection.recipes.map((recipe) => recipe.name)
+    // Its last search carries on with another round; with none yet, one starts.
+    const discovery = collection.found
+      ? await findMore(deps, em, {
+          householdId,
+          userId,
+          discoveryId: collection.found.id,
+          avoid,
+        })
+      : await startDiscovery(deps, em, {
+          householdId,
+          userId,
+          theme: collection.theme,
+          collection: collection.id,
+          avoid,
+        })
     return c.json(discovery, 202)
   })
 }

@@ -497,6 +497,26 @@ describe("a round of Discover", () => {
     })
   })
 
+  test("ends stopped, not done, when it's stopped as its last pick is tried", async () => {
+    // The stop arrives as the last pick's progress is told, with nothing
+    // left to open: the round mustn't go on to save done over it.
+    const picks = fromSites(3)
+    const { tx, search } = await searching()
+    const { options, controller } = roundOptions([picks])
+    options.progress = async (done: number, total: number) => {
+      if (done === total) controller.abort(new JobStopped("cancelled"))
+    }
+
+    await expect(runRound(deps, tx, search, options)).rejects.toBeInstanceOf(
+      JobStopped
+    )
+
+    const saved = await stored(search.id)
+    expect(saved.status).toBe("stopped")
+    expect(saved.progress).toBeNull()
+    expect(saved.recipes).toHaveLength(3)
+  })
+
   test("ends stopped, with what it found, when it's stopped", async () => {
     // Abort with new JobStopped("cancelled") once the first recipe is saved.
     const rest = gate()

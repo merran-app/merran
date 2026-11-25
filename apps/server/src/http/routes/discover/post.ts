@@ -17,7 +17,7 @@ const route = createRoute({
   tags: ["Discover"],
   summary: "Find new recipes online",
   description:
-    'Searches the web for recipes that fit a theme ("cozy fall soups") and suit the household, in the background, with the household\'s model for finding recipes, which must be able to search the web. Merran opens each page and keeps those it can import. Follow it at `GET /discover/{discoveryId}`; one at a time for a household.',
+    'Answers at once with matches from the shelf of recipes Merran reads for a theme ("cozy fall soups"), and carries on in the background: the household\'s model for finding recipes, which must be able to search the web, finds more that suit the household, and Merran opens each page and saves the recipes it can import as each opens. Follow it at `GET /discover/{discoveryId}` or by the live `job` event; stop it at `POST /discover/{discoveryId}/stop`; add more at `POST /discover/{discoveryId}/more`. One search at a time for a household.',
   ...openToKeys("recipes", "write"),
   request: {
     body: {
