@@ -31,8 +31,9 @@ import type { RecipeSummary } from "./queries"
 type Showing = "plan" | "tags" | "share" | "delete" | null
 
 /**
- * What a right click on a recipe card offers: the things done to one recipe
- * without opening it. Each is also on the recipe's page or in select mode.
+ * What a right click, or a long press on a phone, on a recipe card offers:
+ * the things done to one recipe without opening it. Each is also on the
+ * recipe's page or in select mode.
  */
 export function RecipeMenu({
   recipe,

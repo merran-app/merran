@@ -9,7 +9,6 @@ import { useTranslation } from "react-i18next"
 
 import { Badge } from "@/components/ui/badge"
 import { SelectMark } from "@/features/select/select-mark"
-import { useLongPress } from "@/features/select/use-selection"
 import { formatRelativeDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -29,8 +28,6 @@ export type CardSelect = {
   selecting: boolean
   picked: boolean
   onToggle: () => void
-  /** A long press on a phone, which starts selecting with this one. */
-  onLongPress: () => void
 }
 
 const CARD =
@@ -53,10 +50,6 @@ export function RecipeCard({
   onSale?: readonly RecipeSale[] | undefined
 }) {
   const { t } = useTranslation()
-  const press = useLongPress(
-    () => select?.onLongPress(),
-    Boolean(select && !select.selecting)
-  )
   if (select?.selecting) {
     return (
       <button
@@ -83,12 +76,7 @@ export function RecipeCard({
     )
   }
   return (
-    <Link
-      to="/recipes/$slug"
-      params={{ slug: recipe.slug }}
-      className={CARD}
-      {...press}
-    >
+    <Link to="/recipes/$slug" params={{ slug: recipe.slug }} className={CARD}>
       <CardContent recipe={recipe} onSale={onSale} planned={planned} />
     </Link>
   )

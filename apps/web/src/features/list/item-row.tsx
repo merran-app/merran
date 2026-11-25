@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { SwipeRow, type SwipeAction } from "@/features/gestures/swipe-row"
 import { SelectMark } from "@/features/select/select-mark"
-import { useLongPress, type Selection } from "@/features/select/use-selection"
+import type { Selection } from "@/features/select/use-selection"
 import {
   formatPrice,
   type ItemPrice,
@@ -62,8 +62,8 @@ const MEALS_SHOWN = 2
  * One thing to buy, in at most two lines: a box to check it off, its name
  * and how much (tap to change it), and under that what it's for. On the
  * right, what it costs and what a sale saves, and Find, at any of the
- * household's stores. A long press starts selecting with it, and on a
- * phone a swipe removes it or checks it off.
+ * household's stores. A long press opens its menu, and on a phone a swipe
+ * removes it or checks it off.
  */
 export function ItemRow({
   item,
@@ -94,10 +94,6 @@ export function ItemRow({
   const actions = useListActions({ onListDone })
   // Shopping has no selection bar, so selecting there would be a dead end.
   const selectable = !trip
-  const press = useLongPress(
-    () => selection.start(item.id),
-    selectable && !selection.selecting
-  )
   const selecting = selection.selecting
   const picked = selection.isPicked(item.id)
   const priced = Boolean(prices) && !item.checked
@@ -208,7 +204,6 @@ export function ItemRow({
           <button
             type="button"
             onClick={selecting ? () => selection.toggle(item.id) : onEdit}
-            {...(selecting ? {} : press)}
             aria-pressed={selecting ? picked : undefined}
             aria-label={
               selecting

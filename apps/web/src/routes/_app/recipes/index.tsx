@@ -314,7 +314,6 @@ function RecipesPage() {
                       selecting: selection.selecting,
                       picked: selection.isPicked(recipe.id),
                       onToggle: () => selection.toggle(recipe.id),
-                      onLongPress: () => selection.start(recipe.id),
                     }}
                   />
                 )

@@ -21,6 +21,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={resolvedMode}
       dir={direction}
       position={direction === "rtl" ? "bottom-left" : "bottom-right"}
+      // Clear of the phone's tab bar and select mode's bar (index.css).
+      offset={{ bottom: "var(--toast-bottom, 24px)" }}
+      mobileOffset={{ bottom: "var(--toast-bottom, 16px)" }}
       className="toaster group"
       icons={{
         success: (
