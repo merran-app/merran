@@ -1,4 +1,4 @@
-import { addDays, clockIn, weekStartOf } from "@merran/shared"
+import { addDays, clockIn, dayOfWeek, weekStartOf } from "@merran/shared"
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
 import type { App } from "../../../../app.ts"
 import {
@@ -224,14 +224,24 @@ describe("adding a recipe to the list", () => {
   })
 
   test("uses the household's week where it is", async () => {
-    await kyle.patch("/api/households/current", {
-      timeZone: "Pacific/Honolulu",
-    })
+    // A day behind UTC (Honolulu, before 10:00 UTC) or a day ahead
+    // (Kiritimati, after), with the week starting on the later of the two
+    // days, so the household's week is never UTC's, whenever this runs.
+    const utc = clockIn("UTC")
+    const timeZone = utc.hour < 10 ? "Pacific/Honolulu" : "Pacific/Kiritimati"
+    const there = clockIn(timeZone).today
+    const weekStartsOn = dayOfWeek(there > utc.today ? there : utc.today)
+    await kyle.patch("/api/households/current", { timeZone, weekStartsOn })
     try {
       const done = await add({ recipe: "lemon-chicken" })
-      expect(done.entry.date).toBe(thisWeek("Pacific/Honolulu"))
+
+      expect(done.entry.date).toBe(weekStartOf(there, weekStartsOn))
+      expect(done.entry.date).not.toBe(weekStartOf(utc.today, weekStartsOn))
     } finally {
-      await kyle.patch("/api/households/current", { timeZone: "UTC" })
+      await kyle.patch("/api/households/current", {
+        timeZone: "UTC",
+        weekStartsOn: 1,
+      })
     }
   })
 

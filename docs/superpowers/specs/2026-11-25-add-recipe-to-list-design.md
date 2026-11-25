@@ -67,12 +67,11 @@ Out of scope:
 
 ### The List
 
-- **Add a recipe** is an outline button beside **Add from plan**, in the header and in the empty list's message.
+- **Add a recipe** is the first item in the List's **More** (⋯) menu, and an outline button in the empty list's message, beside **Add from plan**. It was planned as a header button; it followed the recipe page's into the menu the same day, to keep the header short.
 - It opens the app's `Dialog`, which is a drawer on phones, titled "Add a recipe to the list":
   1. First the recipe picker (`RecipePicker`). Its plan date is today, so **Already planned** shows for this week.
-  2. Picking a recipe shows its name, a **Servings** field with the recipe's own filled in, and **Add to list**. There's a way back to pick another (my call: the servings step is there because a holiday often means doubling).
+  2. Picking a recipe shows its name, with **Pick another** to go back, a **Servings** field and **Add to list**. The field starts empty, with the recipe's own servings as its placeholder and "Leave it empty for the recipe's 4.", as changing a planned meal does. Empty, or the recipe's own number, sends none (my call: the servings step is there because a holiday often means doubling).
 - It shows the same toast as the recipe page.
-- If the header gets crowded at phone width, **Add a recipe** moves into the ⋯ menu on phones. To be checked at 375px.
 
 ### Words
 

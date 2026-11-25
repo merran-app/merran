@@ -67,7 +67,7 @@ Add extra food or household supplies by typing into the list's add field. **Spli
 For something you didn't plan, like a pie for tomorrow when the week's already on the list:
 
 1. Open the recipe, then **More → Add to list**. Or right-click its card on **Recipes** and choose **Add to list**.
-2. Or, from **List**, open **⋯ → Add a recipe** (or **Add a recipe** on an empty list), find the recipe, set **Servings** if you're making more or fewer, and choose **Add to list**. Choose **Pick another** to go back.
+2. Or, from **List**, open **More → Add a recipe** (or **Add a recipe** on an empty list), find the recipe, set **Servings** if you're making more or fewer, and choose **Add to list**. Choose **Pick another** to go back.
 
 **Expected result:** the recipe's ingredients go on the list, added up with what's there, and the pantry and always-on-hand staples are left off, as **Add from plan** does. From a recipe's page, it uses the servings and side shown there. Every-week items aren't added. The recipe goes on the plan under **This week, any day**, so you can move it to a day; that leaves the list as it is. Taking it off the plan takes its ingredients off the list, and **Undo** on the message does the same.
 

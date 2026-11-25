@@ -5,6 +5,9 @@ import { toast } from "sonner"
 
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
+/** How long Undo stays offered. */
+const UNDO_MS = 10_000
+
 type RecipeToAdd = {
   recipe: { id: string; name: string }
   /** A side it's made with, as the recipe page shows it. */
@@ -60,6 +63,7 @@ export function useAddRecipeToList() {
       await refresh()
       toast.success(t("list.recipe.added", { name: recipe.name }), {
         description: t("list.recipe.onPlan"),
+        duration: UNDO_MS,
         action: {
           label: t("list.undo"),
           onClick: () => void undo(done.entry.id),
