@@ -97,6 +97,16 @@ Planned and built October 28, 2026; released in alpha.6. Before this, putting me
   - putting used-up and lowered things on the list, adding to a line already there, and the Undo;
   - what's still to buy added up when a line has more than one share for the meal.
 
+## Add a recipe to the list without planning it
+
+Decided and built November 25, 2026 ([design](superpowers/specs/2026-11-25-add-recipe-to-list-design.md)). The week was planned and on the list when a pie for Thanksgiving came up, with a trip to the store that afternoon. Getting its ingredients on the list meant **Plan it** on a day and then **Add from plan**, or typing each one.
+
+- **Where:** **Add to list** in a recipe's **More** (⋯) menu and its card's right-click menu, and **Add a recipe** in the List's ⋯ menu and the empty list's message. The recipe page's one started as a button after **Plan it** and moved into **More** the same day, to keep that row short; the List's followed. From the List, a recipe is picked, then its servings (empty for the recipe's own), since a holiday often means making more. The recipe page uses the servings and side shown, as **Plan it** does.
+- **It's an any-day meal.** It goes in the any-day pool of the household's current week, by its time zone and first day. The meal is dinner if the household plans dinners, or its first planned meal. It's listed as Add from plan lists a meal, so the list follows it like any other: its share of each line, what's at home set aside for it, swaps, and taking it off. Showing on the plan was fine with the person who asked. A list-only kind of share would have needed the info popup, Covered at home, swaps and removal each taught about it, and would have lost marking it made. Copying the lines in as typed would have lost all of that.
+- **Every-week items don't come along.** It's a trip for one thing, not the week's shop.
+- **Undo** takes the meal off the plan, which takes its share off the list. Adding a recipe that's already planned and listed adds it again (two pies), with **Already planned** in the picker and Undo for a slip.
+- **The API:** `POST /api/list/recipes` makes the meal and lists it, all or none, and answers with the meal and what went on. It needs list write: a route takes one permission, and this one is asked for as a list change, as `/api/list/covered` was.
+
 ## Before implementation of the planned improvements
 
 Direct meal swaps remain planned. The original feedback record introduced no runtime changes; the shopping completion, shopping mode, substitutions, ingredient-context, meal-moving, weekly-badge, celebration and covered-at-home decisions above describe the subsequent implementation.

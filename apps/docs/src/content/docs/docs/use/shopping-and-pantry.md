@@ -62,6 +62,15 @@ After **Add from plan**, the message's **See what's covered** opens this section
 
 Add extra food or household supplies by typing into the list's add field. **Split the list** and **Edit lists** let you maintain lists for different trips or stores; a list name by itself does not connect a retailer account.
 
+## Add one recipe to the list
+
+For something you didn't plan, like a pie for tomorrow when the week's already on the list:
+
+1. Open the recipe, then **More → Add to list**. Or right-click its card on **Recipes** and choose **Add to list**.
+2. Or, from **List**, open **⋯ → Add a recipe** (or **Add a recipe** on an empty list), find the recipe, set **Servings** if you're making more or fewer, and choose **Add to list**. Choose **Pick another** to go back.
+
+**Expected result:** the recipe's ingredients go on the list, added up with what's there, and the pantry and always-on-hand staples are left off, as **Add from plan** does. From a recipe's page, it uses the servings and side shown there. Every-week items aren't added. The recipe goes on the plan under **This week, any day**, so you can move it to a day; that leaves the list as it is. Taking it off the plan takes its ingredients off the list, and **Undo** on the message does the same.
+
 ## Understand quantities and deductions
 
 Merran combines recognized foods with compatible quantities. For example, two meals needing 200 g and 300 g of the same food can become one 500 g line. If 100 g of compatible stock is available, 400 g remains to buy. Stock already set aside for another upcoming meal is not counted again.
