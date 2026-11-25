@@ -604,6 +604,50 @@ export class JobRunner {
       })
     }
     tell("running")
+
+    const saveProgress = async (
+      done: number,
+      total: number,
+      soFar?: Record<string, unknown>
+    ) => {
+      lastProgress = Date.now()
+      await this.#em().nativeUpdate(
+        Job,
+        { id: job.id },
+        { progress: { done, total }, ...(soFar ? { result: soFar } : {}) }
+      )
+      progressNow = { done, total }
+      announce()
+      tell("running")
+    }
+    /** The latest progress that came too soon to save, and its timer. */
+    let heldBack: {
+      done: number
+      total: number
+      soFar?: Record<string, unknown>
+    } | null = null
+    let heldBackTimer: NodeJS.Timeout | null = null
+    /** A held-back save that's under way, so the end of the try can wait. */
+    let savingHeldBack: Promise<void> = Promise.resolve()
+    const clearHeldBack = () => {
+      if (heldBackTimer) clearTimeout(heldBackTimer)
+      heldBackTimer = null
+      heldBack = null
+    }
+    const saveHeldBack = () => {
+      const pending = heldBack
+      clearHeldBack()
+      // A job that's been stopped saves nothing more.
+      if (!pending || running.stopped) return Promise.resolve()
+      savingHeldBack = saveProgress(
+        pending.done,
+        pending.total,
+        pending.soFar
+      ).catch((err: unknown) =>
+        logger.warn({ err }, "Couldn't save the job's progress")
+      )
+      return savingHeldBack
+    }
     const ctx: JobContext = {
       jobId: job.id,
       payload: job.payload,
@@ -616,16 +660,21 @@ export class JobRunner {
         : this.#em(),
       progress: async (done, total, soFar) => {
         const now = Date.now()
-        if (done < total && now - lastProgress < PROGRESS_EVERY_MS) return
-        lastProgress = now
-        await this.#em().nativeUpdate(
-          Job,
-          { id: job.id },
-          { progress: { done, total }, ...(soFar ? { result: soFar } : {}) }
-        )
-        progressNow = { done, total }
-        announce()
-        tell("running")
+        if (done < total && now - lastProgress < PROGRESS_EVERY_MS) {
+          // Too soon to save, but not to be dropped: the latest call is held
+          // back and saved when the half second is up, so a page following
+          // the job hears the last thing it did.
+          heldBack = { done, total, soFar }
+          if (!heldBackTimer) {
+            heldBackTimer = setTimeout(
+              () => void saveHeldBack(),
+              PROGRESS_EVERY_MS - (now - lastProgress)
+            )
+          }
+          return
+        }
+        clearHeldBack()
+        await saveProgress(done, total, soFar)
       },
       signal: controller.signal,
       logger,
@@ -636,9 +685,18 @@ export class JobRunner {
       try {
         // A job is Merran's own work, though adding it wakes the runner
         // from inside whichever request added it.
-        const result = await withActor(MERRAN, () =>
-          withStopSignal(controller.signal, () => handler.run(ctx))
-        )
+        let result: Record<string, unknown> | void
+        try {
+          result = await withActor(MERRAN, () =>
+            withStopSignal(controller.signal, () => handler.run(ctx))
+          )
+        } finally {
+          // Whether it finished or threw, nothing held back is saved after
+          // this, so it can't land over the result or a retry's reset. A save
+          // already under way is waited for, so it comes before them too.
+          clearHeldBack()
+          await savingHeldBack
+        }
         // Stopped, though it ended as if it hadn't: a handler that catches
         // each item's error caught the stop too, and its last item isn't
         // done. It's cancelled, or runs again next start.

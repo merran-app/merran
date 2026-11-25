@@ -334,6 +334,55 @@ describe("the job runner", () => {
       })
     })
 
+    test("saves progress that came too soon, once the half second is up", async () => {
+      // Two moves a moment apart: the second must still be told.
+      let finish!: () => void
+      const finished = new Promise<void>((resolve) => {
+        finish = resolve
+      })
+      const { jobs, heard } = following([
+        {
+          kind: "long",
+          area: "recipes",
+          run: async ({ progress }) => {
+            await progress(1, 3, { at: 1 })
+            await progress(2, 3, { at: 2 })
+            await finished
+            return { at: "end" }
+          },
+        },
+      ])
+      const job = await enqueue(em(), { kind: "long", householdId: home })
+      await jobs.start()
+      await expect
+        .poll(async () => (await load(job.id)).progress, { timeout: 2000 })
+        .toEqual({ done: 2, total: 3 })
+      expect((await load(job.id)).result).toEqual({ at: 2 })
+      expect(said(heard)).toContainEqual(["running", { done: 2, total: 3 }])
+      finish()
+      await expect.poll(async () => (await load(job.id)).status).toBe("done")
+      await jobs.stop()
+    })
+
+    test("doesn't save progress it held back once the job has ended", async () => {
+      const { jobs } = following([
+        {
+          kind: "long",
+          run: async ({ progress }) => {
+            await progress(1, 3, { at: 1 })
+            await progress(2, 3, { at: 2 })
+            return { at: "end" }
+          },
+        },
+      ])
+      const job = await enqueue(em(), { kind: "long" })
+      await jobs.start()
+      await expect.poll(async () => (await load(job.id)).status).toBe("done")
+      await new Promise((resolve) => setTimeout(resolve, 700))
+      expect((await load(job.id)).result).toEqual({ at: "end" })
+      await jobs.stop()
+    })
+
     test("says who started it, so the app can tell them when it ends", async () => {
       const setup = em()
       const jamie = setup.create(User, {
