@@ -170,9 +170,7 @@ function CollectionPage() {
                         data-icon="inline-start"
                       />
                     )}
-                    {search
-                      ? t("find.collections.findAgain")
-                      : t("find.collections.findMore")}
+                    {t("find.collections.findMore")}
                   </Button>
                 </div>
                 {search && <Search search={search} hideTheme />}
