@@ -20,7 +20,7 @@ const route = createRoute({
   tags: ["List"],
   summary: "Add a recipe to the list",
   description:
-    "A recipe's ingredients on the list without planning a day for it: it goes in this week's any-day meals, and onto the list as Add from plan would put it, from then on following that meal. Every-week items don't come along. Taking the meal off the plan takes it back off the list.",
+    "A recipe's ingredients on the list without planning a day for it, as Add from plan would put them, the list following that meal from then on. A meal of the recipe planned already from today to the end of the week, and not on the list yet, goes on, with the servings given. Otherwise a new one goes in the week's any-day meals. The week is the one with tomorrow in it, so on its last day it's next week. Every-week items don't come along. Give `undo` to /list/recipes/undo to take it back.",
   ...openToKeys("list", "write"),
   request: {
     body: {

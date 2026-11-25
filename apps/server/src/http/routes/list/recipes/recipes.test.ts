@@ -8,9 +8,13 @@ import {
   TestClient,
 } from "../../../../test/app.ts"
 
-// A recipe onto the list without planning a day for it: it goes in this
-// week's any-day meals, and the list follows that meal from then on. In a
-// household on UTC whose week starts on Monday.
+// A recipe onto the list without planning a day for it: it goes in the
+// any-day meals of the week with tomorrow in it, or the meal of it planned
+// already goes on the list, and the list follows that meal from then on. In
+// a household on UTC whose week starts today, so today is never its last day.
+
+/** The day of the week the household's week starts on: today's. */
+const WEEK_STARTS = dayOfWeek(clockIn("UTC").today)
 
 let app: App
 let close: () => Promise<void>
@@ -32,10 +36,13 @@ type Entry = {
   anyDay: boolean
   meal: string
   status: string
+  servings: number | null
 }
 
 type Listed = {
   entry: Entry
+  made: boolean
+  undo: { entry: string; made: boolean; servings: number | null }
   added: number
   merged: number
   onHand: string[]
@@ -43,10 +50,21 @@ type Listed = {
 }
 
 /** This week's first day, where the household is. */
-const thisWeek = (timeZone = "UTC") => weekStartOf(clockIn(timeZone).today, 1)
+const thisWeek = () => weekStartOf(clockIn("UTC").today, WEEK_STARTS)
 
 async function add(body: Record<string, unknown>): Promise<Listed> {
   const res = await kyle.post("/api/list/recipes", body)
+  expect(res.status, await res.clone().text()).toBe(201)
+  return res.json()
+}
+
+async function undo(listed: Listed) {
+  const res = await kyle.post("/api/list/recipes/undo", listed.undo)
+  expect(res.status, await res.clone().text()).toBe(200)
+}
+
+async function plan(body: Record<string, unknown>): Promise<Entry> {
+  const res = await kyle.post("/api/plan/entries", body)
   expect(res.status, await res.clone().text()).toBe(201)
   return res.json()
 }
@@ -107,7 +125,7 @@ beforeAll(async () => {
   kyle = await setUpServer(app, test.setupCode)
   await kyle.patch("/api/households/current", {
     timeZone: "UTC",
-    weekStartsOn: 1,
+    weekStartsOn: WEEK_STARTS,
     country: "GB",
   })
   for (const recipe of RECIPES) {
@@ -134,6 +152,7 @@ describe("adding a recipe to the list", () => {
       date: thisWeek(),
       status: "planned",
     })
+    expect(done.made).toBe(true)
     expect(done.added).toBeGreaterThan(0)
     const chicken = await find("chicken thighs")
     expect(chicken?.meals.map((meal) => meal.id)).toContain(done.entry.id)
@@ -226,23 +245,115 @@ describe("adding a recipe to the list", () => {
   test("uses the household's week where it is", async () => {
     // A day behind UTC (Honolulu, before 10:00 UTC) or a day ahead
     // (Kiritimati, after), with the week starting on the later of the two
-    // days, so the household's week is never UTC's, whenever this runs.
+    // tomorrows, so the household's week is never UTC's, whenever this runs.
     const utc = clockIn("UTC")
     const timeZone = utc.hour < 10 ? "Pacific/Honolulu" : "Pacific/Kiritimati"
-    const there = clockIn(timeZone).today
-    const weekStartsOn = dayOfWeek(there > utc.today ? there : utc.today)
+    const tomorrowThere = addDays(clockIn(timeZone).today, 1)
+    const tomorrowUtc = addDays(utc.today, 1)
+    const weekStartsOn = dayOfWeek(
+      tomorrowThere > tomorrowUtc ? tomorrowThere : tomorrowUtc
+    )
     await kyle.patch("/api/households/current", { timeZone, weekStartsOn })
     try {
       const done = await add({ recipe: "lemon-chicken" })
 
-      expect(done.entry.date).toBe(weekStartOf(there, weekStartsOn))
-      expect(done.entry.date).not.toBe(weekStartOf(utc.today, weekStartsOn))
+      expect(done.entry.date).toBe(weekStartOf(tomorrowThere, weekStartsOn))
+      expect(done.entry.date).not.toBe(weekStartOf(tomorrowUtc, weekStartsOn))
     } finally {
       await kyle.patch("/api/households/current", {
         timeZone: "UTC",
-        weekStartsOn: 1,
+        weekStartsOn: WEEK_STARTS,
       })
     }
+  })
+
+  test("on the week's last day, goes in next week's any-day meals", async () => {
+    const tomorrow = addDays(clockIn("UTC").today, 1)
+    await kyle.patch("/api/households/current", {
+      weekStartsOn: dayOfWeek(tomorrow),
+    })
+    try {
+      const done = await add({ recipe: "lemon-chicken" })
+
+      expect(done.entry).toMatchObject({ anyDay: true, date: tomorrow })
+    } finally {
+      await kyle.patch("/api/households/current", {
+        weekStartsOn: WEEK_STARTS,
+      })
+    }
+  })
+
+  test("lists the meal of it planned already, rather than making another", async () => {
+    const pie = await plan({
+      date: addDays(thisWeek(), 2),
+      meal: "dinner",
+      recipe: "lemon-chicken",
+    })
+
+    const done = await add({ recipe: "lemon-chicken" })
+
+    expect(done.made).toBe(false)
+    expect(done.entry).toMatchObject({ id: pie.id, anyDay: false })
+    expect((await planned()).map((entry) => entry.id)).toEqual([pie.id])
+    const chicken = await find("chicken thighs")
+    expect(chicken).toMatchObject({ quantity: 2 })
+    expect(chicken?.meals.map((meal) => meal.id)).toEqual([pie.id])
+    // It's on the list now, so adding from the plan doesn't add it again.
+    const fromPlan = await kyle.post("/api/list/from-plan", {
+      from: clockIn("UTC").today,
+      to: addDays(thisWeek(), 6),
+    })
+    expect((await fromPlan.json()).meals).toBe(0)
+  })
+
+  test("gives the planned meal the servings asked for, and Undo puts them back", async () => {
+    const pie = await plan({
+      date: addDays(thisWeek(), 2),
+      meal: "dinner",
+      recipe: "lemon-chicken",
+    })
+
+    const done = await add({ recipe: "lemon-chicken", servings: 8 })
+
+    expect(done.entry).toMatchObject({ id: pie.id, servings: 8 })
+    expect(await find("chicken thighs")).toMatchObject({ quantity: 4 })
+
+    await undo(done)
+
+    expect(await planned()).toMatchObject([{ id: pie.id, servings: null }])
+    expect(await find("chicken thighs")).toBeUndefined()
+    // Off the list again, so adding from the plan lists it.
+    const fromPlan = await kyle.post("/api/list/from-plan", {
+      from: clockIn("UTC").today,
+      to: addDays(thisWeek(), 6),
+    })
+    expect((await fromPlan.json()).meals).toBe(1)
+  })
+
+  test("leaves meals on the list or skipped alone", async () => {
+    const today = clockIn("UTC").today
+    await plan({ date: today, meal: "lunch", recipe: "lemon-chicken" })
+    const skipped = await plan({
+      date: addDays(today, 1),
+      meal: "dinner",
+      recipe: "lemon-chicken",
+    })
+    await kyle.patch(`/api/plan/entries/${skipped.id}`, { status: "skipped" })
+    await kyle.post("/api/list/from-plan", { from: today, to: today })
+
+    const done = await add({ recipe: "lemon-chicken" })
+
+    expect(done.made).toBe(true)
+    expect(done.entry.anyDay).toBe(true)
+  })
+
+  test("Undo takes a meal it made off the plan and the list", async () => {
+    const done = await add({ recipe: "lemon-chicken" })
+
+    await undo(done)
+
+    expect(await planned()).toEqual([])
+    expect(await list()).toEqual([])
   })
 
   test("turns away a recipe that's gone", async () => {
@@ -271,15 +382,21 @@ describe("adding a recipe to the list", () => {
       ).json()
     ).key
 
-    const res = await app.request(`${TEST_ORIGIN}/api/list/recipes`, {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${key}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ recipe: ids["Lemon Chicken"] }),
-    })
+    const post = (path: string, body: unknown) =>
+      app.request(`${TEST_ORIGIN}/api${path}`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${key}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(body),
+      })
 
+    const res = await post("/list/recipes", { recipe: ids["Lemon Chicken"] })
     expect(res.status, await res.clone().text()).toBe(201)
+
+    // Undo too, though taking a meal off the plan otherwise needs the plan.
+    const undone = await post("/list/recipes/undo", (await res.json()).undo)
+    expect(undone.status, await undone.clone().text()).toBe(200)
   })
 })

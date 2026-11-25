@@ -487,11 +487,32 @@ export const RecipeToListSchema = z
     },
   })
 
+export const RecipeOnListUndoSchema = z
+  .object({
+    entry: z.string().openapi({ description: "The meal." }),
+    made: z.boolean().openapi({
+      description:
+        "Adding made the meal, so Undo takes it off the plan; otherwise it was planned already, and stays.",
+    }),
+    servings: z.number().nullable().openapi({
+      description: "The meal's servings before, for one planned already.",
+    }),
+  })
+  .openapi("RecipeOnListUndo", {
+    example: { entry: IDS.planEntry, made: true, servings: null },
+  })
+
 export const RecipeListedSchema = z
   .object({
-    // The meal it made in this week's any-day meals. A description here
-    // would become PlanEntry's own, everywhere it's used.
+    // The meal on the list: one planned already, or one it made in the
+    // week's any-day meals. A description here would become PlanEntry's
+    // own, everywhere it's used.
     entry: PlanEntrySchema,
+    made: z.boolean().openapi({
+      description:
+        "It made the meal, in the week's any-day meals; false when a meal of the recipe planned already went on the list.",
+    }),
+    undo: RecipeOnListUndoSchema,
     added: z.number().int().openapi({ description: "New lines on the list." }),
     merged: z
       .number()
@@ -507,6 +528,8 @@ export const RecipeListedSchema = z
   .openapi("RecipeListed", {
     example: {
       entry: { ...PLAN_ENTRY, anyDay: true, date: "2026-10-12" },
+      made: true,
+      undo: { entry: IDS.planEntry, made: true, servings: null },
       added: 6,
       merged: 1,
       onHand: ["salt"],

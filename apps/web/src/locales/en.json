@@ -2518,12 +2518,14 @@
     "recipe": {
       "menu": "Add a recipe",
       "title": "Add a recipe to the list",
-      "description": "Its ingredients go on the list, and it goes on this week's plan for any day, so you can move it to a day later.",
+      "description": "Its ingredients go on the list. If it's planned this week, that meal goes on; if not, it goes on the plan for any day, to move to a day later.",
       "search": "Find a recipe",
       "picked": "Recipe",
       "change": "Pick another",
       "added": "Added {{name}} to the list.",
-      "onPlan": "It's on this week's plan, any day."
+      "onPlan": "It's on this week's plan, any day.",
+      "onNextWeek": "It's on next week's plan, any day.",
+      "plannedFor": "It was planned for {{day}}."
     },
     "plan": {
       "title": "Add from the plan",
