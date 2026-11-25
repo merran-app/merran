@@ -20,7 +20,7 @@ const route = createRoute({
   tags: ["Households"],
   summary: "One of the household's jobs",
   description:
-    "Household admins, and whoever started it. How a job for this household, like an import, is getting on.",
+    "Household admins, and whoever started it. How a job for this household, like an import, is getting on. `error`, what broke inside a job that failed, is only for household admins: it's null for anyone else.",
   security: SESSION_SECURITY,
   request: { params: JobParam },
   responses: {
@@ -40,6 +40,11 @@ export default (router: Router, _deps: AppDeps) => {
     // not there.
     if (!isAdminRole(role) && job.createdBy?.id !== userId) {
       throw new AppError("not_found", "job_not_found", "There's no such job.")
+    }
+    // What broke inside a failed job can be SQL or a file path: for the
+    // household's admins, not a member who only started it.
+    if (!isAdminRole(role)) {
+      return c.json({ ...describeJob(job), error: null }, 200)
     }
     return c.json(describeJob(job), 200)
   })

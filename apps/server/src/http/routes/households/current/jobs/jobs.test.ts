@@ -133,4 +133,45 @@ describe("a household's jobs", () => {
       (await jamie.get(`/api/households/current/jobs/${kyles.id}`)).status
     ).toBe(404)
   })
+
+  test("a member who started a job that failed isn't shown what broke; an admin is", async () => {
+    // What broke can be SQL or a file path: for the household's admins and
+    // the server admin, not every member.
+    const jamieId = (
+      await database.em.fork().findOneOrFail(User, { username: "jamie" })
+    ).id
+    const failed = await enqueue(database.em.fork(), {
+      kind: "test.broken",
+      householdId: home,
+      runAt: new Date(Date.now() + 60_000),
+      createdBy: jamieId,
+    })
+    await database.em.fork().nativeUpdate(
+      Job,
+      { id: failed.id },
+      {
+        status: "failed",
+        error: "SQLITE_BUSY: database is locked",
+        finishedAt: new Date(),
+      }
+    )
+
+    const asMember = await jamie.get(
+      `/api/households/current/jobs/${failed.id}`
+    )
+    expect(asMember.status, await asMember.clone().text()).toBe(200)
+    expect(await asMember.json()).toMatchObject({
+      id: failed.id,
+      status: "failed",
+      error: null,
+    })
+
+    const asAdmin = await kyle.get(`/api/households/current/jobs/${failed.id}`)
+    expect(asAdmin.status, await asAdmin.clone().text()).toBe(200)
+    expect(await asAdmin.json()).toMatchObject({
+      id: failed.id,
+      status: "failed",
+      error: "SQLITE_BUSY: database is locked",
+    })
+  })
 })

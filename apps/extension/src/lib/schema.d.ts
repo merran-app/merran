@@ -1087,7 +1087,7 @@ export interface paths {
         };
         /**
          * One of the household's jobs
-         * @description Household admins, and whoever started it. How a job for this household, like an import, is getting on.
+         * @description Household admins, and whoever started it. How a job for this household, like an import, is getting on. `error`, what broke inside a job that failed, is only for household admins: it's null for anyone else.
          */
         get: operations["getHouseholdJob"];
         put?: never;
