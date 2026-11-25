@@ -1565,15 +1565,35 @@
             "enum": [
               "searching",
               "done",
+              "stopped",
               "failed"
             ],
-            "description": "Still searching, done, or failed (`error` says why)."
+            "description": "Still searching, done, stopped (someone stopped it, keeping what it found), or failed (`error` says why)."
           },
           "error": {
             "type": [
               "string",
               "null"
             ]
+          },
+          "progress": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "done": {
+                "type": "number"
+              },
+              "total": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "done",
+              "total"
+            ],
+            "description": "Pages opened of those found online, while they open. Null otherwise."
           },
           "recipes": {
             "type": "array",
@@ -1600,7 +1620,8 @@
                   "type": [
                     "string",
                     "null"
-                  ]
+                  ],
+                  "description": "A small copy kept by Merran, or null."
                 },
                 "why": {
                   "type": "string",
@@ -1616,7 +1637,7 @@
                 "why"
               ]
             },
-            "description": "Up to eight, each a page Merran opened and can import, no more than two from a site unless there aren't others."
+            "description": "For each round, up to 4 from the shelf of recipes Merran reads, then up to 8 from the web: each a page Merran opened and can import, no more than two from a site unless there aren't others."
           },
           "createdAt": {
             "type": "string",
@@ -1633,6 +1654,7 @@
           "collection",
           "status",
           "error",
+          "progress",
           "recipes",
           "createdAt",
           "updatedAt"
@@ -1643,13 +1665,14 @@
           "collection": null,
           "status": "done",
           "error": null,
+          "progress": null,
           "recipes": [
             {
               "url": "https://cooking.example/butternut-squash-soup",
               "name": "Roasted Butternut Squash Soup",
               "site": "cooking.example",
               "minutes": 60,
-              "photo": "https://cooking.example/images/squash-soup.jpg",
+              "photo": "/api/discover/0199e8b0-5a10-7a01-8b00-00000000002d/photos/a1b2c3d4e5f60718293a4b5c",
               "why": "Vegetarian and freezes well, with the squash roasted for depth."
             }
           ],
@@ -2315,13 +2338,14 @@
               "collection": null,
               "status": "done",
               "error": null,
+              "progress": null,
               "recipes": [
                 {
                   "url": "https://cooking.example/butternut-squash-soup",
                   "name": "Roasted Butternut Squash Soup",
                   "site": "cooking.example",
                   "minutes": 60,
-                  "photo": "https://cooking.example/images/squash-soup.jpg",
+                  "photo": "/api/discover/0199e8b0-5a10-7a01-8b00-00000000002d/photos/a1b2c3d4e5f60718293a4b5c",
                   "why": "Vegetarian and freezes well, with the squash roasted for depth."
                 }
               ],
@@ -21506,6 +21530,91 @@
           }
         },
         "description": "With an API key, it needs the `recipes: read` permission."
+      }
+    },
+    "/api/discover/{discoveryId}/photos/{photo}": {
+      "get": {
+        "operationId": "getDiscoveryPhoto",
+        "tags": [
+          "Discover"
+        ],
+        "summary": "A found recipe's photo",
+        "description": "A small copy, as WebP, kept by Merran when the search found the recipe, so Discover doesn't load photos from other sites. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002d"
+            },
+            "required": true,
+            "name": "discoveryId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "a1b2c3d4e5f60718293a4b5c"
+            },
+            "required": true,
+            "name": "photo",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The photo.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such search, or it has no such photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/events": {

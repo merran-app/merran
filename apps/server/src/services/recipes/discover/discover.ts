@@ -10,12 +10,14 @@ import {
 import { aiUnavailable, useAi, type AiDeps } from "../../ai/run.ts"
 import { resolveTask } from "../../ai/status.ts"
 import { tastesText } from "../../households/taste-text.ts"
-import { enqueue } from "../../jobs/jobs.ts"
+import { enqueue, wakeRunner } from "../../jobs/jobs.ts"
 import type { JobHandler } from "../../jobs/runner.ts"
 import { getTastes } from "../../households/tastes.ts"
 import { decodeHtml } from "../import/import-link.ts"
 import { findBySourceUrl, isVideoLink, normalizeLink } from "../import/links.ts"
 import { readRecipeData } from "../import/recipe-data.ts"
+import { removeFilesLater } from "../../storage/remove-job.ts"
+import { searchFolder } from "./photos.ts"
 
 // Discover: new recipes online for a theme ("cozy fall soups"), found by
 // the household's small model with web search, that suit the household.
@@ -49,7 +51,16 @@ export function describeDiscovery(discovery: Discovery) {
     collection: discovery.collection ?? null,
     status: discovery.status,
     error: discovery.error ?? null,
-    recipes: discovery.recipes,
+    progress: discovery.progress ?? null,
+    // What a search keeps inside, like a photo's key, stays inside.
+    recipes: discovery.recipes.map((recipe) => ({
+      url: recipe.url,
+      name: recipe.name,
+      site: recipe.site,
+      minutes: recipe.minutes,
+      photo: recipe.photo,
+      why: recipe.why,
+    })),
     createdAt: discovery.createdAt.toISOString(),
     updatedAt: discovery.updatedAt.toISOString(),
   }
@@ -131,14 +142,34 @@ export async function startDiscovery(
     createdBy: options.userId,
     maxAttempts: 1,
   })
+  await removeOlderSearches(em, options.householdId)
+  return describeDiscovery(discovery)
+}
+
+/**
+ * Removes the searches past the last twelve, and queues their photos'
+ * folders for removal in the same flush, so the files go only if the
+ * searches do.
+ */
+export async function removeOlderSearches(
+  em: EntityManager,
+  householdId: string
+) {
   const all = await em.find(
     Discovery,
     {},
     { orderBy: { createdAt: "desc", id: "desc" } }
   )
   const older = all.slice(KEPT)
-  if (older.length > 0) await em.remove(older).flush()
-  return describeDiscovery(discovery)
+  if (older.length === 0) return
+  em.remove(older)
+  removeFilesLater(
+    em,
+    householdId,
+    older.map((search) => searchFolder(householdId, search.id))
+  )
+  await em.flush()
+  wakeRunner()
 }
 
 const SYSTEM = `You find recipes online for a household's recipe app. Search the web for recipes that fit the theme and suit the household, then call offer_recipes with 10 to 12 of them.

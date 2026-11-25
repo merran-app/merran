@@ -2806,6 +2806,40 @@
           "enumItems": [],
           "mappedType": "text"
         },
+        "job_id": {
+          "name": "job_id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "progress": {
+          "name": "progress",
+          "type": "json",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
         "recipes": {
           "name": "recipes",
           "type": "json",
@@ -2840,6 +2874,7 @@
           "enumItems": [
             "searching",
             "done",
+            "stopped",
             "failed"
           ],
           "mappedType": "enum"
@@ -2942,8 +2977,8 @@
       "checks": [
         {
           "name": "discoveries_status_check",
-          "expression": "`status` in ('searching', 'done', 'failed')",
-          "definition": "check (`status` in ('searching', 'done', 'failed'))",
+          "expression": "`status` in ('searching', 'done', 'stopped', 'failed')",
+          "definition": "check (`status` in ('searching', 'done', 'stopped', 'failed'))",
           "columnName": "status"
         }
       ],
