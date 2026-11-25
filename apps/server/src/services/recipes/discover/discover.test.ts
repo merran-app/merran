@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
-import { keep, sameDish } from "./discover.ts"
+import { keep } from "./discover.ts"
+import { sameDish } from "./dishes.ts"
 
 const found = (name: string, site: string) => ({
   url: `https://${site}/${name.toLowerCase().replace(/\W+/g, "-")}`,

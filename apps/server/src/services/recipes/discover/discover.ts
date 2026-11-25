@@ -17,7 +17,9 @@ import { decodeHtml } from "../import/import-link.ts"
 import { findBySourceUrl, isVideoLink, normalizeLink } from "../import/links.ts"
 import { readRecipeData } from "../import/recipe-data.ts"
 import { removeFilesLater } from "../../storage/remove-job.ts"
+import { sameDish } from "./dishes.ts"
 import { searchFolder } from "./photos.ts"
+import { shelfMatches } from "./shelf-matches.ts"
 
 // Discover: new recipes online for a theme ("cozy fall soups"), found by
 // the household's small model with web search, that suit the household.
@@ -128,7 +130,12 @@ export async function startDiscovery(
     theme: options.theme,
     collection: options.collection ?? null,
     status: "searching",
-    recipes: [],
+    // What the shelf already has for the theme shows at once, before the
+    // web search finds more.
+    recipes: await shelfMatches(em, options.householdId, options.theme, {
+      avoid: options.avoid ?? [],
+      skip: [],
+    }),
   })
   await em.flush()
   await enqueue(em, {
@@ -312,35 +319,6 @@ async function openAll(
     )
   }
   return opened
-}
-
-/** Words in recipe names that don't say which dish it is. */
-const FILLER = new Set(
-  "a an and the with my our best easy quick simple homemade perfect ultimate favorite favourite classic recipe ingredient minute".split(
-    " "
-  )
-)
-
-/** The words in a recipe's name that say which dish it is. */
-function dishWords(name: string) {
-  return new Set(
-    name
-      .toLowerCase()
-      .split(/[^\p{L}]+/u)
-      .filter((word) => word.length > 1 && !FILLER.has(word))
-  )
-}
-
-/**
- * Whether two names are takes on one dish: "Easy Honey Garlic Salmon" and
- * "Honey Garlic Glazed Salmon".
- */
-export function sameDish(a: string, b: string) {
-  const one = dishWords(a)
-  const two = dishWords(b)
-  const both = [...one].filter((word) => two.has(word)).length
-  const either = one.size + two.size - both
-  return either > 0 && both / either >= 0.6
 }
 
 /**
