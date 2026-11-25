@@ -57,8 +57,8 @@ Out of scope:
 
 ### The recipe page
 
-- **Add to list** is an outline button after **Plan it**, with a shopping-list icon.
-- One tap adds it, with the servings and side shown on the page, as **Plan it** uses them. A spinner shows while it saves.
+- **Add to list** is the first item in the page's **More** (⋯) menu, with a shopping-list icon. It started as a button after **Plan it** and moved into the menu at the person's request, November 25, 2026, to keep the row of buttons short.
+- Choosing it adds the recipe, with the servings and side shown on the page, as **Plan it** uses them. The item is disabled while it saves.
 - The toast says "Added Pumpkin pie to the list." and "It's in this week's any-day meals.", with **Undo**.
 
 ### A recipe card's right-click menu

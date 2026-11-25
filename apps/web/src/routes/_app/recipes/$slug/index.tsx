@@ -41,7 +41,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Spinner } from "@/components/ui/spinner"
 import { useAfterCooking } from "@/features/cook/after-cooking-context"
 import { tastesQuery } from "@/features/household/queries"
 import { CookNotes } from "@/features/recipes/cook-notes"
@@ -247,6 +246,15 @@ function RecipeView({
     servings.changed && recipe.servings
       ? Math.round(recipe.servings * servings.factor * 100) / 100
       : null
+
+  /** The recipe's ingredients on the list, as it's shown: servings and side. */
+  function addToList() {
+    void listing.add({
+      recipe,
+      withRecipe: paired?.id ?? null,
+      servings: shownServings,
+    })
+  }
 
   /** Cooks the meal it was opened from, or today's: says which. */
   async function cookMeal() {
@@ -475,29 +483,6 @@ function RecipeView({
               />
               {t("plan.planIt")}
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              disabled={listing.busy}
-              onClick={() =>
-                void listing.add({
-                  recipe,
-                  withRecipe: paired?.id ?? null,
-                  servings: shownServings,
-                })
-              }
-            >
-              {listing.busy ? (
-                <Spinner data-icon="inline-start" />
-              ) : (
-                <HugeiconsIcon
-                  icon={ShoppingBasketAdd01Icon}
-                  strokeWidth={2}
-                  data-icon="inline-start"
-                />
-              )}
-              {t("recipes.addToList")}
-            </Button>
             <ShareButton recipe={recipe} />
             {planning && (
               <PlanItDialog
@@ -532,6 +517,14 @@ function RecipeView({
                 <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
+                <DropdownMenuItem disabled={listing.busy} onClick={addToList}>
+                  <HugeiconsIcon
+                    icon={ShoppingBasketAdd01Icon}
+                    strokeWidth={2}
+                  />
+                  {t("recipes.addToList")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 {aiOn && (
                   <DropdownMenuItem onClick={() => setTidying(true)}>
                     <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} />
