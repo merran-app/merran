@@ -297,7 +297,7 @@ export type NewEntry = {
 }
 
 /** Makes a meal, after any already in its slot, ready to save. */
-async function createEntry(
+export async function createEntry(
   em: EntityManager,
   householdId: string,
   input: NewEntry,

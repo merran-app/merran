@@ -2,6 +2,7 @@ import { z } from "@hono/zod-openapi"
 import { ITEM_SOURCES, MEALS } from "../../database/entities/index.ts"
 import { IDS, TIMES } from "./examples.ts"
 import { PantrySnapshotSchema } from "./pantry.ts"
+import { MealSchema, PLAN_ENTRY, PlanEntrySchema, servings } from "./plan.ts"
 
 // The shopping lists: what to buy, by aisle, on whichever list the
 // household sorts it onto; from the plan, typed in, or every week.
@@ -459,6 +460,57 @@ export const FromPlanResultSchema = z
       everyWeek: 2,
       onHand: ["salt", "black pepper"],
       inPantry: ["rice"],
+    },
+  })
+
+export const RecipeToListSchema = z
+  .object({
+    recipe: z.string().min(1).openapi({
+      description: "The recipe, by id or address.",
+    }),
+    withRecipe: z.string().nullish().openapi({
+      description: "A side or sauce it's made with, by id or address.",
+    }),
+    servings: servings.nullish().openapi({
+      description: "None for the recipe's own servings.",
+    }),
+    meal: MealSchema.optional().openapi({
+      description:
+        "The meal in the week's pool it goes in: dinner if the household plans dinners, or its first meal, if not given.",
+    }),
+  })
+  .openapi("RecipeToList", {
+    example: {
+      recipe: "lemon-chicken",
+      withRecipe: "garlic-rice",
+      servings: 8,
+    },
+  })
+
+export const RecipeListedSchema = z
+  .object({
+    // The meal it made in this week's any-day meals. A description here
+    // would become PlanEntry's own, everywhere it's used.
+    entry: PlanEntrySchema,
+    added: z.number().int().openapi({ description: "New lines on the list." }),
+    merged: z
+      .number()
+      .int()
+      .openapi({ description: "Lines added to ones already there." }),
+    onHand: z.array(z.string()).openapi({
+      description: "Left off: always on hand.",
+    }),
+    inPantry: z.array(z.string()).openapi({
+      description: "Left off: at home already, and now set aside for it.",
+    }),
+  })
+  .openapi("RecipeListed", {
+    example: {
+      entry: { ...PLAN_ENTRY, anyDay: true, date: "2026-10-12" },
+      added: 6,
+      merged: 1,
+      onHand: ["salt"],
+      inPantry: [],
     },
   })
 

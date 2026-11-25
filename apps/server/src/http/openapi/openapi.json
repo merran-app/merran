@@ -8543,6 +8543,543 @@
         },
         "example": {}
       },
+      "RecipeListed": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/PlanEntry"
+          },
+          "added": {
+            "type": "integer",
+            "description": "New lines on the list."
+          },
+          "merged": {
+            "type": "integer",
+            "description": "Lines added to ones already there."
+          },
+          "onHand": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Left off: always on hand."
+          },
+          "inPantry": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Left off: at home already, and now set aside for it."
+          }
+        },
+        "required": [
+          "entry",
+          "added",
+          "merged",
+          "onHand",
+          "inPantry"
+        ],
+        "example": {
+          "entry": {
+            "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+            "date": "2026-10-12",
+            "anyDay": true,
+            "meal": "dinner",
+            "position": 0,
+            "status": "planned",
+            "recipe": {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "slug": "lemon-chicken",
+              "name": "Lemon Chicken",
+              "photo": null,
+              "servings": 4,
+              "totalMinutes": 50,
+              "calories": 412
+            },
+            "withRecipe": {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+              "slug": "garlic-rice",
+              "name": "Garlic Rice",
+              "calories": 210
+            },
+            "note": null,
+            "servings": null,
+            "why": [
+              {
+                "kind": "theme",
+                "label": "Taco night"
+              }
+            ],
+            "createdAt": "2026-10-15T18:30:00.000Z",
+            "variants": []
+          },
+          "added": 6,
+          "merged": 1,
+          "onHand": [
+            "salt"
+          ],
+          "inPantry": []
+        }
+      },
+      "PlanEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-15",
+            "description": "Its day, or for the week's pool, the week's first day."
+          },
+          "anyDay": {
+            "type": "boolean",
+            "description": "In the week's pool: for any day of the week."
+          },
+          "meal": {
+            "$ref": "#/components/schemas/Meal"
+          },
+          "position": {
+            "type": "integer",
+            "description": "Its place among the meal's dishes."
+          },
+          "status": {
+            "$ref": "#/components/schemas/PlanStatus"
+          },
+          "recipe": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "photo": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "servings": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "totalMinutes": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "calories": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "In a serving, when its nutrition is known."
+              }
+            },
+            "required": [
+              "id",
+              "slug",
+              "name",
+              "photo",
+              "servings",
+              "totalMinutes",
+              "calories"
+            ],
+            "description": "Null for a note."
+          },
+          "withRecipe": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "calories": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "slug",
+              "name",
+              "calories"
+            ],
+            "description": "What it's made with: \"with peanut sauce\"."
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A meal that isn't a recipe: \"leftovers\"."
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Null for the recipe's own servings."
+          },
+          "why": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "maxItems": 5,
+            "description": "Why it was picked, when Fill the week picked it: none otherwise."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MealRecipe"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "anyDay",
+          "meal",
+          "position",
+          "status",
+          "recipe",
+          "withRecipe",
+          "note",
+          "servings",
+          "why",
+          "createdAt",
+          "variants"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+          "date": "2026-10-15",
+          "anyDay": false,
+          "meal": "dinner",
+          "position": 0,
+          "status": "planned",
+          "recipe": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+            "slug": "lemon-chicken",
+            "name": "Lemon Chicken",
+            "photo": null,
+            "servings": 4,
+            "totalMinutes": 50,
+            "calories": 412
+          },
+          "withRecipe": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+            "slug": "garlic-rice",
+            "name": "Garlic Rice",
+            "calories": 210
+          },
+          "note": null,
+          "servings": null,
+          "why": [
+            {
+              "kind": "theme",
+              "label": "Taco night"
+            }
+          ],
+          "createdAt": "2026-10-15T18:30:00.000Z",
+          "variants": []
+        }
+      },
+      "Meal": {
+        "type": "string",
+        "enum": [
+          "breakfast",
+          "lunch",
+          "dinner",
+          "snack"
+        ]
+      },
+      "PlanStatus": {
+        "type": "string",
+        "enum": [
+          "planned",
+          "cooked",
+          "skipped"
+        ]
+      },
+      "Reason": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "theme"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 60
+              }
+            },
+            "required": [
+              "kind",
+              "label"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "themeMissed"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 60
+              }
+            },
+            "required": [
+              "kind",
+              "label"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "usesUp"
+                ]
+              },
+              "foods": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 60
+                },
+                "maxItems": 5
+              }
+            },
+            "required": [
+              "kind",
+              "foods"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "onSale"
+                ]
+              },
+              "foods": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 60
+                },
+                "maxItems": 5
+              },
+              "lowest": {
+                "type": "boolean",
+                "description": "One is the lowest it's been in a while."
+              }
+            },
+            "required": [
+              "kind",
+              "foods",
+              "lowest"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "new"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "notLately"
+                ]
+              },
+              "weeks": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "kind",
+              "weeks"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "rated"
+                ]
+              },
+              "stars": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              }
+            },
+            "required": [
+              "kind",
+              "stars"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "quick"
+                ]
+              },
+              "minutes": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "kind",
+              "minutes"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "leaveOut"
+                ]
+              },
+              "foods": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "food": {
+                      "type": "string",
+                      "maxLength": 60
+                    },
+                    "who": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "food",
+                    "who"
+                  ]
+                },
+                "maxItems": 20
+              }
+            },
+            "required": [
+              "kind",
+              "foods"
+            ]
+          }
+        ],
+        "description": "Why a meal was picked: the night's theme (\"Taco night\"), or one nothing fitted; food at home it uses up; food on sale at the household's store; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.",
+        "example": {
+          "kind": "notLately",
+          "weeks": 5
+        }
+      },
+      "RecipeToList": {
+        "type": "object",
+        "properties": {
+          "recipe": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The recipe, by id or address."
+          },
+          "withRecipe": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A side or sauce it's made with, by id or address."
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 1000,
+            "description": "None for the recipe's own servings."
+          },
+          "meal": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meal"
+              },
+              {
+                "description": "The meal in the week's pool it goes in: dinner if the household plans dinners, or its first meal, if not given."
+              }
+            ]
+          }
+        },
+        "required": [
+          "recipe"
+        ],
+        "example": {
+          "recipe": "lemon-chicken",
+          "withRecipe": "garlic-rice",
+          "servings": 8
+        }
+      },
       "ListItems": {
         "type": "object",
         "properties": {
@@ -9656,421 +10193,6 @@
               "variants": []
             }
           ]
-        }
-      },
-      "PlanEntry": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "date": {
-            "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-            "example": "2026-10-15",
-            "description": "Its day, or for the week's pool, the week's first day."
-          },
-          "anyDay": {
-            "type": "boolean",
-            "description": "In the week's pool: for any day of the week."
-          },
-          "meal": {
-            "$ref": "#/components/schemas/Meal"
-          },
-          "position": {
-            "type": "integer",
-            "description": "Its place among the meal's dishes."
-          },
-          "status": {
-            "$ref": "#/components/schemas/PlanStatus"
-          },
-          "recipe": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "slug": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              },
-              "photo": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "servings": {
-                "type": [
-                  "number",
-                  "null"
-                ]
-              },
-              "totalMinutes": {
-                "type": [
-                  "integer",
-                  "null"
-                ]
-              },
-              "calories": {
-                "type": [
-                  "number",
-                  "null"
-                ],
-                "description": "In a serving, when its nutrition is known."
-              }
-            },
-            "required": [
-              "id",
-              "slug",
-              "name",
-              "photo",
-              "servings",
-              "totalMinutes",
-              "calories"
-            ],
-            "description": "Null for a note."
-          },
-          "withRecipe": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "slug": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              },
-              "calories": {
-                "type": [
-                  "number",
-                  "null"
-                ]
-              }
-            },
-            "required": [
-              "id",
-              "slug",
-              "name",
-              "calories"
-            ],
-            "description": "What it's made with: \"with peanut sauce\"."
-          },
-          "note": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "A meal that isn't a recipe: \"leftovers\"."
-          },
-          "servings": {
-            "type": [
-              "number",
-              "null"
-            ],
-            "description": "Null for the recipe's own servings."
-          },
-          "why": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Reason"
-            },
-            "maxItems": 5,
-            "description": "Why it was picked, when Fill the week picked it: none otherwise."
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "variants": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MealRecipe"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "date",
-          "anyDay",
-          "meal",
-          "position",
-          "status",
-          "recipe",
-          "withRecipe",
-          "note",
-          "servings",
-          "why",
-          "createdAt",
-          "variants"
-        ],
-        "example": {
-          "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
-          "date": "2026-10-15",
-          "anyDay": false,
-          "meal": "dinner",
-          "position": 0,
-          "status": "planned",
-          "recipe": {
-            "id": "0199e8b0-5a10-7a01-8b00-000000000006",
-            "slug": "lemon-chicken",
-            "name": "Lemon Chicken",
-            "photo": null,
-            "servings": 4,
-            "totalMinutes": 50,
-            "calories": 412
-          },
-          "withRecipe": {
-            "id": "0199e8b0-5a10-7a01-8b00-000000000007",
-            "slug": "garlic-rice",
-            "name": "Garlic Rice",
-            "calories": 210
-          },
-          "note": null,
-          "servings": null,
-          "why": [
-            {
-              "kind": "theme",
-              "label": "Taco night"
-            }
-          ],
-          "createdAt": "2026-10-15T18:30:00.000Z",
-          "variants": []
-        }
-      },
-      "Meal": {
-        "type": "string",
-        "enum": [
-          "breakfast",
-          "lunch",
-          "dinner",
-          "snack"
-        ]
-      },
-      "PlanStatus": {
-        "type": "string",
-        "enum": [
-          "planned",
-          "cooked",
-          "skipped"
-        ]
-      },
-      "Reason": {
-        "oneOf": [
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "theme"
-                ]
-              },
-              "label": {
-                "type": "string",
-                "maxLength": 60
-              }
-            },
-            "required": [
-              "kind",
-              "label"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "themeMissed"
-                ]
-              },
-              "label": {
-                "type": "string",
-                "maxLength": 60
-              }
-            },
-            "required": [
-              "kind",
-              "label"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "usesUp"
-                ]
-              },
-              "foods": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "maxLength": 60
-                },
-                "maxItems": 5
-              }
-            },
-            "required": [
-              "kind",
-              "foods"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "onSale"
-                ]
-              },
-              "foods": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "maxLength": 60
-                },
-                "maxItems": 5
-              },
-              "lowest": {
-                "type": "boolean",
-                "description": "One is the lowest it's been in a while."
-              }
-            },
-            "required": [
-              "kind",
-              "foods",
-              "lowest"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "new"
-                ]
-              }
-            },
-            "required": [
-              "kind"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "notLately"
-                ]
-              },
-              "weeks": {
-                "type": "integer",
-                "minimum": 0
-              }
-            },
-            "required": [
-              "kind",
-              "weeks"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "rated"
-                ]
-              },
-              "stars": {
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 5
-              }
-            },
-            "required": [
-              "kind",
-              "stars"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "quick"
-                ]
-              },
-              "minutes": {
-                "type": "integer",
-                "minimum": 0
-              }
-            },
-            "required": [
-              "kind",
-              "minutes"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "leaveOut"
-                ]
-              },
-              "foods": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "food": {
-                      "type": "string",
-                      "maxLength": 60
-                    },
-                    "who": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "food",
-                    "who"
-                  ]
-                },
-                "maxItems": 20
-              }
-            },
-            "required": [
-              "kind",
-              "foods"
-            ]
-          }
-        ],
-        "description": "Why a meal was picked: the night's theme (\"Taco night\"), or one nothing fitted; food at home it uses up; food on sale at the household's store; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.",
-        "example": {
-          "kind": "notLately",
-          "weeks": 5
         }
       },
       "Autoplan": {
@@ -27476,6 +27598,80 @@
           },
           "403": {
             "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/list/recipes": {
+      "post": {
+        "operationId": "addRecipeToList",
+        "tags": [
+          "List"
+        ],
+        "summary": "Add a recipe to the list",
+        "description": "A recipe's ingredients on the list without planning a day for it: it goes in this week's any-day meals, and onto the list as Add from plan would put it, from then on following that meal. Every-week items don't come along. Taking the meal off the plan takes it back off the list. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeToList"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "On the list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeListed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
             "content": {
               "application/json": {
                 "schema": {

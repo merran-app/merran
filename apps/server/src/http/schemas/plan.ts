@@ -12,7 +12,7 @@ const Day = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a day written like "2026-10-15".')
   .openapi({ example: "2026-10-15" })
 
-const MealSchema = z.enum(MEALS).openapi("Meal")
+export const MealSchema = z.enum(MEALS).openapi("Meal")
 const StatusSchema = z.enum(PLAN_STATUSES).openapi("PlanStatus")
 
 const label = z.string().max(60)
@@ -57,7 +57,7 @@ export const ReasonSchema = z
 
 const why = z.array(ReasonSchema).max(5)
 
-const PLAN_ENTRY = {
+export const PLAN_ENTRY = {
   id: IDS.planEntry,
   date: "2026-10-15",
   anyDay: false,
@@ -206,7 +206,7 @@ const note = z
   .trim()
   .min(1, "Write what the meal is.")
   .max(200, "Keep the note under 200 characters.")
-const servings = z
+export const servings = z
   .number()
   .positive("Use a number above 0.")
   .max(1000, "Use 1,000 or fewer.")
