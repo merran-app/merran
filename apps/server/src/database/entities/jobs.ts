@@ -42,6 +42,11 @@ export const Job = defineEntity({
     /** When it was taken to run; set while it's running. */
     startedAt: p.datetime().nullable(),
     finishedAt: p.datetime().nullable(),
+    /**
+     * When a request that was waiting for it gave up and left it to run in
+     * the background, so whoever started it hears when it ends.
+     */
+    handedOverAt: p.datetime().nullable(),
     progress: p.json<JobProgress>().nullable(),
     result: p.json<Record<string, unknown>>().nullable(),
     /** Why it last failed, for the Jobs page. */

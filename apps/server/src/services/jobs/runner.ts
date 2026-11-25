@@ -5,6 +5,7 @@ import type { Config } from "../../core/config.ts"
 import { Job, type JobStatus } from "../../database/entities/index.ts"
 import type { Database } from "../../database/orm.ts"
 import { forHousehold } from "../../database/scope.ts"
+import { reportError } from "../../modules/error-tracking/reporter.ts"
 import type { Module } from "../../modules/module.ts"
 import type { EventBus, LiveArea } from "../events/events.ts"
 import type { MediaMakers } from "../ai/media.ts"
@@ -99,6 +100,15 @@ export type JobHandler = {
    */
   perHousehold?: number
   /**
+   * Someone's waiting on it: a request that waits a few seconds for the job
+   * before handing over (hand-over.ts), as for Work out nutrition or one
+   * link. Due jobs of these kinds are looked for first, so when a place in
+   * the lane frees, one takes it ahead of older background work, like the
+   * nutrition and photos a big import queued, rather than waiting behind
+   * it. It only changes the order of the look: every limit stays.
+   */
+  waitedOn?: boolean
+  /**
    * How long to wait after each failed try, in milliseconds: the first after
    * try 1, and so on. Past its end, or without it, the wait doubles from 30
    * seconds up to 30 minutes.
@@ -159,6 +169,8 @@ const RETRY_MAX_MS = 30 * 60_000
 const POLL_MS = 5_000
 /** How long a job's progress waits before being saved again. */
 const PROGRESS_EVERY_MS = 500
+/** How many due jobs one look for work takes in. */
+const LOOK_SIZE = 50
 
 const scheduleKey = (kind: string) => `schedule:${kind}`
 
@@ -173,6 +185,8 @@ const householdKind = (householdId: string, kind: string) =>
 export class JobRunner {
   readonly #deps: JobDeps
   readonly #handlers: Map<string, JobHandler>
+  /** The kinds someone waits on, looked for first. */
+  readonly #waitedOn: readonly string[]
   readonly #schedules: readonly JobSchedule[]
   readonly #lanes: Record<JobLane, number>
   readonly #running = new Map<string, Running>()
@@ -183,6 +197,7 @@ export class JobRunner {
   #again = false
   #stopping = false
   #stopListening: (() => void) | null = null
+  readonly #beforeTaking: ((jobId: string) => Promise<void>) | undefined
 
   constructor(options: {
     deps: JobDeps
@@ -190,11 +205,21 @@ export class JobRunner {
     schedules?: readonly JobSchedule[]
     /** How many jobs each lane runs at once: 4 in each unless given. */
     lanes?: Partial<Record<JobLane, number>>
+    /**
+     * Called between finding a due job and taking it. Tests use it to
+     * change the job at exactly that moment: the one place a change made
+     * while it waited can come unseen, which no timing could hit reliably.
+     */
+    beforeTaking?: (jobId: string) => Promise<void>
   }) {
     this.#deps = options.deps
     this.#handlers = new Map(options.handlers.map((h) => [h.kind, h]))
+    this.#waitedOn = options.handlers
+      .filter((handler) => handler.waitedOn)
+      .map((handler) => handler.kind)
     this.#schedules = options.schedules ?? []
     this.#lanes = { ...LANE_SIZES, ...options.lanes }
+    this.#beforeTaking = options.beforeTaking
   }
 
   /** The lane a kind waits in; one Merran doesn't know counts as long. */
@@ -388,7 +413,9 @@ export class JobRunner {
       this.#householdsAtLimit(byHouseholdKind)
     )
 
-    // A fair share: households with the least running go first.
+    // A fair share: households with the least running go first. The sort
+    // keeps the look's order otherwise, so among households running as
+    // many, jobs someone waits on still go first.
     const queue = [...due]
     while (queue.length > 0 && !allFull()) {
       queue.sort(
@@ -417,13 +444,32 @@ export class JobRunner {
       ) {
         continue
       }
+      const attempt = job.attempts + 1
+      await this.#beforeTaking?.(job.id)
       // Taken only if still queued, so it runs once.
       const taken = await em.nativeUpdate(
         Job,
         { id: job.id, status: "queued" },
-        { status: "running", startedAt: new Date(), attempts: job.attempts + 1 }
+        { status: "running", startedAt: new Date(), attempts: attempt }
       )
       if (taken !== 1) continue
+      // Run as it is now it's taken, not as the look found it: a change
+      // made while it waited, like Check prices now joining a waiting check
+      // and making it the presser's, may have come in between.
+      const current = await em.findOne(Job, { id: job.id }, { refresh: true })
+      // Shutting down stops only the jobs already running, and this one
+      // isn't yet: it goes back to wait for the next start, without
+      // counting as a try, rather than starting as Merran stops.
+      if (this.#stopping) {
+        await em.nativeUpdate(
+          Job,
+          { id: job.id, status: "running" },
+          { status: "queued", attempts: attempt - 1, startedAt: null }
+        )
+        return
+      }
+      // Cancelled between being taken and read again: it isn't run.
+      if (current?.status !== "running") continue
       byLane.set(lane, (byLane.get(lane) ?? 0) + 1)
       byKind.set(job.kind, (byKind.get(job.kind) ?? 0) + 1)
       byHousehold.set(
@@ -433,7 +479,7 @@ export class JobRunner {
       if (ownKey) {
         byHouseholdKind.set(ownKey, (byHouseholdKind.get(ownKey) ?? 0) + 1)
       }
-      this.#run(handler, lane, job, job.attempts + 1)
+      this.#run(handler, lane, current, attempt)
     }
   }
 
@@ -471,32 +517,54 @@ export class JobRunner {
   }
 
   /**
-   * The jobs that are due, oldest first, as many as one look takes in.
+   * The jobs that are due, as many as one look takes in: first those of the
+   * kinds someone waits on, oldest first, then the rest, oldest first. So
+   * a press of Work out nutrition takes the next place ahead of the backlog
+   * a big import queued, rather than waiting behind it, or not even being
+   * among those looked at.
+   *
    * Kinds that couldn't start are left out, and so is each household's
    * kind it runs as many of as it may: when more of those are due than a
    * look takes in, as when deliveries pile up for a receiver that hangs, or
    * one household's big import queues a hundred nutrition jobs, they'd keep
    * every other kind and household waiting.
    */
-  #dueJobs(
+  async #dueJobs(
     em: EntityManager,
     kindsThatCantStart: readonly string[],
     householdsAtLimit: readonly { kind: string; forHousehold: string }[]
   ) {
-    return em.find(
-      Job,
-      {
-        status: "queued",
-        runAt: { $lte: new Date() },
-        ...(kindsThatCantStart.length > 0
-          ? { kind: { $nin: kindsThatCantStart } }
-          : {}),
-        ...(householdsAtLimit.length > 0
-          ? { $not: { $or: [...householdsAtLimit] } }
-          : {}),
-      },
-      { orderBy: { runAt: "asc", createdAt: "asc" }, limit: 50 }
+    const look = (
+      kinds: { $in: string[] } | { $nin: string[] } | null,
+      limit: number
+    ) =>
+      em.find(
+        Job,
+        {
+          status: "queued",
+          runAt: { $lte: new Date() },
+          ...(kinds ? { kind: kinds } : {}),
+          ...(householdsAtLimit.length > 0
+            ? { $not: { $or: [...householdsAtLimit] } }
+            : {}),
+        },
+        { orderBy: { runAt: "asc", createdAt: "asc" }, limit }
+      )
+
+    const waitedOn = this.#waitedOn.filter(
+      (kind) => !kindsThatCantStart.includes(kind)
     )
+    const first =
+      waitedOn.length > 0 ? await look({ $in: waitedOn }, LOOK_SIZE) : []
+    if (first.length >= LOOK_SIZE) return first
+
+    // Every due job of a waited-on kind that could start is in already.
+    const leftOut = [...new Set([...kindsThatCantStart, ...this.#waitedOn])]
+    const rest = await look(
+      leftOut.length > 0 ? { $nin: leftOut } : null,
+      LOOK_SIZE - first.length
+    )
+    return [...first, ...rest]
   }
 
   #run(handler: JobHandler, lane: JobLane, job: Job, attempt: number) {
@@ -616,6 +684,10 @@ export class JobRunner {
             )
           } else {
             logger.error({ err }, "Job failed")
+            // Failed for good: like an error a request didn't expect, it
+            // goes to error tracking. Its raw text stays on the job, for the
+            // server admin's Jobs card, and isn't shown to anyone else.
+            reportError(err)
             tell(
               await this.#endTry(job.id, attempt, {
                 status: "failed",

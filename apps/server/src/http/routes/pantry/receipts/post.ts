@@ -4,7 +4,7 @@ import type { AppDeps } from "../../../../core/context.ts"
 import { AppError } from "../../../../core/errors.ts"
 import {
   MAX_RECEIPT_FILES,
-  readReceipt,
+  scanReceipt,
 } from "../../../../services/pantry/receipts/receipts.ts"
 import { inHousehold, openToKeys } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
@@ -26,7 +26,7 @@ const route = createRoute({
   operationId: "scanReceipt",
   tags: ["Pantry"],
   summary: "Scan a receipt",
-  description: `Reads a receipt into a draft to look over before anything goes in the pantry: photos of a paper one, screenshots or a PDF of an emailed one (up to ${MAX_RECEIPT_FILES} files, one \`file\` field each), or its \`text\`. Each line says what it is, how much, and the shopping list item it was bought for. Add it with \`POST /pantry/receipts/{receiptId}/add\`; it's forgotten after a day. Uses the household's model for receipts, which must be able to read photos or PDFs if those are sent, and counts towards its AI spend.`,
+  description: `Reads a receipt into a draft to look over before anything goes in the pantry: photos of a paper one, screenshots or a PDF of an emailed one (up to ${MAX_RECEIPT_FILES} files, one \`file\` field each), or its \`text\`. Each line says what it is, how much, and the shopping list item it was bought for. Add it with \`POST /pantry/receipts/{receiptId}/add\`; it's forgotten after a day. Reading takes a while, so it answers 201 with the receipt (\`status\` \`ready\`) if it's read within about 10 seconds, and 202 with the receipt \`reading\` if not: it carries on in the background, and \`GET /pantry/receipts/{receiptId}\` says when it's \`ready\`. Uses the household's model for receipts, which must be able to read photos or PDFs if those are sent, and counts towards its AI spend.`,
   ...keys,
   middleware: [
     ...keys.middleware,
@@ -63,12 +63,25 @@ const route = createRoute({
   },
   responses: {
     201: jsonResponse(ReceiptSchema, "Read, waiting for a look."),
+    202: jsonResponse(
+      ReceiptSchema,
+      "Still being read (`status` `reading`); it carries on in the background."
+    ),
     400: errorResponse("Nothing to read, or a file Merran can't read."),
+    404: errorResponse(
+      "It was discarded as it was read (`receipt_not_found`)."
+    ),
+    409: errorResponse(
+      "Its read was stopped, or it was discarded, before it was read (`job_stopped`)."
+    ),
     413: errorResponse("The files are too big."),
     422: errorResponse(
       "It isn't a receipt (`receipt_is_recipe` when it's a recipe), or the model can't read photos or PDFs."
     ),
     429: errorResponse("This month's AI limit is reached."),
+    502: errorResponse(
+      "The AI didn't answer, or reading it didn't finish (`job_failed`)."
+    ),
     ...SIGNED_IN_ERRORS,
   },
 })
@@ -87,24 +100,13 @@ export default (router: Router, deps: AppDeps) => {
         }))
     )
     const text = typeof body.text === "string" ? body.text : null
-    const { what, receipt } = await readReceipt(em, deps, {
+    const scanned = await scanReceipt(em, deps, {
       householdId,
       userId,
       input: { files, text },
     })
-    if (!receipt) {
-      throw what === "recipe"
-        ? new AppError(
-            "unprocessable",
-            "receipt_is_recipe",
-            "That looks like a recipe, not a receipt."
-          )
-        : new AppError(
-            "unprocessable",
-            "not_a_receipt",
-            "Merran couldn't find a receipt in that. Try a clearer photo, or paste its text."
-          )
-    }
-    return c.json(receipt, 201)
+    return "done" in scanned
+      ? c.json(scanned.done, 201)
+      : c.json(scanned.started, 202)
   })
 }

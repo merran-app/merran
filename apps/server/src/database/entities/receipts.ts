@@ -8,6 +8,21 @@ import { User } from "./users.ts"
 export const RECEIPT_KINDS = ["food", "household", "other"] as const
 export type ReceiptKind = (typeof RECEIPT_KINDS)[number]
 
+/**
+ * Where a receipt is. `reading`: its job hasn't finished. `ready`: read,
+ * waiting for a look. `recipe` and `none`: what was sent turned out to be a
+ * recipe, or to have no receipt in it. `failed`: it couldn't be read, and
+ * `error` says why.
+ */
+export const RECEIPT_STATUSES = [
+  "reading",
+  "ready",
+  "recipe",
+  "none",
+  "failed",
+] as const
+export type ReceiptStatus = (typeof RECEIPT_STATUSES)[number]
+
 /** A line from a receipt, as Merran read it. */
 export type ReceiptLine = {
   id: string
@@ -48,6 +63,10 @@ export const Receipt = defineEntity({
     total: p.double().nullable(),
     lines: p.json<ReceiptLine[]>(),
     files: p.json<ReceiptFile[]>(),
+    // Receipts from before this was kept were all read, so they're ready.
+    status: p.enum(RECEIPT_STATUSES).default("ready"),
+    /** Why it couldn't be read, when it's `failed`. */
+    error: p.text().nullable(),
     createdAt: createdAt(),
   },
   indexes: [{ properties: ["household", "createdAt"] }],

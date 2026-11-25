@@ -140,6 +140,7 @@ export const JOB = {
   runAt: TIMES.now,
   startedAt: TIMES.now,
   finishedAt: null,
+  handedOver: false,
   createdAt: TIMES.now,
 }
 
@@ -199,6 +200,7 @@ export const RECIPE = {
   notes: "Bone-in thighs work too: give them 10 minutes more.",
   dietOverrides: {},
   needs: [],
+  working: [],
   nutrition: {
     source: "calculated" as const,
     calories: 412,

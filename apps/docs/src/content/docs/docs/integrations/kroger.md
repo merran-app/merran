@@ -52,7 +52,7 @@ Prices are estimates from returned store data, not a checkout guarantee. If a tr
 
 ## Prices and planning
 
-**Check prices now** refreshes available price information. **Lean on sales** and **Weekly budget** influence meal suggestions; they are preferences, not guaranteed savings or spending caps. Matching depends on recognizable foods and available store data. A basic **Find** link for another retailer does not imply that it has Kroger-style cart support.
+**Check prices now** refreshes available price information. It usually finishes while you wait. A check that takes longer than about ten seconds carries on in the background: the button says **Checking prices…**, you can leave, and Merran tells whoever pressed it when it's done (**Prices checked: 12 deals.**, with **View** to open Settings → Shopping and stores) or why it didn't work (**Couldn't check prices.**). Pressing it while Merran's own check, from the morning look or a change of store, is still waiting makes that check yours, so you hear how it went. **Lean on sales** and **Weekly budget** influence meal suggestions; they are preferences, not guaranteed savings or spending caps. Matching depends on recognizable foods and available store data. A basic **Find** link for another retailer does not imply that it has Kroger-style cart support.
 
 ## Data, disconnecting, and troubleshooting
 

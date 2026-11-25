@@ -2,7 +2,7 @@ import { sendTelemetryJob } from "../../modules/telemetry/send.ts"
 import { invitationEmailJob } from "../../modules/email/invitations.ts"
 import { passwordResetEmailJob } from "../../modules/email/password-resets.ts"
 import { checkUpdatesJob } from "../../modules/updates/check.ts"
-import { aiPhotoRunJob } from "../recipes/photos/runs.ts"
+import { aiPhotoRunJob, makePhotoJob } from "../recipes/photos/runs.ts"
 import { appImportJob } from "../recipes/import/apps/job.ts"
 import { checkFileJob } from "../recipes/import/apps/check-job.ts"
 import { purgeDeletedJob } from "../recipes/deleted.ts"
@@ -11,10 +11,11 @@ import { linkImportJob } from "../recipes/import/import-links.ts"
 import { importLinkJob, importVideoJob } from "../recipes/import/import-one.ts"
 import { noteEditJob } from "../recipes/review/note-edits.ts"
 import { tidyRunJob } from "../recipes/review/tidy-run.ts"
-import { nutritionRunJob } from "../nutrition/runs.ts"
+import { nutritionRunJob, workOutNutritionJob } from "../nutrition/runs.ts"
 import { autoplanJob } from "../plan/autoplan.ts"
 import { readSitesJob } from "../recipes/discover/sites/read-job.ts"
 import { checkPricesJob } from "../stores/prices.ts"
+import { readReceiptJob } from "../pantry/receipts/receipts.ts"
 import { importJob } from "../transfer/import.ts"
 import { rekeyFoodsJob } from "../list/rekey.ts"
 import { webhookDeliveryJob } from "../webhooks/deliver.ts"
@@ -23,6 +24,7 @@ import { headsUpJob } from "../webhooks/heads-ups/schedule.ts"
 import { closeSessionJob } from "../cooking/sessions.ts"
 import { endQuietSessionJob } from "../cooking/quiet.ts"
 import { timerDoneJob } from "../cooking/timers.ts"
+import { removeFilesJob } from "../storage/remove-job.ts"
 import { cleanUpJobsJob } from "./clean-up.ts"
 import type { JobHandler, JobSchedule } from "./runner.ts"
 
@@ -33,6 +35,7 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
   invitationEmailJob,
   passwordResetEmailJob,
   purgeDeletedJob,
+  removeFilesJob,
   cleanUpJobsJob,
   sendTelemetryJob,
   importJob,
@@ -44,11 +47,14 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
   autoplanJob,
   tidyRunJob,
   nutritionRunJob,
+  workOutNutritionJob,
+  makePhotoJob,
   noteEditJob,
   discoverJob,
   readSitesJob,
   aiPhotoRunJob,
   checkPricesJob,
+  readReceiptJob,
   rekeyFoodsJob,
   checkUpdatesJob,
   webhookDeliveryJob,

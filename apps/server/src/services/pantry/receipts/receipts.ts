@@ -4,8 +4,10 @@ import { generateText, Output, type UserContent } from "ai"
 import sharp from "sharp"
 import { v7 as uuidv7 } from "uuid"
 import { z } from "zod"
+import type { AppDeps } from "../../../core/context.ts"
 import { AppError } from "../../../core/errors.ts"
 import {
+  Job,
   Purchase,
   Receipt,
   ShoppingItem,
@@ -14,6 +16,14 @@ import {
   type ReceiptLine,
 } from "../../../database/entities/index.ts"
 import { householdKeys } from "../../foods/aliases.ts"
+import {
+  failureOf,
+  HANDOVER_MS,
+  waitThenHandOver,
+} from "../../jobs/hand-over.ts"
+import { ACTIVE, enqueue } from "../../jobs/jobs.ts"
+import { JobStopped, type JobHandler } from "../../jobs/runner.ts"
+import { currentActor, withActor, type Actor } from "../../webhooks/actor.ts"
 import { useAi, type AiDeps } from "../../ai/run.ts"
 import { householdToday } from "../../households/clock.ts"
 import { recordListChange } from "../../webhooks/events/list.ts"
@@ -160,8 +170,12 @@ async function readPicture(body: Buffer) {
   return { parts, kept }
 }
 
-/** What the model reads, what's kept to look at, and what the model needs. */
-async function receiptContent(input: ReceiptInput) {
+/**
+ * What can be refused without reading anything: too many files, a PDF
+ * that's too big, or nothing at all. A scan checks these before it makes
+ * a receipt or a job, so they answer at once.
+ */
+function checkInput(input: ReceiptInput) {
   if (input.files.length > MAX_RECEIPT_FILES) {
     throw new AppError(
       "invalid",
@@ -169,19 +183,33 @@ async function receiptContent(input: ReceiptInput) {
       `Use ${MAX_RECEIPT_FILES} files or fewer for one receipt.`
     )
   }
+  for (const file of input.files) {
+    if (isPdf(file.body) && file.body.length > MAX_PDF_BYTES) {
+      throw new AppError(
+        "too_large",
+        "file_too_large",
+        "That PDF is too big. Use one under 10 MB."
+      )
+    }
+  }
+  if (input.files.length === 0 && !input.text?.trim()) {
+    throw new AppError(
+      "invalid",
+      "no_receipt",
+      "Add a photo, screenshot or PDF of the receipt, or paste its text."
+    )
+  }
+}
+
+/** What the model reads, what's kept to look at, and what the model needs. */
+async function receiptContent(input: ReceiptInput) {
+  checkInput(input)
   const content: Exclude<UserContent, string> = []
   const kept: { body: Buffer; mediaType: ReceiptFile["mediaType"] }[] = []
   const texts: string[] = []
   const needs = new Set<ModelAbility>(["structured"])
   for (const file of input.files) {
     if (isPdf(file.body)) {
-      if (file.body.length > MAX_PDF_BYTES) {
-        throw new AppError(
-          "too_large",
-          "file_too_large",
-          "That PDF is too big. Use one under 10 MB."
-        )
-      }
       content.push({
         type: "file",
         data: file.body,
@@ -221,6 +249,8 @@ export function describeReceipt(receipt: Receipt) {
     store: receipt.store ?? null,
     date: receipt.date ?? null,
     total: toNumber(receipt.total),
+    status: receipt.status,
+    error: receipt.error ?? null,
     lines: receipt.lines,
     files: receipt.files.map((file, index) => ({
       url: `/api/pantry/receipts/${receipt.id}/files/${index}`,
@@ -281,7 +311,10 @@ async function matchList(
   })
 }
 
-/** Receipts never looked over, and their files: gone after a day. */
+/**
+ * Receipts never looked over, and their files: gone after a day. A
+ * receipt's uploads are in its folder too, so they go with it.
+ */
 async function forgetOld(
   em: EntityManager,
   files: FileStore,
@@ -296,19 +329,26 @@ async function forgetOld(
   }
 }
 
+/** What was read from a receipt, before anything is saved. */
+export type ReceiptRead = {
+  store: string | null
+  date: string | null
+  total: number | null
+  lines: ReceiptLine[]
+  /** The copies kept to look at while looking it over. */
+  kept: { body: Buffer; mediaType: ReceiptFile["mediaType"] }[]
+}
+
 /**
- * Reads a receipt into a draft to look over; nothing's added yet. Says
- * what it was, too: what's shared to Merran may be a recipe instead, which
- * isn't kept as a receipt.
+ * Reads what came in, and says what it was: a receipt, a recipe (what's
+ * shared to Merran may be one) or something else. Only a receipt with
+ * lines has anything read; nothing is saved here.
  */
-export async function readReceipt(
+export async function readLines(
   em: EntityManager,
-  deps: AiDeps & { files: FileStore },
+  deps: AiDeps,
   options: { householdId: string; userId: string | null; input: ReceiptInput }
-): Promise<{
-  what: "receipt" | "recipe" | "other"
-  receipt: ReceiptView | null
-}> {
+): Promise<{ what: "receipt" | "recipe" | "other"; read: ReceiptRead | null }> {
   const { content, kept, needs } = await receiptContent(options.input)
   const { output } = await useAi(
     deps,
@@ -332,7 +372,7 @@ export async function readReceipt(
   if (output.what !== "receipt" || items.length === 0) {
     return {
       what: output.what === "receipt" ? "other" : output.what,
-      receipt: null,
+      read: null,
     }
   }
 
@@ -355,31 +395,368 @@ export async function readReceipt(
     output.date <= today
       ? output.date
       : null
+  return {
+    what: "receipt",
+    read: {
+      store: output.store?.trim().slice(0, 120) || null,
+      date,
+      total:
+        output.total !== null && Number.isFinite(output.total)
+          ? output.total
+          : null,
+      lines,
+      kept,
+    },
+  }
+}
+
+/** Puts what was read on a receipt, and its kept copies in the file store. */
+async function keepRead(
+  files: FileStore,
+  receipt: Receipt,
+  householdId: string,
+  read: ReceiptRead
+) {
+  receipt.store = read.store
+  receipt.date = read.date
+  receipt.total = read.total
+  receipt.lines = read.lines
+  receipt.files = read.kept.map((file) => ({ mediaType: file.mediaType }))
+  receipt.status = "ready"
+  receipt.error = null
+  await Promise.all(
+    read.kept.map((file, index) =>
+      files.put(fileKey(householdId, receipt.id, index), file.body)
+    )
+  )
+}
+
+/**
+ * Reads a receipt into a draft to look over; nothing's added yet. Says
+ * what it was, too: what's shared to Merran may be a recipe instead, which
+ * isn't kept as a receipt. It's read here, within the request, for the
+ * share sheet and the assistant, who answer with what they find.
+ */
+export async function readReceipt(
+  em: EntityManager,
+  deps: AiDeps & { files: FileStore },
+  options: { householdId: string; userId: string | null; input: ReceiptInput }
+): Promise<{
+  what: "receipt" | "recipe" | "other"
+  receipt: ReceiptView | null
+}> {
+  const { what, read } = await readLines(em, deps, options)
+  if (!read) return { what, receipt: null }
   await forgetOld(em, deps.files, options.householdId)
   const receipt = em.create(Receipt, {
     household: options.householdId,
     user: options.userId
       ? em.getReference(User, options.userId, { wrapped: true })
       : null,
-    store: output.store?.trim().slice(0, 120) || null,
-    date,
-    total:
-      output.total !== null && Number.isFinite(output.total)
-        ? output.total
-        : null,
-    lines,
-    files: kept.map((file) => ({ mediaType: file.mediaType })),
+    lines: [],
+    files: [],
   })
-  await Promise.all(
-    kept.map((file, index) =>
-      deps.files.put(fileKey(options.householdId, receipt.id, index), file.body)
-    )
-  )
+  await keepRead(deps.files, receipt, options.householdId, read)
   await em.flush()
   return { what: "receipt", receipt: describeReceipt(receipt) }
 }
 
-/** Receipts waiting for a look, newest first: shared ones, say. */
+const READ_KIND = "pantry.readReceipt"
+
+/** Where a scan's upload waits for its job: apart from the kept copies. */
+const uploadKey = (householdId: string, receiptId: string, index: number) =>
+  `receipts/${householdId}/${receiptId}/upload/${index}`
+
+/**
+ * Where a scan's pasted text waits for its job: with the uploads, so it
+ * goes with them once the receipt's read, rather than staying in the job's
+ * payload for the 30 days a job is kept.
+ */
+const pastedKey = (householdId: string, receiptId: string) =>
+  `receipts/${householdId}/${receiptId}/upload/text`
+
+/** What a receipt says when its read was stopped. */
+const STOPPED = "It was stopped before it was read."
+
+/** Merran is shutting down, so the job runs again next start. */
+const shuttingDown = (signal: AbortSignal) =>
+  signal.aborted &&
+  signal.reason instanceof JobStopped &&
+  signal.reason.why === "shutdown"
+
+/** Someone stopped the job. */
+const wasCancelled = (signal: AbortSignal) =>
+  signal.aborted &&
+  signal.reason instanceof JobStopped &&
+  signal.reason.why === "cancelled"
+
+const ReadPayload = z.object({
+  receiptId: z.string(),
+  userId: z.string().nullable(),
+  /** Who scanned it, so what it changes says they did, not Merran. */
+  actor: z.custom<Actor>(),
+  /** Whether text was pasted; it's in the file store with the files. */
+  pasted: z.boolean(),
+  /** Each upload's type, in order. */
+  types: z.array(z.string()),
+})
+
+/**
+ * Reads a scanned receipt from its uploads and saves what it finds on the
+ * receipt, then removes the uploads: not before, so a read cut off by a
+ * restart finds them again. A receipt that was a recipe, or had none in
+ * it, or couldn't be read is marked so, and an error that's the person's
+ * to see is handed back as the result for a request still waiting.
+ */
+export const readReceiptJob: JobHandler = {
+  kind: READ_KIND,
+  // Cancelled before it started: nothing will read it, so it says so. Its
+  // uploads go with the receipt, when it's discarded or forgotten.
+  cancelledWaiting: async (em, job) => {
+    const { receiptId } = ReadPayload.pick({ receiptId: true }).parse(
+      job.payload
+    )
+    const receipt = await em.findOne(Receipt, { id: receiptId })
+    if (receipt?.status !== "reading") return
+    receipt.status = "failed"
+    receipt.error = STOPPED
+    await em.flush()
+  },
+  lane: "long",
+  // Scanned, and waited on before handing over.
+  waitedOn: true,
+  area: "pantry",
+  concurrency: 2,
+  perHousehold: 2,
+  changes: ["pantry"],
+  async run({ em, householdId, payload, deps, signal }) {
+    if (!householdId) throw new Error("Receipts need a household.")
+    const { receiptId, userId, actor, pasted, types } =
+      ReadPayload.parse(payload)
+    const folder = `receipts/${householdId}/${receiptId}/upload`
+
+    // The receipt as it is now: it may have been discarded while it was read.
+    const current = () =>
+      em.findOne(Receipt, { id: receiptId }, { refresh: true })
+
+    const markAs = async (
+      status: "recipe" | "none" | "failed",
+      error: string | null
+    ) => {
+      const receipt = await current()
+      if (receipt) {
+        receipt.status = status
+        receipt.error = error
+        await em.flush()
+      }
+      await deps.files.remove(folder)
+    }
+
+    const readUploads = () =>
+      Promise.all(
+        types.map(async (type, index) => {
+          const body = await deps.files.read(
+            uploadKey(householdId, receiptId, index)
+          )
+          if (!body) {
+            throw new AppError(
+              "not_found",
+              "file_not_found",
+              "Merran lost the photos of that receipt. Scan it again."
+            )
+          }
+          return { body, type }
+        })
+      )
+
+    const readPasted = async () => {
+      if (!pasted) return null
+      const body = await deps.files.read(pastedKey(householdId, receiptId))
+      if (!body) {
+        throw new AppError(
+          "not_found",
+          "file_not_found",
+          "Merran lost the text of that receipt. Paste it again."
+        )
+      }
+      return body.toString("utf8")
+    }
+
+    return withActor(actor, async () => {
+      const waiting = await current()
+      // Discarded, or forgotten, before it was started.
+      if (!waiting) {
+        await deps.files.remove(folder)
+        return { receiptId, status: "gone" }
+      }
+      // Already read: a run cut off just after saving.
+      if (waiting.status !== "reading") {
+        return { receiptId, status: waiting.status }
+      }
+      try {
+        const { what, read } = await readLines(em, deps, {
+          householdId,
+          userId,
+          input: { files: await readUploads(), text: await readPasted() },
+        })
+        if (!read) {
+          const status = what === "recipe" ? "recipe" : "none"
+          await markAs(status, null)
+          return { receiptId, status }
+        }
+        const receipt = await current()
+        if (!receipt) {
+          await deps.files.remove(folder)
+          return { receiptId, status: "gone" }
+        }
+        await keepRead(deps.files, receipt, householdId, read)
+        await em.flush()
+        // Only now: until it's saved, a restart reads it again from these.
+        await deps.files.remove(folder)
+        return {
+          receiptId,
+          store: read.store,
+          lines: read.lines.length,
+          status: "ready",
+        }
+      } catch (err) {
+        if (err instanceof AppError) {
+          await markAs("failed", err.message)
+          return { ...failureOf(err), receiptId, status: "failed" }
+        }
+        // Merran shutting down: it runs again next start, with its uploads,
+        // and isn't marked. A cancel or anything else won't be tried again,
+        // so the receipt says so, rather than staying as reading.
+        if (!shuttingDown(signal)) {
+          await markAs(
+            "failed",
+            wasCancelled(signal)
+              ? STOPPED
+              : "That didn't work. Scan it again in a moment."
+          )
+        }
+        throw err
+      }
+    })
+  },
+}
+
+export type Scanned = { done: ReceiptView } | { started: ReceiptView }
+
+const receiptGone = () =>
+  new AppError(
+    "not_found",
+    "receipt_not_found",
+    "That receipt isn't waiting any more. Scan it again."
+  )
+
+/** Removes a receipt, if it's still there, with everything it kept. */
+async function forget(
+  em: EntityManager,
+  files: FileStore,
+  householdId: string,
+  receiptId: string
+) {
+  await em.nativeDelete(Receipt, { id: receiptId })
+  await files.remove(`receipts/${householdId}/${receiptId}`)
+}
+
+/**
+ * Scans a receipt: what's wrong with what was sent (nothing to read, too
+ * many files, a PDF that's too big) fails here at once, with no receipt
+ * or job made. Otherwise a receipt is made, reading, with its uploads
+ * (the files, and any pasted text) kept for the job, which reads it while
+ * the request waits. A receipt in within the wait is answered as it is,
+ * ready; one that was a recipe or had no receipt in it, or couldn't be
+ * read, is removed and fails as it always did. One that takes longer is
+ * answered as reading, and the job goes on in the background.
+ */
+export async function scanReceipt(
+  em: EntityManager,
+  deps: Pick<AppDeps, "jobs" | "files">,
+  options: { householdId: string; userId: string | null; input: ReceiptInput },
+  settings: { handoverMs?: number } = {}
+): Promise<Scanned> {
+  const { householdId, userId, input } = options
+  checkInput(input)
+  await forgetOld(em, deps.files, householdId)
+  const receipt = em.create(Receipt, {
+    household: householdId,
+    user: userId ? em.getReference(User, userId, { wrapped: true }) : null,
+    lines: [],
+    files: [],
+    status: "reading",
+  })
+  await em.flush()
+  const receiptId = receipt.id
+  try {
+    const uploads = input.files.map((file, index) =>
+      deps.files.put(uploadKey(householdId, receiptId, index), file.body)
+    )
+    if (input.text) {
+      uploads.push(
+        deps.files.put(
+          pastedKey(householdId, receiptId),
+          Buffer.from(input.text, "utf8")
+        )
+      )
+    }
+    await Promise.all(uploads)
+  } catch (err) {
+    await forget(em, deps.files, householdId, receiptId)
+    throw err
+  }
+  const job = await enqueue(em, {
+    kind: READ_KIND,
+    householdId,
+    payload: {
+      receiptId,
+      userId,
+      actor: currentActor(),
+      pasted: Boolean(input.text),
+      types: input.files.map((file) => file.type),
+    },
+    createdBy: userId,
+    key: `${READ_KIND}:${receiptId}`,
+    maxAttempts: 1,
+  })
+  // Adding it woke the runner already, except where nothing listens (tests).
+  deps.jobs.wake()
+
+  let answer: Awaited<ReturnType<typeof waitThenHandOver>>
+  try {
+    answer = await waitThenHandOver(em, deps.jobs, job.id, {
+      ms: settings.handoverMs ?? HANDOVER_MS,
+    })
+  } catch (err) {
+    // The person is told why, so there's no receipt left to find.
+    await forget(em, deps.files, householdId, receiptId)
+    throw err
+  }
+  const now = await em.findOne(Receipt, { id: receiptId }, { refresh: true })
+  // Discarded by someone else while it was read.
+  if (!now) throw receiptGone()
+  if ("started" in answer) return { started: describeReceipt(now) }
+  if (now.status === "ready") return { done: describeReceipt(now) }
+  await forget(em, deps.files, householdId, receiptId)
+  if (now.status === "recipe") {
+    throw new AppError(
+      "unprocessable",
+      "receipt_is_recipe",
+      "That looks like a recipe, not a receipt."
+    )
+  }
+  throw new AppError(
+    "unprocessable",
+    "not_a_receipt",
+    "Merran couldn't find a receipt in that. Try a clearer photo, or paste its text."
+  )
+}
+
+/**
+ * The household's receipts of the last day, newest first, whatever became
+ * of them: still being read, waiting for a look, or not read.
+ */
 export async function listReceipts(em: EntityManager) {
   const receipts = await em.find(
     Receipt,
@@ -389,21 +766,23 @@ export async function listReceipts(em: EntityManager) {
   return receipts.map(describeReceipt)
 }
 
-/** A receipt waiting for its look. */
-export async function findReceipt(em: EntityManager, receiptId: string) {
+/**
+ * A receipt, whatever became of it: one still being read, or that wasn't
+ * one, can be looked at and discarded. Adding is only for `ready` ones.
+ */
+export async function findReceipt(
+  em: EntityManager,
+  receiptId: string,
+  options: { ready?: boolean } = {}
+) {
   const receipt = UUID.test(receiptId)
     ? await em.findOne(Receipt, {
         id: receiptId,
         createdAt: { $gte: new Date(Date.now() - KEEP_MS) },
+        ...(options.ready ? { status: "ready" as const } : {}),
       })
     : null
-  if (!receipt) {
-    throw new AppError(
-      "not_found",
-      "receipt_not_found",
-      "That receipt isn't waiting any more. Scan it again."
-    )
-  }
+  if (!receipt) throw receiptGone()
   return receipt
 }
 
@@ -424,15 +803,37 @@ export async function readReceiptFile(
   return { body, mediaType: file.mediaType }
 }
 
-/** Forgets a receipt without adding anything. */
+/**
+ * Forgets a receipt without adding anything. One still being read has its
+ * read stopped too, so the model isn't asked (and paid) for a receipt
+ * nobody wants: the receipt goes first, so the stopped job finds nothing
+ * left to mark.
+ */
 export async function discardReceipt(
   em: EntityManager,
-  files: FileStore,
+  deps: Pick<AppDeps, "jobs" | "files">,
   options: { householdId: string; receiptId: string }
 ) {
   const receipt = await findReceipt(em, options.receiptId)
+  const reading = receipt.status === "reading"
   await em.remove(receipt).flush()
-  await files.remove(`receipts/${options.householdId}/${receipt.id}`)
+  if (reading) await stopRead(em, deps.jobs, options.householdId, receipt.id)
+  await deps.files.remove(`receipts/${options.householdId}/${receipt.id}`)
+}
+
+/** Stops a receipt's read, if it's still waiting or running. */
+async function stopRead(
+  em: EntityManager,
+  jobs: AppDeps["jobs"],
+  householdId: string,
+  receiptId: string
+) {
+  const job = await em.findOne(Job, {
+    key: `${READ_KIND}:${receiptId}`,
+    forHousehold: householdId,
+    status: { $in: [...ACTIVE] },
+  })
+  if (job) await jobs.cancel(em, job)
 }
 
 /**
@@ -452,7 +853,9 @@ export async function addReceipt(
   const keyOf = await householdKeys(em)
   const { householdId } = options
   const result = await inHouseholdTransaction(em, householdId, async (tx) => {
-    const receipt = await findReceipt(tx, options.receiptId)
+    const receipt = await findReceipt(tx, options.receiptId, {
+      ready: true,
+    })
     const byId = new Map(receipt.lines.map((line) => [line.id, line]))
     const today = await householdToday(tx, householdId)
     let added = 0

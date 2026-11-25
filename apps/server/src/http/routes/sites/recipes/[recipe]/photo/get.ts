@@ -18,7 +18,7 @@ const route = createRoute({
   tags: ["Sites"],
   summary: "A site recipe's photo",
   description:
-    "A small copy, as WebP, fetched once through Merran so browsing doesn't load photos from other sites.",
+    "A small copy, as WebP, kept by Merran so browsing doesn't load photos from other sites. Photos are fetched as sites are read; this fetches one only when it wasn't yet.",
   ...openToKeys("recipes", "read"),
   request: { params: ShelfRecipeParam },
   responses: {

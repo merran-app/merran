@@ -375,13 +375,14 @@ async function estimate(
 }
 
 /**
- * Works out a recipe's nutrition and keeps it: from USDA's data with a
- * key, else (or when too much couldn't be counted) an AI estimate.
+ * What working out a recipe's nutrition starts from, or the error that says
+ * why it can't: no servings, no ingredients to count, or neither a USDA key
+ * nor AI.
  */
-export async function workOutNutrition(
+async function nutritionInputs(
   deps: AiDeps,
   em: EntityManager,
-  options: Who & { recipe: string }
+  options: { householdId: string; recipe: string }
 ) {
   const recipe = await findRecipe(em, options.recipe)
   const servings = toNumber(recipe.servings)
@@ -412,6 +413,36 @@ export async function workOutNutrition(
       "Working out nutrition needs a USDA key on the server, or AI for the household."
     )
   }
+  return { recipe, servings, lines, amounts, can }
+}
+
+/**
+ * Throws what working out the recipe's nutrition would throw before it
+ * starts, so a request that would only fail says so at once instead of as a
+ * job that fails later.
+ */
+export async function checkNutritionPossible(
+  deps: AiDeps,
+  em: EntityManager,
+  options: { householdId: string; recipe: string }
+): Promise<void> {
+  await nutritionInputs(deps, em, options)
+}
+
+/**
+ * Works out a recipe's nutrition and keeps it: from USDA's data with a
+ * key, else (or when too much couldn't be counted) an AI estimate.
+ */
+export async function workOutNutrition(
+  deps: AiDeps,
+  em: EntityManager,
+  options: Who & { recipe: string }
+) {
+  const { recipe, servings, lines, amounts, can } = await nutritionInputs(
+    deps,
+    em,
+    options
+  )
   const who = { householdId: options.householdId, userId: options.userId }
   let nutrition: Nutrition
   if (can.usdaKey) {

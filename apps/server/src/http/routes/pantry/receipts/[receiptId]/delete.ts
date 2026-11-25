@@ -15,7 +15,8 @@ const route = createRoute({
   operationId: "discardReceipt",
   tags: ["Pantry"],
   summary: "Discard a receipt",
-  description: "Forgets it, with its photos, without adding anything.",
+  description:
+    "Forgets it, with its photos, without adding anything. One still being read (`reading`) stops being read.",
   ...openToKeys("pantry", "write"),
   request: { params: ReceiptParam },
   responses: {
@@ -25,10 +26,10 @@ const route = createRoute({
   },
 })
 
-export default (router: Router, { files }: AppDeps) => {
+export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId } = inHousehold(c)
-    await discardReceipt(em, files, {
+    await discardReceipt(em, deps, {
       householdId,
       receiptId: c.req.valid("param").receiptId,
     })

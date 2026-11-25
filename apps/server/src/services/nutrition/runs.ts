@@ -4,9 +4,21 @@ import { AppError } from "../../core/errors.ts"
 import { Job, Recipe } from "../../database/entities/index.ts"
 import { forHousehold } from "../../database/scope.ts"
 import type { AiDeps } from "../ai/run.ts"
+import type { AppDeps } from "../../core/context.ts"
+import { failureOf, HANDOVER_MS, waitThenHandOver } from "../jobs/hand-over.ts"
 import { ACTIVE, enqueue } from "../jobs/jobs.ts"
 import { JobStopped, type JobHandler } from "../jobs/runner.ts"
-import { nutritionAbilities, workOutNutrition } from "./nutrition.ts"
+import {
+  findRecipe,
+  loadRecipe,
+  type LoadedRecipe,
+} from "../recipes/recipes.ts"
+import { currentActor, withActor, type Actor } from "../webhooks/actor.ts"
+import {
+  checkNutritionPossible,
+  nutritionAbilities,
+  workOutNutrition,
+} from "./nutrition.ts"
 
 // Working out nutrition in the background: a recipe just saved (new, or
 // with its ingredients changed), or the household's whole library, after
@@ -278,4 +290,89 @@ export async function findNutritionRun(
     throw new AppError("not_found", "run_not_found", "There's no such run.")
   }
   return job
+}
+
+const ONE_KIND = "recipes.workOutNutrition"
+
+const OnePayload = z.object({
+  recipeId: z.string(),
+  userId: z.string().nullable(),
+  /** Who pressed it, so what it changes says they did, not Merran. */
+  actor: z.custom<Actor>(),
+})
+
+/**
+ * One recipe's nutrition, worked out when someone presses the button. The
+ * request waits for it (`workOutNutritionNow`), so an error that's the
+ * person's to see, like USDA's hourly limit, is handed back as the job's
+ * result rather than failing the job.
+ */
+export const workOutNutritionJob: JobHandler = {
+  kind: ONE_KIND,
+  lane: "long",
+  // Pressed, and waited on before handing over.
+  waitedOn: true,
+  area: "recipes",
+  concurrency: 3,
+  perHousehold: 2,
+  changes: ["recipes"],
+  async run({ em, householdId, payload, deps }) {
+    if (!householdId) throw new Error("Nutrition needs a household.")
+    const { recipeId, userId, actor } = OnePayload.parse(payload)
+    // The recipe's name, before the work: one moved to Recently deleted
+    // meanwhile can't be found again, and shouldn't turn an error into a
+    // different one.
+    const named = await em.findOne(
+      Recipe,
+      { id: recipeId },
+      { fields: ["name"] }
+    )
+    return withActor(actor, async () => {
+      try {
+        const recipe = await workOutNutrition(deps, em, {
+          householdId,
+          userId,
+          recipe: recipeId,
+        })
+        return { recipeId, name: recipe.name }
+      } catch (err) {
+        if (!(err instanceof AppError)) throw err
+        return { ...failureOf(err), recipeId, name: named?.name ?? null }
+      }
+    })
+  },
+}
+
+export type WorkedOutNow = { done: LoadedRecipe } | { started: Job }
+
+/**
+ * Works out a recipe's nutrition now: the recipe with it, as before, if it's
+ * in within the wait, or the job, going on in the background. What would
+ * fail anyway (no servings, no ingredients, no way to work it out) fails
+ * here, at once, with no job made. Pressing it again while it's going joins
+ * the job already going.
+ */
+export async function workOutNutritionNow(
+  deps: Pick<AppDeps, "jobs" | "settings" | "fetcher" | "ai">,
+  em: EntityManager,
+  input: { householdId: string; userId: string | null; recipe: string },
+  options: { handoverMs?: number } = {}
+): Promise<WorkedOutNow> {
+  await checkNutritionPossible(deps, em, input)
+  const { id: recipeId } = await findRecipe(em, input.recipe)
+  const job = await enqueue(em, {
+    kind: ONE_KIND,
+    householdId: input.householdId,
+    payload: { recipeId, userId: input.userId, actor: currentActor() },
+    createdBy: input.userId,
+    key: `${ONE_KIND}:${recipeId}`,
+    maxAttempts: 1,
+  })
+  // Adding it woke the runner already, except where nothing listens (tests).
+  deps.jobs.wake()
+  const answer = await waitThenHandOver(em, deps.jobs, job.id, {
+    ms: options.handoverMs ?? HANDOVER_MS,
+  })
+  if ("started" in answer) return answer
+  return { done: await loadRecipe(em, recipeId) }
 }

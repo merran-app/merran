@@ -11,6 +11,7 @@ import type { JobHandler } from "../../../jobs/runner.ts"
 import { allClassics, allSuggestedSites } from "./data.ts"
 import {
   applyOpened,
+  keepShelfPhoto,
   openPage,
   pause,
   pauseFor,
@@ -169,6 +170,7 @@ async function checkClassics(
       // A classic keeps the address it's listed under, to match it again.
       applyOpened(row, opened)
       await own.flush()
+      if (opened.kind === "recipe") await keepShelfPhoto(deps, own, row)
       if (opened.kind === "refused") break
     }
   })

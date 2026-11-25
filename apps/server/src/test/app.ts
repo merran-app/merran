@@ -108,22 +108,24 @@ export async function createTestApp(
       throw new Error("Tests don't reach AI providers.")
     })
   // Not started: tests run what's waiting with `jobs.drain()`.
+  const jobDeps = {
+    config,
+    logger,
+    database,
+    settings,
+    modules,
+    files,
+    fetcher,
+    ai,
+    transcribe,
+    media,
+    video,
+    events,
+  }
+  const jobHandlers = [...JOB_HANDLERS, ...(options.jobHandlers ?? [])]
   const jobs = new JobRunner({
-    deps: {
-      config,
-      logger,
-      database,
-      settings,
-      modules,
-      files,
-      fetcher,
-      ai,
-      transcribe,
-      media,
-      video,
-      events,
-    },
-    handlers: [...JOB_HANDLERS, ...(options.jobHandlers ?? [])],
+    deps: jobDeps,
+    handlers: jobHandlers,
   })
   const app = createApp({
     config,
@@ -150,6 +152,9 @@ export async function createTestApp(
     settings,
     filesDir,
     jobs,
+    // What a second runner needs, for tests of a restart.
+    jobDeps,
+    jobHandlers,
     events,
     close,
   }

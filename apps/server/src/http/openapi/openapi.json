@@ -4035,6 +4035,10 @@
             ],
             "format": "date-time"
           },
+          "handedOver": {
+            "type": "boolean",
+            "description": "A request waiting for it gave up and left it to run in the background, so whoever started it hears when it ends."
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -4054,6 +4058,7 @@
           "runAt",
           "startedAt",
           "finishedAt",
+          "handedOver",
           "createdAt"
         ],
         "example": {
@@ -4073,6 +4078,7 @@
           "runAt": "2026-10-15T18:30:00.000Z",
           "startedAt": "2026-10-15T18:30:00.000Z",
           "finishedAt": null,
+          "handedOver": false,
           "createdAt": "2026-10-15T18:30:00.000Z"
         }
       },
@@ -4387,6 +4393,7 @@
               "runAt": "2026-10-15T18:30:00.000Z",
               "startedAt": "2026-10-15T18:30:00.000Z",
               "finishedAt": null,
+              "handedOver": false,
               "createdAt": "2026-10-15T18:30:00.000Z"
             }
           ]
@@ -5356,6 +5363,7 @@
             "runAt": "2026-10-15T18:30:00.000Z",
             "startedAt": null,
             "finishedAt": null,
+            "handedOver": false,
             "createdAt": "2026-10-15T18:30:00.000Z"
           }
         }
@@ -9212,6 +9220,8 @@
               "store": "Walmart",
               "date": "2026-10-14",
               "total": 48.12,
+              "status": "ready",
+              "error": null,
               "lines": [
                 {
                   "id": "0d1b5c2a9e44",
@@ -9263,6 +9273,24 @@
               "null"
             ]
           },
+          "status": {
+            "type": "string",
+            "enum": [
+              "reading",
+              "ready",
+              "recipe",
+              "none",
+              "failed"
+            ],
+            "description": "`reading` while it's being read (it has no lines yet); `ready` once it's read and waiting for a look; `recipe` when it turned out to be a recipe, `none` when there was no receipt in it, and `failed` when it couldn't be read (`error` says why)."
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why it couldn't be read, when `status` is `failed`."
+          },
           "lines": {
             "type": "array",
             "items": {
@@ -9302,6 +9330,8 @@
           "store",
           "date",
           "total",
+          "status",
+          "error",
           "lines",
           "files",
           "createdAt"
@@ -9311,6 +9341,8 @@
           "store": "Walmart",
           "date": "2026-10-14",
           "total": 48.12,
+          "status": "ready",
+          "error": null,
           "lines": [
             {
               "id": "0d1b5c2a9e44",
@@ -11769,6 +11801,7 @@
             "notes": "Bone-in thighs work too: give them 10 minutes more.",
             "dietOverrides": {},
             "needs": [],
+            "working": [],
             "nutrition": {
               "source": "calculated",
               "calories": 412,
@@ -11917,6 +11950,17 @@
               "nutrition": {
                 "$ref": "#/components/schemas/Nutrition"
               },
+              "working": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "nutrition",
+                    "photo"
+                  ]
+                },
+                "description": "What Merran is doing for it in the background: working out its nutrition, making its photo."
+              },
               "ingredients": {
                 "type": "array",
                 "items": {
@@ -11941,6 +11985,7 @@
               "dietOverrides",
               "needs",
               "nutrition",
+              "working",
               "ingredients",
               "steps"
             ]
@@ -11980,6 +12025,7 @@
           "notes": "Bone-in thighs work too: give them 10 minutes more.",
           "dietOverrides": {},
           "needs": [],
+          "working": [],
           "nutrition": {
             "source": "calculated",
             "calories": 412,
@@ -12970,6 +13016,7 @@
             "notes": "Bone-in thighs work too: give them 10 minutes more.",
             "dietOverrides": {},
             "needs": [],
+            "working": [],
             "nutrition": {
               "source": "calculated",
               "calories": 412,
@@ -13954,6 +14001,7 @@
           "notes": "Bone-in thighs work too: give them 10 minutes more.",
           "dietOverrides": {},
           "needs": [],
+          "working": [],
           "nutrition": {
             "source": "calculated",
             "calories": 412,
@@ -14449,6 +14497,7 @@
             "notes": "Bone-in thighs work too: give them 10 minutes more.",
             "dietOverrides": {},
             "needs": [],
+            "working": [],
             "nutrition": {
               "source": "calculated",
               "calories": 412,
@@ -15379,6 +15428,7 @@
               "runAt": "2026-10-15T18:30:00.000Z",
               "startedAt": "2026-10-15T18:30:00.000Z",
               "finishedAt": null,
+              "handedOver": false,
               "createdAt": "2026-10-15T18:30:00.000Z",
               "householdName": "The Riveras"
             }
@@ -15422,6 +15472,7 @@
           "runAt": "2026-10-15T18:30:00.000Z",
           "startedAt": "2026-10-15T18:30:00.000Z",
           "finishedAt": null,
+          "handedOver": false,
           "createdAt": "2026-10-15T18:30:00.000Z",
           "householdName": "The Riveras"
         }
@@ -16509,6 +16560,10 @@
                 "format": "date-time",
                 "description": "When its prices and sales were last checked."
               },
+              "checkingPrices": {
+                "type": "boolean",
+                "description": "A price check is going now."
+              },
               "leanOnSales": {
                 "type": "string",
                 "enum": [
@@ -16533,6 +16588,7 @@
               "linked",
               "needsRelink",
               "pricesCheckedAt",
+              "checkingPrices",
               "leanOnSales",
               "weeklyBudget"
             ]
@@ -16558,6 +16614,7 @@
             },
             "needsRelink": false,
             "pricesCheckedAt": null,
+            "checkingPrices": false,
             "leanOnSales": "some",
             "weeklyBudget": 120
           }
@@ -23108,7 +23165,7 @@
           "Households"
         ],
         "summary": "One of the household's jobs",
-        "description": "Household admins only. How a job for this household, like an import, is getting on.",
+        "description": "Household admins, and whoever started it. How a job for this household, like an import, is getting on. `error`, what broke inside a job that failed, is only for household admins: it's null for anyone else.",
         "security": [
           {
             "session": []
@@ -23156,7 +23213,7 @@
             }
           },
           "404": {
-            "description": "No such job in this household.",
+            "description": "No such job in this household, or one the person didn't start.",
             "content": {
               "application/json": {
                 "schema": {
@@ -28407,8 +28464,8 @@
         "tags": [
           "Pantry"
         ],
-        "summary": "Receipts waiting for a look",
-        "description": "Scanned, shared or sent to the assistant, and not added or discarded yet, newest first. Each is forgotten after a day. With an API key, it needs the `pantry: read` permission.",
+        "summary": "The household's receipts",
+        "description": "Scanned, shared or sent to the assistant, and not added or discarded yet, newest first, whatever their `status`: still being read, waiting for a look, or not read (a recipe, no receipt in it, or failed). Each is forgotten after a day. With an API key, it needs the `pantry: read` permission.",
         "security": [
           {
             "session": []
@@ -28460,7 +28517,7 @@
           "Pantry"
         ],
         "summary": "Scan a receipt",
-        "description": "Reads a receipt into a draft to look over before anything goes in the pantry: photos of a paper one, screenshots or a PDF of an emailed one (up to 6 files, one `file` field each), or its `text`. Each line says what it is, how much, and the shopping list item it was bought for. Add it with `POST /pantry/receipts/{receiptId}/add`; it's forgotten after a day. Uses the household's model for receipts, which must be able to read photos or PDFs if those are sent, and counts towards its AI spend. With an API key, it needs the `pantry: write` permission.",
+        "description": "Reads a receipt into a draft to look over before anything goes in the pantry: photos of a paper one, screenshots or a PDF of an emailed one (up to 6 files, one `file` field each), or its `text`. Each line says what it is, how much, and the shopping list item it was bought for. Add it with `POST /pantry/receipts/{receiptId}/add`; it's forgotten after a day. Reading takes a while, so it answers 201 with the receipt (`status` `ready`) if it's read within about 10 seconds, and 202 with the receipt `reading` if not: it carries on in the background, and `GET /pantry/receipts/{receiptId}` says when it's `ready`. Uses the household's model for receipts, which must be able to read photos or PDFs if those are sent, and counts towards its AI spend. With an API key, it needs the `pantry: write` permission.",
         "security": [
           {
             "session": []
@@ -28505,6 +28562,16 @@
               }
             }
           },
+          "202": {
+            "description": "Still being read (`status` `reading`); it carries on in the background.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Nothing to read, or a file Merran can't read.",
             "content": {
@@ -28527,6 +28594,26 @@
           },
           "403": {
             "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "It was discarded as it was read (`receipt_not_found`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Its read was stopped, or it was discarded, before it was read (`job_stopped`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -28564,6 +28651,16 @@
                 }
               }
             }
+          },
+          "502": {
+            "description": "The AI didn't answer, or reading it didn't finish (`job_failed`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -28574,8 +28671,8 @@
         "tags": [
           "Pantry"
         ],
-        "summary": "A receipt waiting for a look",
-        "description": "One scanned, shared or sent to the assistant, and not added or discarded yet. With an API key, it needs the `pantry: read` permission.",
+        "summary": "A receipt",
+        "description": "One scanned, shared or sent to the assistant, and not added or discarded yet, whatever its `status`: still being read, waiting for a look, or not read. With an API key, it needs the `pantry: read` permission.",
         "security": [
           {
             "session": []
@@ -28648,7 +28745,7 @@
           "Pantry"
         ],
         "summary": "Discard a receipt",
-        "description": "Forgets it, with its photos, without adding anything. With an API key, it needs the `pantry: write` permission.",
+        "description": "Forgets it, with its photos, without adding anything. One still being read (`reading`) stops being read. With an API key, it needs the `pantry: write` permission.",
         "security": [
           {
             "session": []
@@ -33328,7 +33425,7 @@
           "Recipes"
         ],
         "summary": "Work out a recipe's nutrition",
-        "description": "Per serving, from the ingredients: added up from USDA FoodData Central when the server has a key (AI picking each ingredient's food and weighing what USDA's portions can't), else, or when too much couldn't be counted, estimated by AI. Replaces what it had, from the site too. A recipe's nutrition is worked out by itself after it's saved; this is for doing it again now. With an API key, it needs the `recipes: write` permission.",
+        "description": "Per serving, from the ingredients: added up from USDA FoodData Central when the server has a key (AI picking each ingredient's food and weighing what USDA's portions can't), else, or when too much couldn't be counted, estimated by AI. Replaces what it had, from the site too. A recipe's nutrition is worked out by itself after it's saved; this is for doing it again now. It waits up to 10 seconds; past that it answers 202 with the job, and the recipe has it once the job's done. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -33361,6 +33458,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Still working it out: the recipe has it once this job is done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
                 }
               }
             }
@@ -33405,6 +33512,16 @@
               }
             }
           },
+          "409": {
+            "description": "It was stopped before it was worked out (`job_stopped`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
           "422": {
             "description": "No USDA key on the server, and no AI for the household.",
             "content": {
@@ -33417,6 +33534,16 @@
           },
           "429": {
             "description": "USDA's limit for the hour, or this month's AI limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "USDA or the AI didn't answer, or working it out didn't finish (`job_failed`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -34666,7 +34793,7 @@
           "Recipes"
         ],
         "summary": "Make a photo with AI",
-        "description": "A photo of the finished dish in the household's style, on its OpenAI or Google key: for a recipe without a photo, or in place of one made by AI before. It takes up to a minute. With an API key, it needs the `recipes: write` permission.",
+        "description": "A photo of the finished dish in the household's style, on its OpenAI or Google key: for a recipe without a photo, or in place of one made by AI before. It waits up to 10 seconds; past that it answers 202 with the job, and the recipe has its photo once the job's done. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -34703,6 +34830,16 @@
               }
             }
           },
+          "202": {
+            "description": "Still being made: the recipe has its photo once this job is done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Not signed in.",
             "content": {
@@ -34734,7 +34871,7 @@
             }
           },
           "409": {
-            "description": "It has a real photo, which an AI one never replaces.",
+            "description": "It has a real photo, which an AI one never replaces (`has_photo`), or it was stopped before it was made (`job_stopped`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -34745,6 +34882,26 @@
           },
           "422": {
             "description": "AI photos are off on the server, or the household has no key for them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The key's provider is busy or out of credit, or this month's AI limit is reached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The image provider didn't answer, or making it didn't finish (`job_failed`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -37509,7 +37666,7 @@
           "Sites"
         ],
         "summary": "A site recipe's photo",
-        "description": "A small copy, as WebP, fetched once through Merran so browsing doesn't load photos from other sites. With an API key, it needs the `recipes: read` permission.",
+        "description": "A small copy, as WebP, kept by Merran so browsing doesn't load photos from other sites. Photos are fetched as sites are read; this fetches one only when it wasn't yet. With an API key, it needs the `recipes: read` permission.",
         "security": [
           {
             "session": []
@@ -38924,7 +39081,7 @@
           "Stores"
         ],
         "summary": "Check prices now",
-        "description": "Household admins only. What's done each morning by itself: today's prices for the products the household keeps, and a look at the store for foods its recipes use, for their sales.",
+        "description": "Household admins only. What's done each morning by itself: today's prices for the products the household keeps, and a look at the store for foods its recipes use, for their sales. It waits up to 10 seconds; past that it answers 202 with the job, and the check goes on in the background.",
         "security": [
           {
             "session": []
@@ -38941,6 +39098,16 @@
               }
             }
           },
+          "202": {
+            "description": "Still checking: the stores say it's checking until this job is done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Not signed in.",
             "content": {
@@ -38953,6 +39120,16 @@
           },
           "403": {
             "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The check was stopped before it finished (`job_stopped`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -38982,7 +39159,7 @@
             }
           },
           "502": {
-            "description": "Kroger didn't answer.",
+            "description": "Kroger didn't answer, or the check didn't finish (`job_failed`).",
             "content": {
               "application/json": {
                 "schema": {

@@ -524,7 +524,7 @@ function RecipeView({
                     : t("recipes.photo.add")}
                 </DropdownMenuItem>
                 {photo.canMake && (
-                  <DropdownMenuItem onClick={photo.make}>
+                  <DropdownMenuItem disabled={photo.busy} onClick={photo.make}>
                     <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} />
                     {recipe.photo
                       ? t("recipes.photo.makeAnother")

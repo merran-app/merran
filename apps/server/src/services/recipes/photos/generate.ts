@@ -76,14 +76,13 @@ const noKey = () =>
   )
 
 /**
- * Makes a photo for a recipe and keeps it: only for a recipe without a
- * photo, or with one made by AI, which it replaces. A real photo added
- * while it was being made stays.
+ * What making a recipe's photo starts from, or the error that says why it
+ * can't: photos off, a real photo already, or no key.
  */
-export async function makePhoto(
+async function photoInputs(
   deps: PhotoDeps,
   em: EntityManager,
-  options: { householdId: string; userId: string | null; recipe: string }
+  options: { householdId: string; recipe: string }
 ) {
   if (!(await deps.settings.server(PHOTOS.enabled))) throw off()
   const recipe = await findRecipe(em, options.recipe)
@@ -96,6 +95,33 @@ export async function makePhoto(
   }
   const key = await photoKeyFor(deps, em, options.householdId)
   if (!key) throw noKey()
+  return { recipe, key }
+}
+
+/**
+ * Throws what making the recipe's photo would throw before it starts, so a
+ * request that would only fail says so at once instead of as a job that
+ * fails later.
+ */
+export async function checkPhotoPossible(
+  deps: PhotoDeps,
+  em: EntityManager,
+  options: { householdId: string; recipe: string }
+): Promise<void> {
+  await photoInputs(deps, em, options)
+}
+
+/**
+ * Makes a photo for a recipe and keeps it: only for a recipe without a
+ * photo, or with one made by AI, which it replaces. A real photo added
+ * while it was being made stays.
+ */
+export async function makePhoto(
+  deps: PhotoDeps,
+  em: EntityManager,
+  options: { householdId: string; userId: string | null; recipe: string }
+) {
+  const { recipe, key } = await photoInputs(deps, em, options)
 
   await em.populate(recipe, ["ingredients", "steps"])
   const style = await deps.settings.household(

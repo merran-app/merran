@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../../app.ts"
-import { Job } from "../../../../../database/entities/index.ts"
+import { Job, User } from "../../../../../database/entities/index.ts"
 import type { Database } from "../../../../../database/orm.ts"
 import { enqueue } from "../../../../../services/jobs/jobs.ts"
 import {
@@ -62,9 +62,10 @@ describe("a household's jobs", () => {
     expect(
       (await kyle.get(`/api/households/current/jobs/${cabinJob}`)).status
     ).toBe(404)
+    // A member who didn't start it can't see it.
     expect(
       (await jamie.get(`/api/households/current/jobs/${homeJob}`)).status
-    ).toBe(403)
+    ).toBe(404)
   })
 
   test("are listed for its admins, newest first, and only its own", async () => {
@@ -99,5 +100,78 @@ describe("a household's jobs", () => {
       `/api/households/current/jobs/${homeJob}/cancel`
     )
     expect(await res.json()).toMatchObject({ status: "cancelled" })
+  })
+
+  test("a member who started a job can see it, and not anyone else's", async () => {
+    const jamieId = (
+      await database.em.fork().findOneOrFail(User, { username: "jamie" })
+    ).id
+    const kyleId = (
+      await database.em.fork().findOneOrFail(User, { username: "kyle" })
+    ).id
+    const later = new Date(Date.now() + 60_000)
+    const jamies = await enqueue(database.em.fork(), {
+      kind: "test.mine",
+      householdId: home,
+      runAt: later,
+      createdBy: jamieId,
+    })
+    const kyles = await enqueue(database.em.fork(), {
+      kind: "test.mine",
+      householdId: home,
+      runAt: later,
+      createdBy: kyleId,
+    })
+
+    const res = await jamie.get(`/api/households/current/jobs/${jamies.id}`)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({
+      id: jamies.id,
+      handedOver: false,
+    })
+    expect(
+      (await jamie.get(`/api/households/current/jobs/${kyles.id}`)).status
+    ).toBe(404)
+  })
+
+  test("a member who started a job that failed isn't shown what broke; an admin is", async () => {
+    // What broke can be SQL or a file path: for the household's admins and
+    // the server admin, not every member.
+    const jamieId = (
+      await database.em.fork().findOneOrFail(User, { username: "jamie" })
+    ).id
+    const failed = await enqueue(database.em.fork(), {
+      kind: "test.broken",
+      householdId: home,
+      runAt: new Date(Date.now() + 60_000),
+      createdBy: jamieId,
+    })
+    await database.em.fork().nativeUpdate(
+      Job,
+      { id: failed.id },
+      {
+        status: "failed",
+        error: "SQLITE_BUSY: database is locked",
+        finishedAt: new Date(),
+      }
+    )
+
+    const asMember = await jamie.get(
+      `/api/households/current/jobs/${failed.id}`
+    )
+    expect(asMember.status, await asMember.clone().text()).toBe(200)
+    expect(await asMember.json()).toMatchObject({
+      id: failed.id,
+      status: "failed",
+      error: null,
+    })
+
+    const asAdmin = await kyle.get(`/api/households/current/jobs/${failed.id}`)
+    expect(asAdmin.status, await asAdmin.clone().text()).toBe(200)
+    expect(await asAdmin.json()).toMatchObject({
+      id: failed.id,
+      status: "failed",
+      error: "SQLITE_BUSY: database is locked",
+    })
   })
 })

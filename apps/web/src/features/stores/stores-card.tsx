@@ -151,7 +151,6 @@ export function StoresCard() {
     if (saved) setStores({ kroger: { ...kroger, leanOnSales: value } })
   }
 
-  /** Today's prices and sales now, rather than tomorrow morning. */
   /** The weekly budget, or none when it's left empty. */
   async function saveBudget() {
     const typed = budget.trim().replace(/[^\d.]/g, "")
@@ -177,11 +176,18 @@ export function StoresCard() {
     )
   }
 
+  /** Today's prices and sales now, rather than tomorrow morning. */
   async function checkNow() {
     const check = await attempt("check", () =>
       unwrap(api.POST("/api/stores/kroger/prices"))
     )
     if (!check) return
+    if (!("deals" in check)) {
+      // Past the wait it answers with the job, which goes on by itself and
+      // says when it's done. The button shows it going meanwhile.
+      setStores({ kroger: { ...kroger, checkingPrices: true } })
+      return
+    }
     setStores({
       kroger: { ...kroger, pricesCheckedAt: new Date().toISOString() },
     })
@@ -408,11 +414,13 @@ export function StoresCard() {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={busy !== null}
+                  disabled={busy !== null || kroger.checkingPrices}
                   onClick={() => void checkNow()}
                 >
-                  {busy === "check" && <Spinner />}
-                  {t("settings.household.stores.checkNow")}
+                  {(busy === "check" || kroger.checkingPrices) && <Spinner />}
+                  {kroger.checkingPrices
+                    ? t("settings.household.stores.checkingNow")
+                    : t("settings.household.stores.checkNow")}
                 </Button>
               </div>
             </Field>

@@ -91,6 +91,8 @@ export async function describeFileCheck(
 export const checkFileJob: JobHandler = {
   kind: KIND,
   lane: "long",
+  // The upload waits a moment for it before handing over.
+  waitedOn: true,
   area: "household",
   concurrency: 2,
   perHousehold: 1,

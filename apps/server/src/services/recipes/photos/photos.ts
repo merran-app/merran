@@ -18,7 +18,7 @@ export type PhotoSize = keyof typeof PHOTO_SIZES
 /** The largest photo that can be added. */
 export const MAX_PHOTO_BYTES = 15_000_000
 
-const folder = (householdId: string, photoId: string) =>
+export const photoFolder = (householdId: string, photoId: string) =>
   `photos/${householdId}/${photoId}`
 
 /** Where a recipe's photo is shown from. The photo id in it changes with the photo, so it can be kept for good. */
@@ -60,7 +60,7 @@ export async function storePhoto(
       .resize({ width, height, fit, withoutEnlargement: fit === "inside" })
       .webp({ quality })
       .toBuffer()
-    await files.put(`${folder(householdId, photoId)}/${size}.webp`, body)
+    await files.put(`${photoFolder(householdId, photoId)}/${size}.webp`, body)
   }
   return photoId
 }
@@ -71,7 +71,7 @@ export function readPhoto(
   photoId: string,
   size: PhotoSize
 ) {
-  return files.read(`${folder(householdId, photoId)}/${size}.webp`)
+  return files.read(`${photoFolder(householdId, photoId)}/${size}.webp`)
 }
 
 /** Deletes a photo in every size. A photo that's already gone is fine. */
@@ -80,5 +80,5 @@ export async function removePhoto(
   householdId: string,
   photoId: string | null | undefined
 ) {
-  if (photoId) await files.remove(folder(householdId, photoId))
+  if (photoId) await files.remove(photoFolder(householdId, photoId))
 }

@@ -46,6 +46,9 @@ export const StoresStatusSchema = z
       pricesCheckedAt: z.iso.datetime().nullable().openapi({
         description: "When its prices and sales were last checked.",
       }),
+      checkingPrices: z.boolean().openapi({
+        description: "A price check is going now.",
+      }),
       leanOnSales: z.enum(SALE_LEANS).openapi({
         description:
           "How much Fill the week and the autoplan lean on deals: the household setting `stores.leanOnSales`.",
@@ -65,6 +68,7 @@ export const StoresStatusSchema = z
         linked: { by: "Kyle", at: TIMES.created },
         needsRelink: false,
         pricesCheckedAt: null,
+        checkingPrices: false,
         leanOnSales: "some",
         weeklyBudget: 120,
       },

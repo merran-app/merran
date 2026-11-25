@@ -7,8 +7,8 @@ import recipeIdRoutes from "./[recipeId]/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
   get(router, deps)
-  remove(router, deps)
+  remove(router)
   // Before {recipeId}, so "bulk" isn't taken for one.
-  bulkRoutes(router, deps)
+  bulkRoutes(router)
   recipeIdRoutes(router, deps)
 }

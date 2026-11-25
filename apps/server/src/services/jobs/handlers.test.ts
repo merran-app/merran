@@ -40,6 +40,21 @@ describe("the kinds of job", () => {
     expect(limited.map((handler) => handler.kind)).toEqual([])
   })
 
+  test("the kinds a request waits on are looked for first", () => {
+    // Pressed or sent, and waited on before handing over.
+    const waitedOn = JOB_HANDLERS.filter((handler) => handler.waitedOn)
+    expect(waitedOn.map((handler) => handler.kind).sort()).toEqual(
+      [
+        "recipes.workOutNutrition",
+        "recipes.makePhoto",
+        "stores.prices",
+        "pantry.readReceipt",
+        "recipes.importLink",
+        "recipes.checkFile",
+      ].sort()
+    )
+  })
+
   test("emails, deliveries and housekeeping are quick; AI and pages are long", () => {
     const quick = JOB_HANDLERS.filter((handler) => handler.lane === "quick")
     expect(quick.map((handler) => handler.kind).sort()).toEqual(

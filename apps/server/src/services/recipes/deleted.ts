@@ -9,10 +9,11 @@ import {
 } from "../../database/scope.ts"
 import { inHouseholdTransaction } from "../../database/transactions.ts"
 import type { JobHandler } from "../jobs/runner.ts"
-import type { FileStore } from "../storage/files.ts"
+import { wakeRunner } from "../jobs/jobs.ts"
+import { removeFilesLater } from "../storage/remove-job.ts"
 import { recipeRef } from "../webhooks/payloads.ts"
 import { record } from "../webhooks/record.ts"
-import { removePhoto } from "./photos/photos.ts"
+import { photoFolder } from "./photos/photos.ts"
 import { summarize } from "./recipes.ts"
 import { pruneTags, tagsOf } from "./tags.ts"
 
@@ -25,17 +26,22 @@ const SEE_DELETED = { filters: { [NOT_DELETED_FILTER]: false } }
 const goneAt = (deletedAt: Date) =>
   new Date(deletedAt.getTime() + KEEP_DELETED_DAYS * DAY)
 
-/** Deletes recipes for good, with their lines, versions and photos. */
-async function deleteRecipes(
-  em: EntityManager,
-  files: FileStore,
-  recipes: Recipe[]
-) {
-  if (recipes.length === 0) return
+/**
+ * Deletes recipes for good, with their lines and versions. Their photos
+ * are removed by a job, saved in the same flush: the request needn't wait
+ * for a network call per photo, and the photos go only if the recipes do.
+ */
+async function deleteRecipes(em: EntityManager, recipes: Recipe[]) {
+  const [first] = recipes
+  if (!first) return
+  // The recipes are all one household's, which the entity manager is scoped to.
+  const householdId = first.household.id
+  const folders = recipes
+    .filter((recipe) => recipe.image)
+    .map((recipe) => photoFolder(householdId, recipe.image!))
+  removeFilesLater(em, householdId, folders)
   await em.remove(recipes).flush()
-  for (const recipe of recipes) {
-    await removePhoto(files, recipe.household.id, recipe.image)
-  }
+  wakeRunner()
   await pruneTags(em)
 }
 
@@ -43,13 +49,13 @@ async function deleteRecipes(
 const expiredBefore = () => new Date(Date.now() - KEEP_DELETED_DAYS * DAY)
 
 /** Deletes for good what's been in one household's Recently deleted long enough. */
-async function purgeExpired(em: EntityManager, files: FileStore) {
+async function purgeExpired(em: EntityManager) {
   const expired = await em.find(
     Recipe,
     { deletedAt: { $lt: expiredBefore() } },
     SEE_DELETED
   )
-  await deleteRecipes(em, files, expired)
+  await deleteRecipes(em, expired)
   return expired.length
 }
 
@@ -68,10 +74,7 @@ export const purgeDeletedJob: JobHandler = {
     )
     let purged = 0
     for (const householdId of new Set(expired.map((r) => r.household.id))) {
-      purged += await purgeExpired(
-        forHousehold(deps.database.em, householdId),
-        deps.files
-      )
+      purged += await purgeExpired(forHousehold(deps.database.em, householdId))
     }
     return { purged }
   },
@@ -128,22 +131,18 @@ export async function restoreDeleted(em: EntityManager, recipeId: string) {
 }
 
 /** Deletes a recipe in Recently deleted for good, with its lines, versions and photo. */
-export async function deleteForGood(
-  em: EntityManager,
-  files: FileStore,
-  recipeId: string
-) {
-  await deleteRecipes(em, files, [await findDeleted(em, recipeId)])
+export async function deleteForGood(em: EntityManager, recipeId: string) {
+  await deleteRecipes(em, [await findDeleted(em, recipeId)])
 }
 
 /** Deletes everything in Recently deleted for good. */
-export async function emptyDeleted(em: EntityManager, files: FileStore) {
+export async function emptyDeleted(em: EntityManager) {
   const recipes = await em.find(
     Recipe,
     { deletedAt: { $ne: null } },
     SEE_DELETED
   )
-  await deleteRecipes(em, files, recipes)
+  await deleteRecipes(em, recipes)
 }
 
 /** The picked recipes that are in Recently deleted. */
@@ -157,7 +156,6 @@ const pickedDeleted = (em: EntityManager, ids: readonly string[]) =>
 /** Puts back, or deletes for good, recipes picked in Recently deleted. */
 export async function bulkDeleted(
   em: EntityManager,
-  files: FileStore,
   householdId: string,
   input: DeletedBulkInput
 ) {
@@ -168,7 +166,7 @@ export async function bulkDeleted(
   }
 
   const recipes = await pickedDeleted(em, input.ids)
-  await deleteRecipes(em, files, recipes)
+  await deleteRecipes(em, recipes)
   return { changed: recipes.length }
 }
 

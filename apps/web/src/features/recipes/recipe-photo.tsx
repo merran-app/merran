@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 
 import { useAiPhotos } from "./ai-photos"
 import { recipeQuery, useRefreshRecipes, type Recipe } from "./queries"
+import { markWorking } from "./working"
 
 /** Photos people can pick: what browsers show and Merran can read. */
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/avif"
@@ -29,12 +30,26 @@ export function usePhotoActions(recipe: Recipe) {
   const [making, setMaking] = React.useState(false)
   const aiPhotos = useAiPhotos()
 
-  async function run(work: () => Promise<Recipe>, done: string) {
+  // Whether a photo is being made now: by the button, or by the save that
+  // queued it. Pressing again would pay for a second one.
+  const makingNow = making || recipe.working.includes("photo")
+
+  /** What a photo change answers with: the recipe, or past the wait, the job. */
+  type Answer = Recipe | { id: string }
+
+  async function run(work: () => Promise<Answer>, done: string) {
     setBusy(true)
     try {
-      queryClient.setQueryData(recipeQuery(recipe.slug).queryKey, await work())
-      await refresh()
-      toast.success(done)
+      const updated = await work()
+      if ("slug" in updated) {
+        queryClient.setQueryData(recipeQuery(recipe.slug).queryKey, updated)
+        await refresh()
+        toast.success(done)
+      } else {
+        // The photo goes on being made in the background, and the person
+        // hears when it's done.
+        markWorking(queryClient, recipe.id, "photo")
+      }
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       toast.error(error.message)
@@ -71,6 +86,7 @@ export function usePhotoActions(recipe: Recipe) {
 
   /** A photo made by AI, for a recipe without one or in place of an AI one. */
   async function make() {
+    if (makingNow) return
     setMaking(true)
     await run(
       () =>
@@ -101,8 +117,8 @@ export function usePhotoActions(recipe: Recipe) {
   )
 
   return {
-    busy,
-    making,
+    busy: busy || makingNow,
+    making: makingNow,
     /** Whether AI can make it a photo: none yet, or one made by AI. */
     canMake: aiPhotos && (!recipe.photo || recipe.photoByAi),
     make: () => void make(),

@@ -5,6 +5,8 @@ import * as React from "react"
 import { useMe } from "@/features/auth/use-me"
 import { noticeFor, type JobMoved } from "@/features/imports/notices"
 import { useImportNotice } from "@/features/imports/use-import-notice"
+import { jobNoticeFor } from "@/features/jobs/notices"
+import { useJobNotice } from "@/features/jobs/use-job-notice"
 import { CLIENT_ID } from "@/lib/api/client"
 
 import { gatherChanges } from "./gather"
@@ -69,6 +71,11 @@ export function LiveUpdates({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     noticeImport.current = importNotice
   }, [importNotice])
+  const jobNotice = useJobNotice()
+  const noticeJob = React.useRef(jobNotice)
+  React.useEffect(() => {
+    noticeJob.current = jobNotice
+  }, [jobNotice])
 
   React.useEffect(() => {
     if (typeof EventSource === "undefined") return
@@ -99,6 +106,11 @@ export function LiveUpdates({ children }: { children: React.ReactNode }) {
         if (noticeFor(job, me.id)) {
           // A record deleted meanwhile has nothing to tell.
           noticeImport.current(job.id).catch(() => {})
+        }
+        if (jobNoticeFor(job, me.id)) {
+          // Not everything is handed over, and a job gone meanwhile has
+          // nothing to tell.
+          noticeJob.current(job.id).catch(() => {})
         }
       })
       source.addEventListener("ping", () => heardFromLive())

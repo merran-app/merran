@@ -112,6 +112,7 @@ The well-known queues each need one particular store: pg-boss and Graphile Worke
 - jobs added in the same transaction as the change that needs them
 - retries with backoff, a limit per kind ("two library runs at a time"), a limit per household for a kind ("one import at a time"), one at a time per key ("one nutrition run per recipe"), and a fair share per household; a kind or household at its limit is left out when looking for due work, so a pile of one kind can't keep the others waiting
 - two lanes (November 15, 2026): quick jobs (emails, webhook deliveries, housekeeping) never wait behind long ones (imports, library runs, Discover), and the long lane's size is a setting
+- jobs someone's waiting on first (November 24, 2026): the kinds a request waits on before handing over are looked for before the rest, so a free place goes to them ahead of older background work, with every limit as it is
 - a job's Stop reaches every fetch and AI call it makes, kept for the length of its run like who made a change, and every AI call has a time limit
 - schedules with `croner` (cron expressions in each household's time zone)
 - work that survives restarts without each feature writing its own "carry on at startup" code; a job sees what it saved so far, so it can carry on from where it was

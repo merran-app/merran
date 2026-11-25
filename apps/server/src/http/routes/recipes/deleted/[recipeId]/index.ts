@@ -4,6 +4,6 @@ import remove from "./delete.ts"
 import restoreRoutes from "./restore/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
-  remove(router, deps)
+  remove(router)
   restoreRoutes(router, deps)
 }

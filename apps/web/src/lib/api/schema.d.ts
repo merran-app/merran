@@ -1087,7 +1087,7 @@ export interface paths {
         };
         /**
          * One of the household's jobs
-         * @description Household admins only. How a job for this household, like an import, is getting on.
+         * @description Household admins, and whoever started it. How a job for this household, like an import, is getting on. `error`, what broke inside a job that failed, is only for household admins: it's null for anyone else.
          */
         get: operations["getHouseholdJob"];
         put?: never;
@@ -2294,14 +2294,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Receipts waiting for a look
-         * @description Scanned, shared or sent to the assistant, and not added or discarded yet, newest first. Each is forgotten after a day. With an API key, it needs the `pantry: read` permission.
+         * The household's receipts
+         * @description Scanned, shared or sent to the assistant, and not added or discarded yet, newest first, whatever their `status`: still being read, waiting for a look, or not read (a recipe, no receipt in it, or failed). Each is forgotten after a day. With an API key, it needs the `pantry: read` permission.
          */
         get: operations["listReceipts"];
         put?: never;
         /**
          * Scan a receipt
-         * @description Reads a receipt into a draft to look over before anything goes in the pantry: photos of a paper one, screenshots or a PDF of an emailed one (up to 6 files, one `file` field each), or its `text`. Each line says what it is, how much, and the shopping list item it was bought for. Add it with `POST /pantry/receipts/{receiptId}/add`; it's forgotten after a day. Uses the household's model for receipts, which must be able to read photos or PDFs if those are sent, and counts towards its AI spend. With an API key, it needs the `pantry: write` permission.
+         * @description Reads a receipt into a draft to look over before anything goes in the pantry: photos of a paper one, screenshots or a PDF of an emailed one (up to 6 files, one `file` field each), or its `text`. Each line says what it is, how much, and the shopping list item it was bought for. Add it with `POST /pantry/receipts/{receiptId}/add`; it's forgotten after a day. Reading takes a while, so it answers 201 with the receipt (`status` `ready`) if it's read within about 10 seconds, and 202 with the receipt `reading` if not: it carries on in the background, and `GET /pantry/receipts/{receiptId}` says when it's `ready`. Uses the household's model for receipts, which must be able to read photos or PDFs if those are sent, and counts towards its AI spend. With an API key, it needs the `pantry: write` permission.
          */
         post: operations["scanReceipt"];
         delete?: never;
@@ -2318,15 +2318,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * A receipt waiting for a look
-         * @description One scanned, shared or sent to the assistant, and not added or discarded yet. With an API key, it needs the `pantry: read` permission.
+         * A receipt
+         * @description One scanned, shared or sent to the assistant, and not added or discarded yet, whatever its `status`: still being read, waiting for a look, or not read. With an API key, it needs the `pantry: read` permission.
          */
         get: operations["getReceipt"];
         put?: never;
         post?: never;
         /**
          * Discard a receipt
-         * @description Forgets it, with its photos, without adding anything. With an API key, it needs the `pantry: write` permission.
+         * @description Forgets it, with its photos, without adding anything. One still being read (`reading`) stops being read. With an API key, it needs the `pantry: write` permission.
          */
         delete: operations["discardReceipt"];
         options?: never;
@@ -3348,7 +3348,7 @@ export interface paths {
         put?: never;
         /**
          * Work out a recipe's nutrition
-         * @description Per serving, from the ingredients: added up from USDA FoodData Central when the server has a key (AI picking each ingredient's food and weighing what USDA's portions can't), else, or when too much couldn't be counted, estimated by AI. Replaces what it had, from the site too. A recipe's nutrition is worked out by itself after it's saved; this is for doing it again now. With an API key, it needs the `recipes: write` permission.
+         * @description Per serving, from the ingredients: added up from USDA FoodData Central when the server has a key (AI picking each ingredient's food and weighing what USDA's portions can't), else, or when too much couldn't be counted, estimated by AI. Replaces what it had, from the site too. A recipe's nutrition is worked out by itself after it's saved; this is for doing it again now. It waits up to 10 seconds; past that it answers 202 with the job, and the recipe has it once the job's done. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["workOutNutrition"];
         delete?: never;
@@ -3584,7 +3584,7 @@ export interface paths {
         put?: never;
         /**
          * Make a photo with AI
-         * @description A photo of the finished dish in the household's style, on its OpenAI or Google key: for a recipe without a photo, or in place of one made by AI before. It takes up to a minute. With an API key, it needs the `recipes: write` permission.
+         * @description A photo of the finished dish in the household's style, on its OpenAI or Google key: for a recipe without a photo, or in place of one made by AI before. It waits up to 10 seconds; past that it answers 202 with the job, and the recipe has its photo once the job's done. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["makeRecipePhoto"];
         delete?: never;
@@ -4246,7 +4246,7 @@ export interface paths {
         };
         /**
          * A site recipe's photo
-         * @description A small copy, as WebP, fetched once through Merran so browsing doesn't load photos from other sites. With an API key, it needs the `recipes: read` permission.
+         * @description A small copy, as WebP, kept by Merran so browsing doesn't load photos from other sites. Photos are fetched as sites are read; this fetches one only when it wasn't yet. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["getSiteRecipePhoto"];
         put?: never;
@@ -4636,7 +4636,7 @@ export interface paths {
         put?: never;
         /**
          * Check prices now
-         * @description Household admins only. What's done each morning by itself: today's prices for the products the household keeps, and a look at the store for foods its recipes use, for their sales.
+         * @description Household admins only. What's done each morning by itself: today's prices for the products the household keeps, and a look at the store for foods its recipes use, for their sales. It waits up to 10 seconds; past that it answers 202 with the job, and the check goes on in the background.
          */
         post: operations["checkKrogerPrices"];
         delete?: never;
@@ -11126,6 +11126,7 @@ export interface components {
          *       "runAt": "2026-10-15T18:30:00.000Z",
          *       "startedAt": "2026-10-15T18:30:00.000Z",
          *       "finishedAt": null,
+         *       "handedOver": false,
          *       "createdAt": "2026-10-15T18:30:00.000Z"
          *     }
          */
@@ -11163,6 +11164,8 @@ export interface components {
             startedAt: string | null;
             /** Format: date-time */
             finishedAt: string | null;
+            /** @description A request waiting for it gave up and left it to run in the background, so whoever started it hears when it ends. */
+            handedOver: boolean;
             /** Format: date-time */
             createdAt: string;
         };
@@ -11319,6 +11322,7 @@ export interface components {
          *           "runAt": "2026-10-15T18:30:00.000Z",
          *           "startedAt": "2026-10-15T18:30:00.000Z",
          *           "finishedAt": null,
+         *           "handedOver": false,
          *           "createdAt": "2026-10-15T18:30:00.000Z"
          *         }
          *       ]
@@ -11770,6 +11774,7 @@ export interface components {
          *         "runAt": "2026-10-15T18:30:00.000Z",
          *         "startedAt": null,
          *         "finishedAt": null,
+         *         "handedOver": false,
          *         "createdAt": "2026-10-15T18:30:00.000Z"
          *       }
          *     }
@@ -13662,6 +13667,8 @@ export interface components {
          *           "store": "Walmart",
          *           "date": "2026-10-14",
          *           "total": 48.12,
+         *           "status": "ready",
+         *           "error": null,
          *           "lines": [
          *             {
          *               "id": "0d1b5c2a9e44",
@@ -13697,6 +13704,8 @@ export interface components {
          *       "store": "Walmart",
          *       "date": "2026-10-14",
          *       "total": 48.12,
+         *       "status": "ready",
+         *       "error": null,
          *       "lines": [
          *         {
          *           "id": "0d1b5c2a9e44",
@@ -13727,6 +13736,13 @@ export interface components {
             /** @description The day on it. */
             date: string | null;
             total: number | null;
+            /**
+             * @description `reading` while it's being read (it has no lines yet); `ready` once it's read and waiting for a look; `recipe` when it turned out to be a recipe, `none` when there was no receipt in it, and `failed` when it couldn't be read (`error` says why).
+             * @enum {string}
+             */
+            status: "reading" | "ready" | "recipe" | "none" | "failed";
+            /** @description Why it couldn't be read, when `status` is `failed`. */
+            error: string | null;
             lines: components["schemas"]["ReceiptLine"][];
             /** @description The receipt's photos or PDF, to compare with. */
             files: {
@@ -14933,6 +14949,7 @@ export interface components {
          *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *         "dietOverrides": {},
          *         "needs": [],
+         *         "working": [],
          *         "nutrition": {
          *           "source": "calculated",
          *           "calories": 412,
@@ -15053,6 +15070,7 @@ export interface components {
          *       "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *       "dietOverrides": {},
          *       "needs": [],
+         *       "working": [],
          *       "nutrition": {
          *         "source": "calculated",
          *         "calories": 412,
@@ -15144,6 +15162,8 @@ export interface components {
             /** @description Foods the household said it can't do without: a dislike that's usually left out of recipes rules this one out instead. */
             needs: string[];
             nutrition: components["schemas"]["Nutrition"];
+            /** @description What Merran is doing for it in the background: working out its nutrition, making its photo. */
+            working: ("nutrition" | "photo")[];
             ingredients: components["schemas"]["Ingredient"][];
             steps: components["schemas"]["Step"][];
         };
@@ -15586,6 +15606,7 @@ export interface components {
          *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *         "dietOverrides": {},
          *         "needs": [],
+         *         "working": [],
          *         "nutrition": {
          *           "source": "calculated",
          *           "calories": 412,
@@ -16132,6 +16153,7 @@ export interface components {
          *       "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *       "dietOverrides": {},
          *       "needs": [],
+         *       "working": [],
          *       "nutrition": {
          *         "source": "calculated",
          *         "calories": 412,
@@ -16441,6 +16463,7 @@ export interface components {
          *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *         "dietOverrides": {},
          *         "needs": [],
+         *         "working": [],
          *         "nutrition": {
          *           "source": "calculated",
          *           "calories": 412,
@@ -16952,6 +16975,7 @@ export interface components {
          *           "runAt": "2026-10-15T18:30:00.000Z",
          *           "startedAt": "2026-10-15T18:30:00.000Z",
          *           "finishedAt": null,
+         *           "handedOver": false,
          *           "createdAt": "2026-10-15T18:30:00.000Z",
          *           "householdName": "The Riveras"
          *         }
@@ -16979,6 +17003,7 @@ export interface components {
          *       "runAt": "2026-10-15T18:30:00.000Z",
          *       "startedAt": "2026-10-15T18:30:00.000Z",
          *       "finishedAt": null,
+         *       "handedOver": false,
          *       "createdAt": "2026-10-15T18:30:00.000Z",
          *       "householdName": "The Riveras"
          *     }
@@ -17497,6 +17522,7 @@ export interface components {
          *         },
          *         "needsRelink": false,
          *         "pricesCheckedAt": null,
+         *         "checkingPrices": false,
          *         "leanOnSales": "some",
          *         "weeklyBudget": 120
          *       }
@@ -17526,6 +17552,8 @@ export interface components {
                  * @description When its prices and sales were last checked.
                  */
                 pricesCheckedAt: string | null;
+                /** @description A price check is going now. */
+                checkingPrices: boolean;
                 /**
                  * @description How much Fill the week and the autoplan lean on deals: the household setting `stores.leanOnSales`.
                  * @enum {string}
@@ -21651,7 +21679,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description No such job in this household. */
+            /** @description No such job in this household, or one the person didn't start. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -25327,6 +25355,15 @@ export interface operations {
                     "application/json": components["schemas"]["Receipt"];
                 };
             };
+            /** @description Still being read (`status` `reading`); it carries on in the background. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Receipt"];
+                };
+            };
             /** @description Nothing to read, or a file Merran can't read. */
             400: {
                 headers: {
@@ -25354,6 +25391,24 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description It was discarded as it was read (`receipt_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Its read was stopped, or it was discarded, before it was read (`job_stopped`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description The files are too big. */
             413: {
                 headers: {
@@ -25374,6 +25429,15 @@ export interface operations {
             };
             /** @description This month's AI limit is reached. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The AI didn't answer, or reading it didn't finish (`job_failed`). */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -28546,6 +28610,15 @@ export interface operations {
                     "application/json": components["schemas"]["Recipe"];
                 };
             };
+            /** @description Still working it out: the recipe has it once this job is done. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
             /** @description No servings, or no ingredients. */
             400: {
                 headers: {
@@ -28582,6 +28655,15 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description It was stopped before it was worked out (`job_stopped`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description No USDA key on the server, and no AI for the household. */
             422: {
                 headers: {
@@ -28593,6 +28675,15 @@ export interface operations {
             };
             /** @description USDA's limit for the hour, or this month's AI limit. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description USDA or the AI didn't answer, or working it out didn't finish (`job_failed`). */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -29405,6 +29496,15 @@ export interface operations {
                     "application/json": components["schemas"]["Recipe"];
                 };
             };
+            /** @description Still being made: the recipe has its photo once this job is done. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
             /** @description Not signed in. */
             401: {
                 headers: {
@@ -29432,7 +29532,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description It has a real photo, which an AI one never replaces. */
+            /** @description It has a real photo, which an AI one never replaces (`has_photo`), or it was stopped before it was made (`job_stopped`). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -29443,6 +29543,24 @@ export interface operations {
             };
             /** @description AI photos are off on the server, or the household has no key for them. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The key's provider is busy or out of credit, or this month's AI limit is reached. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The image provider didn't answer, or making it didn't finish (`job_failed`). */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -32402,6 +32520,15 @@ export interface operations {
                     "application/json": components["schemas"]["PriceCheck"];
                 };
             };
+            /** @description Still checking: the stores say it's checking until this job is done. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
             /** @description Not signed in. */
             401: {
                 headers: {
@@ -32413,6 +32540,15 @@ export interface operations {
             };
             /** @description Not allowed. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The check was stopped before it finished (`job_stopped`). */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -32438,7 +32574,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Kroger didn't answer. */
+            /** @description Kroger didn't answer, or the check didn't finish (`job_failed`). */
             502: {
                 headers: {
                     [name: string]: unknown;

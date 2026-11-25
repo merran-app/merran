@@ -1,13 +1,31 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { z } from "zod"
+import type { AppDeps } from "../../../core/context.ts"
 import { AppError } from "../../../core/errors.ts"
 import { Job, Recipe } from "../../../database/entities/index.ts"
 import { forHousehold } from "../../../database/scope.ts"
 import { PHOTOS } from "../../../modules/photos/settings.ts"
+import {
+  failureOf,
+  HANDOVER_MS,
+  waitThenHandOver,
+} from "../../jobs/hand-over.ts"
 import { ACTIVE, enqueue } from "../../jobs/jobs.ts"
 import { JobStopped, type JobHandler } from "../../jobs/runner.ts"
-import type { RecipeOrigin } from "../recipes.ts"
-import { aiPhotosFor, makePhoto, type PhotoDeps } from "./generate.ts"
+import { currentActor, withActor, type Actor } from "../../webhooks/actor.ts"
+import {
+  findRecipe,
+  loadRecipe,
+  recordParts,
+  type LoadedRecipe,
+  type RecipeOrigin,
+} from "../recipes.ts"
+import {
+  aiPhotosFor,
+  checkPhotoPossible,
+  makePhoto,
+  type PhotoDeps,
+} from "./generate.ts"
 
 // Making AI photos in the background: one for a recipe just added without
 // a photo, or for every recipe in the library without one.
@@ -127,6 +145,93 @@ export const aiPhotoRunJob: JobHandler = {
     }
     return counts
   },
+}
+
+const ONE_KIND = "recipes.makePhoto"
+
+const OnePayload = z.object({
+  recipeId: z.string(),
+  userId: z.string().nullable(),
+  /** Who pressed it, so what it changes says they did, not Merran. */
+  actor: z.custom<Actor>(),
+})
+
+/**
+ * One recipe's photo, made when someone presses the button. The request
+ * waits for it (`makePhotoNow`), so an error that's the person's to see,
+ * like the image provider's limit, is handed back as the job's result
+ * rather than failing the job.
+ */
+export const makePhotoJob: JobHandler = {
+  kind: ONE_KIND,
+  lane: "long",
+  // Pressed, and waited on before handing over.
+  waitedOn: true,
+  area: "recipes",
+  concurrency: 2,
+  perHousehold: 1,
+  changes: ["recipes"],
+  async run({ em, householdId, payload, deps }) {
+    if (!householdId) throw new Error("Photos need a household.")
+    const { recipeId, userId, actor } = OnePayload.parse(payload)
+    // The recipe's name, before the work: one moved to Recently deleted
+    // meanwhile can't be found again, and shouldn't turn an error into a
+    // different one.
+    const named = await em.findOne(
+      Recipe,
+      { id: recipeId },
+      { fields: ["name"] }
+    )
+    return withActor(actor, async () => {
+      try {
+        const recipe = await makePhoto(deps, em, {
+          householdId,
+          userId,
+          recipe: recipeId,
+        })
+        // Here and not in makePhoto, which the library run uses too: it
+        // sends nothing.
+        await recordParts(em, householdId, recipe, ["photo"])
+        return { recipeId, name: recipe.name }
+      } catch (err) {
+        if (!(err instanceof AppError)) throw err
+        return { ...failureOf(err), recipeId, name: named?.name ?? null }
+      }
+    })
+  },
+}
+
+export type MadeNow = { done: LoadedRecipe } | { started: Job }
+
+/**
+ * Makes a recipe's photo now: the recipe with it, as before, if it's in
+ * within the wait, or the job, going on in the background. What would fail
+ * anyway (photos off, a real photo, no key) fails here, at once, with no
+ * job made. Pressing it again while it's going joins the job already going.
+ */
+export async function makePhotoNow(
+  deps: PhotoDeps & Pick<AppDeps, "jobs">,
+  em: EntityManager,
+  input: { householdId: string; userId: string | null; recipe: string },
+  options: { handoverMs?: number } = {}
+): Promise<MadeNow> {
+  await checkPhotoPossible(deps, em, input)
+  const { id: recipeId } = await findRecipe(em, input.recipe)
+  const job = await enqueue(em, {
+    kind: ONE_KIND,
+    householdId: input.householdId,
+    payload: { recipeId, userId: input.userId, actor: currentActor() },
+    createdBy: input.userId,
+    key: `${ONE_KIND}:${recipeId}`,
+    maxAttempts: 1,
+  })
+  // Adding it woke the runner already, except where nothing listens (tests).
+  deps.jobs.wake()
+  const answer = await waitThenHandOver(em, deps.jobs, job.id, {
+    ms: options.handoverMs ?? HANDOVER_MS,
+  })
+  if ("started" in answer) return answer
+  return { done: await loadRecipe(em, recipeId) }
 }
 
 /**

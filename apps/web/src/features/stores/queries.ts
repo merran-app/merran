@@ -4,6 +4,7 @@ import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCapability } from "@/features/capabilities/queries"
 
 import { api, unwrap, type Schemas } from "@/lib/api/client"
+import { followWork } from "@/features/live/follow-work"
 
 export type StoresStatus = Schemas["StoresStatus"]
 export type StoreLocation = Schemas["StoreLocation"]
@@ -22,6 +23,10 @@ export type ProductMappings = Schemas["ProductMappings"]
 export const storesQuery = queryOptions({
   queryKey: ["stores"],
   queryFn: () => unwrap(api.GET("/api/stores")),
+  // While prices are being checked in the background, asked about until
+  // it's done: the live stream may be down.
+  refetchInterval: (query) =>
+    followWork(!!query.state.data?.kroger.checkingPrices),
 })
 
 /** Every list's cart at Kroger, to ask for again after a change. */

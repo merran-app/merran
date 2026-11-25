@@ -94,6 +94,9 @@ export function describeJob(job: Job) {
     runAt: job.runAt.toISOString(),
     startedAt: job.startedAt?.toISOString() ?? null,
     finishedAt: job.finishedAt?.toISOString() ?? null,
+    // A job made in this request hasn't been saved and read back, so the
+    // column is undefined, not null.
+    handedOver: (job.handedOverAt ?? null) !== null,
     createdAt: job.createdAt.toISOString(),
   }
 }

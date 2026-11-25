@@ -14,9 +14,12 @@ import {
   type StoreProduct as Product,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
+import { z } from "zod"
 import type { AppDeps } from "../../core/context.ts"
+import { AppError } from "../../core/errors.ts"
 import {
   Household,
+  Job,
   Recipe,
   RecipeIngredient,
   StoreConnection,
@@ -24,13 +27,20 @@ import {
 } from "../../database/entities/index.ts"
 import { ACROSS_HOUSEHOLDS } from "../../database/scope.ts"
 import { STORE_SETTINGS } from "../../modules/stores/settings.ts"
+import { failureOf, HANDOVER_MS, waitThenHandOver } from "../jobs/hand-over.ts"
 import { enqueue } from "../jobs/jobs.ts"
 import type { JobHandler } from "../jobs/runner.ts"
+import { currentActor, withActor, type Actor } from "../webhooks/actor.ts"
 import { householdToday } from "../households/clock.ts"
 import { choose } from "./basket/products.ts"
 import { ready, searchAll } from "./kroger/basket.ts"
 import { recordPrices } from "./basket/prices.ts"
-import { KROGER, krogerConnection } from "./kroger/connection.ts"
+import {
+  CHECK_PRICES,
+  checkKey,
+  KROGER,
+  krogerConnection,
+} from "./kroger/connection.ts"
 import { priceHistory } from "./history.ts"
 import { krogerApp, productsById } from "./kroger/client.ts"
 
@@ -409,29 +419,55 @@ export async function freshPrices(
   await checkPrices(deps, em, householdId).catch(() => undefined)
 }
 
-export const CHECK_PRICES = "stores.prices"
-
 /** Asks for a household's check soon, as when it picks its store. */
 export async function checkPricesSoon(em: EntityManager, householdId: string) {
   await enqueue(em, {
     kind: CHECK_PRICES,
     householdId,
-    key: `${CHECK_PRICES}:${householdId}`,
+    key: checkKey(householdId),
     maxAttempts: 1,
   })
 }
 
+/** What a check someone is waiting for carries; the others have none. */
+const NowPayload = z.object({
+  now: z.literal(true),
+  userId: z.string().nullable(),
+  /** Who pressed it, so what it changes says they did, not Merran. */
+  actor: z.custom<Actor>(),
+})
+
 /**
  * Every half hour: each household whose check is due gets a job of its
- * own, which checks it.
+ * own, which checks it. A check someone pressed the button for (`now`) is
+ * the same job: an error that's the person's to see, like Kroger's daily
+ * limit, is handed back as its result for the waiting request, rather than
+ * failing the job.
  */
 export const checkPricesJob: JobHandler = {
   kind: CHECK_PRICES,
   lane: "long",
+  // Check prices now is waited on before handing over. The checks the
+  // half-hourly look queues share the kind, so they go first too: one per
+  // household, they're few.
+  waitedOn: true,
   area: "list",
   perHousehold: 1,
   concurrency: 2,
-  async run({ em, householdId, deps, logger }) {
+  async run({ em, householdId, payload, deps, logger }) {
+    const now = NowPayload.safeParse(payload)
+    if (now.success && householdId) {
+      return withActor(now.data.actor, async () => {
+        try {
+          const check = await checkPrices(deps, em, householdId)
+          logger.info(check, "Checked the store's prices")
+          return { ...check }
+        } catch (err) {
+          if (!(err instanceof AppError)) throw err
+          return { ...failureOf(err) }
+        }
+      })
+    }
     if (!(await krogerApp(deps.settings))) return { skipped: "no Kroger app" }
     if (householdId) {
       if (!(await krogerConnection(em))?.location) {
@@ -459,4 +495,63 @@ export const checkPricesJob: JobHandler = {
     }
     return { due }
   },
+}
+
+export type CheckedNow = { done: PriceCheck } | { started: Job }
+
+/**
+ * Checks the household's prices now: what it found, as before, if the
+ * check is done within the wait, or the job, going on in the background.
+ * Kroger not set up or no store picked fails here, at once, with no job
+ * made. A check already going (queued by the half-hourly look or a new
+ * store, or by someone pressing this) is joined rather than doubled.
+ */
+export async function checkPricesNow(
+  deps: PriceDeps & Pick<AppDeps, "jobs">,
+  em: EntityManager,
+  input: { householdId: string; userId: string | null },
+  options: { handoverMs?: number } = {}
+): Promise<CheckedNow> {
+  await ready(deps, em)
+  const job = await enqueue(em, {
+    kind: CHECK_PRICES,
+    householdId: input.householdId,
+    payload: { now: true, userId: input.userId, actor: currentActor() },
+    createdBy: input.userId,
+    key: checkKey(input.householdId),
+    maxAttempts: 1,
+  })
+  await joinWaitingCheck(em, job, input)
+  // A check just added woke the runner already (except where nothing
+  // listens, in tests); one joined wasn't added, so it's this wake that
+  // starts it at once rather than at the runner's next look.
+  deps.jobs.wake()
+  const answer = await waitThenHandOver(em, deps.jobs, job.id, {
+    ms: options.handoverMs ?? HANDOVER_MS,
+  })
+  if ("started" in answer) return answer
+  return { done: answer.done as PriceCheck }
+}
+
+/**
+ * A check that was already queued, for nobody, becomes this person's, so it
+ * answers their request and tells them when it ends. One already running
+ * is left as it is. Only a job still queued is changed, so one the runner
+ * takes meanwhile isn't touched.
+ */
+async function joinWaitingCheck(
+  em: EntityManager,
+  job: Job,
+  input: { userId: string | null }
+) {
+  if (NowPayload.safeParse(job.payload).success) return
+  await em.nativeUpdate(
+    Job,
+    { id: job.id, status: "queued" },
+    {
+      payload: { now: true, userId: input.userId, actor: currentActor() },
+      createdBy: input.userId,
+      runAt: new Date(),
+    }
+  )
 }

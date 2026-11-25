@@ -4,11 +4,13 @@ import { ref } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../../core/errors.ts"
 import {
+  Job,
   Secret,
   StoreConnection,
   User,
 } from "../../../database/entities/index.ts"
 import { ACROSS_HOUSEHOLDS } from "../../../database/scope.ts"
+import { ACTIVE } from "../../jobs/jobs.ts"
 import { STORE_SETTINGS } from "../../../modules/stores/settings.ts"
 import {
   authorizeUrl,
@@ -28,6 +30,22 @@ import {
 const LINK_FOR_MS = 15 * 60_000
 
 export const KROGER = "kroger"
+
+/** The job that checks a household's prices (`prices.ts`). */
+export const CHECK_PRICES = "stores.prices"
+
+/** The key a household's check has: only one is queued or running at a time. */
+export const checkKey = (householdId: string) =>
+  `${CHECK_PRICES}:${householdId}`
+
+/** Whether a price check is queued or running for the household. */
+export async function checkingPrices(em: EntityManager, householdId: string) {
+  const going = await em.count(Job, {
+    key: checkKey(householdId),
+    status: { $in: [...ACTIVE] },
+  })
+  return going > 0
+}
 
 /** The server's Kroger app, or why there's none. */
 export async function needKrogerApp(deps: StoreDeps): Promise<KrogerApp> {
@@ -82,6 +100,7 @@ export async function storesStatus(
           : null,
       needsRelink: Boolean(found?.account && found.broken),
       pricesCheckedAt: found?.pricesCheckedAt?.toISOString() ?? null,
+      checkingPrices: await checkingPrices(em, householdId),
       leanOnSales: await deps.settings.household(
         em,
         householdId,

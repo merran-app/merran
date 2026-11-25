@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises"
+import { join } from "node:path"
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../app.ts"
@@ -65,6 +67,7 @@ const fetcher: Fetcher = async (url, options = {}) => {
 let app: App
 let close: () => Promise<void>
 let database: Database
+let filesDir: string
 let jobs: JobRunner
 let kyle: TestClient
 
@@ -122,7 +125,7 @@ beforeAll(async () => {
   web.set("https://plain.example/", { body: "<html><body>Hi</body></html>" })
 
   const test = await createTestApp({ fetcher })
-  ;({ app, close, database, jobs } = test)
+  ;({ app, close, database, jobs, filesDir } = test)
   kyle = await setUpServer(app, test.setupCode)
 })
 
@@ -454,6 +457,149 @@ describe("starter collections", () => {
     const res = await kyle.post("/api/collections/soups/find")
     expect(res.status).toBe(403)
     expect((await res.json()).error.code).toMatch(/^ai_/)
+  })
+})
+
+describe("photos kept as a site is read", () => {
+  const jpeg = () =>
+    sharp({
+      create: { width: 800, height: 600, channels: 3, background: "#369" },
+    })
+      .jpeg()
+      .toBuffer()
+
+  /** A site with a feed that hasn't changed, so only what a test adds is read. */
+  async function quietSite(host: string) {
+    web.set(`https://${host}/feed/`, { body: "", status: 304 })
+    const em = database.em.fork()
+    const site = em.create(RecipeSite, {
+      name: host,
+      url: `https://${host}/`,
+      feedUrl: `https://${host}/feed/`,
+    })
+    await em.flush()
+    return site
+  }
+
+  async function readNow(siteId: string) {
+    const em = database.em.fork()
+    await enqueue(em, { kind: "sites.read", payload: { siteId } })
+    await jobs.drain()
+  }
+
+  const keptFile = (photo: string) =>
+    readFile(join(filesDir, "site-photos", `${photo}.webp`))
+
+  test("a post that opens as a recipe has its photo kept as the site's read", async () => {
+    web.set("https://fresh.example/feed/", {
+      body: `<?xml version="1.0"?><rss version="2.0"><channel>
+        <title>Fresh Example</title><link>https://fresh.example/</link>
+        <item><title>Fresh Bread</title><link>https://fresh.example/bread/</link><pubDate>Wed, 15 Oct 2026 08:00:00 +0000</pubDate></item>
+      </channel></rss>`,
+      contentType: "application/rss+xml",
+    })
+    web.set("https://fresh.example/bread/", {
+      body: recipePage({
+        name: "Fresh Bread",
+        image: "https://fresh.example/bread.jpg",
+        recipeIngredient: ["500 g flour"],
+      }),
+    })
+    web.set("https://fresh.example/bread.jpg", {
+      body: await jpeg(),
+      contentType: "image/jpeg",
+    })
+    const em = database.em.fork()
+    const site = em.create(RecipeSite, {
+      name: "Fresh Example",
+      url: "https://fresh.example/",
+      feedUrl: "https://fresh.example/feed/",
+    })
+    await em.flush()
+
+    await readNow(site.id)
+
+    const row = await database.em
+      .fork()
+      .findOneOrFail(SiteRecipe, { url: "https://fresh.example/bread/" })
+    expect(row.state).toBe("recipe")
+    expect(row.photo).toBeTruthy()
+    const kept = await keptFile(row.photo!)
+    expect((await sharp(kept).metadata()).width).toBe(640)
+  })
+
+  test("each read fills in a few older recipes' photos", async () => {
+    const site = await quietSite("older.example")
+    const picture = await jpeg()
+    const em = database.em.fork()
+    for (let number = 0; number < 8; number++) {
+      web.set(`https://older.example/recipe-${number}.jpg`, {
+        body: picture,
+        contentType: "image/jpeg",
+      })
+      em.create(SiteRecipe, {
+        site: em.getReference(RecipeSite, site.id),
+        url: `https://older.example/recipe-${number}/`,
+        state: "recipe",
+        siteName: "older.example",
+        name: `Recipe ${number}`,
+        photoUrl: `https://older.example/recipe-${number}.jpg`,
+        courses: [],
+        keywords: [],
+        ingredients: [],
+        diets: [],
+        publishedAt: new Date(Date.now() - number * 86_400_000),
+      })
+    }
+    await em.flush()
+
+    await readNow(site.id)
+
+    const rows = await database.em
+      .fork()
+      .find(SiteRecipe, { site: site.id }, { orderBy: { publishedAt: "desc" } })
+    const kept = rows.filter((row) => row.photo)
+    expect(kept).toHaveLength(6)
+    // The newest first, so what's looked at first is ready.
+    expect(kept.map((row) => row.name)).toEqual(
+      rows.slice(0, 6).map((row) => row.name)
+    )
+    for (const row of kept) await keptFile(row.photo!)
+
+    // The rest come with the next read.
+    await readNow(site.id)
+    const after = await database.em
+      .fork()
+      .find(SiteRecipe, { site: site.id }, { fields: ["photo"] })
+    expect(after.filter((row) => row.photo)).toHaveLength(8)
+  })
+
+  test("a photo that won't load doesn't stop the read", async () => {
+    const site = await quietSite("broken.example")
+    web.set("https://broken.example/gone.jpg", { body: "", status: 404 })
+    const em = database.em.fork()
+    em.create(SiteRecipe, {
+      site: em.getReference(RecipeSite, site.id),
+      url: "https://broken.example/gone-recipe/",
+      state: "recipe",
+      siteName: "broken.example",
+      name: "Gone",
+      photoUrl: "https://broken.example/gone.jpg",
+      courses: [],
+      keywords: [],
+      ingredients: [],
+      diets: [],
+    })
+    await em.flush()
+
+    await readNow(site.id)
+
+    const read = await database.em.fork().findOneOrFail(RecipeSite, site.id)
+    expect(read.nextReadAt.getTime()).toBeGreaterThan(Date.now())
+    const row = await database.em
+      .fork()
+      .findOneOrFail(SiteRecipe, { url: "https://broken.example/gone-recipe/" })
+    expect(row.photo).toBe("")
   })
 })
 

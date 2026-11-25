@@ -35,6 +35,7 @@ export function asGuestRecipe(shared: SharedRecipe, token: string): Recipe {
     tags: [],
     notes: null,
     needs: [],
+    working: [],
     dietOverrides: {},
     lastMadeAt: null,
     createdAt: NO_DATE,

@@ -5,7 +5,7 @@ import {
   TextIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
@@ -18,12 +18,15 @@ import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { NeedsAi, useAiFor } from "@/features/ai/needs-ai"
 import { CameraDialog, useCanTakePhoto } from "@/features/assistant/attachments"
+import { followWork } from "@/features/live/follow-work"
+import { watchReceipt } from "@/features/jobs/watching"
 import { useRefreshRecipes } from "@/features/recipes/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { shrinkPhoto } from "@/lib/shrink-photo"
 import { cn } from "@/lib/utils"
 
-import { receiptQuery } from "./queries"
+import { receiptQuery, useDiscardReceipt } from "./queries"
+import { unfinishedMessage } from "./waiting-receipts"
 
 /** What was sent to read: files, or pasted text. */
 type Sent = { files: File[] } | { text: string }
@@ -42,6 +45,7 @@ export function ScanReceiptPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const refreshRecipes = useRefreshRecipes()
+  const discardReceipt = useDiscardReceipt()
   const ai = useAiFor("receipts")
   const canTakePhoto = useCanTakePhoto()
   const camera = React.useRef<HTMLInputElement>(null)
@@ -49,7 +53,14 @@ export function ScanReceiptPage() {
   const [webcam, setWebcam] = React.useState(false)
   const [pasting, setPasting] = React.useState(false)
   const [text, setText] = React.useState("")
-  const [reading, setReading] = React.useState(false)
+  const [sending, setSending] = React.useState(false)
+  // A receipt the server is still reading after the wait: the page holds on
+  // and keeps what was sent, for adding it as a recipe if it was one.
+  const [following, setFollowing] = React.useState<{
+    receiptId: string
+    sent: Sent
+  } | null>(null)
+  const reading = sending || following !== null
   const [adding, setAdding] = React.useState(false)
   const [over, setOver] = React.useState(false)
   const [failed, setFailed] = React.useState<{
@@ -58,9 +69,75 @@ export function ScanReceiptPage() {
     sent: Sent
   } | null>(null)
 
+  const followed = useQuery({
+    ...receiptQuery(following?.receiptId ?? ""),
+    enabled: following !== null,
+    // The live stream says when it's read; this is for when it's down.
+    refetchInterval: (query) =>
+      followWork(query.state.data?.status !== "ready"),
+  })
+
+  // Reading it here, so a notice that it's done would only repeat what
+  // they're looking at. The watch is held until they leave the page, not
+  // released when the follow ends: the job event and the receipt's refetch
+  // race, and a notice checked just after must still be skipped.
+  const stopWatching = React.useRef<(() => void)[]>([])
+  const followedId = following?.receiptId
+  React.useEffect(() => {
+    if (followedId) stopWatching.current.push(watchReceipt(followedId))
+  }, [followedId])
+  React.useEffect(() => {
+    const stops = stopWatching.current
+    return () => {
+      for (const stop of stops) stop()
+    }
+  }, [])
+
+  // Open the receipt once it's read, or say why it can't be.
+  React.useEffect(() => {
+    if (!following) return
+    const receipt = followed.data
+    if (followed.error instanceof ApiError) {
+      // Gone meanwhile: discarded on another device, say.
+      setFailed({
+        message: followed.error.message,
+        recipe: false,
+        sent: following.sent,
+      })
+      setFollowing(null)
+      return
+    }
+    if (!receipt || receipt.status === "reading") return
+
+    setFollowing(null)
+    if (receipt.status === "ready") {
+      void navigate({
+        to: "/pantry/receipts/$receiptId",
+        params: { receiptId: receipt.id },
+      })
+      return
+    }
+    setFailed({
+      message: unfinishedMessage(receipt, t),
+      recipe: receipt.status === "recipe",
+      sent: following.sent,
+    })
+    // Not kept, as when the request waits and it isn't one: said here.
+    void discardEnded(receipt.id)
+  }, [following, followed.data, followed.error, navigate, t])
+
+  /** Tidies away a receipt that wasn't one; there's nothing to look over. */
+  async function discardEnded(receiptId: string) {
+    try {
+      await discardReceipt(receiptId)
+    } catch {
+      // It stays in the waiting list, where it can be discarded.
+    }
+  }
+
   async function read(sent: Sent) {
     if ("files" in sent && sent.files.length === 0) return
-    setReading(true)
+    setSending(true)
     setFailed(null)
     const form = new FormData()
     if ("files" in sent) {
@@ -80,6 +157,11 @@ export function ScanReceiptPage() {
         })
       )
       queryClient.setQueryData(receiptQuery(receipt.id).queryKey, receipt)
+      if (receipt.status === "reading") {
+        // Answered 202: still being read, so hold on.
+        setFollowing({ receiptId: receipt.id, sent })
+        return
+      }
       await navigate({
         to: "/pantry/receipts/$receiptId",
         params: { receiptId: receipt.id },
@@ -92,7 +174,7 @@ export function ScanReceiptPage() {
         sent,
       })
     } finally {
-      setReading(false)
+      setSending(false)
     }
   }
 
@@ -163,6 +245,11 @@ export function ScanReceiptPage() {
           <p className="flex items-center gap-2 text-muted-foreground">
             <Spinner /> {t("pantry.receipts.reading")}
           </p>
+          {following && (
+            <p className="text-sm text-muted-foreground">
+              {t("pantry.receipts.readingStill")}
+            </p>
+          )}
           {Array.from({ length: 4 }, (_, i) => (
             <Skeleton key={i} className="h-16 rounded-2xl" />
           ))}

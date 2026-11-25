@@ -13,6 +13,7 @@ import type { Fetcher } from "../../../fetch/public-fetch.ts"
 import { decodeHtml } from "../../import/import-link.ts"
 import { isVideoLink, normalizeLink } from "../../import/links.ts"
 import { readRecipeData, type RecipeData } from "../../import/recipe-data.ts"
+import { throwIfStopped } from "../../../jobs/stop.ts"
 import type { FileStore } from "../../../storage/files.ts"
 import { COURSES, type Course } from "./data.ts"
 import { looksLikeFeed, parseFeed } from "./feeds.ts"
@@ -39,6 +40,9 @@ const SOON_MS = 30 * 60_000
 
 /** Posts opened each time a site is read. */
 const OPEN_EACH_READ = 12
+
+/** Older recipes' photos fetched at the end of each read. */
+export const PHOTOS_EACH_READ = 6
 
 /** Times in a row a page won't open before it's given up on. */
 const MOST_FAILURES = 3
@@ -303,6 +307,26 @@ async function readFeed(deps: ShelfDeps, em: EntityManager, site: RecipeSite) {
 }
 
 /**
+ * Fills in the photos of a site's recipes opened before photos were fetched
+ * as sites were read, newest first, a few each read so a read stays short.
+ */
+async function keepOlderPhotos(
+  deps: ShelfDeps,
+  em: EntityManager,
+  site: RecipeSite
+) {
+  const rows = await em.find(
+    SiteRecipe,
+    { site, state: "recipe", photo: null, photoUrl: { $ne: null } },
+    {
+      orderBy: { publishedAt: "desc", createdAt: "desc" },
+      limit: PHOTOS_EACH_READ,
+    }
+  )
+  for (const row of rows) await keepShelfPhoto(deps, em, row)
+}
+
+/**
  * Reads a site: its feed, then its new posts, one at a time, a few seconds
  * apart. Sooner again while there are posts still to open.
  */
@@ -340,7 +364,11 @@ export async function readSite(
       if (!other) row.url = opened.url
     }
     await em.flush()
+    // Its photo is fetched now, so opening the site later has none to wait for.
+    if (opened.kind === "recipe") await keepShelfPhoto(deps, em, row)
   }
+
+  if (!refused) await keepOlderPhotos(deps, em, site)
 
   const left = await em.count(SiteRecipe, { site, state: "waiting" })
   site.nextReadAt = new Date(
@@ -384,16 +412,16 @@ async function prune(deps: ShelfDeps, em: EntityManager, site: RecipeSite) {
 const photoKey = (photo: string) => `site-photos/${photo}.webp`
 
 /**
- * A shelf recipe's photo, small, as WebP: fetched once, with its page as
- * the referer, then kept. Null when it has none, or it won't load.
+ * Fetches a shelf recipe's photo and keeps it, small, as WebP, with its page
+ * as the referer. Does nothing if it has none, or has been tried already. A
+ * photo that won't load is marked "", so it isn't tried again.
  */
-export async function shelfPhoto(
+export async function keepShelfPhoto(
   deps: ShelfDeps,
   em: EntityManager,
   row: SiteRecipe
-): Promise<Buffer | null> {
-  if (row.photo) return deps.files.read(photoKey(row.photo))
-  if (row.photo === "" || !row.photoUrl) return null
+): Promise<void> {
+  if (row.photo !== null || !row.photoUrl) return
   try {
     const answer = await deps.fetcher(row.photoUrl, {
       accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
@@ -409,10 +437,25 @@ export async function shelfPhoto(
     await deps.files.put(photoKey(photo), body)
     row.photo = photo
     await em.flush()
-    return body
   } catch {
+    // Stopping the job isn't the photo's fault: it's tried again later.
+    throwIfStopped()
     row.photo = ""
     await em.flush()
-    return null
   }
+}
+
+/**
+ * A shelf recipe's photo, small, as WebP: fetched once, then kept. Null when
+ * it has none, or it won't load. Sites' photos are fetched as the site is
+ * read, so this fetches only one that wasn't yet.
+ */
+export async function shelfPhoto(
+  deps: ShelfDeps,
+  em: EntityManager,
+  row: SiteRecipe
+): Promise<Buffer | null> {
+  await keepShelfPhoto(deps, em, row)
+  if (!row.photo) return null
+  return deps.files.read(photoKey(row.photo))
 }

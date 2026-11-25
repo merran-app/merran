@@ -75,6 +75,10 @@ Validation errors can include `error.fields`. Authentication-library endpoints o
 | 429       | Respect `Retry-After` when provided; otherwise back off and retry sparingly.                       |
 | 500 / 502 | Inspect the request ID and server/upstream status; avoid an unbounded retry loop.                  |
 
+A request that starts slow work waits up to ten seconds for it, then answers `202` instead of the result, and the work carries on after you stop waiting: an import answers with the import, working out nutrition (`POST /api/recipes/{recipe}/nutrition`), making a recipe's photo (`POST /api/recipes/{recipe}/photo/make`) and `POST /api/stores/kroger/prices` with the job, and a scanned receipt (`POST /api/pantry/receipts`) with the receipt, its `status` `reading`. Check the status before reading the body. If the work fails or is stopped while the request is still waiting, it answers `502` `job_failed` or `409` `job_stopped`.
+
+An API key follows a `202` through the thing itself, asking again now and then: the import (`GET /api/imports/{importId}`), the recipe's `working` (`GET /api/recipes/{recipe}`), the receipt's `status` (`GET /api/pantry/receipts/{receiptId}`), or `kroger.checkingPrices` on `GET /api/stores`. Or it listens for the live `job` event. A signed-in session can also read the job at `GET /api/households/current/jobs/{jobId}`, as a household admin or whoever started it (another member gets `404`); that route doesn't take API keys, which get `403` `api_key_not_allowed`.
+
 In alpha.1, authenticated API keys are limited to **300 requests per 60-second window per key**. The counter is in memory and resets with the server. Exceeding it returns 429 and `Retry-After` in seconds. Sign-in/setup, AI providers, and other upstream services have separate limits; this is not a guarantee that every request below 300 succeeds.
 
 Retrying a read is usually safe. Do not automatically replay imports, cart transfers, or other writes after an ambiguous network failure: the first request may have succeeded. There is no universal idempotency-key guarantee in this API.
