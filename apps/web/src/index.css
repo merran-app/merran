@@ -92,6 +92,19 @@
 }
 
 /*
+ * On a touch screen, a long press on a thing opens its menu
+ * (components/ui/context-menu.tsx), so it mustn't select the thing's text
+ * too, as Safari on iOS does when a finger stays put. A mouse can still
+ * select it.
+ */
+@media (pointer: coarse) {
+  [data-slot="context-menu-trigger"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/*
  * Color palettes. Tokens follow shadcn/ui, plus `highlight` for timers,
  * ratings and the current cook step. Sage is the default; the others apply
  * when <html data-palette="..."> is set. Every text/background pair is checked
