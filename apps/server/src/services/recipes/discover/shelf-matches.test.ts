@@ -106,6 +106,21 @@ describe("a theme's words", () => {
     expect(themeWords("something cozy")).toEqual([])
   })
 
+  test("leave out single letters, which can't be matched as words", () => {
+    expect(themeWords("Vitamin C smoothies")).toEqual(["vitamin", "smoothies"])
+    expect(themeWords("x y")).toEqual([])
+    // A theme of only single letters matches nothing, not every name with
+    // a gap between two words.
+    expect(
+      fitsTheme(themeWords("x y"), {
+        name: "Soup - Easy",
+        keywords: [],
+        courses: [],
+        diets: [],
+      })
+    ).toBe(false)
+  })
+
   test("fit a recipe by its name, keywords, course or diets", () => {
     const soup = {
       name: "Lentil Soup",
@@ -176,6 +191,12 @@ describe("shelf matches", () => {
   test("finds nothing for a theme of only moods", async () => {
     expect(
       await shelfMatches(em(), home, "something cozy", { avoid: [], skip: [] })
+    ).toEqual([])
+  })
+
+  test("finds nothing for a theme of only single letters", async () => {
+    expect(
+      await shelfMatches(em(), home, "x y", { avoid: [], skip: [] })
     ).toEqual([])
   })
 })

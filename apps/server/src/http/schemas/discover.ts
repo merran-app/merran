@@ -54,7 +54,8 @@ export const DiscoverySchema = z
           site: z.string(),
           minutes: z.number().nullable(),
           photo: z.string().nullable().openapi({
-            description: "A small copy kept by Merran, or null.",
+            description:
+              "A small copy kept by Merran, a shelf recipe's photo (`GET /sites/recipes/{recipe}/photo`), or, for a search from before November 25, 2026, the site's own link. Null when it has none.",
           }),
           why: z.string().openapi({ description: "Why it's a good pick." }),
         })

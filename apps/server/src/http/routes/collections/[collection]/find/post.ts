@@ -43,21 +43,21 @@ export default (router: Router, deps: AppDeps) => {
       await languageOf(em, userId),
       c.req.valid("param").collection
     )
-    const avoid = collection.recipes.map((recipe) => recipe.name)
-    // Its last search carries on with another round; with none yet, one starts.
+    // Its last search carries on with another round, leaving out the
+    // collection's own recipes as any of its searches does; with none yet,
+    // one starts.
     const discovery = collection.found
       ? await findMore(deps, em, {
           householdId,
           userId,
           discoveryId: collection.found.id,
-          avoid,
         })
       : await startDiscovery(deps, em, {
           householdId,
           userId,
           theme: collection.theme,
           collection: collection.id,
-          avoid,
+          avoid: collection.recipes.map((recipe) => recipe.name),
         })
     return c.json(discovery, 202)
   })

@@ -1,5 +1,6 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import type { Logger } from "pino"
+import { z } from "zod"
 import type { AppDeps } from "../../../core/context.ts"
 import { AppError } from "../../../core/errors.ts"
 import type {
@@ -34,20 +35,28 @@ const NOTHING_ELSE = "Nothing else turned up online that Merran could open."
 const DIDNT_WORK = "The search didn't work. Try again in a moment."
 
 /** A recipe page the AI picked, with a line on why it suits. */
-export type AiPick = { url: string; name: string; why: string }
+const AiPick = z.object({ url: z.string(), name: z.string(), why: z.string() })
+export type AiPick = z.infer<typeof AiPick>
 
-/** What a round keeps with its job as it goes, so a restart carries on. */
-export type RoundSaved = {
+/**
+ * What a round keeps with its job as it goes, so a restart carries on; it's
+ * read back with this after one.
+ */
+export const RoundSaved = z.object({
   /** How many recipes the search had when the job began. */
-  startedWith: number
-  picks: AiPick[]
-  /** The picks opened or given up on, by link. */
-  tried: string[]
+  startedWith: z.number(),
+  picks: z.array(AiPick),
+  /**
+   * The picks opened or given up on, by link. One held back isn't tried
+   * until it's saved, so a restart before then opens it again.
+   */
+  tried: z.array(z.string()),
   /** The picks that didn't open as recipes, to tell the AI. */
-  failed: string[]
+  failed: z.array(z.string()),
   /** How many times the AI's been asked: 1 or 2. */
-  asked: number
-}
+  asked: z.number(),
+})
+export type RoundSaved = z.infer<typeof RoundSaved>
 
 type RoundOptions = {
   householdId: string
@@ -67,7 +76,12 @@ type RoundDeps = Pick<AppDeps, "fetcher" | "files">
 /** A page that opened as a recipe, before its photo is fetched. */
 type Opened = Omit<DiscoveredRecipe, "photo" | "photoKey" | "shelfId"> & {
   photoUrl: string | null
+  /** The AI's link for it, as `tried` names it: the page may have moved. */
+  pickUrl: string
 }
+
+/** A recipe's photo, kept small on Merran, or null when it has none. */
+type KeptPhoto = Awaited<ReturnType<typeof keepFoundPhoto>>
 
 /** What telling recipes apart needs of one. */
 type Found = Pick<DiscoveredRecipe, "url" | "name" | "site">
@@ -101,7 +115,10 @@ class Round {
    * or on the way with its photo. Those saved before a restart count too.
    */
   readonly #ours: Found[]
-  /** Recipes held back because their site has two already, in the order they opened. */
+  /**
+   * Recipes held back because their site has two already, in the order they
+   * opened. They aren't tried until the round fills from them.
+   */
   readonly #held: Opened[] = []
   /** The last save, which the next waits for. */
   #saving: Promise<void> = Promise.resolve()
@@ -148,12 +165,27 @@ class Round {
     // Too few opened: once more, saying which didn't.
     const opened = this.#ours.length + this.#held.length
     if (this.#asked === 1 && opened < ENOUGH && !this.#full) {
+      await this.#searchingAgain()
       await this.#ask([...this.#failed])
       await this.#openAll(this.#untried())
     }
 
-    await this.#fillFromHeld()
+    if (this.#held.length > 0) await this.#fillFromHeld()
     await this.#finish()
+  }
+
+  /**
+   * Clears the search's progress while the AI is asked again, so the page
+   * says it's searching the web rather than opening pages. The new picks
+   * set it again.
+   */
+  async #searchingAgain() {
+    await this.#save(() => {
+      if (this.#markStoppedIfCancelled()) return
+      this.#discovery.progress = null
+    })
+    // Stopped while it saved: the AI isn't asked.
+    this.#signal.throwIfAborted()
   }
 
   /** Asks the AI for picks, and keeps them with the job before opening any. */
@@ -169,8 +201,12 @@ class Round {
     await this.#tell()
   }
 
+  /** The picks still to open: not tried, and not held back. */
   #untried() {
-    return this.#picks.filter((pick) => !this.#tried.includes(pick.url))
+    const held = this.#held.map((recipe) => recipe.pickUrl)
+    return this.#picks.filter(
+      (pick) => !this.#tried.includes(pick.url) && !held.includes(pick.url)
+    )
   }
 
   /**
@@ -196,9 +232,18 @@ class Round {
     if (this.#signal.aborted) return
     if (!recipe) {
       this.#failed.push(pick.url)
-    } else if (this.#take(recipe) === "ours") {
-      await this.#keep(recipe)
-      if (this.#signal.aborted) return
+    } else {
+      const taken = this.#take(recipe)
+      if (taken === "held") {
+        // Not tried until it's saved, so a restart before then opens its
+        // page again rather than losing it.
+        await this.#tell()
+        return
+      }
+      if (taken === "ours") {
+        await this.#keep(recipe)
+        if (this.#signal.aborted) return
+      }
     }
     this.#tried.push(pick.url)
     await this.#tell()
@@ -237,7 +282,12 @@ class Round {
 
   /** Fetches a recipe's photo, kept small on Merran, and saves the recipe to the search. */
   async #keep(recipe: Opened) {
-    const photo = await keepFoundPhoto(
+    await this.#saveFound(recipe, await this.#photoOf(recipe))
+  }
+
+  /** Fetches a recipe's photo and keeps it small on Merran. */
+  #photoOf(recipe: Opened): Promise<KeptPhoto> {
+    return keepFoundPhoto(
       this.#deps,
       {
         householdId: this.#options.householdId,
@@ -246,6 +296,10 @@ class Round {
       recipe.photoUrl,
       recipe.url
     )
+  }
+
+  /** Saves a recipe to the search, with its photo. */
+  async #saveFound(recipe: Opened, photo: KeptPhoto) {
     const found: DiscoveredRecipe = {
       url: recipe.url,
       name: recipe.name,
@@ -262,14 +316,34 @@ class Round {
     })
   }
 
-  /** The held-back recipes fill the round up to eight, in the order they opened. */
+  /**
+   * The held-back recipes fill the round up to eight. Their photos are
+   * fetched together, and they're saved in the order they opened. Then
+   * they're all tried: saved, or with no room for them.
+   */
   async #fillFromHeld() {
     const room = Math.max(0, MOST - this.#ours.length)
-    for (const recipe of this.#held.slice(0, room)) {
-      this.#signal.throwIfAborted()
-      this.#ours.push(recipe)
-      await this.#keep(recipe)
+    const promoted = this.#held.slice(0, room)
+    this.#ours.push(...promoted)
+    const photos = promoted.map((recipe) => this.#photoOf(recipe))
+    // Every fetch is heard from now, so one that fails while an earlier
+    // recipe saves isn't left unhandled, and waited for, so no photo is
+    // still being written once a stop has ended the round.
+    const allFetched = Promise.allSettled(photos)
+    try {
+      for (const [i, recipe] of promoted.entries()) {
+        const photo = await photos[i]!
+        this.#signal.throwIfAborted()
+        await this.#saveFound(recipe, photo)
+        this.#signal.throwIfAborted()
+      }
+    } finally {
+      await allFetched
     }
+    for (const recipe of this.#held.splice(0)) {
+      this.#tried.push(recipe.pickUrl)
+    }
+    await this.#tell()
     this.#signal.throwIfAborted()
   }
 
@@ -317,17 +391,33 @@ class Round {
   }
 
   /**
-   * Says how far the round's got: with its job, where a restart finds what
-   * it's done, and on the search, for the page showing it.
+   * Says how far the round's got: on the search first, for the page showing
+   * it, then with its job, where a restart finds what it's done. The job's
+   * live event has the page read the search again, so the search must say
+   * it by then. It's worked out as the save takes its turn, so it's as far
+   * as the round has got at that moment.
    */
   async #tell() {
-    const done = this.#tried.length
-    const total = this.#picks.length
-    await this.#options.progress(done, total, this.#soFar())
-    await this.#save(() => {
-      if (this.#markStoppedIfCancelled()) return
-      this.#discovery.progress = { done, total }
+    const told = await this.#save(() => {
+      if (this.#markStoppedIfCancelled()) return null
+      const progress = this.#progress()
+      this.#discovery.progress = progress
+      return { ...progress, soFar: this.#soFar() }
     })
+    // Someone's stopped the round: it says no more.
+    if (!told) return
+    await this.#options.progress(told.done, told.total, told.soFar)
+  }
+
+  /**
+   * Pages opened of the AI's picks: those tried, and those held back, which
+   * have opened but aren't tried until they're saved.
+   */
+  #progress() {
+    return {
+      done: this.#tried.length + this.#held.length,
+      total: this.#picks.length,
+    }
   }
 
   /**
@@ -359,15 +449,20 @@ class Round {
 
   /**
    * Makes a change to the search and saves it, after the save before it:
-   * one entity manager can't flush twice at once.
+   * one entity manager can't flush twice at once. Answers what the change
+   * returns, once it's saved.
    */
-  #save(change: () => void): Promise<void> {
+  #save<T>(change: () => T): Promise<T> {
     const turn = this.#saving.then(async () => {
-      change()
+      const result = change()
       await this.#em.flush()
+      return result
     })
     // A save that fails is thrown to whoever asked for it, not to the next.
-    this.#saving = turn.catch(() => {})
+    this.#saving = turn.then(
+      () => {},
+      () => {}
+    )
     return turn
   }
 }
@@ -400,6 +495,7 @@ async function open(
         ((input.prepMinutes ?? 0) + (input.cookMinutes ?? 0) || null),
       photoUrl: data.photoUrls[0] ?? null,
       why: pick.why.replace(/\s+/g, " ").trim().slice(0, 300),
+      pickUrl: pick.url,
     }
   } catch {
     return null

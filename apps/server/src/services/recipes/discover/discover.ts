@@ -6,13 +6,15 @@ import { Discovery, Job, User } from "../../../database/entities/index.ts"
 import { aiUnavailable, useAi, type AiDeps } from "../../ai/run.ts"
 import { resolveTask } from "../../ai/status.ts"
 import { tastesText } from "../../households/taste-text.ts"
-import { ACTIVE, enqueue, findJob, wakeRunner } from "../../jobs/jobs.ts"
+import { ACTIVE, createJob, findJob, wakeRunner } from "../../jobs/jobs.ts"
 import type { JobHandler, JobRunner } from "../../jobs/runner.ts"
 import { getTastes } from "../../households/tastes.ts"
 import { removeFilesLater } from "../../storage/remove-job.ts"
 import { searchFolder } from "./photos.ts"
-import { runRound } from "./rounds.ts"
+import { RoundSaved, runRound } from "./rounds.ts"
 import { shelfMatches } from "./shelf-matches.ts"
+import { getCollection } from "./sites/collections.ts"
+import { languageOf } from "./sites/sites.ts"
 
 // Discover: new recipes online for a theme ("cozy fall soups"), found by
 // the household's small model with web search, that suit the household.
@@ -104,7 +106,8 @@ export async function startDiscovery(
 
 /**
  * Adds a round to a search that's over: up to four more from the shelf and
- * up to eight more from the web, other than what it has.
+ * up to eight more from the web, other than what it has, and other than a
+ * starter collection's own recipes when it's that collection's search.
  */
 export async function findMore(
   deps: AiDeps,
@@ -113,17 +116,43 @@ export async function findMore(
     householdId: string
     userId: string
     discoveryId: string
-    /** More dishes to find others than, after the search's own. */
-    avoid?: readonly string[]
   }
 ) {
   const discovery = await findDiscovery(em, options.discoveryId)
   return startRound(deps, em, {
     householdId: options.householdId,
     userId: options.userId,
-    given: options.avoid ?? [],
+    given: await collectionRecipeNames(em, options, discovery),
     search: discovery,
   })
+}
+
+/**
+ * The names of the recipes in the starter collection a search is for, as
+ * the person sees the collection, so its Find more finds others than them,
+ * whether it's pressed on the collection or on Discover. None for a search
+ * of its own, or for a collection that's gone.
+ */
+async function collectionRecipeNames(
+  em: EntityManager,
+  person: { householdId: string; userId: string },
+  discovery: Discovery
+) {
+  if (!discovery.collection) return []
+  try {
+    const collection = await getCollection(
+      em,
+      person.householdId,
+      await languageOf(em, person.userId),
+      discovery.collection
+    )
+    return collection.recipes.map((recipe) => recipe.name)
+  } catch (err) {
+    if (err instanceof AppError && err.code === "collection_not_found") {
+      return []
+    }
+    throw err
+  }
 }
 
 /**
@@ -235,10 +264,9 @@ async function startRound(
   discovery.status = "searching"
   discovery.progress = null
   discovery.error = null
-  await em.flush()
 
   // Worked out once the shelf's matches are in, so the AI is told about them.
-  const job = await enqueue(em, {
+  const job = createJob(em, {
     kind: KIND,
     householdId: options.householdId,
     payload: {
@@ -250,7 +278,10 @@ async function startRound(
     maxAttempts: 1,
   })
   discovery.jobId = job.id
+  // The search and its job are saved together, so neither is ever saved
+  // without the other.
   await em.flush()
+  wakeRunner()
   await removeOlderSearches(em, options.householdId)
   return describeDiscovery(discovery)
 }
@@ -389,17 +420,6 @@ const Payload = z.object({
   avoid: z.array(z.string()).default([]),
 })
 
-/** What a round kept with its job, read back after a restart. */
-const Saved = z.object({
-  startedWith: z.number(),
-  picks: z.array(
-    z.object({ url: z.string(), name: z.string(), why: z.string() })
-  ),
-  tried: z.array(z.string()),
-  failed: z.array(z.string()),
-  asked: z.number(),
-})
-
 export const discoverJob: JobHandler = {
   kind: KIND,
   lane: "long",
@@ -447,7 +467,8 @@ export const discoverJob: JobHandler = {
           failed,
           avoid,
         }),
-      saved: Saved.safeParse(saved).data ?? null,
+      // What the round kept with its job before a restart.
+      saved: RoundSaved.safeParse(saved).data ?? null,
       progress,
       signal,
       logger,

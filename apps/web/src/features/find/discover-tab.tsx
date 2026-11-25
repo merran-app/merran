@@ -212,6 +212,10 @@ export function Search({
     }
   }
 
+  const heading = !hideTheme && (
+    <h2 className="text-xl font-semibold break-words">{search.theme}</h2>
+  )
+
   const found = (
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {search.recipes.map((recipe) => (
@@ -230,6 +234,7 @@ export function Search({
   if (searching) {
     return (
       <section className="grid gap-4">
+        {heading}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p
             className="flex items-center gap-2 text-muted-foreground"
@@ -257,9 +262,7 @@ export function Search({
 
   return (
     <section className="grid gap-4">
-      {!hideTheme && (
-        <h2 className="text-xl font-semibold break-words">{search.theme}</h2>
-      )}
+      {heading}
       {search.status === "stopped" && (
         <p className="text-muted-foreground" role="status">
           {search.recipes.length > 0

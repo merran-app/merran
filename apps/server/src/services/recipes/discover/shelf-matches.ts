@@ -39,7 +39,9 @@ const FILLER = new Set(
 /**
  * The words of a theme that can be matched, lowercase, with the filler
  * left out. A hyphenated word stays whole when it's a diet label
- * ("gluten-free") and is split otherwise ("sheet-pan").
+ * ("gluten-free") and is split otherwise ("sheet-pan"). Single letters
+ * ("Vitamin C") are left out too: a word is matched in its forms of two
+ * letters or more, so a single letter would match any name.
  */
 export function themeWords(theme: string) {
   const words: string[] = []
@@ -48,7 +50,7 @@ export function themeWords(theme: string) {
       ? [word]
       : word.split("-")
     for (const part of parts) {
-      if (part && !FILLER.has(part) && !words.includes(part)) {
+      if (part.length > 1 && !FILLER.has(part) && !words.includes(part)) {
         words.push(part)
       }
     }

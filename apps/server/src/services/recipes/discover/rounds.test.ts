@@ -3,7 +3,15 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pino } from "pino"
 import sharp from "sharp"
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest"
 import { AppError } from "../../../core/errors.ts"
 import {
   Discovery,
@@ -497,21 +505,186 @@ describe("a round of Discover", () => {
     })
   })
 
-  test("a progress save made as it's stopped doesn't write progress over the stop", async () => {
-    // One pick opens, and its progress is told as the stop arrives, while the
-    // others' pages wait. The search must say stopped, with no progress, at
-    // once: not "1 of 3" until the others finish and the round ends.
-    const rest = gate()
-    const picks = fromSites(3).map((pick, i) =>
-      i === 0 ? pick : recipe(pick.url, pick.name, { wait: rest.shut })
-    )
+  test("opens a held-back pick again after a restart, without asking the AI again", async () => {
+    // Three picks from a.example and one from b.example, whose page waits.
+    // The third from a is held back when Merran shuts down. What's kept with
+    // the job doesn't count it as tried, so after the restart its page is
+    // opened again; with it, the round has four, and the AI isn't asked.
+    const bPage = gate()
+    const picks = [
+      recipe("https://a.example/beef-stew", "Beef Stew", { photo: false }),
+      recipe("https://a.example/chicken-curry", "Chicken Curry", {
+        photo: false,
+      }),
+      recipe("https://a.example/pad-thai", "Pad Thai", { photo: false }),
+      recipe("https://b.example/fish-tacos", "Fish Tacos", {
+        photo: false,
+        wait: bPage.shut,
+      }),
+    ]
     const { tx, search } = await searching()
-    const { options, controller } = roundOptions([picks])
+    const before = roundOptions([picks])
+
+    const round = runRound(deps, tx, search, before.options)
+    await expect.poll(() => before.progressed.at(-1)?.done).toBe(3)
+    before.controller.abort(new JobStopped("shutdown"))
+    bPage.open()
+    await expect(round).rejects.toBeInstanceOf(JobStopped)
+
+    const kept = await savedNames(search.id)
+    expect(kept).toHaveLength(2)
+    const heldBack = picks.find(
+      (pick) => pick.url.startsWith("https://a.") && !kept.includes(pick.name)
+    )!
+    const saved = before.progressed.at(-1)!.saved
+    expect(saved.tried).not.toContain(heldBack.url)
+
+    fetched.length = 0
+    const restarted = em()
+    const again = await restarted.findOneOrFail(Discovery, { id: search.id })
+    let askedAgain = 0
+    const after = roundOptions([], {
+      saved,
+      ask: async () => {
+        askedAgain++
+        return []
+      },
+    })
+    await runRound(deps, restarted, again, after.options)
+
+    expect(fetchedPages()).toContain(heldBack.url)
+    expect(askedAgain).toBe(0)
+    expect(again.status).toBe("done")
+    expect(again.recipes.map((found) => found.name).sort()).toEqual(
+      picks.map((pick) => pick.name).sort()
+    )
+  })
+
+  test("tells its job how far it's got once the search says so", async () => {
+    // The web app reads the search again when it hears the job's event, so
+    // the search has the progress first. One pick, so nothing else saves
+    // between the two.
+    const { tx, search } = await searching()
+    const { options } = roundOptions([fromSites(1, { photo: false }), []])
+    const seen: { told: unknown; saved: unknown }[] = []
+    options.progress = async (done: number, total: number) => {
+      const saved = (await stored(search.id)).progress
+      seen.push({ told: { done, total }, saved })
+    }
+
+    await runRound(deps, tx, search, options)
+
+    expect(seen.length).toBeGreaterThan(0)
+    for (const { told, saved } of seen) expect(saved).toEqual(told)
+  })
+
+  test("says it's searching the web again while the AI is asked once more", async () => {
+    const answers = [[broken("https://broken.example/one")], []]
+    const { tx, search } = await searching()
+    let whileAskedAgain: unknown = "not asked again"
+    const { options } = roundOptions([], {
+      ask: async () => {
+        if (answers.length === 1) {
+          whileAskedAgain = (await stored(search.id)).progress
+        }
+        return answers.shift() ?? []
+      },
+    })
+
+    await runRound(deps, tx, search, options)
+
+    expect(whileAskedAgain).toBeNull()
+  })
+
+  test("fetches the held-back recipes' photos together, saving them in the order they opened", async () => {
+    // Four picks from a.example, opened one after another: two are the
+    // round's, two held back. The first held back's photo waits, and the
+    // second's is fetched meanwhile, but isn't saved before it. The round's
+    // own two are saved as their photos come, in either order.
+    const slowPhoto = gate()
+    const thirdTold = gate()
+    const names = DISHES.slice(0, 4)
+    const urls = names.map((name) => `https://a.example/${slug(name)}`)
+    const picks = [
+      recipe(urls[0]!, names[0]!),
+      recipe(urls[1]!, names[1]!, { wait: whenFetched(`${urls[0]}.jpg`) }),
+      recipe(urls[2]!, names[2]!, {
+        wait: whenFetched(`${urls[1]}.jpg`),
+        photoWait: slowPhoto.shut,
+      }),
+      recipe(urls[3]!, names[3]!, { wait: thirdTold.shut }),
+    ]
+    const { tx, search } = await searching()
+    const { options } = roundOptions([picks, []])
     options.progress = async (done: number) => {
-      if (done === 1) controller.abort(new JobStopped("cancelled"))
+      if (done === 3) thirdTold.open()
     }
 
     const round = runRound(deps, tx, search, options)
+    await expect.poll(() => fetched).toContain(`${urls[3]}.jpg`)
+    expect((await savedNames(search.id)).sort()).toEqual(
+      names.slice(0, 2).sort()
+    )
+    slowPhoto.open()
+    await round
+
+    expect(search.status).toBe("done")
+    const saved = search.recipes.map((found) => found.name)
+    expect(saved.slice(0, 2).sort()).toEqual(names.slice(0, 2).sort())
+    expect(saved.slice(2)).toEqual(names.slice(2))
+  })
+
+  test("a progress save that waits its turn as it's stopped doesn't write progress over the stop", async () => {
+    // The first pick's progress is saving, held up, when the second, which
+    // doesn't open, is tried, so its progress waits its turn; the stop comes
+    // while it waits. The search must say stopped, with no progress, at
+    // once: not "2 of 3" until the last page opens and the round ends.
+    const rest = gate()
+    const saveHeld = gate()
+    const letSaveGo = gate()
+    let failSecond!: (err: Error) => void
+    const secondAnswers = new Promise<void>((_, reject) => {
+      failSecond = reject
+    })
+    const first = recipe("https://site1.example/beef-stew", "Beef Stew", {
+      photo: false,
+    })
+    const second: AiPick = {
+      url: "https://site2.example/not-a-page",
+      name: "Not a page",
+      why: "",
+    }
+    web.set(second.url, {
+      body: "",
+      contentType: "text/html",
+      wait: secondAnswers,
+    })
+    const third = recipe("https://site3.example/pad-thai", "Pad Thai", {
+      wait: rest.shut,
+    })
+    const { tx, search } = await searching()
+    const { options, controller } = roundOptions([[first, second, third]])
+    const flush = tx.flush.bind(tx)
+    let held = false
+    vi.spyOn(tx, "flush").mockImplementation(async () => {
+      if (!held && search.progress?.done === 1) {
+        held = true
+        saveHeld.open()
+        await letSaveGo.shut
+      }
+      await flush()
+    })
+
+    const round = runRound(deps, tx, search, options)
+    await saveHeld.shut
+    await whenFetched(second.url)
+    failSecond(new Error("It didn't answer."))
+    // Nothing's awaited between its page failing and its save being asked
+    // for, so by the next turn of the event loop that save is waiting.
+    await pause(0)
+    controller.abort(new JobStopped("cancelled"))
+    letSaveGo.open()
+
     await expect
       .poll(async () => {
         const saved = await stored(search.id)

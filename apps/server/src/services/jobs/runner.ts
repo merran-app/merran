@@ -64,7 +64,9 @@ export type JobContext = {
   em: EntityManager
   /**
    * Says how far it's got, for "Importing 12 of 52", and what it's done so
-   * far when someone follows it item by item (kept as its result).
+   * far when someone follows it item by item (kept as its result). A call
+   * that comes within half a second of the last is saved a moment later,
+   * with `soFar` as it is then, so pass a copy if you keep changing it.
    */
   progress(
     done: number,

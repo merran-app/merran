@@ -392,4 +392,48 @@ describe("finding more, and stopping", () => {
     const job = await jobFor(body.id)
     expect(job.payload.avoid).toHaveLength(30)
   })
+
+  test("Find more on Discover leaves a collection's own recipes out of its search", async () => {
+    // The Discover tab lists a collection's searches too, and its Find more
+    // says nothing of the collection.
+    const going = await database.em
+      .fork()
+      .find(Discovery, { status: "searching" }, { filters: false })
+    for (const search of going) await finish(search.id)
+
+    const em = database.em.fork()
+    em.create(SiteRecipe, {
+      url: "https://shelf.example/sesame-pasta-noodles",
+      state: "recipe",
+      siteName: "Shelf",
+      name: "Sesame Pasta Noodles",
+      courses: ["main"],
+      keywords: [],
+      ingredients: ["1 cup water"],
+      diets: [],
+      publishedAt: new Date(),
+    } as never)
+    await em.flush()
+    const collection = await (await kyle.get("/api/collections/pasta")).json()
+    expect(
+      collection.recipes.map((recipe: { name: string }) => recipe.name)
+    ).toContain("Sesame Pasta Noodles")
+    const search = em.create(Discovery, {
+      household: await em.findOneOrFail(Household, { id: home }),
+      theme: collection.theme,
+      collection: "pasta",
+      status: "done",
+      recipes: [],
+    })
+    await em.flush()
+
+    const more = await kyle.post(`/api/discover/${search.id}/more`)
+    expect(more.status, await more.clone().text()).toBe(202)
+    const body = await more.json()
+    expect(
+      body.recipes.map((recipe: { name: string }) => recipe.name)
+    ).not.toContain("Sesame Pasta Noodles")
+    const job = await jobFor(search.id)
+    expect(job.payload.avoid).toContain("Sesame Pasta Noodles")
+  })
 })
