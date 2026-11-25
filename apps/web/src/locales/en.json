@@ -2516,6 +2516,12 @@
       "hint": "They go there next time too."
     },
     "recipe": {
+      "menu": "Add a recipe",
+      "title": "Add a recipe to the list",
+      "description": "Its ingredients go on the list, and it goes on this week's plan for any day, so you can move it to a day later.",
+      "search": "Find a recipe",
+      "picked": "Recipe",
+      "change": "Pick another",
       "added": "Added {{name}} to the list.",
       "onPlan": "It's on this week's plan, any day."
     },

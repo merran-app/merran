@@ -75,6 +75,7 @@ import { initials } from "@/lib/initials"
 import { cn } from "@/lib/utils"
 
 import { AddFromPlanDialog } from "./add-from-plan-dialog"
+import { AddRecipeDialog } from "./add-recipe-dialog"
 import { CoveredAtHome } from "./covered-at-home"
 import { ItemRow, type RowFind, type RowPrices } from "./item-row"
 import {
@@ -126,6 +127,7 @@ export function ListPage() {
   const admin = isAdminRole(useActiveHousehold()?.role)
   const others = usePeopleHere()
   const [fromPlan, setFromPlan] = React.useState(false)
+  const [addingRecipe, setAddingRecipe] = React.useState(false)
   const [everyWeek, setEveryWeek] = React.useState(false)
   const [onHand, setOnHand] = React.useState(false)
   const [foods, setFoods] = React.useState(false)
@@ -401,6 +403,10 @@ export function ListPage() {
                   <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => setAddingRecipe(true)}>
+                    {t("list.recipe.menu")}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     disabled={selectable.length === 0}
                     onClick={() => selection.start()}
@@ -527,6 +533,9 @@ export function ListPage() {
               <div className="flex flex-wrap justify-center gap-2">
                 <Button onClick={() => setFromPlan(true)}>
                   {t("list.fromPlan")}
+                </Button>
+                <Button variant="outline" onClick={() => setAddingRecipe(true)}>
+                  {t("list.recipe.menu")}
                 </Button>
                 <Button variant="outline" onClick={() => setEveryWeek(true)}>
                   {t("list.setUpEveryWeek")}
@@ -767,6 +776,7 @@ export function ListPage() {
         }}
       />
       <AddFromPlanDialog open={fromPlan} onOpenChange={setFromPlan} />
+      <AddRecipeDialog open={addingRecipe} onOpenChange={setAddingRecipe} />
       <EveryWeekDialog open={everyWeek} onOpenChange={setEveryWeek} />
       <OnHandDialog open={onHand} onOpenChange={setOnHand} />
       <FoodsDialog open={foods} onOpenChange={setFoods} />
