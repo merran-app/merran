@@ -83,14 +83,31 @@ export const collectionsQuery = queryOptions({
   queryFn: () => unwrap(api.GET("/api/collections")),
 })
 
+/** How many of a collection's recipes each page brings. */
+const COLLECTION_PAGE = 24
+
+/**
+ * A collection as pages of its recipes, 24 at a time. The header, its
+ * counts and what Find more found come with the first page.
+ */
 export const collectionQuery = (id: string) =>
-  queryOptions({
+  infiniteQueryOptions({
     queryKey: ["recipes", "collections", id],
-    queryFn: () =>
+    queryFn: ({ pageParam }) =>
       unwrap(
         api.GET("/api/collections/{collection}", {
-          params: { path: { collection: id } },
+          params: {
+            path: { collection: id },
+            query: { offset: pageParam, limit: COLLECTION_PAGE },
+          },
         })
+      ),
+    initialPageParam: 0,
+    getNextPageParam: (_last, pages) =>
+      nextOffset(
+        // A collection says how many it has as its count.
+        pages.map((page) => ({ ...page, total: page.count })),
+        (page) => page.recipes.length
       ),
   })
 

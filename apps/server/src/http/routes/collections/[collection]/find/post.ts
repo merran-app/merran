@@ -4,7 +4,10 @@ import {
   findMore,
   startDiscovery,
 } from "../../../../../services/recipes/discover/discover.ts"
-import { getCollection } from "../../../../../services/recipes/discover/sites/collections.ts"
+import {
+  COLLECTION_PAGE,
+  getCollection,
+} from "../../../../../services/recipes/discover/sites/collections.ts"
 import { languageOf } from "../../../../../services/recipes/discover/sites/sites.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
@@ -41,7 +44,8 @@ export default (router: Router, deps: AppDeps) => {
       em,
       householdId,
       await languageOf(em, userId),
-      c.req.valid("param").collection
+      c.req.valid("param").collection,
+      { offset: 0, limit: COLLECTION_PAGE }
     )
     // Its last search carries on with another round, leaving out the
     // collection's own recipes as any of its searches does; with none yet,

@@ -13,7 +13,7 @@ import { removeFilesLater } from "../../storage/remove-job.ts"
 import { searchFolder } from "./photos.ts"
 import { RoundSaved, runRound } from "./rounds.ts"
 import { shelfMatches } from "./shelf-matches.ts"
-import { getCollection } from "./sites/collections.ts"
+import { COLLECTION_PAGE, getCollection } from "./sites/collections.ts"
 import { languageOf } from "./sites/sites.ts"
 
 // Discover: new recipes online for a theme ("cozy fall soups"), found by
@@ -144,7 +144,8 @@ async function collectionRecipeNames(
       em,
       person.householdId,
       await languageOf(em, person.userId),
-      discovery.collection
+      discovery.collection,
+      { offset: 0, limit: COLLECTION_PAGE }
     )
     return collection.recipes.map((recipe) => recipe.name)
   } catch (err) {

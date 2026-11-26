@@ -9,7 +9,11 @@ import {
   jsonResponse,
   SIGNED_IN_ERRORS,
 } from "../../../schemas/responses.ts"
-import { CollectionParam, CollectionSchema } from "../../../schemas/sites.ts"
+import {
+  CollectionParam,
+  CollectionSchema,
+  PageQuerySchema,
+} from "../../../schemas/sites.ts"
 
 const route = createRoute({
   method: "get",
@@ -18,9 +22,9 @@ const route = createRoute({
   tags: ["Collections"],
   summary: "A starter collection",
   description:
-    "Its recipes that suit the household, and what Find more found for it last.",
+    "A page of its recipes that suit the household (24 at first; `offset` and `limit` bring the rest), and what Find more found for it last.",
   ...openToKeys("recipes", "read"),
-  request: { params: CollectionParam },
+  request: { params: CollectionParam, query: PageQuerySchema },
   responses: {
     200: jsonResponse(CollectionSchema, "The collection."),
     404: errorResponse("No such collection."),
@@ -35,7 +39,8 @@ export default (router: Router, _deps: AppDeps) => {
       em,
       householdId,
       await languageOf(em, userId),
-      c.req.valid("param").collection
+      c.req.valid("param").collection,
+      c.req.valid("query")
     )
     return c.json(collection, 200)
   })

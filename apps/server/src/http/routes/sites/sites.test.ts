@@ -7,6 +7,7 @@ import type { App } from "../../../app.ts"
 import { AppError } from "../../../core/errors.ts"
 import {
   Import,
+  ImportItem,
   RecipeSite,
   SiteRecipe,
 } from "../../../database/entities/index.ts"
@@ -838,5 +839,152 @@ describe("show more of a followed site, and a spotlight that suits", () => {
 
     // As it was, for the tests after.
     await kyle.put("/api/households/current/tastes", AVOID_PEANUTS)
+  })
+})
+
+describe("show more of a collection, and import what's shown", () => {
+  type Listed = {
+    id: string
+    url: string
+    inLibrary: { slug: string } | null
+  }
+  type Page = { count: number; toImport: number; recipes: Listed[] }
+
+  const SOUPS = 30
+  let bulk: SiteRecipe[]
+
+  async function collection(query = "") {
+    const res = await kyle.get(`/api/collections/soups${query}`)
+    expect(res.status).toBe(200)
+    return (await res.json()) as Page
+  }
+
+  beforeAll(async () => {
+    // 30 more soups that suit the household, so "soups" has over 24.
+    const em = database.em.fork()
+    bulk = Array.from({ length: SOUPS }, (_, index) =>
+      em.create(SiteRecipe, {
+        url: `https://bulk-soups.example/soup-${index}/`,
+        state: "recipe",
+        siteName: "Bulk Soups",
+        name: `Bulk Soup ${index}`,
+        courses: ["soup"],
+        keywords: [],
+        ingredients: ["1 onion", "4 cups stock"],
+        diets: [],
+        publishedAt: new Date(Date.now() - index * 60_000),
+      })
+    )
+    await em.flush()
+  })
+
+  afterAll(async () => {
+    const em = database.em.fork()
+    await em
+      .remove(await em.find(SiteRecipe, { id: bulk.map((row) => row.id) }))
+      .flush()
+  })
+
+  test("a collection shows 24 at a time and says how many it has", async () => {
+    const first = await collection()
+    expect(first.recipes).toHaveLength(24)
+    expect(first.count).toBeGreaterThan(24)
+
+    const rest = await collection("?offset=24&limit=96")
+    expect(rest.recipes).toHaveLength(first.count - 24)
+    expect(rest.recipes.map((recipe) => recipe.id)).not.toContain(
+      first.recipes[0]!.id
+    )
+    expect(rest.count).toBe(first.count)
+
+    const beyond = await collection("?offset=500")
+    expect(beyond.recipes).toEqual([])
+    expect(beyond.count).toBe(first.count)
+  })
+
+  test("the collections list counts every recipe that suits, not just 24", async () => {
+    const first = await collection()
+    const { collections } = await (await kyle.get("/api/collections")).json()
+    const listed = collections.find(
+      (found: { id: string }) => found.id === "soups"
+    )
+    expect(listed.count).toBe(first.count)
+    expect(listed.toImport).toBe(first.toImport)
+  })
+
+  test("Import these imports just the recipes shown", async () => {
+    const first = await collection()
+    const ids = first.recipes.slice(0, 3).map((recipe) => recipe.id)
+    const res = await kyle.post("/api/collections/soups/import", {
+      recipes: ids,
+    })
+    expect(res.status).toBe(202)
+    expect((await res.json()).total).toBe(3)
+  })
+
+  test("Import these leaves out what's gone from the collection or into the library", async () => {
+    const all = await collection("?limit=96")
+    const unhad = all.recipes.filter((recipe) => !recipe.inLibrary)
+    const had = all.recipes.find((recipe) => recipe.inLibrary)
+    expect(had).toBeDefined()
+    // A recipe on the shelf that isn't one of the soups.
+    const { sites } = await (await kyle.get("/api/sites")).json()
+    const elsewhere = sites.find((site: Site) => site.name === "Paged Example")
+      .recipes[0].id
+
+    // Left out, the import's total shows: one of the soups, one that isn't
+    // in the collection, one that's in the library already, and one that
+    // isn't a recipe at all.
+    const res = await kyle.post("/api/collections/soups/import", {
+      recipes: [unhad[0]!.id, elsewhere, had!.id, randomUUID()],
+    })
+    expect(res.status).toBe(202)
+    expect((await res.json()).total).toBe(1)
+
+    // With only those, there's nothing to import.
+    const none = await kyle.post("/api/collections/soups/import", {
+      recipes: [elsewhere, had!.id],
+    })
+    expect(none.status).toBe(409)
+    expect((await none.json()).error.code).toBe("collection_imported")
+  })
+
+  test("Import these takes the collection's order, and no more than 100", async () => {
+    const all = await collection("?limit=96")
+    const unhad = all.recipes.filter((recipe) => !recipe.inLibrary)
+    // Asked for backwards: it's imported as the collection lists them.
+    const asked = [unhad[2]!.id, unhad[0]!.id, unhad[1]!.id]
+    const res = await kyle.post("/api/collections/soups/import", {
+      recipes: asked,
+    })
+    expect(res.status).toBe(202)
+    const started = await res.json()
+    expect(started.total).toBe(3)
+    const items = await database.em
+      .fork()
+      .find(
+        ImportItem,
+        { import: started.id },
+        { orderBy: { position: "asc" }, filters: false }
+      )
+    expect(items.map((item) => item.label)).toEqual(
+      unhad.slice(0, 3).map((recipe) => recipe.url)
+    )
+
+    const tooMany = await kyle.post("/api/collections/soups/import", {
+      recipes: Array.from({ length: 101 }, () => randomUUID()),
+    })
+    expect(tooMany.status).toBe(400)
+    const empty = await kyle.post("/api/collections/soups/import", {
+      recipes: [],
+    })
+    expect(empty.status).toBe(400)
+  })
+
+  test("without a body, it imports the first 100 not in the library", async () => {
+    const first = await collection()
+    const res = await kyle.post("/api/collections/soups/import")
+    expect(res.status).toBe(202)
+    expect((await res.json()).total).toBe(first.toImport)
   })
 })

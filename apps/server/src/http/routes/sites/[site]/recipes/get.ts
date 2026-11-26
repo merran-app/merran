@@ -10,7 +10,7 @@ import {
 } from "../../../../schemas/responses.ts"
 import {
   SiteParam,
-  SitePageQuerySchema,
+  PageQuerySchema,
   SiteRecipesPageSchema,
 } from "../../../../schemas/sites.ts"
 
@@ -23,7 +23,7 @@ const route = createRoute({
   description:
     "A page of the site's recipes, newest first, as `GET /sites` lists them: for Show more after the newest 24 it gives. Merran keeps a site's newest 120.",
   ...openToKeys("recipes", "read"),
-  request: { params: SiteParam, query: SitePageQuerySchema },
+  request: { params: SiteParam, query: PageQuerySchema },
   responses: {
     200: jsonResponse(SiteRecipesPageSchema, "A page of its recipes."),
     404: errorResponse("The household doesn't follow that site."),

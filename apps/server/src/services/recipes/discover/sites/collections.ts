@@ -20,8 +20,8 @@ import { describeForHousehold, type ShelfRecipeView } from "./sites.ts"
 // files, data.ts), filled from the shelf as the sites post, and fitted to
 // the household: what it can't eat left out, what it has already last.
 
-/** The most recipes a collection shows. */
-const MOST = 24
+/** How many recipes a collection shows at first, and each Show more. */
+export const COLLECTION_PAGE = 24
 
 /** Fewer than this left for a household, and the collection's hidden. */
 const FEWEST = 4
@@ -179,7 +179,10 @@ async function householdShelf(em: EntityManager, householdId: string) {
   return { shelf, views: new Map(views.map((view) => [view.id, view])) }
 }
 
-/** A collection's recipes for the household: those that suit it, unhad first. */
+/**
+ * Every recipe of a collection that suits the household, unhad first: the
+ * pages and the counts are cut from this.
+ */
 function recipesFor(
   collection: CollectionData,
   { shelf, views }: Awaited<ReturnType<typeof householdShelf>>
@@ -190,7 +193,7 @@ function recipesFor(
   return [
     ...shown.filter((recipe) => !recipe.inLibrary),
     ...shown.filter((recipe) => recipe.inLibrary),
-  ].slice(0, MOST)
+  ]
 }
 
 function describeCollection(
@@ -246,14 +249,15 @@ export function findCollection(language: string, id: string) {
 }
 
 /**
- * A collection with its recipes, and what Find more found for it last, or
- * is finding.
+ * A collection with a page of its recipes (its summary counts them all), and
+ * what Find more found for it last, or is finding.
  */
 export async function getCollection(
   em: EntityManager,
   householdId: string,
   language: string,
-  id: string
+  id: string,
+  page: { offset: number; limit: number }
 ) {
   const collection = findCollection(language, id)
   const recipes = recipesFor(collection, await householdShelf(em, householdId))
@@ -264,7 +268,7 @@ export async function getCollection(
   )
   return {
     ...describeCollection(collection, recipes),
-    recipes,
+    recipes: recipes.slice(page.offset, page.offset + page.limit),
     found: search ? describeDiscovery(search) : null,
   }
 }

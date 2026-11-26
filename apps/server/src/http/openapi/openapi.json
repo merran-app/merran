@@ -1286,7 +1286,8 @@
             "description": "What Find more looks for."
           },
           "count": {
-            "type": "number"
+            "type": "number",
+            "description": "How many recipes suit the household, not just those shown."
           },
           "toImport": {
             "type": "number",
@@ -1338,7 +1339,8 @@
             "description": "What Find more looks for."
           },
           "count": {
-            "type": "number"
+            "type": "number",
+            "description": "How many recipes suit the household, not just those shown."
           },
           "toImport": {
             "type": "number",
@@ -1356,7 +1358,7 @@
             "items": {
               "$ref": "#/components/schemas/ShelfRecipe"
             },
-            "description": "Up to 24 that suit the household, those not in its library first: the sites' newest that fit, its hand-picked classics, then the rest."
+            "description": "A page of those that suit the household, those not in its library first: the sites' newest that fit, its hand-picked classics, then the rest. `offset` and `limit` page through the `count`."
           },
           "found": {
             "anyOf": [
@@ -1843,6 +1845,25 @@
           "createdAt": "2026-11-15T18:02:11.000Z",
           "finishedAt": "2026-11-15T18:02:40.000Z",
           "undoneAt": null
+        }
+      },
+      "ImportCollectionRequest": {
+        "type": "object",
+        "properties": {
+          "recipes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "The shelf recipes to import, up to 100: the ones shown, for Import these. Those not in the collection or already in the library are left out. Leave it out for the first 100 not in the library."
+          }
+        },
+        "example": {
+          "recipes": [
+            "0199e8b0-5a10-7a01-8b00-000000000031"
+          ]
         }
       },
       "CookingSessions": {
@@ -20887,7 +20908,7 @@
           "Collections"
         ],
         "summary": "A starter collection",
-        "description": "Its recipes that suit the household, and what Find more found for it last. With an API key, it needs the `recipes: read` permission.",
+        "description": "A page of its recipes that suit the household (24 at first; `offset` and `limit` bring the rest), and what Find more found for it last. With an API key, it needs the `recipes: read` permission.",
         "security": [
           {
             "session": []
@@ -20909,6 +20930,32 @@
             "required": true,
             "name": "collection",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0,
+              "description": "How many to skip: those shown already."
+            },
+            "required": false,
+            "description": "How many to skip: those shown already.",
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 96,
+              "default": 24
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
           }
         ],
         "responses": {
@@ -20961,8 +21008,8 @@
         "tags": [
           "Collections"
         ],
-        "summary": "Import a whole collection",
-        "description": "Its recipes not in the library yet, in the background, as several links are: follow along at /imports/{importId}. With an API key, it needs the `imports: write` permission.",
+        "summary": "Import a collection",
+        "description": "Its recipes not in the library yet, in the background, as several links are: follow along at /imports/{importId}. Send `recipes` to import just those (the ones shown); without them, it's the first 100 not in the library. With an API key, it needs the `imports: write` permission.",
         "security": [
           {
             "session": []
@@ -20986,6 +21033,16 @@
             "in": "path"
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportCollectionRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "202": {
             "description": "Importing: follow it at /imports/{importId}.",

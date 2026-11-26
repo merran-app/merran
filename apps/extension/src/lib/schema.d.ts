@@ -435,7 +435,7 @@ export interface paths {
         };
         /**
          * A starter collection
-         * @description Its recipes that suit the household, and what Find more found for it last. With an API key, it needs the `recipes: read` permission.
+         * @description A page of its recipes that suit the household (24 at first; `offset` and `limit` bring the rest), and what Find more found for it last. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["getCollection"];
         put?: never;
@@ -456,8 +456,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import a whole collection
-         * @description Its recipes not in the library yet, in the background, as several links are: follow along at /imports/{importId}. With an API key, it needs the `imports: write` permission.
+         * Import a collection
+         * @description Its recipes not in the library yet, in the background, as several links are: follow along at /imports/{importId}. Send `recipes` to import just those (the ones shown); without them, it's the first 100 not in the library. With an API key, it needs the `imports: write` permission.
          */
         post: operations["importCollection"];
         delete?: never;
@@ -10151,6 +10151,7 @@ export interface components {
             description: string;
             /** @description What Find more looks for. */
             theme: string;
+            /** @description How many recipes suit the household, not just those shown. */
             count: number;
             /** @description How many aren't in the library yet. */
             toImport: number;
@@ -10212,12 +10213,13 @@ export interface components {
             description: string;
             /** @description What Find more looks for. */
             theme: string;
+            /** @description How many recipes suit the household, not just those shown. */
             count: number;
             /** @description How many aren't in the library yet. */
             toImport: number;
             /** @description Up to four, for its card. */
             photos: string[];
-            /** @description Up to 24 that suit the household, those not in its library first: the sites' newest that fit, its hand-picked classics, then the rest. */
+            /** @description A page of those that suit the household, those not in its library first: the sites' newest that fit, its hand-picked classics, then the rest. `offset` and `limit` page through the `count`. */
             recipes: components["schemas"]["ShelfRecipe"][];
             /** @description What Find more found for it last, or is finding. */
             found: components["schemas"]["Discovery"] | null;
@@ -10386,6 +10388,17 @@ export interface components {
             finishedAt: string | null;
             /** Format: date-time */
             undoneAt: string | null;
+        };
+        /**
+         * @example {
+         *       "recipes": [
+         *         "0199e8b0-5a10-7a01-8b00-000000000031"
+         *       ]
+         *     }
+         */
+        ImportCollectionRequest: {
+            /** @description The shelf recipes to import, up to 100: the ones shown, for Import these. Those not in the collection or already in the library are left out. Leave it out for the first 100 not in the library. */
+            recipes?: string[];
         };
         /**
          * @example {
@@ -20125,7 +20138,11 @@ export interface operations {
     };
     getCollection: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description How many to skip: those shown already. */
+                offset?: number | null;
+                limit?: number;
+            };
             header?: never;
             path: {
                 collection: string;
@@ -20181,7 +20198,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ImportCollectionRequest"];
+            };
+        };
         responses: {
             /** @description Importing: follow it at /imports/{importId}. */
             202: {

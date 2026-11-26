@@ -1,12 +1,17 @@
 import { ArrowLeft01Icon, Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/layout/page-header"
+import { ShowMoreButton } from "@/components/show-more-button"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
@@ -15,27 +20,45 @@ import { Search } from "@/features/find/discover-tab"
 import { collectionQuery, discoveryQuery } from "@/features/find/queries"
 import { ShelfRecipeCard } from "@/features/find/shelf-recipe-card"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { uniqueById } from "@/lib/pages"
 
 export const Route = createFileRoute("/_app/recipes/find/$collection")({
   component: CollectionPage,
 })
 
-/** A starter collection: its recipes, Import all, and Find more with AI. */
+/** The most recipes one import takes. */
+const MOST_IMPORTED = 100
+
+/**
+ * A starter collection: its recipes, Show more, Import what's shown, and
+ * Find more with AI.
+ */
 function CollectionPage() {
   const { t } = useTranslation()
   const { collection: id } = Route.useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const ai = useAiFor("discover")
-  const { data: collection, isPending, isError } = useQuery(collectionQuery(id))
+  const pages = useInfiniteQuery(collectionQuery(id))
+  const { isPending, isError } = pages
+  // The header, its counts and Find more's search come with the first page.
+  const collection = pages.data?.pages[0]
+  const recipes = uniqueById(
+    pages.data?.pages.flatMap((page) => page.recipes) ?? []
+  )
+  // What's shown and not in the library yet: what the button imports.
+  const toImportShown = recipes
+    .filter((recipe) => !recipe.inLibrary)
+    .slice(0, MOST_IMPORTED)
   const [busy, setBusy] = React.useState<"import" | "find" | null>(null)
 
-  async function importAll() {
+  async function importShown() {
     setBusy("import")
     try {
       const started = await unwrap(
         api.POST("/api/collections/{collection}/import", {
           params: { path: { collection: id } },
+          body: { recipes: toImportShown.map((recipe) => recipe.id) },
         })
       )
       await navigate({
@@ -89,6 +112,13 @@ function CollectionPage() {
     })
   }, [finished, id, queryClient])
 
+  // "Import all" only when it really is all: nothing hidden, and no more
+  // than one import takes.
+  const everythingImports =
+    !pages.hasNextPage &&
+    collection !== undefined &&
+    toImportShown.length === collection.toImport
+
   return (
     <>
       <Button
@@ -123,27 +153,36 @@ function CollectionPage() {
             title={collection.title}
             description={collection.description}
             actions={
-              collection.toImport > 0 && (
+              toImportShown.length > 0 && (
                 <Button
                   disabled={busy !== null}
-                  onClick={() => void importAll()}
+                  onClick={() => void importShown()}
                 >
                   {busy === "import" && <Spinner data-icon="inline-start" />}
-                  {t("find.collections.importAll", {
-                    count: collection.toImport,
-                  })}
+                  {everythingImports
+                    ? t("find.collections.importAll", {
+                        count: collection.toImport,
+                      })
+                    : t("find.collections.importShown", {
+                        count: toImportShown.length,
+                      })}
                 </Button>
               )
             }
           />
           <div className="grid gap-8">
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {collection.recipes.map((recipe) => (
+              {recipes.map((recipe) => (
                 <li key={recipe.id}>
                   <ShelfRecipeCard recipe={recipe} />
                 </li>
               ))}
             </ul>
+            {pages.hasNextPage && (
+              <div className="flex justify-center">
+                <ShowMoreButton query={pages} />
+              </div>
+            )}
 
             {ai.ready && (
               <section className="grid gap-4">

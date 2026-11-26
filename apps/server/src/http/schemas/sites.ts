@@ -1,5 +1,6 @@
 import { z } from "@hono/zod-openapi"
 import { COURSES } from "../../services/recipes/discover/sites/data.ts"
+import { MAX_LINKS } from "../../services/recipes/import/import-links.ts"
 import { DiscoverySchema } from "./discover.ts"
 import { IDS, TIMES } from "./examples.ts"
 
@@ -170,8 +171,8 @@ export const SiteRecipesPageSchema = z
     example: { recipes: [SHELF_RECIPE, IN_LIBRARY], total: 26 },
   })
 
-/** A page of a list on the shelf: what Show more asks for. */
-export const SitePageQuerySchema = z.object({
+/** A page of a list on the shelf, a site's or a collection's: what Show more asks for. */
+export const PageQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).default(0).openapi({
     description: "How many to skip: those shown already.",
   }),
@@ -207,7 +208,9 @@ const summaryShape = {
   title: z.string(),
   description: z.string(),
   theme: z.string().openapi({ description: "What Find more looks for." }),
-  count: z.number(),
+  count: z.number().openapi({
+    description: "How many recipes suit the household, not just those shown.",
+  }),
   toImport: z
     .number()
     .openapi({ description: "How many aren't in the library yet." }),
@@ -229,7 +232,7 @@ export const CollectionSchema = z
     ...summaryShape,
     recipes: z.array(ShelfRecipeSchema).openapi({
       description:
-        "Up to 24 that suit the household, those not in its library first: the sites' newest that fit, its hand-picked classics, then the rest.",
+        "A page of those that suit the household, those not in its library first: the sites' newest that fit, its hand-picked classics, then the rest. `offset` and `limit` page through the `count`.",
     }),
     // A union, as .nullable() would make every Discovery nullable.
     found: z.union([DiscoverySchema, z.null()]).openapi({
@@ -238,6 +241,17 @@ export const CollectionSchema = z
   })
   .openapi("Collection", {
     example: { ...SUMMARY, recipes: [SHELF_RECIPE, IN_LIBRARY], found: null },
+  })
+
+export const ImportCollectionRequestSchema = z
+  .object({
+    recipes: z.array(z.string()).min(1).max(MAX_LINKS).optional().openapi({
+      description:
+        "The shelf recipes to import, up to 100: the ones shown, for Import these. Those not in the collection or already in the library are left out. Leave it out for the first 100 not in the library.",
+    }),
+  })
+  .openapi("ImportCollectionRequest", {
+    example: { recipes: [IDS.siteRecipe] },
   })
 
 export const CollectionParam = z.object({
