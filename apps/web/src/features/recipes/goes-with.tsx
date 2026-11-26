@@ -8,7 +8,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import { pairedRecipeLines } from "@merran/shared"
 import {
-  keepPreviousData,
+  useInfiniteQuery,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query"
@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { uniqueById } from "@/lib/pages"
 import { cn } from "@/lib/utils"
 
 import {
@@ -43,6 +44,7 @@ import {
   useRefreshRecipes,
   type Recipe,
   type RecipePairings,
+  pickRecipesQuery,
 } from "./queries"
 
 function failed(error: unknown) {
@@ -346,33 +348,16 @@ function PickRecipes({ recipe }: { recipe: Recipe }) {
     return () => clearTimeout(timer)
   }, [words])
 
-  const found = useQuery({
-    queryKey: ["recipes", "pick", find, tag],
-    queryFn: () =>
-      unwrap(
-        api.GET("/api/recipes", {
-          params: {
-            query: {
-              ...(find ? { q: find } : {}),
-              ...(tag ? { tag: [tag] } : {}),
-              sort: "name",
-              limit: 50,
-            },
-          },
-        })
-      ),
-    // The last results stay, dimmed, while the next search loads.
-    placeholderData: keepPreviousData,
-  })
+  const found = useInfiniteQuery(pickRecipesQuery("pick", find, tag))
 
   const already = new Set(
     (pairings.data?.pairings ?? []).flatMap((rule) =>
       rule.kind === "recipe" ? [rule.recipe.id] : []
     )
   )
-  const shown = (found.data?.recipes ?? []).filter(
-    (option) => option.id !== recipe.id && !already.has(option.id)
-  )
+  const shown = uniqueById(
+    (found.data?.pages ?? []).flatMap((page) => page.recipes)
+  ).filter((option) => option.id !== recipe.id && !already.has(option.id))
 
   async function add() {
     setAdding(true)
@@ -482,6 +467,19 @@ function PickRecipes({ recipe }: { recipe: Recipe }) {
               </li>
             )
           })}
+          {found.hasNextPage && (
+            <li className="flex justify-center p-2">
+              <Button
+                variant="outline"
+                onClick={() => void found.fetchNextPage()}
+                // The pages shown belong to the last search until the new one's in.
+                disabled={found.isFetchingNextPage || found.isPlaceholderData}
+              >
+                {found.isFetchingNextPage && <Spinner />}
+                {t("recipes.showMore")}
+              </Button>
+            </li>
+          )}
         </ul>
       )}
       <Button disabled={picked.size === 0 || adding} onClick={() => void add()}>

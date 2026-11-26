@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query"
 
 import { api, unwrap, type Schemas } from "@/lib/api/client"
+import { nextOffset } from "@/lib/pages"
 import { followWork } from "@/features/live/follow-work"
 
 export type RecipeSummary = Schemas["RecipeSummary"]
@@ -91,11 +92,44 @@ export const recipesQuery = (search: RecipeSearch) =>
         })
       ),
     initialPageParam: 0,
-    getNextPageParam: (last, pages) => {
-      const loaded = pages.reduce((n, page) => n + page.recipes.length, 0)
-      return loaded < last.total ? loaded : undefined
-    },
+    getNextPageParam: (_last, pages) =>
+      nextOffset(pages, (page) => page.recipes.length),
     // The last results stay, dimmed, while a new search or filter loads.
+    placeholderData: keepPreviousData,
+  })
+
+const PICK_PAGE = 50
+
+/**
+ * Recipes to pick from, by name, a page at a time: the meal picker
+ * ("pick-one") and the pairings picker ("pick"). A new search or tag is a new
+ * query, so it starts from the first page again.
+ */
+export const pickRecipesQuery = (
+  scope: "pick-one" | "pick",
+  find: string,
+  tag: string | null
+) =>
+  infiniteQueryOptions({
+    queryKey: ["recipes", scope, find, tag],
+    queryFn: ({ pageParam }) =>
+      unwrap(
+        api.GET("/api/recipes", {
+          params: {
+            query: {
+              ...(find ? { q: find } : {}),
+              ...(tag ? { tag: [tag] } : {}),
+              sort: "name",
+              limit: PICK_PAGE,
+              offset: pageParam,
+            },
+          },
+        })
+      ),
+    initialPageParam: 0,
+    getNextPageParam: (_last, pages) =>
+      nextOffset(pages, (page) => page.recipes.length),
+    // The last results stay, dimmed, while the next search loads.
     placeholderData: keepPreviousData,
   })
 

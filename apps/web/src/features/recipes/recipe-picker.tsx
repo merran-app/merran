@@ -1,6 +1,6 @@
 import { Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { keepPreviousData, useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
@@ -11,11 +11,15 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { api, unwrap, type Schemas } from "@/lib/api/client"
+import { Spinner } from "@/components/ui/spinner"
+import { type Schemas } from "@/lib/api/client"
+import { uniqueById } from "@/lib/pages"
 import { cn } from "@/lib/utils"
 
 import { formatMinutes } from "./format"
+import { pickRecipesQuery } from "./queries"
 
 type RecipeSummary = Schemas["RecipeSummary"]
 
@@ -47,22 +51,10 @@ export function RecipePicker({
     return () => clearTimeout(timer)
   }, [words])
 
-  const found = useQuery({
-    queryKey: ["recipes", "pick-one", find],
-    queryFn: () =>
-      unwrap(
-        api.GET("/api/recipes", {
-          params: {
-            query: { ...(find ? { q: find } : {}), sort: "name", limit: 50 },
-          },
-        })
-      ),
-    // The last results stay, dimmed, while the next search loads.
-    placeholderData: keepPreviousData,
-  })
-  const shown = (found.data?.recipes ?? []).filter(
-    (recipe) => !exclude.includes(recipe.id)
-  )
+  const found = useInfiniteQuery(pickRecipesQuery("pick-one", find, null))
+  const shown = uniqueById(
+    (found.data?.pages ?? []).flatMap((page) => page.recipes)
+  ).filter((recipe) => !exclude.includes(recipe.id))
 
   return (
     <div className="grid min-w-0 gap-3">
@@ -125,6 +117,19 @@ export function RecipePicker({
               </button>
             </li>
           ))}
+          {found.hasNextPage && (
+            <li className="flex justify-center p-2">
+              <Button
+                variant="outline"
+                onClick={() => void found.fetchNextPage()}
+                // The pages shown belong to the last search until the new one's in.
+                disabled={found.isFetchingNextPage || found.isPlaceholderData}
+              >
+                {found.isFetchingNextPage && <Spinner />}
+                {t("recipes.showMore")}
+              </Button>
+            </li>
+          )}
         </ul>
       )}
     </div>
