@@ -709,6 +709,48 @@ describe("the job runner", () => {
     }
   })
 
+  test("a look asked for during a look isn't lost, however that look began", async () => {
+    // The runner is asked to look again while it's taking the first job,
+    // in a look `drain` began: once that look's done, it must look again,
+    // and find the quick job queued behind sixty long ones.
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    let quickRan = false
+    const jobs: JobRunner = runner(
+      [
+        { kind: "hog", lane: "long", concurrency: 5, run: () => held },
+        {
+          kind: "email",
+          lane: "quick",
+          run: async () => {
+            quickRan = true
+          },
+        },
+      ],
+      {
+        lanes: { long: 1 },
+        beforeTaking: async () => {
+          jobs.wake()
+        },
+      }
+    )
+    const tx = em()
+    const longAgo = new Date(Date.now() - 60 * 60_000)
+    for (let i = 0; i < 60; i++) {
+      tx.create(Job, { kind: "hog", payload: {}, runAt: longAgo })
+    }
+    await tx.flush()
+    await enqueue(em(), { kind: "email" })
+
+    const draining = jobs.drain()
+    try {
+      await expect.poll(() => quickRan).toBe(true)
+    } finally {
+      letThemGo()
+      await draining
+    }
+  })
+
   test("a job someone's waiting on takes the next place ahead of older background work", async () => {
     // A big import's nutrition jobs, say: more than one look takes in, and
     // older, with the lane's one place taken, when someone presses Work out

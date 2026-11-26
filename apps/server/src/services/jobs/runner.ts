@@ -271,28 +271,30 @@ export class JobRunner {
       this.#again = true
       return
     }
-    void this.#check().then(() => {
-      if (this.#again) {
-        this.#again = false
-        this.wake()
-      }
-    })
+    void this.#check()
   }
 
-  /** One check for work at a time, so two can't both take the last place. */
+  /**
+   * One check for work at a time, so two can't both take the last place.
+   * Asked to look while it looked, it looks again once it's done, however
+   * the look began: a wake from a job that started as it looked isn't lost.
+   */
   async #check() {
     while (this.#ticking) await this.#ticking
-    this.#ticking = this.#tick()
-      .catch((err: unknown) =>
-        this.#deps.logger.error(
-          { err },
-          "The job runner couldn't check for work"
+    do {
+      this.#again = false
+      this.#ticking = this.#tick()
+        .catch((err: unknown) =>
+          this.#deps.logger.error(
+            { err },
+            "The job runner couldn't check for work"
+          )
         )
-      )
-      .finally(() => {
-        this.#ticking = null
-      })
-    await this.#ticking
+        .finally(() => {
+          this.#ticking = null
+        })
+      await this.#ticking
+    } while (this.#again && !this.#stopping)
   }
 
   /**
