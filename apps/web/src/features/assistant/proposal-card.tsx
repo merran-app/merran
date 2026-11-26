@@ -369,6 +369,7 @@ function CardBody({
         <div className="flex gap-3">
           {found.photo && (
             <img
+              decoding="async"
               src={found.photo}
               alt=""
               referrerPolicy="no-referrer"

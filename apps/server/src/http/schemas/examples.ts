@@ -166,6 +166,7 @@ export const SECRET_SETTING = {
 const photo = (recipeId: string) => ({
   full: `/api/recipes/${recipeId}/photo?size=full&v=4b1c2d3e`,
   card: `/api/recipes/${recipeId}/photo?size=card&v=4b1c2d3e`,
+  thumb: `/api/recipes/${recipeId}/photo?size=thumb&v=4b1c2d3e`,
 })
 
 export const RECIPE_SUMMARY = {

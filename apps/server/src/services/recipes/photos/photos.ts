@@ -4,13 +4,14 @@ import { AppError } from "../../../core/errors.ts"
 import type { FileStore } from "../../storage/files.ts"
 
 /**
- * Each photo is kept in two sizes: big enough for the recipe page, and
- * cropped for recipe cards. Phone photos are often 5 to 10 MB; these are
- * a few hundred KB.
+ * Each photo is kept in three sizes: big enough for the recipe page, cropped
+ * for recipe cards, and a small square for tiles. Phone photos are often 5 to
+ * 10 MB; these are a few hundred KB, and the thumbnail a few KB.
  */
 export const PHOTO_SIZES = {
   full: { width: 1600, height: 1600, fit: "inside", quality: 80 },
   card: { width: 800, height: 600, fit: "cover", quality: 75 },
+  thumb: { width: 160, height: 160, fit: "cover", quality: 70 },
 } as const
 
 export type PhotoSize = keyof typeof PHOTO_SIZES
@@ -26,7 +27,7 @@ export function photoUrls(recipe: { id: string; image?: string | null }) {
   if (!recipe.image) return null
   const url = (size: PhotoSize) =>
     `/api/recipes/${recipe.id}/photo?size=${size}&v=${recipe.image}`
-  return { full: url("full"), card: url("card") }
+  return { full: url("full"), card: url("card"), thumb: url("thumb") }
 }
 
 /**
@@ -65,13 +66,29 @@ export async function storePhoto(
   return photoId
 }
 
-export function readPhoto(
+export async function readPhoto(
   files: FileStore,
   householdId: string,
   photoId: string,
   size: PhotoSize
 ) {
-  return files.read(`${photoFolder(householdId, photoId)}/${size}.webp`)
+  const key = `${photoFolder(householdId, photoId)}/${size}.webp`
+  const kept = await files.read(key)
+  if (kept || size !== "thumb") return kept
+
+  // A photo kept before thumbnails existed has none. Make it from the full
+  // photo the first time it's asked for, and keep it for the next.
+  const full = await files.read(
+    `${photoFolder(householdId, photoId)}/full.webp`
+  )
+  if (!full) return null
+  const { width, height, fit, quality } = PHOTO_SIZES.thumb
+  const thumb = await sharp(full)
+    .resize({ width, height, fit })
+    .webp({ quality })
+    .toBuffer()
+  await files.put(key, thumb)
+  return thumb
 }
 
 /** Deletes a photo in every size. A photo that's already gone is fine. */

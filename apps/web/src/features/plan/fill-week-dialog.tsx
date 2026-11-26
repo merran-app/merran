@@ -227,9 +227,10 @@ function FillWeek({
         <ul className="-mx-1 grid max-h-[55vh] gap-1 overflow-y-auto px-1">
           {rows.map((row) => (
             <li key={row.key} className="flex items-center gap-3 py-1">
-              {row.recipe.photo ? (
+              {row.recipe.thumb ? (
                 <img
-                  src={row.recipe.photo}
+                  decoding="async"
+                  src={row.recipe.thumb}
                   alt=""
                   className="size-11 shrink-0 rounded-lg object-cover"
                 />

@@ -410,9 +410,10 @@ function LinkList({ items }: { items: ImportDetail["items"] }) {
     <ul className="grid divide-y rounded-3xl border bg-card">
       {items.map((item) => (
         <li key={item.position} className="flex items-center gap-3 p-3">
-          {item.recipe?.photo ? (
+          {item.recipe?.thumb ? (
             <img
-              src={item.recipe.photo}
+              decoding="async"
+              src={item.recipe.thumb}
               alt=""
               className="size-12 shrink-0 rounded-xl object-cover"
             />
@@ -497,9 +498,10 @@ function CameIn({
               onCheckedChange={(on) => toggle(recipe.id, on)}
               aria-label={recipe.name}
             />
-            {recipe.photo && (
+            {recipe.thumb && (
               <img
-                src={recipe.photo}
+                decoding="async"
+                src={recipe.thumb}
                 alt=""
                 className="size-10 shrink-0 rounded-lg object-cover"
               />

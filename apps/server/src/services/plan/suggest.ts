@@ -83,6 +83,7 @@ type Candidate = {
   slug: string
   name: string
   photo: string | null
+  thumb: string | null
   servings: number | null
   totalMinutes: number | null
   rating: number | null
@@ -100,7 +101,7 @@ type Candidate = {
 export type Suggestion = Slot & {
   recipe: Pick<
     Candidate,
-    "id" | "slug" | "name" | "photo" | "servings" | "totalMinutes"
+    "id" | "slug" | "name" | "photo" | "thumb" | "servings" | "totalMinutes"
   >
   /** A sauce or side it goes with, picked to go with it. */
   withRecipe: { id: string; slug: string; name: string } | null
@@ -197,6 +198,7 @@ async function candidates(em: EntityManager): Promise<Candidate[]> {
     slug: recipe.slug,
     name: recipe.name,
     photo: photoUrls(recipe)?.card ?? null,
+    thumb: photoUrls(recipe)?.thumb ?? null,
     servings: toNumber(recipe.servings),
     totalMinutes: totalMinutes(recipe),
     rating: toNumber(recipe.rating),
@@ -436,6 +438,7 @@ export async function suggestMeals(
           slug: recipe.slug,
           name: recipe.name,
           photo: recipe.photo,
+          thumb: recipe.thumb,
           servings: recipe.servings,
           totalMinutes: recipe.totalMinutes,
         },

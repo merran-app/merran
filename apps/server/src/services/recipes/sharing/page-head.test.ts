@@ -25,6 +25,7 @@ function sharedRecipe(overrides: Partial<SharedRecipe> = {}): SharedRecipe {
     photo: {
       full: `/api/shared/${TOKEN}/photo?size=full&v=1`,
       card: `/api/shared/${TOKEN}/photo?size=card&v=1`,
+      thumb: `/api/shared/${TOKEN}/photo?size=thumb&v=1`,
     },
     ingredients: [
       line("i1", "Sauce", "2 lemons, juiced"),

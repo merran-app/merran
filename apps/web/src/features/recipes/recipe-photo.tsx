@@ -153,6 +153,7 @@ export function RecipePhoto({
       {recipe.photo ? (
         <>
           <img
+            decoding="async"
             src={recipe.photo.full}
             alt={t("recipes.photo.alt", { name: recipe.name })}
             className="size-full object-cover"

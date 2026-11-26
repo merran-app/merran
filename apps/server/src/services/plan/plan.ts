@@ -63,6 +63,7 @@ function recipeSummary(recipe: Recipe | undefined | null) {
     slug: recipe.slug,
     name: recipe.name,
     photo: photoUrls(recipe)?.card ?? null,
+    thumb: photoUrls(recipe)?.thumb ?? null,
     servings: toNumber(recipe.servings),
     totalMinutes: totalMinutes(recipe),
     calories: recipe.nutrition?.calories ?? null,

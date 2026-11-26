@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs"
+import { existsSync, readdirSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
@@ -46,7 +46,7 @@ async function addRecipe(name: string) {
 }
 
 describe("a recipe's photo", () => {
-  test("is kept in two sizes, and shown from its links", async () => {
+  test("is kept in three sizes, and shown from its links", async () => {
     const soup = await addRecipe("Soup")
     const res = await kyle.upload(
       `/api/recipes/${soup.slug}/photo`,
@@ -59,6 +59,7 @@ describe("a recipe's photo", () => {
     expect(recipe.photo).toEqual({
       full: expect.stringMatching(/\/photo\?size=full&v=\w+$/),
       card: expect.stringMatching(/\/photo\?size=card&v=\w+$/),
+      thumb: expect.stringMatching(/\/photo\?size=thumb&v=\w+$/),
     })
     const full = await kyle.get(recipe.photo.full)
     const size = await sharp(Buffer.from(await full.arrayBuffer())).metadata()
@@ -152,5 +153,58 @@ describe("a recipe's photo", () => {
 
     expect((await withKey("GET")).status).toBe(200)
     expect((await withKey("DELETE")).status).toBe(403)
+  })
+})
+
+describe("a recipe's thumbnail", () => {
+  const photoFolder = (photoId: string) =>
+    join(filesDir, "photos", householdId, photoId)
+
+  /** Adds a photo to a new recipe, and returns the recipe and its photo's id. */
+  async function recipeWithPhoto(name: string) {
+    const added = await addRecipe(name)
+    const recipe = await (
+      await kyle.upload(
+        `/api/recipes/${added.slug}/photo`,
+        await photoOf(1200, 900),
+        "image/png"
+      )
+    ).json()
+    const photoId = new URL(recipe.photo.thumb, TEST_ORIGIN).searchParams.get(
+      "v"
+    ) as string
+    return { recipe, photoId }
+  }
+
+  test("is there for small tiles", async () => {
+    const { recipe, photoId } = await recipeWithPhoto("Thumb soup")
+    expect(recipe.photo.thumb).toBe(
+      `/api/recipes/${recipe.id}/photo?size=thumb&v=${photoId}`
+    )
+
+    const res = await kyle.get(recipe.photo.thumb)
+    expect(res.status).toBe(200)
+    expect(res.headers.get("content-type")).toBe("image/webp")
+    const { width, height } = await sharp(
+      Buffer.from(await res.arrayBuffer())
+    ).metadata()
+    expect([width, height]).toEqual([160, 160])
+  })
+
+  test("is made the first time it's asked for, for a photo kept before thumbnails", async () => {
+    const { recipe, photoId } = await recipeWithPhoto("Thumb stew")
+    const thumbFile = join(photoFolder(photoId), "thumb.webp")
+    rmSync(thumbFile)
+
+    const res = await kyle.get(recipe.photo.thumb)
+    expect(res.status).toBe(200)
+    expect(existsSync(thumbFile)).toBe(true)
+  })
+
+  test("can't be made without the photo it's made from", async () => {
+    const { recipe, photoId } = await recipeWithPhoto("Thumb curry")
+    rmSync(photoFolder(photoId), { recursive: true })
+
+    expect((await kyle.get(recipe.photo.thumb)).status).toBe(404)
   })
 })

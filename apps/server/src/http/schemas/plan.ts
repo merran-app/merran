@@ -69,6 +69,7 @@ export const PLAN_ENTRY = {
     slug: "lemon-chicken",
     name: "Lemon Chicken",
     photo: null,
+    thumb: null,
     servings: 4,
     totalMinutes: 50,
     calories: 412,
@@ -123,6 +124,9 @@ export const PlanEntrySchema = z
         slug: z.string(),
         name: z.string(),
         photo: z.string().nullable(),
+        thumb: z.string().nullable().openapi({
+          description: "Its photo as a small square, for small tiles.",
+        }),
         servings: z.number().nullable(),
         totalMinutes: z.number().int().nullable(),
         calories: z.number().nullable().openapi({
@@ -380,6 +384,7 @@ const SUGGESTION = {
     slug: "lemon-chicken",
     name: "Lemon Chicken",
     photo: null,
+    thumb: null,
     servings: 4,
     totalMinutes: 50,
   },
@@ -401,6 +406,9 @@ export const SuggestionsSchema = z
           slug: z.string(),
           name: z.string(),
           photo: z.string().nullable(),
+          thumb: z.string().nullable().openapi({
+            description: "Its photo as a small square, for small tiles.",
+          }),
           servings: z.number().nullable(),
           totalMinutes: z.number().int().nullable(),
         }),

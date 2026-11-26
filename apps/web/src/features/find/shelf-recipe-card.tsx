@@ -73,6 +73,7 @@ export function ShelfRecipeCard({
       <div className="aspect-[4/3] bg-muted">
         {recipe.photo && (
           <img
+            decoding="async"
             src={recipe.photo}
             alt=""
             loading="lazy"

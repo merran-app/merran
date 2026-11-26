@@ -84,6 +84,7 @@ export function MealHero({
             className="block h-full"
           >
             <img
+              decoding="async"
               src={entry.recipe.photo}
               alt=""
               className="aspect-[16/10] w-full object-cover sm:absolute sm:inset-0 sm:aspect-auto sm:h-full"

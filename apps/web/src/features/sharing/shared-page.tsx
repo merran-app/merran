@@ -58,6 +58,7 @@ export function SharedPage({
           {recipe.photo && (
             <div className="aspect-[4/3] overflow-hidden rounded-3xl bg-muted">
               <img
+                decoding="async"
                 src={recipe.photo.full}
                 alt={t("recipes.photo.alt", { name: recipe.name })}
                 className="size-full object-cover"

@@ -77,6 +77,7 @@ function CollectionCard({ collection }: { collection: CollectionSummary }) {
       <div className="grid aspect-[16/10] grid-cols-2 grid-rows-2 gap-0.5 bg-muted">
         {photos.map((photo, index) => (
           <img
+            decoding="async"
             key={photo}
             src={photo}
             alt=""

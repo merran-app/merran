@@ -188,6 +188,7 @@ export function TonightIdea({
       {photo && (
         <div className="relative shrink-0 overflow-hidden bg-muted sm:min-h-56 sm:w-72">
           <img
+            decoding="async"
             src={photo}
             alt=""
             className="aspect-[16/10] w-full object-cover sm:absolute sm:inset-0 sm:aspect-auto sm:h-full"

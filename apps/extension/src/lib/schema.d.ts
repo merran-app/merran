@@ -3654,7 +3654,7 @@ export interface paths {
         };
         /**
          * A recipe's photo
-         * @description As WebP: `full` for the recipe page, or `card`, cropped for recipe cards. Use the links in the recipe's `photo`, which can be kept for good. With an API key, it needs the `recipes: read` permission.
+         * @description As WebP: `full` for the recipe page, `card`, cropped for recipe cards, or `thumb`, a small square for tiles. Use the links in the recipe's `photo`, which can be kept for good. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["getRecipePhoto"];
         /**
@@ -4282,7 +4282,7 @@ export interface paths {
         };
         /**
          * A shared recipe's photo
-         * @description As WebP, with no sign-in: `full` for the page, or `card` for previews. Use the links in the recipe's `photo`.
+         * @description As WebP, with no sign-in: `full` for the page, `card` for previews, or `thumb` for small tiles. Use the links in the recipe's `photo`.
          */
         get: operations["getSharedRecipePhoto"];
         put?: never;
@@ -11955,7 +11955,8 @@ export interface components {
          *             "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff16",
          *             "slug": "lemon-chicken",
          *             "name": "Lemon Chicken",
-         *             "photo": null
+         *             "photo": null,
+         *             "thumb": null
          *           },
          *           "error": null
          *         },
@@ -11976,6 +11977,7 @@ export interface components {
          *               "slug": "lemon-chicken",
          *               "name": "Lemon Chicken",
          *               "photo": null,
+         *               "thumb": null,
          *               "deleted": false,
          *               "changed": false,
          *               "planned": true,
@@ -12019,6 +12021,8 @@ export interface components {
                     name: string;
                     /** @description Its card photo. */
                     photo: string | null;
+                    /** @description Its photo as a small square, for small tiles. */
+                    thumb: string | null;
                 } | null;
                 error: string | null;
             }[];
@@ -12032,6 +12036,8 @@ export interface components {
                         name: string;
                         /** @description Its card photo. */
                         photo: string | null;
+                        /** @description Its photo as a small square, for small tiles. */
+                        thumb: string | null;
                         /** @description In Recently deleted. */
                         deleted: boolean;
                         /** @description Changed since it came in. */
@@ -12059,6 +12065,8 @@ export interface components {
                         name: string;
                         /** @description Its card photo. */
                         photo: string | null;
+                        /** @description Its photo as a small square, for small tiles. */
+                        thumb: string | null;
                     } | null;
                 }[];
                 /** @description Whether there are more: ask again from further on. */
@@ -13378,6 +13386,7 @@ export interface components {
          *           "slug": "lemon-chicken",
          *           "name": "Lemon Chicken",
          *           "photo": null,
+         *           "thumb": null,
          *           "servings": 4,
          *           "totalMinutes": 50,
          *           "calories": 412
@@ -13440,6 +13449,7 @@ export interface components {
          *         "slug": "lemon-chicken",
          *         "name": "Lemon Chicken",
          *         "photo": null,
+         *         "thumb": null,
          *         "servings": 4,
          *         "totalMinutes": 50,
          *         "calories": 412
@@ -13481,6 +13491,8 @@ export interface components {
                 slug: string;
                 name: string;
                 photo: string | null;
+                /** @description Its photo as a small square, for small tiles. */
+                thumb: string | null;
                 servings: number | null;
                 totalMinutes: number | null;
                 /** @description In a serving, when its nutrition is known. */
@@ -14233,6 +14245,7 @@ export interface components {
          *             "slug": "lemon-chicken",
          *             "name": "Lemon Chicken",
          *             "photo": null,
+         *             "thumb": null,
          *             "servings": 4,
          *             "totalMinutes": 50,
          *             "calories": 412
@@ -14475,6 +14488,7 @@ export interface components {
          *           "slug": "lemon-chicken",
          *           "name": "Lemon Chicken",
          *           "photo": null,
+         *           "thumb": null,
          *           "servings": 4,
          *           "totalMinutes": 50,
          *           "calories": 412
@@ -14545,6 +14559,7 @@ export interface components {
          *             "slug": "lemon-chicken",
          *             "name": "Lemon Chicken",
          *             "photo": null,
+         *             "thumb": null,
          *             "servings": 4,
          *             "totalMinutes": 50,
          *             "calories": 412
@@ -14608,6 +14623,7 @@ export interface components {
          *             "slug": "lemon-chicken",
          *             "name": "Lemon Chicken",
          *             "photo": null,
+         *             "thumb": null,
          *             "servings": 4,
          *             "totalMinutes": 50,
          *             "calories": 412
@@ -14823,6 +14839,7 @@ export interface components {
          *             "slug": "lemon-chicken",
          *             "name": "Lemon Chicken",
          *             "photo": null,
+         *             "thumb": null,
          *             "servings": 4,
          *             "totalMinutes": 50
          *           },
@@ -14855,6 +14872,8 @@ export interface components {
                     slug: string;
                     name: string;
                     photo: string | null;
+                    /** @description Its photo as a small square, for small tiles. */
+                    thumb: string | null;
                     servings: number | null;
                     totalMinutes: number | null;
                 };
@@ -15139,7 +15158,8 @@ export interface components {
          *         ],
          *         "photo": {
          *           "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *           "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *         },
          *         "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *         "createdAt": "2026-10-01T17:30:00.000Z",
@@ -15260,7 +15280,8 @@ export interface components {
          *       ],
          *       "photo": {
          *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *         "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *       },
          *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *       "createdAt": "2026-10-01T17:30:00.000Z",
@@ -15445,7 +15466,8 @@ export interface components {
          *       ],
          *       "photo": {
          *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *         "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *       },
          *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *       "createdAt": "2026-10-01T17:30:00.000Z",
@@ -15471,6 +15493,8 @@ export interface components {
                 full: string;
                 /** @description Cropped, for recipe cards. */
                 card: string;
+                /** @description A small square, for small tiles. */
+                thumb: string;
             } | null;
             /** Format: date-time */
             lastMadeAt: string | null;
@@ -15514,7 +15538,8 @@ export interface components {
          *           ],
          *           "photo": {
          *             "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *             "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *             "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *             "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *           },
          *           "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *           "createdAt": "2026-10-01T17:30:00.000Z",
@@ -15637,7 +15662,8 @@ export interface components {
          *       ],
          *       "photo": {
          *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *         "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *       },
          *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *       "createdAt": "2026-10-01T17:30:00.000Z",
@@ -15796,7 +15822,8 @@ export interface components {
          *         ],
          *         "photo": {
          *           "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *           "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *         },
          *         "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *         "createdAt": "2026-10-01T17:30:00.000Z",
@@ -16343,7 +16370,8 @@ export interface components {
          *       ],
          *       "photo": {
          *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *         "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *       },
          *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *       "createdAt": "2026-10-01T17:30:00.000Z",
@@ -16653,7 +16681,8 @@ export interface components {
          *         ],
          *         "photo": {
          *           "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *           "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *         },
          *         "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *         "createdAt": "2026-10-01T17:30:00.000Z",
@@ -17431,7 +17460,8 @@ export interface components {
          *       "sourceUrl": null,
          *       "photo": {
          *         "full": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=full&v=0199e8b0",
-         *         "card": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=card&v=0199e8b0"
+         *         "card": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=card&v=0199e8b0",
+         *         "thumb": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=thumb&v=0199e8b0"
          *       },
          *       "ingredients": [
          *         {
@@ -17475,6 +17505,8 @@ export interface components {
                 full: string;
                 /** @description Cropped, for previews. */
                 card: string;
+                /** @description A small square, for small tiles. */
+                thumb: string;
             } | null;
             ingredients: {
                 /** @description Its place in the list. */
@@ -29785,7 +29817,7 @@ export interface operations {
     getRecipePhoto: {
         parameters: {
             query?: {
-                size?: "full" | "card";
+                size?: "full" | "card" | "thumb";
                 /** @description Which photo: the links in `photo` say. */
                 v?: string;
             };
@@ -31835,7 +31867,7 @@ export interface operations {
     getSharedRecipePhoto: {
         parameters: {
             query?: {
-                size?: "full" | "card";
+                size?: "full" | "card" | "thumb";
                 /** @description Which photo: the links in `photo` say. */
                 v?: string;
             };

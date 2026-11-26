@@ -101,7 +101,8 @@ export function RecipePicker({
               >
                 {recipe.photo ? (
                   <img
-                    src={recipe.photo.card}
+                    decoding="async"
+                    src={recipe.photo.thumb}
                     alt=""
                     className="size-9 shrink-0 rounded-lg object-cover"
                   />

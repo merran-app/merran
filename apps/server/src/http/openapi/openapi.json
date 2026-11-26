@@ -5486,13 +5486,21 @@
                             "null"
                           ],
                           "description": "Its card photo."
+                        },
+                        "thumb": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Its photo as a small square, for small tiles."
                         }
                       },
                       "required": [
                         "id",
                         "slug",
                         "name",
-                        "photo"
+                        "photo",
+                        "thumb"
                       ]
                     },
                     "error": {
@@ -5542,6 +5550,13 @@
                               ],
                               "description": "Its card photo."
                             },
+                            "thumb": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "Its photo as a small square, for small tiles."
+                            },
                             "deleted": {
                               "type": "boolean",
                               "description": "In Recently deleted."
@@ -5568,6 +5583,7 @@
                             "slug",
                             "name",
                             "photo",
+                            "thumb",
                             "deleted",
                             "changed",
                             "planned",
@@ -5628,13 +5644,21 @@
                                 "null"
                               ],
                               "description": "Its card photo."
+                            },
+                            "thumb": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "Its photo as a small square, for small tiles."
                             }
                           },
                           "required": [
                             "id",
                             "slug",
                             "name",
-                            "photo"
+                            "photo",
+                            "thumb"
                           ],
                           "description": "The recipe that's there."
                         }
@@ -5735,7 +5759,8 @@
                 "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff16",
                 "slug": "lemon-chicken",
                 "name": "Lemon Chicken",
-                "photo": null
+                "photo": null,
+                "thumb": null
               },
               "error": null
             },
@@ -5756,6 +5781,7 @@
                   "slug": "lemon-chicken",
                   "name": "Lemon Chicken",
                   "photo": null,
+                  "thumb": null,
                   "deleted": false,
                   "changed": false,
                   "planned": true,
@@ -8625,6 +8651,7 @@
               "slug": "lemon-chicken",
               "name": "Lemon Chicken",
               "photo": null,
+              "thumb": null,
               "servings": 4,
               "totalMinutes": 50,
               "calories": 412
@@ -8707,6 +8734,13 @@
                   "null"
                 ]
               },
+              "thumb": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Its photo as a small square, for small tiles."
+              },
               "servings": {
                 "type": [
                   "number",
@@ -8732,6 +8766,7 @@
               "slug",
               "name",
               "photo",
+              "thumb",
               "servings",
               "totalMinutes",
               "calories"
@@ -8828,6 +8863,7 @@
             "slug": "lemon-chicken",
             "name": "Lemon Chicken",
             "photo": null,
+            "thumb": null,
             "servings": 4,
             "totalMinutes": 50,
             "calories": 412
@@ -10244,6 +10280,7 @@
                 "slug": "lemon-chicken",
                 "name": "Lemon Chicken",
                 "photo": null,
+                "thumb": null,
                 "servings": 4,
                 "totalMinutes": 50,
                 "calories": 412
@@ -10726,6 +10763,7 @@
               "slug": "lemon-chicken",
               "name": "Lemon Chicken",
               "photo": null,
+              "thumb": null,
               "servings": 4,
               "totalMinutes": 50,
               "calories": 412
@@ -10844,6 +10882,7 @@
                 "slug": "lemon-chicken",
                 "name": "Lemon Chicken",
                 "photo": null,
+                "thumb": null,
                 "servings": 4,
                 "totalMinutes": 50,
                 "calories": 412
@@ -10936,6 +10975,7 @@
                 "slug": "lemon-chicken",
                 "name": "Lemon Chicken",
                 "photo": null,
+                "thumb": null,
                 "servings": 4,
                 "totalMinutes": 50,
                 "calories": 412
@@ -11343,6 +11383,13 @@
                         "null"
                       ]
                     },
+                    "thumb": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "Its photo as a small square, for small tiles."
+                    },
                     "servings": {
                       "type": [
                         "number",
@@ -11361,6 +11408,7 @@
                     "slug",
                     "name",
                     "photo",
+                    "thumb",
                     "servings",
                     "totalMinutes"
                   ]
@@ -11418,6 +11466,7 @@
                 "slug": "lemon-chicken",
                 "name": "Lemon Chicken",
                 "photo": null,
+                "thumb": null,
                 "servings": 4,
                 "totalMinutes": 50
               },
@@ -11982,7 +12031,8 @@
             ],
             "photo": {
               "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-              "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+              "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+              "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
             },
             "lastMadeAt": "2026-10-09T01:15:00.000Z",
             "createdAt": "2026-10-01T17:30:00.000Z",
@@ -12206,7 +12256,8 @@
           ],
           "photo": {
             "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+            "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
           },
           "lastMadeAt": "2026-10-09T01:15:00.000Z",
           "createdAt": "2026-10-01T17:30:00.000Z",
@@ -12471,11 +12522,16 @@
               "card": {
                 "type": "string",
                 "description": "Cropped, for recipe cards."
+              },
+              "thumb": {
+                "type": "string",
+                "description": "A small square, for small tiles."
               }
             },
             "required": [
               "full",
-              "card"
+              "card",
+              "thumb"
             ],
             "description": "Where its photo is, in each size, or null. The links change with the photo, so they can be kept."
           },
@@ -12530,7 +12586,8 @@
           ],
           "photo": {
             "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+            "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
           },
           "lastMadeAt": "2026-10-09T01:15:00.000Z",
           "createdAt": "2026-10-01T17:30:00.000Z",
@@ -12595,7 +12652,8 @@
               ],
               "photo": {
                 "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-                "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+                "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+                "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
               },
               "lastMadeAt": "2026-10-09T01:15:00.000Z",
               "createdAt": "2026-10-01T17:30:00.000Z",
@@ -12921,7 +12979,8 @@
           ],
           "photo": {
             "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+            "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
           },
           "lastMadeAt": "2026-10-09T01:15:00.000Z",
           "createdAt": "2026-10-01T17:30:00.000Z",
@@ -13197,7 +13256,8 @@
             ],
             "photo": {
               "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-              "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+              "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+              "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
             },
             "lastMadeAt": "2026-10-09T01:15:00.000Z",
             "createdAt": "2026-10-01T17:30:00.000Z",
@@ -14182,7 +14242,8 @@
           ],
           "photo": {
             "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+            "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
           },
           "lastMadeAt": "2026-10-09T01:15:00.000Z",
           "createdAt": "2026-10-01T17:30:00.000Z",
@@ -14678,7 +14739,8 @@
             ],
             "photo": {
               "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-              "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+              "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+              "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
             },
             "lastMadeAt": "2026-10-09T01:15:00.000Z",
             "createdAt": "2026-10-01T17:30:00.000Z",
@@ -16205,11 +16267,16 @@
               "card": {
                 "type": "string",
                 "description": "Cropped, for previews."
+              },
+              "thumb": {
+                "type": "string",
+                "description": "A small square, for small tiles."
               }
             },
             "required": [
               "full",
-              "card"
+              "card",
+              "thumb"
             ],
             "description": "Where its photo is, in each size, or null. The links need no sign-in."
           },
@@ -16346,7 +16413,8 @@
           "sourceUrl": null,
           "photo": {
             "full": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=full&v=0199e8b0",
-            "card": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=card&v=0199e8b0"
+            "card": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=card&v=0199e8b0",
+            "thumb": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=thumb&v=0199e8b0"
           },
           "ingredients": [
             {
@@ -35130,7 +35198,7 @@
           "Recipes"
         ],
         "summary": "A recipe's photo",
-        "description": "As WebP: `full` for the recipe page, or `card`, cropped for recipe cards. Use the links in the recipe's `photo`, which can be kept for good. With an API key, it needs the `recipes: read` permission.",
+        "description": "As WebP: `full` for the recipe page, `card`, cropped for recipe cards, or `thumb`, a small square for tiles. Use the links in the recipe's `photo`, which can be kept for good. With an API key, it needs the `recipes: read` permission.",
         "security": [
           {
             "session": []
@@ -35160,7 +35228,8 @@
               "type": "string",
               "enum": [
                 "full",
-                "card"
+                "card",
+                "thumb"
               ],
               "default": "full"
             },
@@ -38008,7 +38077,7 @@
           "Sharing"
         ],
         "summary": "A shared recipe's photo",
-        "description": "As WebP, with no sign-in: `full` for the page, or `card` for previews. Use the links in the recipe's `photo`.",
+        "description": "As WebP, with no sign-in: `full` for the page, `card` for previews, or `thumb` for small tiles. Use the links in the recipe's `photo`.",
         "security": [],
         "parameters": [
           {
@@ -38024,7 +38093,8 @@
               "type": "string",
               "enum": [
                 "full",
-                "card"
+                "card",
+                "thumb"
               ],
               "default": "full"
             },
