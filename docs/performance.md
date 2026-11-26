@@ -2,7 +2,7 @@
 
 Audited November 10, 2026. This is what's slow or feels slow, what still runs inside a request that should be a job, what search and Discover need, and which indexes are missing, split into slices to plan in detail and build one at a time. The order, the job lanes, imports and the Imports page were decided the same day ([Decisions](#decisions)); how search matches was left to a revamp of its own.
 
-Checked again November 14, 2026, after webhooks were built (#95 to #100) ahead of slice 2: they built two of its pieces, leaving full kinds out of the check and a retry schedule per kind ([What webhooks built](#what-webhooks-built)). Slice 1, the quick wins, was built the same day ([What slice 1 built](#what-slice-1-built)), and slice 2, the job runner's foundations, on November 15, 2026 ([What slice 2 built](#what-slice-2-built)), followed the same day by slice 3, imports in the background with the Imports page ([What slice 3 built](#what-slice-3-built)). Slice 4 was planned on November 22, 2026 ([its plan](superpowers/plans/2026-11-22-slow-requests.md)), with decisions 6 to 9, and built on November 24, 2026: the rest of the slow requests ([What slice 4 built](#what-slice-4-built)). Slice 5 was planned and built on November 25, 2026 ([its plan](superpowers/plans/2026-11-25-discover-as-found.md)), with decision 10: Discover as it finds them, and Find more ([What slice 5 built](#what-slice-5-built)). Slices 6 to 8 aren't built yet.
+Checked again November 14, 2026, after webhooks were built (#95 to #100) ahead of slice 2: they built two of its pieces, leaving full kinds out of the check and a retry schedule per kind ([What webhooks built](#what-webhooks-built)). Slice 1, the quick wins, was built the same day ([What slice 1 built](#what-slice-1-built)), and slice 2, the job runner's foundations, on November 15, 2026 ([What slice 2 built](#what-slice-2-built)), followed the same day by slice 3, imports in the background with the Imports page ([What slice 3 built](#what-slice-3-built)). Slice 4 was planned on November 22, 2026 ([its plan](superpowers/plans/2026-11-22-slow-requests.md)), with decisions 6 to 9, and built on November 24, 2026: the rest of the slow requests ([What slice 4 built](#what-slice-4-built)). Slice 5 was planned and built on November 25, 2026 ([its plan](superpowers/plans/2026-11-25-discover-as-found.md)), with decision 10: Discover as it finds them, and Find more ([What slice 5 built](#what-slice-5-built)). Slice 6 was planned and built on November 26, 2026 ([its plan](superpowers/plans/2026-11-25-see-more.md)), with decisions 1 to 8 in it: **Show more** everywhere, and a thumbnail size ([What slice 6 built](#what-slice-6-built)). Slices 7 and 8 aren't built yet.
 
 ## Goal
 
@@ -180,6 +180,41 @@ Decided while building it (November 25, 2026):
 - **The search says how far it's got before its job does,** so the page, which reads the search again when it hears the job, sees the new count. While the AI is asked a second time, the search says it's searching the web again.
 - **A recipe held back for its site isn't counted as tried until it's saved,** so a restart opens its page again rather than losing it, which could have brought a second, paid, AI ask.
 
+### What slice 6 built
+
+Built November 26, 2026, in one pull request, from [its plan](superpowers/plans/2026-11-25-see-more.md), on top of slice 5:
+
+- **A small photo for tiles.** A third photo size, `thumb` (160×160 WebP), is made with the other two for new photos. A photo kept before this gets its thumbnail the first time one is asked for, and keeps it; a photo whose files are gone answers 404. The recipe pickers, plan tiles, Fill the week and both tiles on the Imports page use it, and so does a shared recipe's photo. Every image in the web app has `decoding="async"`. Cards, recipe pages and Today keep the card and full sizes.
+- **The pickers show more.** The meal picker and the pairings picker show 50 at a time, with **Show more** at the end of the list. An empty page ends **Show more** even if the total says there's more, and a card that moved onto the next page shows once. The library's own **Show more** follows the same rule.
+- **The assistant can page `search_recipes`.** It takes an `offset` and answers `nextOffset`, which is null when there's no more, on MCP as well. Its description no longer says it matches tags: it matches the name, description and ingredients.
+- **Each followed site shows 24 and has Show more.** The Sites tab reads each site's newest 24 in one query, and **Show more** loads 24 more at a time, up to the 120 Merran keeps (`GET /api/sites/{site}/recipes`). A site's `total` is on the list. The counts, the library lookup and the household's tastes are each read once for all the sites, not once per site.
+- **The spotlight fills up.** The spotlight and Today's idea get up to 24 recipes that suit the household, chosen on the server, reading the followed sites 48 at a time, newest first. Before, they got the newest 24 and the browser dropped what didn't suit.
+- **A collection shows 24 and has Show more** (`GET /api/collections/{collection}?offset&limit`). Its `count` is every recipe that suits the household, not the first 24, in the list of collections too. Its import button brings in what's shown that isn't in the library, up to 100: **Import these 24** while more are hidden, **Import all 12** once everything is showing. `POST /api/collections/{collection}/import` takes an optional `recipes` list of up to 100 ids; ids that left the collection or are already in the library are skipped, and it answers 409 when none are left. Without a list it imports the first 100 not in the library, as before. **Find more** now leaves out every recipe in the collection, not just the first 24.
+- **Newest first has a last tie-break on id,** for sites and collections, so a page boundary can't repeat or skip a recipe.
+- **One Show more button** serves the pickers, the sites and the collections.
+- **Nothing breaks.** Only new fields and parameters.
+
+Decided while planning (November 25, 2026):
+
+- **A collection's import button brings in what's shown,** up to one import's 100.
+- **The button says Show more,** as the library's does, not "See more" as the slice table's row had it.
+- **Pages of 24** for a site and a collection, and 50 for the pickers. A site shows up to the 120 Merran keeps.
+- **`thumb` is for tiles of 48 px or less.** Photos from the shelf and Discover stay as they are: they're 640×480 and shown on cards.
+- **The spotlight is chosen on the server,** and each site's first page is one query.
+- **`search_recipes` takes an `offset`.** How it matches is still for the [search revamp](#later-the-search-revamp).
+
+Decided while building it (November 26, 2026):
+
+- **`offset` is required but can be null,** like every other field of the shared tools, so strict tool schemas accept it. An MCP caller that leaves it out gets an error naming it.
+- **A site's later pages load only when Show more is pressed,** so the Sites tab sends no request per site on load.
+- **The import button never promises more than one import takes.** With more than 100 left even with everything showing, it says **Import these 100**.
+
+Known and left for later:
+
+- While the Sites tab polls a site being opened, only its first page refreshes, so a new post can hide one recipe at the page boundary until the next refresh. No card shows twice.
+- When almost nothing on the followed sites suits the household, the spotlight reads every followed site's recipes, 48 at a time, to find 24 (10 sites of 120 each: about 25 queries). The browser keeps the result 5 minutes.
+- Each collection page still reads and describes the whole shelf (slice 7), and refreshing a collection after **Find more** refetches every page loaded.
+
 ## Findings
 
 ### Work still inside a request
@@ -226,18 +261,18 @@ So what's missing is a household **Imports** page listing every import, how it w
 - **It feels slow because it flashes.** Each new search swaps the grid for skeletons (there's no `placeholderData` on the library's query), though the query itself takes milliseconds. The plan's and pairings' recipe pickers do the same. Fixed in slice 1 (November 14, 2026).
 - **Matching is one phrase.** `%chicken soup%` against the name, the description and ingredient lines, so "chicken soup" doesn't find "Soup with chicken". Nothing is ranked (a name match doesn't beat an ingredient match), tags aren't searched by the text, and SQLite only ignores case for ASCII letters.
 - **Every recipe change reloads every loaded page** of the library (below, under the web app).
-- **The pickers stop at 50,** and their 36 px tiles download the 800×600 card photo.
+- **The pickers stop at 50,** and their 36 px tiles download the 800×600 card photo. Fixed in slice 6 (November 26, 2026): **Show more** at the end of each picker's list, and a small photo for the tiles.
 - **Full-text search isn't worth it for speed yet.** The dev household has 57 recipes and 893 ingredient lines; even 30,000 lines is a scan of a few milliseconds. FTS5 and Postgres `tsvector` would only add word stems and ranking, with two implementations to keep. Matching each word separately, plus a simple ranking, gets most of the benefit.
-- How search matches is left to its own revamp ([below](#later-the-search-revamp)); only the flashing (slice 1) and the pickers' limit (slice 6) are fixed here.
+- How search matches is left to its own revamp ([below](#later-the-search-revamp)); only the flashing (slice 1) and the pickers' limit (slice 6, November 26, 2026) are fixed here.
 
 ### Discover and the shelf
 
 - **Discover shows nothing until it's all done.** One AI call with web search picks 10–12 links; the pages are opened four at a time, each four waiting for the slowest (up to 15 s); a second AI round runs if fewer than four opened; then the best 8 (two per site at most) are saved together at the end (`services/recipes/discover/discover.ts`). The web app polls all 12 recent searches every 2 s and shows skeletons until then. The first result arrives with the last, roughly 30 s to 2 minutes and more with a second round (estimated, not measured). It reports no progress and ignores **Stop**. Fixed in slice 5 (November 25, 2026): matches from the shelf come first, each recipe is saved as its page opens, and the search shows its progress and has **Stop**. The AI still finishes its picks before the first web recipe shows; offering each link as it finds it is for later.
 - **No Find more on Discover.** Only a collection's Find more tells the search what's already been shown, so the same search again can bring the same dishes. Fixed in slice 5 (November 25, 2026): **Find more** adds a round to the same search, naming what it found.
 - **Discover's photos are the sites' full-size images,** linked directly rather than resized like shelf photos. Fixed in slice 5 (November 25, 2026): they're made small on Merran and removed with the search.
-- **The Sites tab** makes four queries per followed site (`listSites`), shows 24 of the 120 kept for each with no way to see more, and polls every 5 s while any site has posts waiting. A post refused with 403 or 429 stays waiting, so that polling can go on for hours (how often this happens is unsure). The Recipes page loads all of it, poll included, just to know whether any site is followed (`SitesStart`). Fixed in slice 1 (November 14, 2026): the polling stops 3 minutes after a read, and the Recipes page asks `GET /api/sites/suggestions`. The four queries per site and the 24 shown are still to do.
-- **Followed sites' spotlight** takes the newest 24 and then drops the ones that don't suit the household, in the browser, so it can show very few, with no more to see.
-- **Starter collections** load the whole shelf (up to about 1,400 recipes, ingredients included) on every request, check the household's tastes on each and run the rules in JavaScript; each shows 24, with no more. During Find more the page polls every 2 s, repeating all of that each time. Fixed in slice 1 (November 14, 2026): Find more polls its own search, and the collection is fetched once when it's done.
+- **The Sites tab** makes four queries per followed site (`listSites`), shows 24 of the 120 kept for each with no way to see more, and polls every 5 s while any site has posts waiting. A post refused with 403 or 429 stays waiting, so that polling can go on for hours (how often this happens is unsure). The Recipes page loads all of it, poll included, just to know whether any site is followed (`SitesStart`). Fixed in slice 1 (November 14, 2026): the polling stops 3 minutes after a read, and the Recipes page asks `GET /api/sites/suggestions`. Fixed in slice 6 (November 26, 2026): each site's first page of 24 is one query, with **Show more** for the rest, and the counts, the library lookup and the household's tastes are read once for all the sites.
+- **Followed sites' spotlight** takes the newest 24 and then drops the ones that don't suit the household, in the browser, so it can show very few, with no more to see. Fixed in slice 6 (November 26, 2026): the server chooses up to 24 that suit.
+- **Starter collections** load the whole shelf (up to about 1,400 recipes, ingredients included) on every request, check the household's tastes on each and run the rules in JavaScript; each shows 24, with no more. Fixed in slice 6 (November 26, 2026) for the 24: **Show more**, and a count of every recipe that suits. The whole-shelf read is still for slice 7. During Find more the page polls every 2 s, repeating all of that each time. Fixed in slice 1 (November 14, 2026): Find more polls its own search, and the collection is fetched once when it's done.
 - **The shelf can't be searched** anywhere.
 
 ### The database
@@ -302,7 +337,7 @@ No text lookups use `lower(column)`: names, foods and emails are normalized befo
 - **Onboarding refetches** on every navigation and after every recipes, plan or list fetch, and saves progress on every load.
 - **Nothing shows while a page loads,** so on slow Wi-Fi a tap looks like it did nothing.
 - **Big imports and library runs set off refetch storms.** A `recipes` change refetches every recipe query, every loaded library page one after another, tags and Review. Nutrition and photo runs send one change per recipe, and each recipe imported from a link queues its own nutrition and photo jobs, each sending one. Every recipe write announces four areas, even read-only posts like stand-ins, and moving between pages closes and reopens the live stream, missing what happens in between. Partly fixed in slice 1 (November 14, 2026): changes are gathered for a second, and a job's for five, so a burst is one round of refetches. Announcing fewer areas and keeping the stream open across pages are still to do.
-- **Small tiles download the card photo.** Plan tiles and pickers (36–48 px) load the 800×600 card; there's no thumbnail size, and no image has `decoding="async"`.
+- **Small tiles download the card photo.** Plan tiles and pickers (36–48 px) load the 800×600 card; there's no thumbnail size, and no image has `decoding="async"`. Fixed in slice 6 (November 26, 2026).
 - Long lists aren't virtualized; that's fine until a pantry has hundreds of things.
 
 ## The plan
@@ -316,7 +351,7 @@ Eight slices, each its own pull request (decided November 10, 2026), with its ow
 | 3 | **Imports in the background, with a history** (built November 15, 2026: [what it built](#what-slice-3-built)) | One-link, video, extension, share-sheet and proposal imports become import jobs that hand over after about 10 s; uploaded files checked in a job; the **Imports** page ([below](#the-imports-page)): every import, the recipes each brought in, what didn't come in and why, **Delete**, **Undo** and **Try again**; a notice when one finishes; no more in-memory video queue | L | 2 |
 | 4 | **The rest of the slow requests** (built November 24, 2026: [what it built](#what-slice-4-built)) | Receipts, **Work out nutrition**, **Make a photo**, **Check prices now** and **Empty** run as jobs; site photos fetched when the site is read; a time limit on text and photo imports (already there from slice 2) | M | 2 |
 | 5 | **Discover as it finds them, and Find more** (built November 25, 2026: [what it built](#what-slice-5-built)) | Each recipe saved as soon as it's opened (duplicates and the two-per-site rule applied as it goes); a pool of four instead of batches; progress and **Stop**; the cards found so far shown while it searches; matches from the shelf first, instantly and without AI; **Find more** adding to the same search; Discover photos resized like the shelf's. Later: the AI offering each link as it finds it, so the first card comes before the AI finishes | M | 2 for the events, otherwise none |
-| 6 | **See more everywhere** | **See more** on each site's shelf, collections past 24, pickers past 50, and pages for the assistant's `search_recipes`; a thumbnail size for tiles. How search matches is left to the [search revamp](#later-the-search-revamp) | S–M | — |
+| 6 | **See more everywhere** (built November 26, 2026: [what it built](#what-slice-6-built); the button says **Show more**) | **See more** on each site's shelf, collections past 24, pickers past 50, and pages for the assistant's `search_recipes`; a thumbnail size for tiles. How search matches is left to the [search revamp](#later-the-search-revamp) | S–M | — |
 | 7 | **Queries that grow** | One loader for planning, sales and costs that works out each line's food once; usual buys from the last year; "Same as…" touching only the rows it changes; the shelf kept in memory for collections; duplicates filtered in SQL; tags pruned in one statement; old prices, sessions, tokens and proposals cleared daily; SQLite's settings applied on each connection | M–L | — |
 | 8 | **Loading the app** | Data started alongside each page's code (loaders), the household loaded with the sign-in check, one summary for Today, a progress bar while a page loads, `@merran/shared` split by use, small chunks grouped, the one font axis, onboarding's extra requests, and the live stream kept open across pages | M | — |
 
@@ -358,7 +393,7 @@ Decided November 10, 2026, for slice 3. One list of everything that brought reci
 Decided November 10, 2026: how search matches gets a revamp of its own, planned separately and likely released alongside this work. Meaning-based search, perhaps with pgvector, is the idea ("Recipe translations, step photos, meaning-based search" in [features.md](features.md), Later). What's here for it to start from:
 
 - The [library search findings](#library-search): one phrase, no ranking, tags not searched by the text, ASCII-only case on SQLite. Matching each word separately with a simple ranking is the cheap fallback.
-- The shelf (followed sites and starter collections) can't be searched at all, and the assistant's `search_recipes` says it matches tags but doesn't.
+- The shelf (followed sites and starter collections) can't be searched at all, and the assistant's `search_recipes` says it matches tags but doesn't. The description was fixed in slice 6 (November 26, 2026); how it matches is still for the revamp.
 - SQLite is the default, so whatever's chosen needs an answer there too: pgvector is Postgres only. `sqlite-vec` is the SQLite counterpart, and at a household's size (a few thousand recipes) comparing vectors in memory would also do.
 - Embeddings need a provider that makes them (OpenAI, Google, Ollama and others; Anthropic has none), so meaning-based search would be a module, off until it's set up, like the rest of Merran's AI, with the plain search still working without it.
 
