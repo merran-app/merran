@@ -1934,6 +1934,7 @@
     "original": "Original recipe: {{site}}",
     "startCooking": "Start cooking",
     "madeIt": "Made it",
+    "addToList": "Add to list",
     "markedMade": "Marked as made today.",
     "filters": "Filters",
     "new": "New",
@@ -2513,6 +2514,25 @@
       "title_one": "Move {{count}} thing to",
       "title_other": "Move {{count}} things to",
       "hint": "They go there next time too."
+    },
+    "recipe": {
+      "menu": "Add a recipe",
+      "title": "Add a recipe to the list",
+      "description": "Its ingredients go on the list. If it's planned this week, that meal goes on; if not, it goes on the plan for any day, to move to a day later.",
+      "search": "Find a recipe",
+      "picked": "Recipe",
+      "change": "Pick another",
+      "added": "Added {{name}} to the list.",
+      "onPlan": "It's on this week's plan, any day.",
+      "onNextWeek": "It's on next week's plan, any day.",
+      "plannedFor": "It was planned for {{day}}.",
+      "tonight": {
+        "title": "Are you making {{name}} tonight?",
+        "question": "Are you making it tonight?",
+        "description": "It's the last day of your week. Tonight keeps it on this week's plan; later puts it on next week's.",
+        "yes": "Yes, tonight",
+        "no": "No, later"
+      }
     },
     "plan": {
       "title": "Add from the plan",

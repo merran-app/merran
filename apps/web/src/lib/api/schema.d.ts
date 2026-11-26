@@ -2098,6 +2098,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/list/recipes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a recipe to the list
+         * @description A recipe's ingredients on the list without planning a day for it, as Add from plan would put them, the list following that meal from then on. A meal of the recipe planned already from today to the end of the week, and not on the list yet, goes on, with the servings given. Otherwise a new one goes in the week's any-day meals. The week is the one with tomorrow in it, so on its last day it's next week. Every-week items don't come along. Give `undo` to /list/recipes/undo to take it back. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["addRecipeToList"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/recipes/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo adding a recipe to the list
+         * @description Takes `undo` from adding a recipe to the list. A meal it made comes off the plan, and so off the list. One that was planned already stays on the plan, off the list again, with its servings as they were. Needs only list write, like adding. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["undoRecipeOnList"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/list/restore": {
         parameters: {
             query?: never;
@@ -13326,6 +13366,230 @@ export interface components {
         };
         /**
          * @example {
+         *       "entry": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *         "date": "2026-10-12",
+         *         "anyDay": true,
+         *         "meal": "dinner",
+         *         "position": 0,
+         *         "status": "planned",
+         *         "recipe": {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *           "slug": "lemon-chicken",
+         *           "name": "Lemon Chicken",
+         *           "photo": null,
+         *           "servings": 4,
+         *           "totalMinutes": 50,
+         *           "calories": 412
+         *         },
+         *         "withRecipe": {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *           "slug": "garlic-rice",
+         *           "name": "Garlic Rice",
+         *           "calories": 210
+         *         },
+         *         "note": null,
+         *         "servings": null,
+         *         "why": [
+         *           {
+         *             "kind": "theme",
+         *             "label": "Taco night"
+         *           }
+         *         ],
+         *         "createdAt": "2026-10-15T18:30:00.000Z",
+         *         "variants": []
+         *       },
+         *       "made": true,
+         *       "undo": {
+         *         "entry": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *         "made": true,
+         *         "servings": null
+         *       },
+         *       "added": 6,
+         *       "merged": 1,
+         *       "onHand": [
+         *         "salt"
+         *       ],
+         *       "inPantry": []
+         *     }
+         */
+        RecipeListed: {
+            entry: components["schemas"]["PlanEntry"];
+            /** @description It made the meal, in the week's any-day meals; false when a meal of the recipe planned already went on the list. */
+            made: boolean;
+            undo: components["schemas"]["RecipeOnListUndo"];
+            /** @description New lines on the list. */
+            added: number;
+            /** @description Lines added to ones already there. */
+            merged: number;
+            /** @description Left off: always on hand. */
+            onHand: string[];
+            /** @description Left off: at home already, and now set aside for it. */
+            inPantry: string[];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *       "date": "2026-10-15",
+         *       "anyDay": false,
+         *       "meal": "dinner",
+         *       "position": 0,
+         *       "status": "planned",
+         *       "recipe": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *         "slug": "lemon-chicken",
+         *         "name": "Lemon Chicken",
+         *         "photo": null,
+         *         "servings": 4,
+         *         "totalMinutes": 50,
+         *         "calories": 412
+         *       },
+         *       "withRecipe": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *         "slug": "garlic-rice",
+         *         "name": "Garlic Rice",
+         *         "calories": 210
+         *       },
+         *       "note": null,
+         *       "servings": null,
+         *       "why": [
+         *         {
+         *           "kind": "theme",
+         *           "label": "Taco night"
+         *         }
+         *       ],
+         *       "createdAt": "2026-10-15T18:30:00.000Z",
+         *       "variants": []
+         *     }
+         */
+        PlanEntry: {
+            id: string;
+            /**
+             * @description Its day, or for the week's pool, the week's first day.
+             * @example 2026-10-15
+             */
+            date: string;
+            /** @description In the week's pool: for any day of the week. */
+            anyDay: boolean;
+            meal: components["schemas"]["Meal"];
+            /** @description Its place among the meal's dishes. */
+            position: number;
+            status: components["schemas"]["PlanStatus"];
+            /** @description Null for a note. */
+            recipe: {
+                id: string;
+                slug: string;
+                name: string;
+                photo: string | null;
+                servings: number | null;
+                totalMinutes: number | null;
+                /** @description In a serving, when its nutrition is known. */
+                calories: number | null;
+            } | null;
+            /** @description What it's made with: "with peanut sauce". */
+            withRecipe: {
+                id: string;
+                slug: string;
+                name: string;
+                calories: number | null;
+            } | null;
+            /** @description A meal that isn't a recipe: "leftovers". */
+            note: string | null;
+            /** @description Null for the recipe's own servings. */
+            servings: number | null;
+            /** @description Why it was picked, when Fill the week picked it: none otherwise. */
+            why: components["schemas"]["Reason"][];
+            /** Format: date-time */
+            createdAt: string;
+            variants: components["schemas"]["MealRecipe"][];
+        };
+        /** @enum {string} */
+        Meal: "breakfast" | "lunch" | "dinner" | "snack";
+        /** @enum {string} */
+        PlanStatus: "planned" | "cooked" | "skipped";
+        /**
+         * @description Why a meal was picked: the night's theme ("Taco night"), or one nothing fitted; food at home it uses up; food on sale at the household's store; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.
+         * @example {
+         *       "kind": "notLately",
+         *       "weeks": 5
+         *     }
+         */
+        Reason: {
+            /** @enum {string} */
+            kind: "theme";
+            label: string;
+        } | {
+            /** @enum {string} */
+            kind: "themeMissed";
+            label: string;
+        } | {
+            /** @enum {string} */
+            kind: "usesUp";
+            foods: string[];
+        } | {
+            /** @enum {string} */
+            kind: "onSale";
+            foods: string[];
+            /** @description One is the lowest it's been in a while. */
+            lowest: boolean;
+        } | {
+            /** @enum {string} */
+            kind: "new";
+        } | {
+            /** @enum {string} */
+            kind: "notLately";
+            weeks: number;
+        } | {
+            /** @enum {string} */
+            kind: "rated";
+            stars: number;
+        } | {
+            /** @enum {string} */
+            kind: "quick";
+            minutes: number;
+        } | {
+            /** @enum {string} */
+            kind: "leaveOut";
+            foods: {
+                food: string;
+                who: string | null;
+            }[];
+        };
+        /**
+         * @example {
+         *       "entry": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *       "made": true,
+         *       "servings": null
+         *     }
+         */
+        RecipeOnListUndo: {
+            /** @description The meal. */
+            entry: string;
+            /** @description Adding made the meal, so Undo takes it off the plan; otherwise it was planned already, and stays. */
+            made: boolean;
+            /** @description The meal's servings before, for one planned already. */
+            servings: number | null;
+        };
+        /**
+         * @example {
+         *       "recipe": "lemon-chicken",
+         *       "withRecipe": "garlic-rice",
+         *       "servings": 8
+         *     }
+         */
+        RecipeToList: {
+            /** @description The recipe, by id or address. */
+            recipe: string;
+            /** @description A side or sauce it's made with, by id or address. */
+            withRecipe?: string | null;
+            /** @description None for the recipe's own servings. */
+            servings?: number | null;
+            meal?: components["schemas"]["Meal"] & unknown;
+            /** @description It's made today, so it goes in this week's any-day meals even on the week's last day, when it would otherwise go in next week's. */
+            tonight?: boolean;
+        };
+        /**
+         * @example {
          *       "items": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
@@ -13995,134 +14259,6 @@ export interface components {
          */
         Plan: {
             entries: components["schemas"]["PlanEntry"][];
-        };
-        /**
-         * @example {
-         *       "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
-         *       "date": "2026-10-15",
-         *       "anyDay": false,
-         *       "meal": "dinner",
-         *       "position": 0,
-         *       "status": "planned",
-         *       "recipe": {
-         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
-         *         "slug": "lemon-chicken",
-         *         "name": "Lemon Chicken",
-         *         "photo": null,
-         *         "servings": 4,
-         *         "totalMinutes": 50,
-         *         "calories": 412
-         *       },
-         *       "withRecipe": {
-         *         "id": "0199e8b0-5a10-7a01-8b00-000000000007",
-         *         "slug": "garlic-rice",
-         *         "name": "Garlic Rice",
-         *         "calories": 210
-         *       },
-         *       "note": null,
-         *       "servings": null,
-         *       "why": [
-         *         {
-         *           "kind": "theme",
-         *           "label": "Taco night"
-         *         }
-         *       ],
-         *       "createdAt": "2026-10-15T18:30:00.000Z",
-         *       "variants": []
-         *     }
-         */
-        PlanEntry: {
-            id: string;
-            /**
-             * @description Its day, or for the week's pool, the week's first day.
-             * @example 2026-10-15
-             */
-            date: string;
-            /** @description In the week's pool: for any day of the week. */
-            anyDay: boolean;
-            meal: components["schemas"]["Meal"];
-            /** @description Its place among the meal's dishes. */
-            position: number;
-            status: components["schemas"]["PlanStatus"];
-            /** @description Null for a note. */
-            recipe: {
-                id: string;
-                slug: string;
-                name: string;
-                photo: string | null;
-                servings: number | null;
-                totalMinutes: number | null;
-                /** @description In a serving, when its nutrition is known. */
-                calories: number | null;
-            } | null;
-            /** @description What it's made with: "with peanut sauce". */
-            withRecipe: {
-                id: string;
-                slug: string;
-                name: string;
-                calories: number | null;
-            } | null;
-            /** @description A meal that isn't a recipe: "leftovers". */
-            note: string | null;
-            /** @description Null for the recipe's own servings. */
-            servings: number | null;
-            /** @description Why it was picked, when Fill the week picked it: none otherwise. */
-            why: components["schemas"]["Reason"][];
-            /** Format: date-time */
-            createdAt: string;
-            variants: components["schemas"]["MealRecipe"][];
-        };
-        /** @enum {string} */
-        Meal: "breakfast" | "lunch" | "dinner" | "snack";
-        /** @enum {string} */
-        PlanStatus: "planned" | "cooked" | "skipped";
-        /**
-         * @description Why a meal was picked: the night's theme ("Taco night"), or one nothing fitted; food at home it uses up; food on sale at the household's store; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.
-         * @example {
-         *       "kind": "notLately",
-         *       "weeks": 5
-         *     }
-         */
-        Reason: {
-            /** @enum {string} */
-            kind: "theme";
-            label: string;
-        } | {
-            /** @enum {string} */
-            kind: "themeMissed";
-            label: string;
-        } | {
-            /** @enum {string} */
-            kind: "usesUp";
-            foods: string[];
-        } | {
-            /** @enum {string} */
-            kind: "onSale";
-            foods: string[];
-            /** @description One is the lowest it's been in a while. */
-            lowest: boolean;
-        } | {
-            /** @enum {string} */
-            kind: "new";
-        } | {
-            /** @enum {string} */
-            kind: "notLately";
-            weeks: number;
-        } | {
-            /** @enum {string} */
-            kind: "rated";
-            stars: number;
-        } | {
-            /** @enum {string} */
-            kind: "quick";
-            minutes: number;
-        } | {
-            /** @enum {string} */
-            kind: "leaveOut";
-            foods: {
-                food: string;
-                who: string | null;
-            }[];
         };
         /**
          * @example {
@@ -24854,6 +24990,119 @@ export interface operations {
             };
             /** @description Not allowed. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addRecipeToList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecipeToList"];
+            };
+        };
+        responses: {
+            /** @description On the list. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipeListed"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    undoRecipeOnList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecipeOnListUndo"];
+            };
+        };
+        responses: {
+            /** @description Undone. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        done: boolean;
+                    };
+                };
+            };
+            /** @description That meal wasn't made by adding a recipe to the list. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description That meal isn't on the plan. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
