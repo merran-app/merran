@@ -67,6 +67,7 @@ const FOLLOWED = {
   url: "https://www.recipetineats.com/",
   feedUrl: "https://www.recipetineats.com/feed/",
   recipes: [SHELF_RECIPE, IN_LIBRARY],
+  total: 2,
   waiting: 3,
   reading: false,
   readAt: TIMES.now,
@@ -82,7 +83,11 @@ export const FollowedSiteSchema = z
     feedUrl: z.string(),
     recipes: z.array(ShelfRecipeSchema).openapi({
       description:
-        "Its newest recipes, newest first: posts Merran opened and can import.",
+        "Its newest 24 recipes, newest first: posts Merran opened and can import.",
+    }),
+    total: z.number().openapi({
+      description:
+        "How many recipes it has in all, up to the newest 120 Merran keeps. `GET /sites/{site}/recipes` gives the rest.",
     }),
     waiting: z.number().openapi({
       description:
@@ -153,6 +158,25 @@ export const FollowSiteSchema = z
 export const SiteRecipesSchema = z
   .object({ recipes: z.array(ShelfRecipeSchema) })
   .openapi("SiteRecipes", { example: { recipes: [SHELF_RECIPE, IN_LIBRARY] } })
+
+export const SiteRecipesPageSchema = z
+  .object({
+    recipes: z.array(ShelfRecipeSchema).openapi({
+      description: "Newest first.",
+    }),
+    total: z.number().openapi({ description: "How many it has in all." }),
+  })
+  .openapi("SiteRecipesPage", {
+    example: { recipes: [SHELF_RECIPE, IN_LIBRARY], total: 26 },
+  })
+
+/** A page of a list on the shelf: what Show more asks for. */
+export const SitePageQuerySchema = z.object({
+  offset: z.coerce.number().int().min(0).default(0).openapi({
+    description: "How many to skip: those shown already.",
+  }),
+  limit: z.coerce.number().int().min(1).max(96).default(24),
+})
 
 export const SiteParam = z.object({
   site: z.string().openapi({

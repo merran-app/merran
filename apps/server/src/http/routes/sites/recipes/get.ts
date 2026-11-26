@@ -11,12 +11,12 @@ const route = createRoute({
   path: "/sites/recipes",
   operationId: "listSiteRecipes",
   tags: ["Sites"],
-  summary: "The newest recipes from followed sites",
+  summary: "The newest recipes from followed sites that suit the household",
   description:
-    "Up to 24, newest first, from every site the household follows: for Recipes' spotlight and Today's idea for tonight.",
+    "Up to 24 that suit the household, newest first, from every site it follows: none with a food it avoids, and all on its diets. For Recipes' spotlight and Today's idea for tonight.",
   ...openToKeys("recipes", "read"),
   responses: {
-    200: jsonResponse(SiteRecipesSchema, "Their newest recipes."),
+    200: jsonResponse(SiteRecipesSchema, "Their newest recipes that suit it."),
     ...SIGNED_IN_ERRORS,
   },
 })

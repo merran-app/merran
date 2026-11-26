@@ -18,6 +18,7 @@ import { Trans, useTranslation } from "react-i18next"
 import { TermHelp } from "@/features/onboarding/term-help"
 import { toast } from "sonner"
 
+import { ShowMoreButton } from "@/components/show-more-button"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -469,15 +470,7 @@ function PickRecipes({ recipe }: { recipe: Recipe }) {
           })}
           {found.hasNextPage && (
             <li className="flex justify-center p-2">
-              <Button
-                variant="outline"
-                onClick={() => void found.fetchNextPage()}
-                // The pages shown belong to the last search until the new one's in.
-                disabled={found.isFetchingNextPage || found.isPlaceholderData}
-              >
-                {found.isFetchingNextPage && <Spinner />}
-                {t("recipes.showMore")}
-              </Button>
+              <ShowMoreButton query={found} />
             </li>
           )}
         </ul>

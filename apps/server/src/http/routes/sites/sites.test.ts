@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 import sharp from "sharp"
@@ -139,6 +140,7 @@ type Site = {
   name: string
   reading: boolean
   waiting: number
+  total: number
   error: string | null
   recipes: {
     id: string
@@ -211,22 +213,23 @@ describe("following a site", () => {
     expect(tips.state).toBe("not-recipe")
   })
 
-  test("says which recipes don't suit the household", async () => {
+  test("says which recipes don't suit the household, and keeps them out of the spotlight", async () => {
     await kyle.put("/api/households/current/tastes", {
       avoid: [{ food: "peanuts", level: "allergy" }],
       diets: [],
       weeknightMinutes: null,
     })
-    const { recipes } = await (await kyle.get("/api/sites/recipes")).json()
+    const { sites } = await (await kyle.get("/api/sites")).json()
     expect(
-      recipes.map((recipe: Site["recipes"][number]) => [
-        recipe.name,
-        recipe.suits,
-      ])
+      (sites as Site[])[0]!.recipes.map((recipe) => [recipe.name, recipe.suits])
     ).toEqual([
       ["Lentil Soup", true],
       ["Peanut Noodles", false],
     ])
+    const { recipes } = await (await kyle.get("/api/sites/recipes")).json()
+    expect(
+      recipes.map((recipe: Site["recipes"][number]) => recipe.name)
+    ).toEqual(["Lentil Soup"])
   })
 
   test("knows which are in the library", async () => {
@@ -638,5 +641,202 @@ describe("keeping the shelf small", () => {
     // The newest 120: the five oldest are forgotten.
     expect(kept).toHaveLength(120)
     expect(kept.at(-1)!.name).toBe("Recipe 119")
+  })
+})
+
+describe("show more of a followed site, and a spotlight that suits", () => {
+  const AVOID_PEANUTS = {
+    avoid: [{ food: "peanuts", level: "allergy" }],
+    diets: [],
+    weeknightMinutes: null,
+  }
+  const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000)
+  const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000)
+  const minutesAgo = (minutes: number) =>
+    new Date(Date.now() - minutes * 60_000)
+
+  let pagedSite: RecipeSite
+  let peanutSite: RecipeSite
+  let sites: Site[]
+  let site: Site
+
+  /**
+   * A site on the shelf with its feed in the test web, read just now and
+   * not again for an hour, so following it queues no read.
+   */
+  async function readSite(name: string, host: string) {
+    web.set(`https://${host}/feed/`, {
+      body: `<?xml version="1.0"?><rss version="2.0"><channel>
+        <title>${name}</title><link>https://${host}/</link>
+      </channel></rss>`,
+      contentType: "application/rss+xml",
+    })
+    const em = database.em.fork()
+    const created = em.create(RecipeSite, {
+      name,
+      url: `https://${host}/`,
+      feedUrl: `https://${host}/feed/`,
+      readAt: new Date(),
+      nextReadAt: new Date(Date.now() + 3_600_000),
+    })
+    await em.flush()
+    return created
+  }
+
+  /** Recipes on a site's shelf, by name, each posted when `posted` says. */
+  async function shelve(
+    on: RecipeSite,
+    names: string[],
+    posted: (index: number) => Date,
+    ingredients: string[]
+  ) {
+    const em = database.em.fork()
+    names.forEach((name, index) => {
+      em.create(SiteRecipe, {
+        site: em.getReference(RecipeSite, on.id),
+        url: `${on.url}${name.toLowerCase().replace(/\W+/g, "-")}/`,
+        state: "recipe",
+        siteName: on.name,
+        name,
+        courses: [],
+        keywords: [],
+        ingredients,
+        diets: [],
+        publishedAt: posted(index),
+      })
+    })
+    await em.flush()
+  }
+
+  const numbered = (prefix: string, count: number, from = 0) =>
+    Array.from({ length: count }, (_, index) => `${prefix} ${from + index}`)
+
+  beforeAll(async () => {
+    await kyle.put("/api/households/current/tastes", AVOID_PEANUTS)
+
+    pagedSite = await readSite("Paged Example", "paged.example")
+    await shelve(
+      pagedSite,
+      numbered("Paged", 30),
+      (index) => daysAgo(index + 1),
+      ["1 onion", "2 cups rice"]
+    )
+    // The 10 newest recipes on followed sites have peanuts, which the
+    // household avoids.
+    peanutSite = await readSite("Peanut Example", "peanut.example")
+    await shelve(
+      peanutSite,
+      numbered("Peanut Noodles", 10),
+      (index) => hoursAgo(index + 1),
+      ["200 g noodles", "3 tbsp peanut butter"]
+    )
+
+    for (const followed of [pagedSite, peanutSite]) {
+      const res = await kyle.post("/api/sites", { url: followed.feedUrl })
+      expect(res.status).toBe(201)
+    }
+    ;({ sites } = await (await kyle.get("/api/sites")).json())
+    site = sites.find((found) => found.name === "Paged Example")!
+  })
+
+  test("a followed site shows its newest 24 and how many it has", async () => {
+    expect(site.recipes).toHaveLength(24)
+    expect(site.total).toBe(30)
+    expect(site.recipes[0]!.name).toBe("Paged 0")
+  })
+
+  test("Show more brings the next of a site's recipes", async () => {
+    const page = await (
+      await kyle.get(`/api/sites/${site.id}/recipes?offset=24&limit=24`)
+    ).json()
+    expect(page.total).toBe(30)
+    expect(page.recipes.map((recipe: { name: string }) => recipe.name)).toEqual(
+      ["Paged 24", "Paged 25", "Paged 26", "Paged 27", "Paged 28", "Paged 29"]
+    )
+    const beyond = await (
+      await kyle.get(`/api/sites/${site.id}/recipes?offset=90`)
+    ).json()
+    expect(beyond).toEqual({ recipes: [], total: 30 })
+    expect((await kyle.get(`/api/sites/${randomUUID()}/recipes`)).status).toBe(
+      404
+    )
+  })
+
+  test("each site says how many posts wait, counted for all at once", async () => {
+    const em = database.em.fork()
+    const waiting = ["first", "second"].map((post) =>
+      em.create(SiteRecipe, {
+        site: em.getReference(RecipeSite, pagedSite.id),
+        url: `https://paged.example/waiting-${post}/`,
+        state: "waiting",
+        siteName: "Paged Example",
+        courses: [],
+        keywords: [],
+        ingredients: [],
+        diets: [],
+        publishedAt: new Date(),
+      })
+    )
+    await em.flush()
+
+    const after: Site[] = (await (await kyle.get("/api/sites")).json()).sites
+    const counts = (list: Site[], name: string) => {
+      const found = list.find((listed) => listed.name === name)!
+      return { waiting: found.waiting, total: found.total }
+    }
+    expect(counts(after, "Paged Example")).toEqual({ waiting: 2, total: 30 })
+    // Only the recipes count: what's waiting isn't shown yet.
+    expect(after.find((listed) => listed.id === site.id)!.recipes).toHaveLength(
+      24
+    )
+    const others = sites.filter((listed) => listed.id !== site.id)
+    expect(others.map((other) => other.name)).toContain("Peanut Example")
+    for (const other of others) {
+      expect(counts(after, other.name)).toEqual(counts(sites, other.name))
+    }
+    expect(counts(after, "Peanut Example")).toEqual({ waiting: 0, total: 10 })
+
+    // As it was, for the tests after.
+    await em.remove(waiting).flush()
+  })
+
+  test("the spotlight gets recipes that suit the household, not just the newest", async () => {
+    const { recipes } = await (await kyle.get("/api/sites/recipes")).json()
+    expect(recipes).toHaveLength(24)
+    expect(
+      recipes.every((recipe: Site["recipes"][number]) => recipe.suits)
+    ).toBe(true)
+    expect(
+      recipes.some((recipe: { name: string }) =>
+        recipe.name.startsWith("Peanut")
+      )
+    ).toBe(false)
+  })
+
+  test("the spotlight looks past the newest 48 when none of them suit", async () => {
+    // 40 more with peanuts, newer still: the newest 50 don't suit.
+    await shelve(
+      peanutSite,
+      numbered("Peanut Noodles", 40, 10),
+      (index) => minutesAgo(index + 1),
+      ["200 g noodles", "3 tbsp peanut butter"]
+    )
+    const { recipes } = await (await kyle.get("/api/sites/recipes")).json()
+    expect(recipes.map((recipe: { name: string }) => recipe.name)).toEqual(
+      numbered("Paged", 24)
+    )
+  })
+
+  test("the spotlight is empty when nothing suits", async () => {
+    // None of the followed sites' recipes are labelled vegan.
+    await kyle.put("/api/households/current/tastes", {
+      ...AVOID_PEANUTS,
+      diets: ["vegan"],
+    })
+    const { recipes } = await (await kyle.get("/api/sites/recipes")).json()
+    expect(recipes).toEqual([])
+
+    // As it was, for the tests after.
+    await kyle.put("/api/households/current/tastes", AVOID_PEANUTS)
   })
 })

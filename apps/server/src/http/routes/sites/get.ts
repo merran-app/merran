@@ -16,7 +16,7 @@ const route = createRoute({
   tags: ["Sites"],
   summary: "Followed recipe sites",
   description:
-    "The recipe sites the household follows, oldest followed first, each with its newest recipes; and suggested sites it doesn't follow yet. Merran reads each site's feed every few hours.",
+    "The recipe sites the household follows, oldest followed first, each with its newest 24 recipes and how many it has (`GET /sites/{site}/recipes` gives the rest); and suggested sites it doesn't follow yet. Merran reads each site's feed every few hours.",
   ...openToKeys("recipes", "read"),
   responses: {
     200: jsonResponse(SiteListSchema, "Its sites."),

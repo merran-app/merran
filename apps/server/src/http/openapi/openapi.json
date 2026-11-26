@@ -16520,6 +16520,7 @@
                   "suits": true
                 }
               ],
+              "total": 2,
               "waiting": 3,
               "reading": false,
               "readAt": "2026-10-15T18:30:00.000Z",
@@ -16556,7 +16557,11 @@
             "items": {
               "$ref": "#/components/schemas/ShelfRecipe"
             },
-            "description": "Its newest recipes, newest first: posts Merran opened and can import."
+            "description": "Its newest 24 recipes, newest first: posts Merran opened and can import."
+          },
+          "total": {
+            "type": "number",
+            "description": "How many recipes it has in all, up to the newest 120 Merran keeps. `GET /sites/{site}/recipes` gives the rest."
           },
           "waiting": {
             "type": "number",
@@ -16591,6 +16596,7 @@
           "url",
           "feedUrl",
           "recipes",
+          "total",
           "waiting",
           "reading",
           "readAt",
@@ -16637,6 +16643,7 @@
               "suits": true
             }
           ],
+          "total": 2,
           "waiting": 3,
           "reading": false,
           "readAt": "2026-10-15T18:30:00.000Z",
@@ -16757,6 +16764,64 @@
               "description": "Bright, seasonal vegetarian cooking."
             }
           ]
+        }
+      },
+      "SiteRecipesPage": {
+        "type": "object",
+        "properties": {
+          "recipes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShelfRecipe"
+            },
+            "description": "Newest first."
+          },
+          "total": {
+            "type": "number",
+            "description": "How many it has in all."
+          }
+        },
+        "required": [
+          "recipes",
+          "total"
+        ],
+        "example": {
+          "recipes": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+              "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+              "name": "Honey Garlic Chicken",
+              "site": "RecipeTin Eats",
+              "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+              "minutes": 12,
+              "courses": [
+                "main"
+              ],
+              "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+              "publishedAt": "2026-10-01T17:30:00.000Z",
+              "inLibrary": null,
+              "suits": true
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000032",
+              "url": "https://www.recipetineats.com/lemon-chicken/",
+              "name": "Lemon Chicken",
+              "site": "RecipeTin Eats",
+              "description": null,
+              "minutes": 35,
+              "courses": [
+                "main"
+              ],
+              "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+              "publishedAt": "2026-10-01T17:30:00.000Z",
+              "inLibrary": {
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken"
+              },
+              "suits": true
+            }
+          ],
+          "total": 26
         }
       },
       "StoresStatus": {
@@ -38155,7 +38220,7 @@
           "Sites"
         ],
         "summary": "Followed recipe sites",
-        "description": "The recipe sites the household follows, oldest followed first, each with its newest recipes; and suggested sites it doesn't follow yet. Merran reads each site's feed every few hours. With an API key, it needs the `recipes: read` permission.",
+        "description": "The recipe sites the household follows, oldest followed first, each with its newest 24 recipes and how many it has (`GET /sites/{site}/recipes` gives the rest); and suggested sites it doesn't follow yet. Merran reads each site's feed every few hours. With an API key, it needs the `recipes: read` permission.",
         "security": [
           {
             "session": []
@@ -38300,8 +38365,8 @@
         "tags": [
           "Sites"
         ],
-        "summary": "The newest recipes from followed sites",
-        "description": "Up to 24, newest first, from every site the household follows: for Recipes' spotlight and Today's idea for tonight. With an API key, it needs the `recipes: read` permission.",
+        "summary": "The newest recipes from followed sites that suit the household",
+        "description": "Up to 24 that suit the household, newest first, from every site it follows: none with a food it avoids, and all on its diets. For Recipes' spotlight and Today's idea for tonight. With an API key, it needs the `recipes: read` permission.",
         "security": [
           {
             "session": []
@@ -38316,7 +38381,7 @@
         "x-merran-permission": "recipes:read",
         "responses": {
           "200": {
-            "description": "Their newest recipes.",
+            "description": "Their newest recipes that suit it.",
             "content": {
               "application/json": {
                 "schema": {
@@ -38512,6 +38577,107 @@
         "responses": {
           "204": {
             "description": "Not following it any more."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The household doesn't follow that site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sites/{site}/recipes": {
+      "get": {
+        "operationId": "listFollowedSiteRecipes",
+        "tags": [
+          "Sites"
+        ],
+        "summary": "A followed site's recipes",
+        "description": "A page of the site's recipes, newest first, as `GET /sites` lists them: for Show more after the newest 24 it gives. Merran keeps a site's newest 120. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000030"
+            },
+            "required": true,
+            "name": "site",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0,
+              "description": "How many to skip: those shown already."
+            },
+            "required": false,
+            "description": "How many to skip: those shown already.",
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 96,
+              "default": 24
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of its recipes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteRecipesPage"
+                }
+              }
+            }
           },
           "401": {
             "description": "Not signed in.",

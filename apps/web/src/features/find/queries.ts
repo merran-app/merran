@@ -1,12 +1,18 @@
-import { queryOptions, useQueryClient } from "@tanstack/react-query"
+import {
+  infiniteQueryOptions,
+  queryOptions,
+  useQueryClient,
+} from "@tanstack/react-query"
 
 import { followEvery } from "@/features/live/state"
 import { api, unwrap, type Schemas } from "@/lib/api/client"
+import { nextOffset } from "@/lib/pages"
 
 import { stillOpening } from "./opening"
 
 export type ShelfRecipe = Schemas["ShelfRecipe"]
 export type FollowedSite = Schemas["FollowedSite"]
+export type SiteRecipesPage = Schemas["SiteRecipesPage"]
 export type CollectionSummary = Schemas["CollectionSummary"]
 export type Collection = Schemas["Collection"]
 
@@ -31,6 +37,46 @@ export const siteRecipesQuery = queryOptions({
   queryFn: () => unwrap(api.GET("/api/sites/recipes")),
   staleTime: 5 * 60_000,
 })
+
+/** How many of a site's recipes each Show more brings. */
+const SITE_PAGE = 24
+
+/**
+ * A followed site's recipes as pages: first the newest, which
+ * `GET /api/sites` gives with the site, then what each Show more brought.
+ */
+export function sitePages(
+  site: FollowedSite,
+  more: readonly SiteRecipesPage[] = []
+): SiteRecipesPage[] {
+  return [{ recipes: site.recipes, total: site.total }, ...more]
+}
+
+/**
+ * The pages a followed site's Show more brings, after the first that comes
+ * with the site. It takes the site, not just its id, to start after the
+ * recipes shown. Nothing's asked for until Show more is pressed, so the
+ * Sites tab costs no request for each site; from then on, live changes
+ * refresh these pages with the sites, as they're under their key.
+ */
+export const siteRecipesPagesQuery = (site: FollowedSite) =>
+  infiniteQueryOptions({
+    queryKey: ["recipes", "sites", "site", site.id],
+    queryFn: ({ pageParam }) =>
+      unwrap(
+        api.GET("/api/sites/{site}/recipes", {
+          params: {
+            path: { site: site.id },
+            query: { offset: pageParam, limit: SITE_PAGE },
+          },
+        })
+      ),
+    initialPageParam: site.recipes.length,
+    getNextPageParam: (_last, pages) =>
+      nextOffset(sitePages(site, pages), (page) => page.recipes.length),
+    // Show more's first press fetches the first of these pages by hand.
+    enabled: (query) => query.state.data !== undefined,
+  })
 
 export const collectionsQuery = queryOptions({
   queryKey: ["recipes", "collections"],

@@ -4302,7 +4302,7 @@ export interface paths {
         };
         /**
          * Followed recipe sites
-         * @description The recipe sites the household follows, oldest followed first, each with its newest recipes; and suggested sites it doesn't follow yet. Merran reads each site's feed every few hours. With an API key, it needs the `recipes: read` permission.
+         * @description The recipe sites the household follows, oldest followed first, each with its newest 24 recipes and how many it has (`GET /sites/{site}/recipes` gives the rest); and suggested sites it doesn't follow yet. Merran reads each site's feed every few hours. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["listSites"];
         put?: never;
@@ -4325,8 +4325,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The newest recipes from followed sites
-         * @description Up to 24, newest first, from every site the household follows: for Recipes' spotlight and Today's idea for tonight. With an API key, it needs the `recipes: read` permission.
+         * The newest recipes from followed sites that suit the household
+         * @description Up to 24 that suit the household, newest first, from every site it follows: none with a food it avoids, and all on its diets. For Recipes' spotlight and Today's idea for tonight. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["listSiteRecipes"];
         put?: never;
@@ -4392,6 +4392,26 @@ export interface paths {
          * @description Recipes imported from it stay in the library. With an API key, it needs the `recipes: write` permission.
          */
         delete: operations["unfollowSite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sites/{site}/recipes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A followed site's recipes
+         * @description A page of the site's recipes, newest first, as `GET /sites` lists them: for Show more after the newest 24 it gives. Merran keeps a site's newest 120. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["listFollowedSiteRecipes"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -17574,6 +17594,7 @@ export interface components {
          *               "suits": true
          *             }
          *           ],
+         *           "total": 2,
          *           "waiting": 3,
          *           "reading": false,
          *           "readAt": "2026-10-15T18:30:00.000Z",
@@ -17641,6 +17662,7 @@ export interface components {
          *           "suits": true
          *         }
          *       ],
+         *       "total": 2,
          *       "waiting": 3,
          *       "reading": false,
          *       "readAt": "2026-10-15T18:30:00.000Z",
@@ -17653,8 +17675,10 @@ export interface components {
             name: string;
             url: string;
             feedUrl: string;
-            /** @description Its newest recipes, newest first: posts Merran opened and can import. */
+            /** @description Its newest 24 recipes, newest first: posts Merran opened and can import. */
             recipes: components["schemas"]["ShelfRecipe"][];
+            /** @description How many recipes it has in all, up to the newest 120 Merran keeps. `GET /sites/{site}/recipes` gives the rest. */
+            total: number;
             /** @description New posts not opened yet: Merran opens them a few seconds apart. */
             waiting: number;
             /** @description Not read for the first time yet. */
@@ -17739,6 +17763,52 @@ export interface components {
                 url: string;
                 description: string;
             }[];
+        };
+        /**
+         * @example {
+         *       "recipes": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+         *           "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+         *           "name": "Honey Garlic Chicken",
+         *           "site": "RecipeTin Eats",
+         *           "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+         *           "minutes": 12,
+         *           "courses": [
+         *             "main"
+         *           ],
+         *           "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *           "publishedAt": "2026-10-01T17:30:00.000Z",
+         *           "inLibrary": null,
+         *           "suits": true
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000032",
+         *           "url": "https://www.recipetineats.com/lemon-chicken/",
+         *           "name": "Lemon Chicken",
+         *           "site": "RecipeTin Eats",
+         *           "description": null,
+         *           "minutes": 35,
+         *           "courses": [
+         *             "main"
+         *           ],
+         *           "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *           "publishedAt": "2026-10-01T17:30:00.000Z",
+         *           "inLibrary": {
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken"
+         *           },
+         *           "suits": true
+         *         }
+         *       ],
+         *       "total": 26
+         *     }
+         */
+        SiteRecipesPage: {
+            /** @description Newest first. */
+            recipes: components["schemas"]["ShelfRecipe"][];
+            /** @description How many it has in all. */
+            total: number;
         };
         /**
          * @example {
@@ -32024,7 +32094,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Their newest recipes. */
+            /** @description Their newest recipes that suit it. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -32157,6 +32227,59 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The household doesn't follow that site. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listFollowedSiteRecipes: {
+        parameters: {
+            query?: {
+                /** @description How many to skip: those shown already. */
+                offset?: number | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                site: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of its recipes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteRecipesPage"];
+                };
             };
             /** @description Not signed in. */
             401: {

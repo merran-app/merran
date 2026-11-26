@@ -4,6 +4,7 @@ import { useInfiniteQuery } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
+import { ShowMoreButton } from "@/components/show-more-button"
 import { Badge } from "@/components/ui/badge"
 import { usePlannedRecipes } from "@/features/plan/use-planned-recipes"
 import {
@@ -11,9 +12,7 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Spinner } from "@/components/ui/spinner"
 import { type Schemas } from "@/lib/api/client"
 import { uniqueById } from "@/lib/pages"
 import { cn } from "@/lib/utils"
@@ -119,15 +118,7 @@ export function RecipePicker({
           ))}
           {found.hasNextPage && (
             <li className="flex justify-center p-2">
-              <Button
-                variant="outline"
-                onClick={() => void found.fetchNextPage()}
-                // The pages shown belong to the last search until the new one's in.
-                disabled={found.isFetchingNextPage || found.isPlaceholderData}
-              >
-                {found.isFetchingNextPage && <Spinner />}
-                {t("recipes.showMore")}
-              </Button>
+              <ShowMoreButton query={found} />
             </li>
           )}
         </ul>
