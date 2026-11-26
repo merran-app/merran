@@ -412,6 +412,27 @@ async function prune(deps: ShelfDeps, em: EntityManager, site: RecipeSite) {
 const photoKey = (photo: string) => `site-photos/${photo}.webp`
 
 /**
+ * Fetches a photo with its page as the referer and makes it small, as WebP.
+ * Throws when it won't load or isn't a picture.
+ */
+export async function smallPhoto(
+  fetcher: Fetcher,
+  url: string,
+  referer: string
+): Promise<Buffer> {
+  const answer = await fetcher(url, {
+    accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+    maxBytes: 15_000_000,
+    referer,
+  })
+  return sharp(answer.body, { failOn: "error" })
+    .rotate()
+    .resize({ ...PHOTO, fit: "cover" })
+    .webp({ quality: PHOTO.quality })
+    .toBuffer()
+}
+
+/**
  * Fetches a shelf recipe's photo and keeps it, small, as WebP, with its page
  * as the referer. Does nothing if it has none, or has been tried already. A
  * photo that won't load is marked "", so it isn't tried again.
@@ -423,16 +444,7 @@ export async function keepShelfPhoto(
 ): Promise<void> {
   if (row.photo !== null || !row.photoUrl) return
   try {
-    const answer = await deps.fetcher(row.photoUrl, {
-      accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
-      maxBytes: 15_000_000,
-      referer: row.url,
-    })
-    const body = await sharp(answer.body, { failOn: "error" })
-      .rotate()
-      .resize({ ...PHOTO, fit: "cover" })
-      .webp({ quality: PHOTO.quality })
-      .toBuffer()
+    const body = await smallPhoto(deps.fetcher, row.photoUrl, row.url)
     const photo = randomBytes(12).toString("hex")
     await deps.files.put(photoKey(photo), body)
     row.photo = photo

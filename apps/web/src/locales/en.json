@@ -3639,7 +3639,12 @@
     "earlier": "Earlier searches",
     "minutes": "{{minutes}} min",
     "import": "Import",
-    "open": "Open it"
+    "open": "Open it",
+    "opening": "Opening the recipes it found: {{done}} of {{total}}",
+    "stop": "Stop",
+    "stopped": "Stopped. Here's what it found.",
+    "stoppedEmpty": "Stopped before anything turned up.",
+    "findMore": "Find more"
   },
   "find": {
     "title": "Find recipes",
@@ -3667,7 +3672,6 @@
       "moreTitle": "Find more like these",
       "moreHint": "AI searches the web for more in this collection's theme that suit your household, and Merran opens each one first.",
       "findMore": "Find more",
-      "findAgain": "Find more again",
       "browse": "Browse collections"
     },
     "sites": {

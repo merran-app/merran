@@ -334,6 +334,55 @@ describe("the job runner", () => {
       })
     })
 
+    test("saves progress that came too soon, once the half second is up", async () => {
+      // Two moves a moment apart: the second must still be told.
+      let finish!: () => void
+      const finished = new Promise<void>((resolve) => {
+        finish = resolve
+      })
+      const { jobs, heard } = following([
+        {
+          kind: "long",
+          area: "recipes",
+          run: async ({ progress }) => {
+            await progress(1, 3, { at: 1 })
+            await progress(2, 3, { at: 2 })
+            await finished
+            return { at: "end" }
+          },
+        },
+      ])
+      const job = await enqueue(em(), { kind: "long", householdId: home })
+      await jobs.start()
+      await expect
+        .poll(async () => (await load(job.id)).progress, { timeout: 2000 })
+        .toEqual({ done: 2, total: 3 })
+      expect((await load(job.id)).result).toEqual({ at: 2 })
+      expect(said(heard)).toContainEqual(["running", { done: 2, total: 3 }])
+      finish()
+      await expect.poll(async () => (await load(job.id)).status).toBe("done")
+      await jobs.stop()
+    })
+
+    test("doesn't save progress it held back once the job has ended", async () => {
+      const { jobs } = following([
+        {
+          kind: "long",
+          run: async ({ progress }) => {
+            await progress(1, 3, { at: 1 })
+            await progress(2, 3, { at: 2 })
+            return { at: "end" }
+          },
+        },
+      ])
+      const job = await enqueue(em(), { kind: "long" })
+      await jobs.start()
+      await expect.poll(async () => (await load(job.id)).status).toBe("done")
+      await new Promise((resolve) => setTimeout(resolve, 700))
+      expect((await load(job.id)).result).toEqual({ at: "end" })
+      await jobs.stop()
+    })
+
     test("says who started it, so the app can tell them when it ends", async () => {
       const setup = em()
       const jamie = setup.create(User, {
@@ -653,6 +702,48 @@ describe("the job runner", () => {
         .toBe(1)
       // The next look for work, as the runner makes every few seconds.
       jobs.wake()
+      await expect.poll(() => quickRan).toBe(true)
+    } finally {
+      letThemGo()
+      await draining
+    }
+  })
+
+  test("a look asked for during a look isn't lost, however that look began", async () => {
+    // The runner is asked to look again while it's taking the first job,
+    // in a look `drain` began: once that look's done, it must look again,
+    // and find the quick job queued behind sixty long ones.
+    let letThemGo!: () => void
+    const held = new Promise<void>((resolve) => (letThemGo = resolve))
+    let quickRan = false
+    const jobs: JobRunner = runner(
+      [
+        { kind: "hog", lane: "long", concurrency: 5, run: () => held },
+        {
+          kind: "email",
+          lane: "quick",
+          run: async () => {
+            quickRan = true
+          },
+        },
+      ],
+      {
+        lanes: { long: 1 },
+        beforeTaking: async () => {
+          jobs.wake()
+        },
+      }
+    )
+    const tx = em()
+    const longAgo = new Date(Date.now() - 60 * 60_000)
+    for (let i = 0; i < 60; i++) {
+      tx.create(Job, { kind: "hog", payload: {}, runAt: longAgo })
+    }
+    await tx.flush()
+    await enqueue(em(), { kind: "email" })
+
+    const draining = jobs.drain()
+    try {
       await expect.poll(() => quickRan).toBe(true)
     } finally {
       letThemGo()

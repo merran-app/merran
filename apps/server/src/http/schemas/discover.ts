@@ -7,7 +7,7 @@ const FOUND = {
   name: "Roasted Butternut Squash Soup",
   site: "cooking.example",
   minutes: 60,
-  photo: "https://cooking.example/images/squash-soup.jpg",
+  photo: `/api/discover/${IDS.discovery}/photos/a1b2c3d4e5f60718293a4b5c`,
   why: "Vegetarian and freezes well, with the squash roasted for depth.",
 }
 
@@ -17,6 +17,7 @@ const SEARCH = {
   collection: null,
   status: "done" as const,
   error: null,
+  progress: null,
   recipes: [FOUND],
   createdAt: TIMES.created,
   updatedAt: TIMES.created,
@@ -31,9 +32,17 @@ export const DiscoverySchema = z
         "The starter collection it found more for (`POST /collections/{collection}/find`), or null.",
     }),
     status: z.enum(DISCOVERY_STATUSES).openapi({
-      description: "Still searching, done, or failed (`error` says why).",
+      description:
+        "Still searching, done, stopped (someone stopped it, keeping what it found), or failed (`error` says why).",
     }),
     error: z.string().nullable(),
+    progress: z
+      .object({ done: z.number(), total: z.number() })
+      .nullable()
+      .openapi({
+        description:
+          "Pages opened of those found online, while they open. Null otherwise.",
+      }),
     recipes: z
       .array(
         z.object({
@@ -44,13 +53,16 @@ export const DiscoverySchema = z
           name: z.string(),
           site: z.string(),
           minutes: z.number().nullable(),
-          photo: z.string().nullable(),
+          photo: z.string().nullable().openapi({
+            description:
+              "A small copy kept by Merran, a shelf recipe's photo (`GET /sites/recipes/{recipe}/photo`), or, for a search from before November 25, 2026, the site's own link. Null when it has none.",
+          }),
           why: z.string().openapi({ description: "Why it's a good pick." }),
         })
       )
       .openapi({
         description:
-          "Up to eight, each a page Merran opened and can import, no more than two from a site unless there aren't others.",
+          "For each round, up to 4 from the shelf of recipes Merran reads, then up to 8 from the web: each a page Merran opened and can import, no more than two from a site unless there aren't others.",
       }),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
@@ -75,5 +87,12 @@ export const DiscoveryParam = z.object({
   discoveryId: z.string().openapi({
     param: { name: "discoveryId", in: "path" },
     example: IDS.discovery,
+  }),
+})
+
+export const DiscoveryPhotoParam = DiscoveryParam.extend({
+  photo: z.string().openapi({
+    param: { name: "photo", in: "path" },
+    example: "a1b2c3d4e5f60718293a4b5c",
   }),
 })

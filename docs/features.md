@@ -124,7 +124,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Follow recipe sites and see their newest recipes | Key | Built | Module, on by default; respects `robots.txt`; on Recipes and Today too |
 | Starter collections that fill themselves from recipe sites, fitted to your tastes | Key | Built | Module, on by default; a rule and a few classics per collection, in data files per language; Find more with AI |
 | Imports in your language: a recipe from another language translated as it comes in | Key | Planned | AI; a setting, with the app's translations |
-| Discover: find recipes for any theme with AI | Key | Built | AI, with web search; each page is opened first, so they all import |
+| Discover: find recipes for any theme with AI | Key | Built | AI, with web search; each page is opened first, so they all import. Since November 25, 2026 (slice 5): matches from the shelf come first, recipes show as they're found, with **Stop** and **Find more**, and photos are kept small on Merran ([what it built](performance.md#what-slice-5-built)) |
 | Browser extension: import a page, right-click, the list in a side panel | Key | Built | Chrome, Edge, Firefox; even sites that turn servers away or need a sign-in; in the stores with 0.1 |
 | Import from sites that turn servers away, through your own FlareSolverr | Detail | Built | Available in alpha.7. Module, off until the server admin gives FlareSolverr's address, with a Test; only for imports a person asks for, including phone shares and the API, never feed reads or photos. A `flaresolverr` Compose profile and a guide with examples ([plan](flaresolverr-imports.md), [#51](https://github.com/merran-app/merran/issues/51)) |
 | Tandoor import | Detail | Later | |

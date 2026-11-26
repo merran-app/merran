@@ -77,6 +77,9 @@ const reply = (call: MockCall): MockReply => {
 }
 const system = () => asked.find((m) => m.role === "system")?.content as string
 
+/** The recipe pages' photo, which Discover keeps a small copy of. */
+const SOUP_PHOTO = "https://photos.example/soup.jpg"
+
 /** A recipe page with its recipe data, as most sites have. */
 const page = (name: string) =>
   `<!doctype html><html><head><script type="application/ld+json">${JSON.stringify(
@@ -84,7 +87,7 @@ const page = (name: string) =>
       "@type": "Recipe",
       name,
       totalTime: "PT40M",
-      image: "https://photos.example/soup.jpg",
+      image: SOUP_PHOTO,
       recipeIngredient: ["1 squash", "1 onion"],
       recipeInstructions: [{ "@type": "HowToStep", text: "Roast and blend." }],
     }
@@ -98,8 +101,22 @@ const web = new Map<string, string>([
   ["https://stews.example/lentil", page("Lentil Stew")],
   ["https://stews.example/bean", page("Bean Stew")],
 ])
+const soupPhoto = sharp({
+  create: { width: 1200, height: 900, channels: 3, background: "#a63" },
+})
+  .jpeg()
+  .toBuffer()
+
 const aiFetcher = fakeAiFetcher()
 const fetcher: Fetcher = async (url, options) => {
+  if (url === SOUP_PHOTO) {
+    return {
+      url,
+      status: 200,
+      contentType: "image/jpeg",
+      body: await soupPhoto,
+    }
+  }
   const body = web.get(url)
   if (body === undefined) {
     if (/\.example\//.test(url)) {
@@ -895,13 +912,23 @@ describe("Discover", () => {
     await jobs.drain()
     const done = await (await kyle.get(`/api/discover/${started.id}`)).json()
     expect(done).toMatchObject({ status: "done", error: null })
-    expect(done.recipes.map((recipe: { name: string }) => recipe.name)).toEqual(
-      ["Leek Soup", "Onion Soup", "Lentil Stew", "Bean Stew"]
+    // Each is saved as its page opens, so they come in the order they open.
+    const names = done.recipes.map((recipe: { name: string }) => recipe.name)
+    expect(names.sort()).toEqual([
+      "Bean Stew",
+      "Leek Soup",
+      "Lentil Stew",
+      "Onion Soup",
+    ])
+    const leek = done.recipes.find(
+      (recipe: { name: string }) => recipe.name === "Leek Soup"
     )
-    expect(done.recipes[0]).toMatchObject({
+    expect(leek).toMatchObject({
       site: "soups.example",
       minutes: 40,
-      photo: "https://photos.example/soup.jpg",
+      photo: expect.stringMatching(
+        new RegExp(`^/api/discover/${started.id}/photos/[0-9a-f]{24}$`)
+      ),
       why: "Silky.",
     })
     const { searches } = await (await kyle.get("/api/discover")).json()

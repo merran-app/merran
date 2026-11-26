@@ -4,7 +4,12 @@ import { createdAt, id, updatedAt } from "./base.ts"
 import { householdRef } from "./households.ts"
 import { User } from "./users.ts"
 
-export const DISCOVERY_STATUSES = ["searching", "done", "failed"] as const
+export const DISCOVERY_STATUSES = [
+  "searching",
+  "done",
+  "stopped",
+  "failed",
+] as const
 
 /** A recipe Discover found: a page Merran opened and can import. */
 export type DiscoveredRecipe = {
@@ -13,8 +18,16 @@ export type DiscoveredRecipe = {
   site: string
   /** Minutes in all, when the page says. */
   minutes: number | null
-  /** Its photo on the page, when it has one. */
+  /**
+   * Its photo as the API shows it: a small copy kept by Merran, a shelf
+   * recipe's photo, or, for a search from before photos were kept, the
+   * site's own link.
+   */
   photo: string | null
+  /** The file kept for it, the `{photo}` in its path. Not in the API. */
+  photoKey?: string | null
+  /** The shelf recipe it is, when it came from the shelf. Not in the API. */
+  shelfId?: string | null
   /** Why it's a good pick, in a line. */
   why: string
 }
@@ -33,6 +46,10 @@ export const Discovery = defineEntity({
     collection: p.string().nullable(),
     status: p.enum(DISCOVERY_STATUSES),
     error: p.text().nullable(),
+    /** Pages opened of those the AI offered, while they open; else null. */
+    progress: p.json<{ done: number; total: number }>().nullable(),
+    /** The job of the round going now, for Stop. Not in the API. */
+    jobId: p.string().nullable(),
     recipes: p.json<DiscoveredRecipe[]>(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

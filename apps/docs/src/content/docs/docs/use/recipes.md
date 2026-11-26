@@ -47,6 +47,19 @@ If **You have this one** appears, choose **Open it** to use the existing recipe.
 
 Only the first 100 links are considered per batch. Existing recipes are skipped. Video links come in with the rest when video import is on; when it's off, they're left out and the list says so. Successful imports remain even if other links fail.
 
+### Discover new recipes
+
+Discover needs AI, with web search, so the household needs an AI key.
+
+1. Open **Recipes → Find recipes → Discover**.
+2. Type a theme into **What sounds good?**, such as "Sheet-pan dinners", or pick one of the ideas, then choose **Find recipes**.
+3. Matches from the recipe sites Merran reads show straight away, then recipes from the web as Merran opens each page: **Opening the recipes it found: 3 of 11**. Each round of a search adds up to 12 recipes: up to 4 from the recipe sites Merran reads, then up to 8 from the web.
+4. Choose **Import** on a recipe to add it, or **Open it** if you already have it.
+
+Merran opens each recipe's page before it shows it, so what you see will import. Choose **Stop** to end the search early: it keeps what it found, and says **Stopped. Here's what it found.** Choose **Find more** to carry on with another round, which adds to the same search and leaves out what it has shown already. **Earlier searches** keeps the last 12, so you can come back to them.
+
+A collection under **Collections** has its own **Find more**. It adds to that collection's last search, and what the search already found stays out of it.
+
 ### Type one in
 
 1. Choose **Type one in instead** from **Add a recipe**.

@@ -303,7 +303,7 @@ The Recipe sites module reads recipe sites' feeds in the background and keeps wh
 - **A starter collection is a rule, not a list.** Each language has a data file of collections: a title, a line on what it is, a theme for Discover, a rule (courses, words in the name or keywords, words that rule one out, diets, the most minutes, months of the year), and a few hand-picked classics. A collection shows its classics and every recipe on the shelf that fits its rule, newest first, so it changes as the sites post.
 - **Seasons:** a collection with months shows only in them, moved by six months for a household in the southern hemisphere.
 - **Checked by itself:** the classics are opened again every week, and one that stops importing is hidden until it works again.
-- **Fitted to each household:** recipes against its allergies or diets are left out (one Merran can't read counts as having every allergy), recipes in its library are marked and go last, and a collection with fewer than four left is hidden. With AI, **Find more** runs Discover with the collection's theme and keeps what it finds with the collection, for that household.
+- **Fitted to each household:** recipes against its allergies or diets are left out (one Merran can't read counts as having every allergy), recipes in its library are marked and go last, and a collection with fewer than four left is hidden. With AI, **Find more** runs Discover with the collection's theme and keeps what it finds with the collection, for that household. It adds a round to the collection's last search, and what the search already found stays out of it.
 - **No calling home:** collections and suggested sites come with Merran's releases, in `apps/server/src/services/recipes/discover/sites/data/<language>/`; the server never fetches them from the Merran project.
 
 ## The database
@@ -344,7 +344,7 @@ Merran's own job runner does everything in the background, from a `jobs` table i
 | Check prices now (`stores.prices`) | When pressed, joining a check already waiting; one per household | Long |
 | Reading a scanned receipt (`pantry.readReceipt`) | When a receipt is scanned in the app | Long |
 | Removing the photos of recipes deleted for good (`files.remove`) | With the delete; one at a time | Long |
-| Discover searches | When started; two at a time, one per household | Long |
+| Discover searches (a round each: when started, and for each Find more) | When started; two at a time, one per household | Long |
 | Purging Recently deleted | Daily | Long |
 | Prep reminders | Every few minutes (not a job yet) | |
 | Emails: invitations and password resets | When sent | Quick |

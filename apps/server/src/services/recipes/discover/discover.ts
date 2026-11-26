@@ -2,20 +2,19 @@ import type { EntityManager } from "@mikro-orm/sql"
 import { generateText, hasToolCall, stepCountIs, tool } from "ai"
 import { z } from "zod"
 import { AppError } from "../../../core/errors.ts"
-import {
-  Discovery,
-  User,
-  type DiscoveredRecipe,
-} from "../../../database/entities/index.ts"
+import { Discovery, Job, User } from "../../../database/entities/index.ts"
 import { aiUnavailable, useAi, type AiDeps } from "../../ai/run.ts"
 import { resolveTask } from "../../ai/status.ts"
 import { tastesText } from "../../households/taste-text.ts"
-import { enqueue } from "../../jobs/jobs.ts"
-import type { JobHandler } from "../../jobs/runner.ts"
+import { ACTIVE, createJob, findJob, wakeRunner } from "../../jobs/jobs.ts"
+import type { JobHandler, JobRunner } from "../../jobs/runner.ts"
 import { getTastes } from "../../households/tastes.ts"
-import { decodeHtml } from "../import/import-link.ts"
-import { findBySourceUrl, isVideoLink, normalizeLink } from "../import/links.ts"
-import { readRecipeData } from "../import/recipe-data.ts"
+import { removeFilesLater } from "../../storage/remove-job.ts"
+import { searchFolder } from "./photos.ts"
+import { RoundSaved, runRound } from "./rounds.ts"
+import { shelfMatches } from "./shelf-matches.ts"
+import { getCollection } from "./sites/collections.ts"
+import { languageOf } from "./sites/sites.ts"
 
 // Discover: new recipes online for a theme ("cozy fall soups"), found by
 // the household's small model with web search, that suit the household.
@@ -24,21 +23,14 @@ import { readRecipeData } from "../import/recipe-data.ts"
 
 const KIND = "discover.search"
 
-/** The most recipes kept, and from one site, unless there aren't others. */
-const MOST = 8
-const PER_SITE = 2
-
-/** Fewer than this that open, and the model is asked once more. */
-const ENOUGH = 4
-
 /** Dishes named to find others than, at most. */
 const MOST_AVOIDED = 30
 
 /** The searches kept, newest first. */
 const KEPT = 12
 
-/** Pages opened at once. */
-const AT_ONCE = 4
+/** How long Stop waits for a running job to end, at most. */
+const STOP_WAIT_MS = 10_000
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -49,7 +41,16 @@ export function describeDiscovery(discovery: Discovery) {
     collection: discovery.collection ?? null,
     status: discovery.status,
     error: discovery.error ?? null,
-    recipes: discovery.recipes,
+    progress: discovery.progress ?? null,
+    // What a search keeps inside, like a photo's key, stays inside.
+    recipes: discovery.recipes.map((recipe) => ({
+      url: recipe.url,
+      name: recipe.name,
+      site: recipe.site,
+      minutes: recipe.minutes,
+      photo: recipe.photo,
+      why: recipe.why,
+    })),
     createdAt: discovery.createdAt.toISOString(),
     updatedAt: discovery.updatedAt.toISOString(),
   }
@@ -95,13 +96,140 @@ export async function startDiscovery(
     avoid?: readonly string[]
   }
 ) {
-  const going = await em.findOne(Discovery, { status: "searching" })
-  if (going) {
+  return startRound(deps, em, {
+    householdId: options.householdId,
+    userId: options.userId,
+    given: options.avoid ?? [],
+    search: { theme: options.theme, collection: options.collection ?? null },
+  })
+}
+
+/**
+ * Adds a round to a search that's over: up to four more from the shelf and
+ * up to eight more from the web, other than what it has, and other than a
+ * starter collection's own recipes when it's that collection's search.
+ */
+export async function findMore(
+  deps: AiDeps,
+  em: EntityManager,
+  options: {
+    householdId: string
+    userId: string
+    discoveryId: string
+  }
+) {
+  const discovery = await findDiscovery(em, options.discoveryId)
+  return startRound(deps, em, {
+    householdId: options.householdId,
+    userId: options.userId,
+    given: await collectionRecipeNames(em, options, discovery),
+    search: discovery,
+  })
+}
+
+/**
+ * The names of the recipes in the starter collection a search is for, as
+ * the person sees the collection, so its Find more finds others than them,
+ * whether it's pressed on the collection or on Discover. None for a search
+ * of its own, or for a collection that's gone.
+ */
+async function collectionRecipeNames(
+  em: EntityManager,
+  person: { householdId: string; userId: string },
+  discovery: Discovery
+) {
+  if (!discovery.collection) return []
+  try {
+    const collection = await getCollection(
+      em,
+      person.householdId,
+      await languageOf(em, person.userId),
+      discovery.collection
+    )
+    return collection.recipes.map((recipe) => recipe.name)
+  } catch (err) {
+    if (err instanceof AppError && err.code === "collection_not_found") {
+      return []
+    }
+    throw err
+  }
+}
+
+/**
+ * Stops a search that's going, keeping what it found. It says so at once;
+ * its job, as it ends, leaves it stopped.
+ */
+export async function stopDiscovery(
+  jobs: JobRunner,
+  em: EntityManager,
+  householdId: string,
+  discoveryId: string
+) {
+  const discovery = await findDiscovery(em, discoveryId)
+  if (discovery.status !== "searching") {
     throw new AppError(
       "conflict",
-      "discover_busy",
-      "A search is going already. It'll be done in a minute."
+      "discover_finished",
+      "That search has already finished."
     )
+  }
+  // A search from before its job was kept has none to stop.
+  if (discovery.jobId) {
+    const job = await findJob(em, discovery.jobId, householdId).catch(
+      (err: unknown) => {
+        // A job that's gone has nothing left to stop either.
+        if (err instanceof AppError && err.code === "job_not_found") return null
+        throw err
+      }
+    )
+    if (job && ACTIVE.includes(job.status)) {
+      await jobs.cancel(em, job)
+      // A running job is only asked to stop, and ends a moment later with a
+      // last save of its own. Waiting for it means that save lands first,
+      // and can't undo what's saved here, or a round started after this.
+      await jobs.waitFor(job.id, STOP_WAIT_MS)
+    }
+  }
+  discovery.status = "stopped"
+  discovery.progress = null
+  await em.flush()
+  return describeDiscovery(discovery)
+}
+
+function busy() {
+  return new AppError(
+    "conflict",
+    "discover_busy",
+    "A search is going already. It'll be done in a minute."
+  )
+}
+
+type NewSearch = { theme: string; collection: string | null }
+
+/**
+ * Starts a round for a new search, or for one that's over: refuses while a
+ * search is going, adds the round's matches from the shelf, and queues the
+ * job that finds the rest on the web.
+ */
+async function startRound(
+  deps: AiDeps,
+  em: EntityManager,
+  options: {
+    householdId: string
+    userId: string
+    /** Dishes to find others than, after the search's own. */
+    given: readonly string[]
+    search: Discovery | NewSearch
+  }
+) {
+  const going = await em.findOne(Discovery, { status: "searching" })
+  if (going) throw busy()
+  // A search that's stopped, or just ended, may have its job finishing still:
+  // a new round beside it could be overwritten by its last save.
+  const previous = "id" in options.search ? options.search.jobId : null
+  if (previous) {
+    const job = await em.findOne(Job, { id: previous })
+    if (job && ACTIVE.includes(job.status)) throw busy()
   }
   const resolution = await resolveTask(
     deps,
@@ -111,34 +239,88 @@ export async function startDiscovery(
   )
   if (!resolution.ok) throw aiUnavailable(resolution.why)
 
-  const discovery = em.create(Discovery, {
-    household: options.householdId,
-    user: em.getReference(User, options.userId, { wrapped: true }),
-    theme: options.theme,
-    collection: options.collection ?? null,
-    status: "searching",
-    recipes: [],
+  const discovery =
+    "id" in options.search
+      ? options.search
+      : em.create(Discovery, {
+          household: options.householdId,
+          user: em.getReference(User, options.userId, { wrapped: true }),
+          theme: options.search.theme,
+          collection: options.search.collection,
+          status: "searching",
+          recipes: [],
+        })
+
+  // What the shelf already has for the theme shows at once, before the web
+  // search finds more.
+  // Every name is kept from the shelf's matches: the cap is for what the AI
+  // is told, and a collection's own recipes mustn't drop out of the shelf's
+  // list as its search grows.
+  const matches = await shelfMatches(em, options.householdId, discovery.theme, {
+    avoid: namesIn(discovery, options.given),
+    skip: discovery.recipes.map((recipe) => recipe.url),
   })
-  await em.flush()
-  await enqueue(em, {
+  discovery.recipes = [...discovery.recipes, ...matches]
+  discovery.status = "searching"
+  discovery.progress = null
+  discovery.error = null
+
+  // Worked out once the shelf's matches are in, so the AI is told about them.
+  const job = createJob(em, {
     kind: KIND,
     householdId: options.householdId,
     payload: {
       discoveryId: discovery.id,
       userId: options.userId,
-      avoid: (options.avoid ?? []).slice(0, MOST_AVOIDED),
+      avoid: avoidedBy(discovery, options.given),
     },
     createdBy: options.userId,
     maxAttempts: 1,
   })
+  discovery.jobId = job.id
+  // The search and its job are saved together, so neither is ever saved
+  // without the other.
+  await em.flush()
+  wakeRunner()
+  await removeOlderSearches(em, options.householdId)
+  return describeDiscovery(discovery)
+}
+
+/** What the AI is told to find others than: those names, at most 30. */
+function avoidedBy(discovery: Discovery, given: readonly string[]) {
+  return namesIn(discovery, given).slice(0, MOST_AVOIDED)
+}
+
+/** The names in a search, newest first, then those given. */
+function namesIn(discovery: Discovery, given: readonly string[]) {
+  const names = discovery.recipes.map((recipe) => recipe.name).reverse()
+  return [...names, ...given]
+}
+
+/**
+ * Removes the searches past the last twelve, and queues their photos'
+ * folders for removal in the same flush, so the files go only if the
+ * searches do.
+ */
+export async function removeOlderSearches(
+  em: EntityManager,
+  householdId: string
+) {
   const all = await em.find(
     Discovery,
     {},
     { orderBy: { createdAt: "desc", id: "desc" } }
   )
   const older = all.slice(KEPT)
-  if (older.length > 0) await em.remove(older).flush()
-  return describeDiscovery(discovery)
+  if (older.length === 0) return
+  em.remove(older)
+  removeFilesLater(
+    em,
+    householdId,
+    older.map((search) => searchFolder(householdId, search.id))
+  )
+  await em.flush()
+  wakeRunner()
 }
 
 const SYSTEM = `You find recipes online for a household's recipe app. Search the web for recipes that fit the theme and suit the household, then call offer_recipes with 10 to 12 of them.
@@ -232,112 +414,6 @@ async function askForPicks(
   })
 }
 
-/** A pick that opens as a recipe page, as Discover keeps it; or null. */
-async function open(
-  deps: AiDeps,
-  em: EntityManager,
-  pick: { url: string; why: string }
-): Promise<DiscoveredRecipe | null> {
-  try {
-    const url = normalizeLink(pick.url)
-    if (isVideoLink(url)) return null
-    const page = await deps.fetcher(url)
-    const pageUrl = normalizeLink(page.url)
-    // In the library already: nothing new.
-    if (await findBySourceUrl(em, [url, pageUrl])) return null
-    const data = readRecipeData(
-      decodeHtml(page.body, page.contentType),
-      pageUrl
-    )
-    if (!data) return null
-    const input = data.input
-    return {
-      url: pageUrl,
-      name: input.name,
-      site: new URL(pageUrl).hostname.replace(/^www\./, ""),
-      minutes:
-        input.totalMinutes ??
-        ((input.prepMinutes ?? 0) + (input.cookMinutes ?? 0) || null),
-      photo: data.photoUrls[0] ?? null,
-      why: pick.why.replace(/\s+/g, " ").trim().slice(0, 300),
-    }
-  } catch {
-    return null
-  }
-}
-
-/** The picks that open, a few at a time, in the order they came. */
-async function openAll(
-  deps: AiDeps,
-  em: EntityManager,
-  picks: { url: string; why: string }[]
-) {
-  const opened: (DiscoveredRecipe | null)[] = []
-  for (let i = 0; i < picks.length; i += AT_ONCE) {
-    opened.push(
-      ...(await Promise.all(
-        picks.slice(i, i + AT_ONCE).map((pick) => open(deps, em, pick))
-      ))
-    )
-  }
-  return opened
-}
-
-/** Words in recipe names that don't say which dish it is. */
-const FILLER = new Set(
-  "a an and the with my our best easy quick simple homemade perfect ultimate favorite favourite classic recipe ingredient minute".split(
-    " "
-  )
-)
-
-/** The words in a recipe's name that say which dish it is. */
-function dishWords(name: string) {
-  return new Set(
-    name
-      .toLowerCase()
-      .split(/[^\p{L}]+/u)
-      .filter((word) => word.length > 1 && !FILLER.has(word))
-  )
-}
-
-/**
- * Whether two names are takes on one dish: "Easy Honey Garlic Salmon" and
- * "Honey Garlic Glazed Salmon".
- */
-export function sameDish(a: string, b: string) {
-  const one = dishWords(a)
-  const two = dishWords(b)
-  const both = [...one].filter((word) => two.has(word)).length
-  const either = one.size + two.size - both
-  return either > 0 && both / either >= 0.6
-}
-
-/**
- * Up to eight, each a different dish, no more than two from a site unless
- * there aren't others.
- */
-export function keep(found: readonly DiscoveredRecipe[]) {
-  const unique = found.filter(
-    (recipe, i) =>
-      found.findIndex(
-        (other) => other.url === recipe.url || sameDish(other.name, recipe.name)
-      ) === i
-  )
-  const kept: DiscoveredRecipe[] = []
-  const bySite = new Map<string, number>()
-  for (const recipe of unique) {
-    if (kept.length === MOST) break
-    if ((bySite.get(recipe.site) ?? 0) >= PER_SITE) continue
-    kept.push(recipe)
-    bySite.set(recipe.site, (bySite.get(recipe.site) ?? 0) + 1)
-  }
-  for (const recipe of unique) {
-    if (kept.length === MOST) break
-    if (!kept.includes(recipe)) kept.push(recipe)
-  }
-  return kept
-}
-
 const Payload = z.object({
   discoveryId: z.string(),
   userId: z.string().nullable(),
@@ -350,60 +426,52 @@ export const discoverJob: JobHandler = {
   area: "recipes",
   perHousehold: 1,
   concurrency: 2,
-  async run({ em, householdId, payload, signal, deps, logger }) {
+  // Stopped before it started: the search says so, as one stopped while it
+  // runs does, rather than searching for good.
+  cancelledWaiting: async (em, job) => {
+    const { discoveryId } = Payload.pick({ discoveryId: true }).parse(
+      job.payload
+    )
+    const discovery = await em.findOne(Discovery, { id: discoveryId })
+    if (discovery?.status !== "searching") return
+    discovery.status = "stopped"
+    discovery.progress = null
+    await em.flush()
+  },
+  async run({
+    em,
+    householdId,
+    payload,
+    saved,
+    progress,
+    signal,
+    deps,
+    logger,
+  }) {
     if (!householdId) throw new Error("A search needs a household.")
     const { discoveryId, userId, avoid } = Payload.parse(payload)
     const discovery = await findDiscovery(em, discoveryId)
-    try {
-      const tastes = tastesText(await getTastes(em, householdId))
-      const ask = (failed: string[]) =>
+    // Stopped before it started.
+    if (discovery.status !== "searching") return
+    await runRound(deps, em, discovery, {
+      householdId,
+      avoid,
+      // The household's tastes are read as the AI is asked, so a problem
+      // reading them fails the search rather than leaving it searching.
+      ask: async (failed) =>
         askForPicks(deps, em, {
           householdId,
           userId,
           theme: discovery.theme,
-          tastes,
+          tastes: tastesText(await getTastes(em, householdId)),
           failed,
           avoid,
-        })
-      const picks = await ask([])
-      const opened = await openAll(deps, em, picks)
-      let found = opened.filter((recipe) => recipe !== null)
-      // Too few open: once more, saying which didn't.
-      if (found.length < ENOUGH) {
-        const failed = picks
-          .filter((_, i) => opened[i] === null)
-          .map((pick) => pick.url)
-        const more = await ask(failed)
-        found = [
-          ...found,
-          ...(await openAll(deps, em, more)).filter(
-            (recipe) => recipe !== null
-          ),
-        ]
-      }
-      discovery.recipes = keep(found)
-      discovery.status = "done"
-      discovery.error =
-        discovery.recipes.length === 0
-          ? "Nothing turned up that Merran could open. Try another theme."
-          : null
-    } catch (err) {
-      // Stopped, or Merran is shutting down: the search didn't fail.
-      if (signal.aborted) throw err
-      discovery.status = "failed"
-      discovery.error =
-        err instanceof AppError
-          ? err.message
-          : "The search didn't work. Try again in a moment."
-      if (!(err instanceof AppError)) {
-        logger.warn({ err, discovery: discovery.id }, "A search failed")
-      }
-    }
-    await em.flush()
-    deps.events.changed(householdId, {
-      area: "recipes",
-      by: null,
-      client: null,
+        }),
+      // What the round kept with its job before a restart.
+      saved: RoundSaved.safeParse(saved).data ?? null,
+      progress,
+      signal,
+      logger,
     })
     return { recipes: discovery.recipes.length }
   },

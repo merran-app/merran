@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { NeedsAi, useAiFor } from "@/features/ai/needs-ai"
+import { placeholders } from "@/features/find/placeholders"
 import { importStarted, useStartedNotice } from "@/features/imports/started"
 import { followEvery } from "@/features/live/state"
 import { useRefreshRecipes } from "@/features/recipes/queries"
@@ -42,6 +43,7 @@ export function DiscoverTab() {
   const [theme, setTheme] = React.useState("")
   const [shown, setShown] = React.useState<string | null>(null)
   const [starting, setStarting] = React.useState(false)
+  const [addingMore, setAddingMore] = React.useState(false)
   const searches = data?.searches ?? []
   const search = searches.find((s) => s.id === shown) ?? searches[0]
   const searching = searches.some((s) => s.status === "searching")
@@ -62,6 +64,23 @@ export function DiscoverTab() {
       toast.error(err.message)
     } finally {
       setStarting(false)
+    }
+  }
+
+  async function findMore(discoveryId: string) {
+    setAddingMore(true)
+    try {
+      await unwrap(
+        api.POST("/api/discover/{discoveryId}/more", {
+          params: { path: { discoveryId } },
+        })
+      )
+      await queryClient.invalidateQueries({ queryKey: searchesQuery.queryKey })
+    } catch (err) {
+      if (!(err instanceof ApiError)) throw err
+      toast.error(err.message)
+    } finally {
+      setAddingMore(false)
     }
   }
 
@@ -119,7 +138,13 @@ export function DiscoverTab() {
           </div>
         )}
 
-        {search && <Search search={search} />}
+        {search && (
+          <Search
+            search={search}
+            moreBusy={addingMore || searching}
+            onMore={ai.why ? undefined : () => void findMore(search.id)}
+          />
+        )}
 
         {searches.length > 1 && (
           <section className="grid gap-2">
@@ -149,51 +174,124 @@ export function DiscoverTab() {
   )
 }
 
-/** A search: going, what it found, or why it found nothing. */
+/** A search: going, what it found so far, or why it found nothing. */
 export function Search({
   search,
   hideTheme = false,
+  onMore,
+  moreBusy = false,
 }: {
   search: Discovery
   /** Its theme goes without saying, as on a collection's page. */
   hideTheme?: boolean
+  /** Adds a round to the search: shows Find more once it isn't searching. */
+  onMore?: () => void
+  moreBusy?: boolean
 }) {
   const { t } = useTranslation()
-  if (search.status === "searching") {
+  const queryClient = useQueryClient()
+  const [stopping, setStopping] = React.useState(false)
+  const searching = search.status === "searching"
+
+  // Stopping waits for the search's job to wind down, which can take a few
+  // seconds, so the button stays busy until the stopped search comes back.
+  async function stop() {
+    setStopping(true)
+    try {
+      await unwrap(
+        api.POST("/api/discover/{discoveryId}/stop", {
+          params: { path: { discoveryId: search.id } },
+        })
+      )
+      await queryClient.invalidateQueries({ queryKey: ["recipes", "discover"] })
+    } catch (err) {
+      if (!(err instanceof ApiError)) throw err
+      toast.error(err.message)
+    } finally {
+      setStopping(false)
+    }
+  }
+
+  const heading = !hideTheme && (
+    <h2 className="text-xl font-semibold break-words">{search.theme}</h2>
+  )
+
+  const found = (
+    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {search.recipes.map((recipe) => (
+        <li key={recipe.url}>
+          <FoundCard found={recipe} />
+        </li>
+      ))}
+      {Array.from({ length: placeholders(search) }, (_, i) => (
+        <li key={`placeholder-${i}`} aria-hidden="true">
+          <Skeleton className="h-64 rounded-3xl" />
+        </li>
+      ))}
+    </ul>
+  )
+
+  if (searching) {
     return (
       <section className="grid gap-4">
-        <p
-          className="flex items-center gap-2 text-muted-foreground"
-          aria-live="polite"
-        >
-          <Spinner />
-          {t("discover.searching", { theme: search.theme })}
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-64 rounded-3xl" />
-          ))}
+        {heading}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p
+            className="flex items-center gap-2 text-muted-foreground"
+            aria-live="polite"
+          >
+            <Spinner />
+            {search.progress
+              ? t("discover.opening", search.progress)
+              : t("discover.searching", { theme: search.theme })}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={stopping}
+            onClick={() => void stop()}
+          >
+            {stopping && <Spinner data-icon="inline-start" />}
+            {t("discover.stop")}
+          </Button>
         </div>
+        {found}
       </section>
     )
   }
+
   return (
     <section className="grid gap-4">
-      {!hideTheme && (
-        <h2 className="text-xl font-semibold break-words">{search.theme}</h2>
+      {heading}
+      {search.status === "stopped" && (
+        <p className="text-muted-foreground" role="status">
+          {search.recipes.length > 0
+            ? t("discover.stopped")
+            : t("discover.stoppedEmpty")}
+        </p>
       )}
       {search.error && (
         <p className="text-muted-foreground" role="status">
           {search.error}
         </p>
       )}
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {search.recipes.map((found) => (
-          <li key={found.url}>
-            <FoundCard found={found} />
-          </li>
-        ))}
-      </ul>
+      {found}
+      {onMore && (
+        <div>
+          <Button variant="outline" disabled={moreBusy} onClick={onMore}>
+            {moreBusy ? (
+              <Spinner data-icon="inline-start" />
+            ) : (
+              <HugeiconsIcon
+                icon={Search01Icon}
+                strokeWidth={2}
+                data-icon="inline-start"
+              />
+            )}
+            {t("discover.findMore")}
+          </Button>
+        </div>
+      )}
     </section>
   )
 }
