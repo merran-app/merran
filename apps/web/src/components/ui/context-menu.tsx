@@ -89,7 +89,6 @@ function ContextMenuTrigger({
   onPointerCancel,
   onLostPointerCapture,
   onContextMenu,
-  onClickCapture,
   onTouchStart,
   ...props
 }: TriggerProps) {
@@ -133,11 +132,6 @@ function ContextMenuTrigger({
     onContextMenu?.(event)
   }
 
-  function clickCapture(event: TriggerEvent<"onClickCapture">) {
-    press.onClickCapture(event)
-    onClickCapture?.(event)
-  }
-
   function touchStart(event: TriggerEvent<"onTouchStart">) {
     touch.current = true
     event.preventBaseUIHandler()
@@ -153,7 +147,6 @@ function ContextMenuTrigger({
       onPointerCancel={pointerCancel}
       onLostPointerCapture={lostPointerCapture}
       onContextMenu={rightClick}
-      onClickCapture={clickCapture}
       onTouchStart={touchStart}
       {...props}
     />
