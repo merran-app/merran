@@ -5,7 +5,7 @@ import {
   MAX_LINKS,
   startLinkImport,
 } from "../../../../../services/recipes/import/import-links.ts"
-import { getCollection } from "../../../../../services/recipes/discover/sites/collections.ts"
+import { collectionRecipes } from "../../../../../services/recipes/discover/sites/collections.ts"
 import { languageOf } from "../../../../../services/recipes/discover/sites/sites.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import {
@@ -58,17 +58,16 @@ export default (router: Router, _deps: AppDeps) => {
     const { em, householdId, userId } = inHousehold(c)
     // Every recipe of the collection, to pick from: what the person saw
     // may have changed since.
-    const collection = await getCollection(
+    const { collection, recipes } = await collectionRecipes(
       em,
       householdId,
       await languageOf(em, userId),
-      c.req.valid("param").collection,
-      { offset: 0, limit: Number.MAX_SAFE_INTEGER }
+      c.req.valid("param").collection
     )
     const asked = c.req.valid("json")?.recipes
     const wanted = asked ? new Set(asked) : null
     // In the collection's order, whatever order they were asked for in.
-    const urls = collection.recipes
+    const urls = recipes
       .filter((recipe) => !recipe.inLibrary)
       .filter((recipe) => !wanted || wanted.has(recipe.id))
       .slice(0, MAX_LINKS)

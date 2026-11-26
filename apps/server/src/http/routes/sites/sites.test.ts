@@ -6,15 +6,18 @@ import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../app.ts"
 import { AppError } from "../../../core/errors.ts"
 import {
+  Household,
   Import,
   ImportItem,
   RecipeSite,
   SiteRecipe,
 } from "../../../database/entities/index.ts"
+import { forHousehold } from "../../../database/scope.ts"
 import type { Database } from "../../../database/orm.ts"
 import type { Fetcher } from "../../../services/fetch/public-fetch.ts"
 import { enqueue } from "../../../services/jobs/jobs.ts"
 import type { JobRunner } from "../../../services/jobs/runner.ts"
+import { collectionRecipes } from "../../../services/recipes/discover/sites/collections.ts"
 import { siteData } from "../../../services/recipes/discover/sites/data.ts"
 import { forgetRobots } from "../../../services/recipes/discover/sites/robots.ts"
 import { PACE } from "../../../services/recipes/discover/sites/shelf.ts"
@@ -986,5 +989,59 @@ describe("show more of a collection, and import what's shown", () => {
     const res = await kyle.post("/api/collections/soups/import")
     expect(res.status).toBe(202)
     expect((await res.json()).total).toBe(first.toImport)
+  })
+
+  test("what Find more leaves out is the whole collection, not just a page", async () => {
+    // Find more's search needs AI, which these tests don't have, so this
+    // is the list it gives its avoid names from.
+    const first = await collection()
+    const [household] = await database.em
+      .fork()
+      .find(Household, {}, { filters: false })
+    const { recipes } = await collectionRecipes(
+      forHousehold(database.em, household!.id),
+      household!.id,
+      "en",
+      "soups"
+    )
+    expect(recipes).toHaveLength(first.count)
+    expect(first.count).toBeGreaterThan(24)
+  })
+
+  test("recipes posted at the same moment keep one order across pages", async () => {
+    const em = database.em.fork()
+    const moment = new Date(Date.now() - 400 * 86_400_000)
+    const tied = Array.from({ length: 6 }, (_, index) =>
+      em.create(SiteRecipe, {
+        url: `https://tied-soups.example/soup-${index}/`,
+        state: "recipe",
+        siteName: "Tied Soups",
+        name: `Tied Soup ${index}`,
+        courses: ["soup"],
+        keywords: [],
+        ingredients: ["1 onion"],
+        diets: [],
+        publishedAt: moment,
+        createdAt: moment,
+      })
+    )
+    await em.flush()
+    try {
+      const pages = [
+        ...(await collection("?offset=0&limit=96")).recipes,
+        ...(await collection("?offset=0&limit=96")).recipes,
+      ].map((recipe) => recipe.id)
+      const once = pages.slice(0, pages.length / 2)
+      expect(pages.slice(pages.length / 2)).toEqual(once)
+      // Paged in twos, they come out as the whole list does.
+      const paged: string[] = []
+      for (let offset = 0; offset < once.length; offset += 2) {
+        const page = await collection(`?offset=${offset}&limit=2`)
+        paged.push(...page.recipes.map((recipe) => recipe.id))
+      }
+      expect(paged).toEqual(once)
+    } finally {
+      await em.remove(tied).flush()
+    }
   })
 })
