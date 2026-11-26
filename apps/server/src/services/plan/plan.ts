@@ -176,7 +176,11 @@ export async function findEntry(em: EntityManager, entryId: string) {
 }
 
 /** One of the household's recipes, by id or address. */
-async function recipeFor(em: EntityManager, idOrSlug: string, field: string) {
+export async function recipeFor(
+  em: EntityManager,
+  idOrSlug: string,
+  field: string
+) {
   const recipe = await em.findOne(
     Recipe,
     UUID.test(idOrSlug) ? { id: idOrSlug } : { slug: idOrSlug }
@@ -297,7 +301,7 @@ export type NewEntry = {
 }
 
 /** Makes a meal, after any already in its slot, ready to save. */
-async function createEntry(
+export async function createEntry(
   em: EntityManager,
   householdId: string,
   input: NewEntry,

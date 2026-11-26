@@ -17,6 +17,9 @@ const CHANGES: [RegExp, LiveArea[]][] = [
   ],
   // The list follows the plan, and cooking uses up the pantry.
   [/^\/api\/plan(\/|$)/, ["plan", "list", "pantry"]],
+  // A recipe added to the list goes on the plan too, or changes a meal
+  // there, and so does its Undo.
+  [/^\/api\/list\/recipes(\/undo)?$/, ["list", "plan", "pantry"]],
   // Shopping put away goes in the pantry; listing meals sets food aside,
   // and what isn't at home after all comes off it.
   [

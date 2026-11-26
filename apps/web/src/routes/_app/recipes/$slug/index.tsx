@@ -9,6 +9,7 @@ import {
   LeafIcon,
   LinkSquare02Icon,
   MoreHorizontalIcon,
+  ShoppingBasketAdd01Icon,
   Tick02Icon,
   Calendar03Icon,
   Time04Icon,
@@ -78,6 +79,7 @@ import { RecipeSuggestions } from "@/features/recipes/tidy/recipe-suggestions"
 import { VersionsDialog } from "@/features/recipes/versions-dialog"
 import { useCapability } from "@/features/capabilities/queries"
 import { useAssistantPage } from "@/features/assistant/assistant-context"
+import { useAddRecipeToList } from "@/features/list/use-add-recipe"
 import { PlanItDialog } from "@/features/plan/plan-it-dialog"
 import { ShareButton } from "@/features/sharing/share-button"
 import { SharedBadge } from "@/features/sharing/shared-badge"
@@ -237,6 +239,22 @@ function RecipeView({
   const afterCooking = useAfterCooking()
   const [marking, setMarking] = React.useState(false)
   const [planning, setPlanning] = React.useState(false)
+  const listing = useAddRecipeToList()
+  // Planning it or putting it on the list takes the servings shown, when
+  // they aren't the recipe's own.
+  const shownServings =
+    servings.changed && recipe.servings
+      ? Math.round(recipe.servings * servings.factor * 100) / 100
+      : null
+
+  /** The recipe's ingredients on the list, as it's shown: servings and side. */
+  function addToList() {
+    void listing.add({
+      recipe,
+      withRecipe: paired?.id ?? null,
+      servings: shownServings,
+    })
+  }
 
   /** Cooks the meal it was opened from, or today's: says which. */
   async function cookMeal() {
@@ -466,14 +484,11 @@ function RecipeView({
               {t("plan.planIt")}
             </Button>
             <ShareButton recipe={recipe} />
+            {listing.question}
             {planning && (
               <PlanItDialog
                 recipe={recipe}
-                servings={
-                  servings.changed && recipe.servings
-                    ? Math.round(recipe.servings * servings.factor * 100) / 100
-                    : null
-                }
+                servings={shownServings}
                 withRecipe={paired ?? null}
                 open={planning}
                 onOpenChange={setPlanning}
@@ -503,6 +518,14 @@ function RecipeView({
                 <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
+                <DropdownMenuItem disabled={listing.busy} onClick={addToList}>
+                  <HugeiconsIcon
+                    icon={ShoppingBasketAdd01Icon}
+                    strokeWidth={2}
+                  />
+                  {t("recipes.addToList")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 {aiOn && (
                   <DropdownMenuItem onClick={() => setTidying(true)}>
                     <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} />

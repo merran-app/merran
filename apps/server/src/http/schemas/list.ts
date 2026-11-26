@@ -2,6 +2,7 @@ import { z } from "@hono/zod-openapi"
 import { ITEM_SOURCES, MEALS } from "../../database/entities/index.ts"
 import { IDS, TIMES } from "./examples.ts"
 import { PantrySnapshotSchema } from "./pantry.ts"
+import { MealSchema, PLAN_ENTRY, PlanEntrySchema, servings } from "./plan.ts"
 
 // The shopping lists: what to buy, by aisle, on whichever list the
 // household sorts it onto; from the plan, typed in, or every week.
@@ -459,6 +460,84 @@ export const FromPlanResultSchema = z
       everyWeek: 2,
       onHand: ["salt", "black pepper"],
       inPantry: ["rice"],
+    },
+  })
+
+export const RecipeToListSchema = z
+  .object({
+    recipe: z.string().min(1).openapi({
+      description: "The recipe, by id or address.",
+    }),
+    withRecipe: z.string().nullish().openapi({
+      description: "A side or sauce it's made with, by id or address.",
+    }),
+    servings: servings.nullish().openapi({
+      description: "None for the recipe's own servings.",
+    }),
+    meal: MealSchema.optional().openapi({
+      description:
+        "The meal in the week's pool it goes in: dinner if the household plans dinners, or its first meal, if not given.",
+    }),
+    tonight: z.boolean().optional().openapi({
+      description:
+        "It's made today, so it goes in this week's any-day meals even on the week's last day, when it would otherwise go in next week's.",
+    }),
+  })
+  .openapi("RecipeToList", {
+    example: {
+      recipe: "lemon-chicken",
+      withRecipe: "garlic-rice",
+      servings: 8,
+    },
+  })
+
+export const RecipeOnListUndoSchema = z
+  .object({
+    entry: z.string().openapi({ description: "The meal." }),
+    made: z.boolean().openapi({
+      description:
+        "Adding made the meal, so Undo takes it off the plan; otherwise it was planned already, and stays.",
+    }),
+    servings: z.number().nullable().openapi({
+      description: "The meal's servings before, for one planned already.",
+    }),
+  })
+  .openapi("RecipeOnListUndo", {
+    example: { entry: IDS.planEntry, made: true, servings: null },
+  })
+
+export const RecipeListedSchema = z
+  .object({
+    // The meal on the list: one planned already, or one it made in the
+    // week's any-day meals. A description here would become PlanEntry's
+    // own, everywhere it's used.
+    entry: PlanEntrySchema,
+    made: z.boolean().openapi({
+      description:
+        "It made the meal, in the week's any-day meals; false when a meal of the recipe planned already went on the list.",
+    }),
+    undo: RecipeOnListUndoSchema,
+    added: z.number().int().openapi({ description: "New lines on the list." }),
+    merged: z
+      .number()
+      .int()
+      .openapi({ description: "Lines added to ones already there." }),
+    onHand: z.array(z.string()).openapi({
+      description: "Left off: always on hand.",
+    }),
+    inPantry: z.array(z.string()).openapi({
+      description: "Left off: at home already, and now set aside for it.",
+    }),
+  })
+  .openapi("RecipeListed", {
+    example: {
+      entry: { ...PLAN_ENTRY, anyDay: true, date: "2026-10-12" },
+      made: true,
+      undo: { entry: IDS.planEntry, made: true, servings: null },
+      added: 6,
+      merged: 1,
+      onHand: ["salt"],
+      inPantry: [],
     },
   })
 
