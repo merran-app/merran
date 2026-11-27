@@ -6,7 +6,7 @@ import { PlanEntry } from "../../database/entities/index.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
 import { apartName, householdAliases, saveAlias } from "../foods/aliases.ts"
 import { findItem } from "./list.ts"
-import { rekeyHousehold } from "./rekey.ts"
+import { rekeyFoods } from "./rekey.ts"
 
 // Teaching Merran a household's own foods from the list (docs/foods.md):
 // "Same as…" joins one thing to another from now on, and "Not the same"
@@ -37,9 +37,10 @@ export async function sameAs(
   const to = other.foodKey ?? plainKey(other.name)
   const food = from === to ? to : await saveAlias(em, householdId, from, to)
   await em.flush()
-  // Every key made again with it: the list's lines join, and what's at
-  // home, aisles and store products follow.
-  const { joined } = await rekeyHousehold(em)
+  // The keys of the two foods made again: the list's lines join, and
+  // what's at home, aisles and store products follow. No other food's key
+  // changes with it.
+  const { joined } = await rekeyFoods(em, [from, to])
   return { food, joined }
 }
 
@@ -93,8 +94,8 @@ export async function keepApart(
   return { kept: kept.length }
 }
 
-/** Forgets one of the household's names; keys are made again without it. */
+/** Forgets one of the household's names; its two foods' keys are made again. */
 export async function forgetAlias(em: EntityManager, id: string) {
-  await removeAlias(em, id)
-  await rekeyHousehold(em)
+  const { name, foodKey } = await removeAlias(em, id)
+  await rekeyFoods(em, [name, foodKey])
 }

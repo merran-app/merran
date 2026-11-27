@@ -1,9 +1,11 @@
 import {
   foodKey,
   joinAmounts,
+  plainKey,
   FOOD_KEYS_VERSION,
   shoppingName,
 } from "@merran/shared"
+import type { FilterQuery } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
 import {
   FoodPlacement,
@@ -45,8 +47,52 @@ export async function rekeyFoodsSoon(em: EntityManager) {
   })
 }
 
+/** Which rows a re-keying looks at, and what it's told to do with them. */
+type RekeyScope = {
+  items: FilterQuery<ShoppingItem>
+  placements: FilterQuery<FoodPlacement>
+  products: FilterQuery<StoreProduct>
+  pantry: FilterQuery<PantryItem>
+  purchases: FilterQuery<Purchase>
+  /** Of the list items read, the ones that count. Everything, if not set. */
+  wanted?: (item: ShoppingItem, keyFor: (name: string) => string) => boolean
+}
+
 /** One household's keys and list names, made again. */
 export async function rekeyHousehold(em: EntityManager) {
+  return rekeyRows(em, {
+    items: {},
+    placements: {},
+    products: {},
+    pantry: {},
+    purchases: {},
+  })
+}
+
+/**
+ * The rows of some foods, their keys made again. "Same as…" and forgetting
+ * it change only the two foods' keys, so a household with years of lists
+ * and purchases isn't read and saved whole. It does what `rekeyHousehold`
+ * does, to these rows only: the others are already as it would leave them.
+ */
+export async function rekeyFoods(em: EntityManager, keys: readonly string[]) {
+  const foods = new Set(keys)
+  return rekeyRows(em, {
+    // A line with no key yet is matched by what its name would key to.
+    items: { $or: [{ foodKey: { $in: [...foods] } }, { foodKey: null }] },
+    placements: { foodKey: { $in: [...foods] } },
+    products: { food: { $in: [...foods] } },
+    pantry: { foodKey: { $in: [...foods] } },
+    purchases: { foodKey: { $in: [...foods] } },
+    wanted: (item, keyFor) =>
+      item.foodKey !== null && item.foodKey !== undefined
+        ? foods.has(item.foodKey)
+        : foods.has(plainKey(item.name)) || foods.has(keyFor(item.name)),
+  })
+}
+
+/** The work of both, over the rows the scope reads. */
+async function rekeyRows(em: EntityManager, scope: RekeyScope) {
   // The household's own names for foods count.
   const keyFor = await householdKeys(em)
   let renamed = 0
@@ -54,11 +100,12 @@ export async function rekeyHousehold(em: EntityManager) {
 
   // Lists: names from the plan tidied, every key made again, then lines of
   // the same food on the same list joined where they add up.
-  const items = await em.find(
-    ShoppingItem,
-    {},
-    { orderBy: { createdAt: "asc", id: "asc" } }
-  )
+  const read = await em.find(ShoppingItem, scope.items, {
+    orderBy: { createdAt: "asc", id: "asc" },
+  })
+  const items = scope.wanted
+    ? read.filter((item) => scope.wanted!(item, keyFor))
+    : read
   for (const item of items) {
     if (item.source === "plan") {
       const name = shoppingName(item.name)
@@ -106,11 +153,9 @@ export async function rekeyHousehold(em: EntityManager) {
   }
 
   // Aisles chosen for a food: the latest wins where two become one.
-  const placements = await em.find(
-    FoodPlacement,
-    {},
-    { orderBy: { updatedAt: "desc" } }
-  )
+  const placements = await em.find(FoodPlacement, scope.placements, {
+    orderBy: { updatedAt: "desc" },
+  })
   const placed = new Map<string, FoodPlacement>()
   for (const placement of placements) {
     const key = keyFor(placement.foodKey)
@@ -119,11 +164,9 @@ export async function rekeyHousehold(em: EntityManager) {
   }
 
   // Store products: the one a person picked, else the latest.
-  const products = await em.find(
-    StoreProduct,
-    {},
-    { orderBy: { chosen: "desc", updatedAt: "desc" } }
-  )
+  const products = await em.find(StoreProduct, scope.products, {
+    orderBy: { chosen: "desc", updatedAt: "desc" },
+  })
   const stocked = new Map<string, StoreProduct>()
   for (const product of products) {
     const key = `${product.store}|${keyFor(product.food)}`
@@ -135,11 +178,11 @@ export async function rekeyHousehold(em: EntityManager) {
   for (const [key, placement] of placed) placement.foodKey = key
   for (const product of stocked.values()) product.food = keyFor(product.food)
 
-  for (const row of await em.find(PantryItem, {})) {
+  for (const row of await em.find(PantryItem, scope.pantry)) {
     row.foodKey = keyFor(row.name)
   }
   // Purchases are matched as the pantry matches food, for usual buys.
-  for (const row of await em.find(Purchase, {})) {
+  for (const row of await em.find(Purchase, scope.purchases)) {
     row.foodKey = keyFor(row.name)
   }
 
