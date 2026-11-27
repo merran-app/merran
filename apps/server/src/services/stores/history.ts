@@ -13,7 +13,7 @@ import { KROGER } from "./kroger/connection.ts"
 // judged against, and "usually $4.49".
 
 /** How far back prices are read. */
-const HISTORY_DAYS = 90
+export const HISTORY_DAYS = 90
 
 /** Each product's prices over the past 90 days, by product id. */
 export async function priceHistory(
