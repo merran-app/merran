@@ -15,7 +15,7 @@ import { recipeRef } from "../webhooks/payloads.ts"
 import { record } from "../webhooks/record.ts"
 import { photoFolder } from "./photos/photos.ts"
 import { summarize } from "./recipes.ts"
-import { pruneTags, tagsOf } from "./tags.ts"
+import { pruneTags, tagIdsOf, tagsOf } from "./tags.ts"
 
 /** How long a recipe stays in Recently deleted. */
 export const KEEP_DELETED_DAYS = 30
@@ -40,9 +40,14 @@ async function deleteRecipes(em: EntityManager, recipes: Recipe[]) {
     .filter((recipe) => recipe.image)
     .map((recipe) => photoFolder(householdId, recipe.image!))
   removeFilesLater(em, householdId, folders)
+  // Their tags are read first: removing a recipe takes its tag rows with it.
+  const tagIds = await tagIdsOf(
+    em,
+    recipes.map((recipe) => recipe.id)
+  )
   await em.remove(recipes).flush()
   wakeRunner()
-  await pruneTags(em)
+  await pruneTags(em, tagIds)
 }
 
 /** When a recipe deleted before then is gone for good. */

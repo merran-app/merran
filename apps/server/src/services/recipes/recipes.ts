@@ -48,7 +48,7 @@ import {
 } from "./diet-labels.ts"
 import { photoUrls, removePhoto, storePhoto } from "./photos/photos.ts"
 import { uniqueSlug } from "./slugs.ts"
-import { pruneTags, setTags, tagKey, tagsOf } from "./tags.ts"
+import { pruneTags, setTags, tagIdsOf, tagKey, tagsOf } from "./tags.ts"
 import { workingOn, type WorkingOn } from "./working.ts"
 import { saveVersion, type VersionSource } from "./versions.ts"
 import { recipeRef, type RecipePart } from "../webhooks/payloads.ts"
@@ -534,6 +534,7 @@ export async function updateRecipe(
       const recipe = await findRecipe(tx, options.recipe)
       const tags = (await tagsOf(tx, [recipe.id])).get(recipe.id) ?? []
       const before = describeRecipe(recipe, tags)
+      const tagIdsBefore = await tagIdsOf(tx, [recipe.id])
       await saveVersion(tx, {
         householdId: options.householdId,
         recipe,
@@ -550,7 +551,8 @@ export async function updateRecipe(
         options.foods
       )
       if (options.tidied) recipe.tidiedAt = new Date()
-      await pruneTags(tx)
+      // Only the tags it had can have been left with no recipe.
+      await pruneTags(tx, tagIdsBefore)
       const tagsAfter = (await tagsOf(tx, [recipe.id])).get(recipe.id) ?? []
       const parts = changedParts(before, describeRecipe(recipe, tagsAfter))
       if (parts.length > 0) {

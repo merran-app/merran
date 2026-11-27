@@ -323,6 +323,33 @@ describe("tags", () => {
       (await (await kyle.get("/api/recipes/apple-pie")).json()).tags
     ).toEqual([])
   })
+
+  test("saving a recipe removes only the tags it lost that nothing else has", async () => {
+    const first = await add(kyle, {
+      name: "Tag Pin One",
+      tags: ["pin-quick", "pin-soup"],
+    })
+    const second = await add(kyle, { name: "Tag Pin Two", tags: ["pin-soup"] })
+
+    const res = await kyle.request("PUT", `/api/recipes/${first.id}`, {
+      name: "Tag Pin One",
+      tags: [],
+    })
+    expect(res.status).toBe(200)
+
+    const names = (await tags()).map((tag: { name: string }) => tag.name)
+    expect(names).toContain("pin-soup")
+    expect(names).not.toContain("pin-quick")
+
+    // Put the other recipes away, so the tests after this see what they did.
+    for (const recipe of [first, second]) {
+      await kyle.delete(`/api/recipes/${recipe.id}`)
+      await kyle.delete(`/api/recipes/deleted/${recipe.id}`)
+    }
+    expect(
+      (await tags()).map((tag: { name: string }) => tag.name)
+    ).not.toContain("pin-soup")
+  })
 })
 
 describe("Recently deleted", () => {

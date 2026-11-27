@@ -140,21 +140,45 @@ export async function removeTagsFrom(
     tag: { $in: tags.map((tag) => tag.id) },
   })
   const changed = new Set(rows.map((row) => row.recipe.id)).size
+  const touched = [...new Set(rows.map((row) => row.tag.id))]
   tx.remove(rows)
   await tx.flush()
-  await pruneTags(tx)
+  await pruneTags(tx, touched)
   return changed
 }
 
-/** Deletes tags no recipe has, Recently deleted ones included. */
-export async function pruneTags(tx: EntityManager) {
+/**
+ * Deletes those of these tags that no recipe has, Recently deleted ones
+ * included: the tags a change touched, so nothing else is read.
+ */
+export async function pruneTags(tx: EntityManager, tagIds: readonly string[]) {
+  if (tagIds.length === 0) return
   const used = new Set(
-    (await tx.find(RecipeTag, {}, { fields: ["tag"] })).map((row) => row.tag.id)
+    (
+      await tx.find(
+        RecipeTag,
+        { tag: { $in: [...tagIds] } },
+        { fields: ["tag"] }
+      )
+    ).map((row) => row.tag.id)
   )
-  for (const tag of await tx.find(Tag, {})) {
-    if (!used.has(tag.id)) tx.remove(tag)
-  }
-  await tx.flush()
+  const unused = tagIds.filter((id) => !used.has(id))
+  if (unused.length === 0) return
+  await tx.nativeDelete(Tag, { id: { $in: unused } })
+}
+
+/** The ids of the tags these recipes have. */
+export async function tagIdsOf(
+  tx: EntityManager,
+  recipeIds: readonly string[]
+): Promise<string[]> {
+  if (recipeIds.length === 0) return []
+  const rows = await tx.find(
+    RecipeTag,
+    { recipe: { $in: [...recipeIds] } },
+    { fields: ["tag"] }
+  )
+  return [...new Set(rows.map((row) => row.tag.id))]
 }
 
 /** The household's tags, with how many recipes have each, alphabetically. */

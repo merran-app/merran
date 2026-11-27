@@ -1,9 +1,11 @@
 import { describe, expect, test } from "vitest"
 import {
+  candidatePairs,
   duplicateReasons,
   findDuplicatePairs,
   linkKey,
   nameWords,
+  needsFoods,
   type DuplicateCandidate,
 } from "./duplicates.ts"
 
@@ -233,5 +235,40 @@ describe("findDuplicatePairs", () => {
     const started = Date.now()
     expect(findDuplicatePairs(library)).toEqual([])
     expect(Date.now() - started).toBeLessThan(500)
+  })
+})
+
+describe("what duplicates need", () => {
+  test("foods are only needed when one name is inside another", () => {
+    expect(
+      needsFoods({ name: "Chicken Curry" }, { name: "Easy Chicken Curry" })
+    ).toBe(false)
+    expect(
+      needsFoods({ name: "Chicken Curry" }, { name: "Chicken Curry Bowl" })
+    ).toBe(true)
+    expect(
+      needsFoods({ name: "Chicken Curry" }, { name: "Curry Chicken" })
+    ).toBe(false)
+    expect(needsFoods({ name: "Chicken Curry" }, { name: "Beef Stew" })).toBe(
+      false
+    )
+  })
+
+  test("the candidates are the pairs findDuplicatePairs weighs", () => {
+    const library = [
+      { name: "Lemon Chicken", sourceUrl: "https://example.com/a" },
+      { name: "Tomato Soup", sourceUrl: "https://www.example.com/a/print" },
+      { name: "Chicken with Lemon", sourceUrl: null },
+      { name: "Lemon Chicken Bowl", sourceUrl: null },
+      { name: "Beef Stew", sourceUrl: null },
+    ]
+    // 0 and 1 share a link, 0 and 2 the same words, 0 and 3 and 2 and 3
+    // a name inside another; the stew is a stranger to all.
+    expect(candidatePairs(library)).toEqual([
+      [0, 1],
+      [0, 2],
+      [0, 3],
+      [2, 3],
+    ])
   })
 })
