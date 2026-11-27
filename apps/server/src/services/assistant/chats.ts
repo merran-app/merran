@@ -11,6 +11,12 @@ import { filesIn, removeChatFiles } from "./files.ts"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+/**
+ * Whether an id could name a chat. Chats' ids are UUIDs, and Postgres
+ * refuses to compare one with anything else, so look only these up.
+ */
+export const isChatId = (id: string) => UUID.test(id)
+
 /** A new chat's title, until its first message gives it one. */
 export const NEW_CHAT = "New chat"
 
@@ -41,7 +47,7 @@ export async function findChat(
   userId: string,
   chatId: string
 ) {
-  const chat = UUID.test(chatId)
+  const chat = isChatId(chatId)
     ? await em.findOne(Chat, { id: chatId, user: userId })
     : null
   if (!chat) {

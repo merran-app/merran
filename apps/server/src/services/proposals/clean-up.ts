@@ -1,6 +1,7 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { Chat, Proposal } from "../../database/entities/index.ts"
 import { ACROSS_HOUSEHOLDS } from "../../database/scope.ts"
+import { isChatId } from "../assistant/chats.ts"
 
 /** How long a suggestion stays after it was applied or dismissed. */
 export const KEEP_PROPOSALS_DAYS = 30
@@ -34,12 +35,19 @@ export async function clearOldProposals(
     { ...resolved, chat: { $ne: null } },
     { fields: ["id", "chat"], ...ACROSS_HOUSEHOLDS }
   )
-  const chatIds = [...new Set(fromChats.map((proposal) => proposal.chat!))]
-  const chats = await em.find(
-    Chat,
-    { id: { $in: chatIds } },
-    { fields: ["id"], ...ACROSS_HOUSEHOLDS }
-  )
+  // A chat column that isn't a chat's id names no chat, so its proposal
+  // goes like one whose chat was deleted.
+  const chatIds = [
+    ...new Set(fromChats.map((proposal) => proposal.chat!)),
+  ].filter(isChatId)
+  const chats =
+    chatIds.length > 0
+      ? await em.find(
+          Chat,
+          { id: { $in: chatIds } },
+          { fields: ["id"], ...ACROSS_HOUSEHOLDS }
+        )
+      : []
   const existing = new Set(chats.map((chat) => chat.id))
   const orphaned = fromChats
     .filter((proposal) => !existing.has(proposal.chat!))
