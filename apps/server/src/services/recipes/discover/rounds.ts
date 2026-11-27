@@ -478,8 +478,10 @@ async function open(
     if (isVideoLink(url)) return null
     const page = await deps.fetcher(url)
     const pageUrl = normalizeLink(page.url)
-    // In the library already: nothing new.
-    if (await findBySourceUrl(em, [url, pageUrl])) return null
+    // In the library already: nothing new. Read through a fork: while
+    // another page's save flushes, the round's entity manager holds that
+    // flush's transaction, and a read on it then fails once it commits.
+    if (await findBySourceUrl(em.fork(), [url, pageUrl])) return null
     const data = readRecipeData(
       decodeHtml(page.body, page.contentType),
       pageUrl
