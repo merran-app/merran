@@ -1,5 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
+import { loadPlanningLibrary } from "../../../../services/plan/library.ts"
 import { suggestMeals } from "../../../../services/plan/suggest.ts"
 import { budgetForSuggest } from "../../../../services/stores/costs.ts"
 import { salesForSuggest } from "../../../../services/stores/prices.ts"
@@ -36,10 +37,13 @@ export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId } = inHousehold(c)
     const { slots, exclude } = c.req.valid("json")
+    // The recipes are read once, for the suggestions, sales and costs alike.
+    const library = await loadPlanningLibrary(em)
     const suggestions = await suggestMeals(em, householdId, slots, {
       exclude,
-      sales: await salesForSuggest(deps, em, householdId),
-      budget: await budgetForSuggest(deps, em, householdId, slots),
+      library,
+      sales: await salesForSuggest(deps, em, householdId, library),
+      budget: await budgetForSuggest(deps, em, householdId, slots, library),
     })
     return c.json({ suggestions }, 200)
   })

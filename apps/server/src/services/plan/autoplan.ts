@@ -26,6 +26,7 @@ import {
 import { appLink } from "../webhooks/payloads.ts"
 import { record } from "../webhooks/record.ts"
 import { addEntries } from "./plan.ts"
+import { loadPlanningLibrary } from "./library.ts"
 import { suggestMeals } from "./suggest.ts"
 
 // The weekly autoplan: on the household's day and hour, in its time zone,
@@ -159,9 +160,14 @@ export async function planWeek(
       slots.push({ date, meal })
     }
   }
+  // The recipes are read once, for the suggestions, sales and costs alike.
+  const library = await loadPlanningLibrary(em)
   const suggestions = await suggestMeals(em, householdId, slots, {
-    sales: deps ? await salesForSuggest(deps, em, householdId) : null,
-    budget: deps ? await budgetForSuggest(deps, em, householdId, slots) : null,
+    library,
+    sales: deps ? await salesForSuggest(deps, em, householdId, library) : null,
+    budget: deps
+      ? await budgetForSuggest(deps, em, householdId, slots, library)
+      : null,
   })
   if (suggestions.length > 0) {
     await addEntries(

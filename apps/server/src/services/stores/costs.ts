@@ -12,11 +12,11 @@ import type { AppDeps } from "../../core/context.ts"
 import {
   Household,
   PlanEntry,
-  Recipe,
-  RecipeIngredient,
   StoreProduct,
 } from "../../database/entities/index.ts"
 import { STORE_SETTINGS } from "../../modules/stores/settings.ts"
+import { lineFoodsOf } from "../foods/line-foods.ts"
+import { loadPlanningLibrary, type PlanningLibrary } from "../plan/library.ts"
 import { householdToday } from "../households/clock.ts"
 import { toNumber } from "../../database/numbers.ts"
 import { KROGER } from "./kroger/connection.ts"
@@ -31,24 +31,15 @@ type Costed = { cost: RecipeCost; servings: number | null }
 /** Each recipe's cost, by id, as far as its lines have prices. */
 export async function recipeCosts(
   em: EntityManager,
-  householdId: string
+  householdId: string,
+  library?: PlanningLibrary
 ): Promise<Map<string, Costed>> {
   const costs = new Map<string, Costed>()
   const products = await em.find(StoreProduct, { store: KROGER })
   if (products.length === 0) return costs
   const byFood = new Map(products.map((row) => [row.food, row.product]))
-  const recipes = await em.find(Recipe, {}, { fields: ["id", "servings"] })
+  const { recipes } = library ?? (await loadPlanningLibrary(em))
   if (recipes.length === 0) return costs
-  const lines = new Map<string, string[]>()
-  for (const line of await em.find(
-    RecipeIngredient,
-    { recipe: { $in: recipes.map((recipe) => recipe.id) } },
-    { fields: ["recipe", "rawText"], orderBy: { position: "asc" } }
-  )) {
-    const list = lines.get(line.recipe.id)
-    if (list) list.push(line.rawText)
-    else lines.set(line.recipe.id, [line.rawText])
-  }
   const household = await em.findOneOrFail(Household, { id: householdId })
   const isOnHand = onHandTest(
     household.settings?.alwaysOnHand ?? DEFAULT_ON_HAND
@@ -56,11 +47,12 @@ export async function recipeCosts(
   const today = await householdToday(em, householdId)
   for (const recipe of recipes) {
     costs.set(recipe.id, {
-      cost: recipeCost(lines.get(recipe.id) ?? [], (food) => byFood.get(food), {
-        today,
-        isOnHand,
-      }),
-      servings: toNumber(recipe.servings),
+      cost: recipeCost(
+        recipe.lines.map((line) => line.rawText),
+        (food) => byFood.get(food),
+        { today, isOnHand, foodsOf: lineFoodsOf }
+      ),
+      servings: recipe.servings,
     })
   }
   return costs
@@ -123,7 +115,8 @@ export async function budgetForSuggest(
   deps: Pick<AppDeps, "settings">,
   em: EntityManager,
   householdId: string,
-  slots: readonly { date: string }[]
+  slots: readonly { date: string }[],
+  library?: PlanningLibrary
 ): Promise<SuggestBudget | null> {
   if (slots.length === 0 || !(await krogerApp(deps.settings))) return null
   const weekly = await deps.settings.household(
@@ -132,7 +125,7 @@ export async function budgetForSuggest(
     STORE_SETTINGS.weeklyBudget
   )
   if (weekly === null) return null
-  const costs = await recipeCosts(em, householdId)
+  const costs = await recipeCosts(em, householdId, library)
   const costOf = new Map<string, number>()
   for (const [id, { cost }] of costs) {
     if (costShown(cost)) costOf.set(id, cost.total)

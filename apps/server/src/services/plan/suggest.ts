@@ -4,7 +4,6 @@ import {
   clockIn,
   dayOfWeek,
   fitsTheme,
-  lineFoods,
   missingDiets,
   NO_TASTES,
   NO_THEMES,
@@ -18,6 +17,7 @@ import {
   WEEKNIGHTS,
   type Diet,
   type IngredientMark,
+  type LineFood,
   type Meal,
   type NightTheme,
   type Reason,
@@ -26,19 +26,14 @@ import type { EntityManager } from "@mikro-orm/sql"
 import {
   Household,
   PlanEntry,
-  Recipe,
-  RecipeIngredient,
   RecipePairing,
 } from "../../database/entities/index.ts"
 import { householdKeys } from "../foods/aliases.ts"
 import { getPantry } from "../pantry/pantry.ts"
-import { decodeDiets } from "../recipes/diet-labels.ts"
 import { photoUrls } from "../recipes/photos/photos.ts"
-import { toNumber } from "../../database/numbers.ts"
-import { totalMinutes } from "../recipes/recipes.ts"
-import { tagKey, tagsOf } from "../recipes/tags.ts"
 import type { SuggestBudget } from "../stores/costs.ts"
 import type { RecipeSale, SuggestSales } from "../stores/prices.ts"
+import { loadPlanningLibrary, type PlanningLibrary } from "./library.ts"
 
 // Fill the week, without AI: a recipe for each empty meal, by the
 // household's tastes and theme nights, not repeating a dish within two
@@ -94,6 +89,8 @@ type Candidate = {
   lines: string[]
   /** What each line is to the dish, as tidy up marked it. */
   marks: (IngredientMark | null)[]
+  /** The foods its lines name, as the vocabulary reads them. */
+  foods: readonly LineFood[]
   /** Foods the household said it can't do without. */
   needs: string[]
 }
@@ -176,38 +173,24 @@ const dish = (name: string) =>
     .trim()
     .toLowerCase()
 
-/** Every recipe in the household, with what the suggester needs of it. */
-async function candidates(em: EntityManager): Promise<Candidate[]> {
-  const recipes = await em.find(Recipe, {})
-  const ids = recipes.map((recipe) => recipe.id)
-  const tags = await tagsOf(em, ids)
-  const lines = new Map<string, RecipeIngredient[]>()
-  if (ids.length > 0) {
-    for (const line of await em.find(
-      RecipeIngredient,
-      { recipe: { $in: ids } },
-      { orderBy: { position: "asc" } }
-    )) {
-      const list = lines.get(line.recipe.id)
-      if (list) list.push(line)
-      else lines.set(line.recipe.id, [line])
-    }
-  }
-  return recipes.map((recipe) => ({
+/** Every recipe in the library, with what the suggester needs of it. */
+function candidates(library: PlanningLibrary): Candidate[] {
+  return library.recipes.map((recipe) => ({
     id: recipe.id,
     slug: recipe.slug,
     name: recipe.name,
     photo: photoUrls(recipe)?.card ?? null,
     thumb: photoUrls(recipe)?.thumb ?? null,
-    servings: toNumber(recipe.servings),
-    totalMinutes: totalMinutes(recipe),
-    rating: toNumber(recipe.rating),
-    lastMadeAt: recipe.lastMadeAt ?? null,
-    tags: (tags.get(recipe.id) ?? []).map(tagKey),
-    diets: decodeDiets(recipe.diets),
-    lines: (lines.get(recipe.id) ?? []).map((line) => line.rawText),
-    marks: (lines.get(recipe.id) ?? []).map((line) => line.mark ?? null),
-    needs: recipe.needs ?? [],
+    servings: recipe.servings,
+    totalMinutes: recipe.totalMinutes,
+    rating: recipe.rating,
+    lastMadeAt: recipe.lastMadeAt,
+    tags: recipe.tags,
+    diets: recipe.diets,
+    lines: recipe.lines.map((line) => line.rawText),
+    marks: recipe.lines.map((line) => line.mark),
+    foods: recipe.lines.flatMap((line) => line.foods),
+    needs: recipe.needs,
   }))
 }
 
@@ -245,6 +228,8 @@ export async function suggestMeals(
     sales?: SuggestSales | null
     /** What's left of the weekly budget for each meal, and what recipes cost. */
     budget?: SuggestBudget | null
+    /** The recipes to choose from, when they're loaded already. */
+    library?: PlanningLibrary
   } = {}
 ): Promise<Suggestion[]> {
   const keyOf = await householdKeys(em)
@@ -255,7 +240,7 @@ export async function suggestMeals(
   const themes = household.settings?.themes ?? NO_THEMES
   const { today } = clockIn(household.timeZone)
 
-  const recipes = await candidates(em)
+  const recipes = candidates(options.library ?? (await loadPlanningLibrary(em)))
   const byId = new Map(recipes.map((recipe) => [recipe.id, recipe]))
 
   // What's at home and needs using soon, and the recipes that use it.
@@ -264,13 +249,7 @@ export async function suggestMeals(
   )
   const usesUp = new Map(
     recipes.map((recipe) => {
-      const keys = [
-        ...new Set(
-          recipe.lines.flatMap((line) =>
-            lineFoods(line).map((food) => keyOf(food.name))
-          )
-        ),
-      ]
+      const keys = [...new Set(recipe.foods.map((food) => keyOf(food.name)))]
       // What's at home uses up a recipe's food, or a food it's a kind of:
       // the green bell pepper, a recipe's bell pepper.
       const foods = soon
