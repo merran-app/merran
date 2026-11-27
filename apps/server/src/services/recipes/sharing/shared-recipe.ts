@@ -1,6 +1,7 @@
 import { toNumber } from "../../../database/numbers.ts"
 import type { Nutrition, Recipe } from "../../../database/entities/index.ts"
 import { decodeDiets } from "../diet-labels.ts"
+import type { PhotoSize } from "../photos/photos.ts"
 import { totalMinutes } from "../recipes.ts"
 
 /**
@@ -33,7 +34,7 @@ export function describeShared(
   householdName: string,
   token: string
 ) {
-  const photo = (size: "full" | "card") =>
+  const photo = (size: PhotoSize) =>
     `/api/shared/${token}/photo?size=${size}&v=${recipe.image}`
 
   return {
@@ -47,7 +48,9 @@ export function describeShared(
     diets: decodeDiets(recipe.diets),
     nutrition: sharedNutrition(recipe.nutrition),
     sourceUrl: recipe.sourceUrl ?? null,
-    photo: recipe.image ? { full: photo("full"), card: photo("card") } : null,
+    photo: recipe.image
+      ? { full: photo("full"), card: photo("card"), thumb: photo("thumb") }
+      : null,
     ingredients: recipe.ingredients.getItems().map((line, index) => ({
       id: `i${index + 1}`,
       section: line.section ?? null,

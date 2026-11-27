@@ -24,6 +24,7 @@ export function ProductSummary({
       <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-white">
         {product.image ? (
           <img
+            decoding="async"
             src={product.image}
             alt=""
             loading="lazy"

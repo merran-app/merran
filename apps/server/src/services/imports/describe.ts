@@ -44,6 +44,7 @@ function recipeOf(recipe: Recipe) {
     slug: recipe.slug,
     name: recipe.name,
     photo: photoUrls(recipe)?.card ?? null,
+    thumb: photoUrls(recipe)?.thumb ?? null,
   }
 }
 

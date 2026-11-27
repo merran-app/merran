@@ -435,7 +435,7 @@ export interface paths {
         };
         /**
          * A starter collection
-         * @description Its recipes that suit the household, and what Find more found for it last. With an API key, it needs the `recipes: read` permission.
+         * @description A page of its recipes that suit the household (24 at first; `offset` and `limit` bring the rest), and what Find more found for it last. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["getCollection"];
         put?: never;
@@ -456,8 +456,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import a whole collection
-         * @description Its recipes not in the library yet, in the background, as several links are: follow along at /imports/{importId}. With an API key, it needs the `imports: write` permission.
+         * Import a collection
+         * @description Its recipes not in the library yet, in the background, as several links are: follow along at /imports/{importId}. Send `recipes` to import just those (the ones shown); without them, it's the first 100 not in the library. With an API key, it needs the `imports: write` permission.
          */
         post: operations["importCollection"];
         delete?: never;
@@ -3654,7 +3654,7 @@ export interface paths {
         };
         /**
          * A recipe's photo
-         * @description As WebP: `full` for the recipe page, or `card`, cropped for recipe cards. Use the links in the recipe's `photo`, which can be kept for good. With an API key, it needs the `recipes: read` permission.
+         * @description As WebP: `full` for the recipe page, `card`, cropped for recipe cards, or `thumb`, a small square for tiles. Use the links in the recipe's `photo`, which can be kept for good. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["getRecipePhoto"];
         /**
@@ -4282,7 +4282,7 @@ export interface paths {
         };
         /**
          * A shared recipe's photo
-         * @description As WebP, with no sign-in: `full` for the page, or `card` for previews. Use the links in the recipe's `photo`.
+         * @description As WebP, with no sign-in: `full` for the page, `card` for previews, or `thumb` for small tiles. Use the links in the recipe's `photo`.
          */
         get: operations["getSharedRecipePhoto"];
         put?: never;
@@ -4302,7 +4302,7 @@ export interface paths {
         };
         /**
          * Followed recipe sites
-         * @description The recipe sites the household follows, oldest followed first, each with its newest recipes; and suggested sites it doesn't follow yet. Merran reads each site's feed every few hours. With an API key, it needs the `recipes: read` permission.
+         * @description The recipe sites the household follows, oldest followed first, each with its newest 24 recipes and how many it has (`GET /sites/{site}/recipes` gives the rest); and suggested sites it doesn't follow yet. Merran reads each site's feed every few hours. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["listSites"];
         put?: never;
@@ -4325,8 +4325,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The newest recipes from followed sites
-         * @description Up to 24, newest first, from every site the household follows: for Recipes' spotlight and Today's idea for tonight. With an API key, it needs the `recipes: read` permission.
+         * The newest recipes from followed sites that suit the household
+         * @description Up to 24 that suit the household, newest first, from every site it follows: none with a food it avoids, and all on its diets. For Recipes' spotlight and Today's idea for tonight. With an API key, it needs the `recipes: read` permission.
          */
         get: operations["listSiteRecipes"];
         put?: never;
@@ -4392,6 +4392,26 @@ export interface paths {
          * @description Recipes imported from it stay in the library. With an API key, it needs the `recipes: write` permission.
          */
         delete: operations["unfollowSite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sites/{site}/recipes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A followed site's recipes
+         * @description A page of the site's recipes, newest first, as `GET /sites` lists them: for Show more after the newest 24 it gives. Merran keeps a site's newest 120. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["listFollowedSiteRecipes"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -10131,6 +10151,7 @@ export interface components {
             description: string;
             /** @description What Find more looks for. */
             theme: string;
+            /** @description How many recipes suit the household, not just those shown. */
             count: number;
             /** @description How many aren't in the library yet. */
             toImport: number;
@@ -10192,12 +10213,13 @@ export interface components {
             description: string;
             /** @description What Find more looks for. */
             theme: string;
+            /** @description How many recipes suit the household, not just those shown. */
             count: number;
             /** @description How many aren't in the library yet. */
             toImport: number;
             /** @description Up to four, for its card. */
             photos: string[];
-            /** @description Up to 24 that suit the household, those not in its library first: the sites' newest that fit, its hand-picked classics, then the rest. */
+            /** @description A page of those that suit the household, those not in its library first: the sites' newest that fit, its hand-picked classics, then the rest. `offset` and `limit` page through the `count`. */
             recipes: components["schemas"]["ShelfRecipe"][];
             /** @description What Find more found for it last, or is finding. */
             found: components["schemas"]["Discovery"] | null;
@@ -10366,6 +10388,17 @@ export interface components {
             finishedAt: string | null;
             /** Format: date-time */
             undoneAt: string | null;
+        };
+        /**
+         * @example {
+         *       "recipes": [
+         *         "0199e8b0-5a10-7a01-8b00-000000000031"
+         *       ]
+         *     }
+         */
+        ImportCollectionRequest: {
+            /** @description The shelf recipes to import, up to 100: the ones shown, for Import these. Those not in the collection or already in the library are left out. Leave it out for the first 100 not in the library. */
+            recipes?: string[];
         };
         /**
          * @example {
@@ -11955,7 +11988,8 @@ export interface components {
          *             "id": "01a1e0f0-e739-758e-85c2-c9e3cd06ff16",
          *             "slug": "lemon-chicken",
          *             "name": "Lemon Chicken",
-         *             "photo": null
+         *             "photo": null,
+         *             "thumb": null
          *           },
          *           "error": null
          *         },
@@ -11976,6 +12010,7 @@ export interface components {
          *               "slug": "lemon-chicken",
          *               "name": "Lemon Chicken",
          *               "photo": null,
+         *               "thumb": null,
          *               "deleted": false,
          *               "changed": false,
          *               "planned": true,
@@ -12019,6 +12054,8 @@ export interface components {
                     name: string;
                     /** @description Its card photo. */
                     photo: string | null;
+                    /** @description Its photo as a small square, for small tiles. */
+                    thumb: string | null;
                 } | null;
                 error: string | null;
             }[];
@@ -12032,6 +12069,8 @@ export interface components {
                         name: string;
                         /** @description Its card photo. */
                         photo: string | null;
+                        /** @description Its photo as a small square, for small tiles. */
+                        thumb: string | null;
                         /** @description In Recently deleted. */
                         deleted: boolean;
                         /** @description Changed since it came in. */
@@ -12059,6 +12098,8 @@ export interface components {
                         name: string;
                         /** @description Its card photo. */
                         photo: string | null;
+                        /** @description Its photo as a small square, for small tiles. */
+                        thumb: string | null;
                     } | null;
                 }[];
                 /** @description Whether there are more: ask again from further on. */
@@ -13378,6 +13419,7 @@ export interface components {
          *           "slug": "lemon-chicken",
          *           "name": "Lemon Chicken",
          *           "photo": null,
+         *           "thumb": null,
          *           "servings": 4,
          *           "totalMinutes": 50,
          *           "calories": 412
@@ -13440,6 +13482,7 @@ export interface components {
          *         "slug": "lemon-chicken",
          *         "name": "Lemon Chicken",
          *         "photo": null,
+         *         "thumb": null,
          *         "servings": 4,
          *         "totalMinutes": 50,
          *         "calories": 412
@@ -13481,6 +13524,8 @@ export interface components {
                 slug: string;
                 name: string;
                 photo: string | null;
+                /** @description Its photo as a small square, for small tiles. */
+                thumb: string | null;
                 servings: number | null;
                 totalMinutes: number | null;
                 /** @description In a serving, when its nutrition is known. */
@@ -14233,6 +14278,7 @@ export interface components {
          *             "slug": "lemon-chicken",
          *             "name": "Lemon Chicken",
          *             "photo": null,
+         *             "thumb": null,
          *             "servings": 4,
          *             "totalMinutes": 50,
          *             "calories": 412
@@ -14475,6 +14521,7 @@ export interface components {
          *           "slug": "lemon-chicken",
          *           "name": "Lemon Chicken",
          *           "photo": null,
+         *           "thumb": null,
          *           "servings": 4,
          *           "totalMinutes": 50,
          *           "calories": 412
@@ -14545,6 +14592,7 @@ export interface components {
          *             "slug": "lemon-chicken",
          *             "name": "Lemon Chicken",
          *             "photo": null,
+         *             "thumb": null,
          *             "servings": 4,
          *             "totalMinutes": 50,
          *             "calories": 412
@@ -14608,6 +14656,7 @@ export interface components {
          *             "slug": "lemon-chicken",
          *             "name": "Lemon Chicken",
          *             "photo": null,
+         *             "thumb": null,
          *             "servings": 4,
          *             "totalMinutes": 50,
          *             "calories": 412
@@ -14823,6 +14872,7 @@ export interface components {
          *             "slug": "lemon-chicken",
          *             "name": "Lemon Chicken",
          *             "photo": null,
+         *             "thumb": null,
          *             "servings": 4,
          *             "totalMinutes": 50
          *           },
@@ -14855,6 +14905,8 @@ export interface components {
                     slug: string;
                     name: string;
                     photo: string | null;
+                    /** @description Its photo as a small square, for small tiles. */
+                    thumb: string | null;
                     servings: number | null;
                     totalMinutes: number | null;
                 };
@@ -15139,7 +15191,8 @@ export interface components {
          *         ],
          *         "photo": {
          *           "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *           "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *         },
          *         "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *         "createdAt": "2026-10-01T17:30:00.000Z",
@@ -15260,7 +15313,8 @@ export interface components {
          *       ],
          *       "photo": {
          *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *         "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *       },
          *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *       "createdAt": "2026-10-01T17:30:00.000Z",
@@ -15445,7 +15499,8 @@ export interface components {
          *       ],
          *       "photo": {
          *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *         "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *       },
          *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *       "createdAt": "2026-10-01T17:30:00.000Z",
@@ -15471,6 +15526,8 @@ export interface components {
                 full: string;
                 /** @description Cropped, for recipe cards. */
                 card: string;
+                /** @description A small square, for small tiles. */
+                thumb: string;
             } | null;
             /** Format: date-time */
             lastMadeAt: string | null;
@@ -15514,7 +15571,8 @@ export interface components {
          *           ],
          *           "photo": {
          *             "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *             "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *             "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *             "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *           },
          *           "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *           "createdAt": "2026-10-01T17:30:00.000Z",
@@ -15637,7 +15695,8 @@ export interface components {
          *       ],
          *       "photo": {
          *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *         "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *       },
          *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *       "createdAt": "2026-10-01T17:30:00.000Z",
@@ -15796,7 +15855,8 @@ export interface components {
          *         ],
          *         "photo": {
          *           "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *           "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *         },
          *         "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *         "createdAt": "2026-10-01T17:30:00.000Z",
@@ -16343,7 +16403,8 @@ export interface components {
          *       ],
          *       "photo": {
          *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *         "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *       },
          *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *       "createdAt": "2026-10-01T17:30:00.000Z",
@@ -16653,7 +16714,8 @@ export interface components {
          *         ],
          *         "photo": {
          *           "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *           "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
          *         },
          *         "lastMadeAt": "2026-10-09T01:15:00.000Z",
          *         "createdAt": "2026-10-01T17:30:00.000Z",
@@ -17431,7 +17493,8 @@ export interface components {
          *       "sourceUrl": null,
          *       "photo": {
          *         "full": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=full&v=0199e8b0",
-         *         "card": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=card&v=0199e8b0"
+         *         "card": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=card&v=0199e8b0",
+         *         "thumb": "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=thumb&v=0199e8b0"
          *       },
          *       "ingredients": [
          *         {
@@ -17475,6 +17538,8 @@ export interface components {
                 full: string;
                 /** @description Cropped, for previews. */
                 card: string;
+                /** @description A small square, for small tiles. */
+                thumb: string;
             } | null;
             ingredients: {
                 /** @description Its place in the list. */
@@ -17542,6 +17607,7 @@ export interface components {
          *               "suits": true
          *             }
          *           ],
+         *           "total": 2,
          *           "waiting": 3,
          *           "reading": false,
          *           "readAt": "2026-10-15T18:30:00.000Z",
@@ -17609,6 +17675,7 @@ export interface components {
          *           "suits": true
          *         }
          *       ],
+         *       "total": 2,
          *       "waiting": 3,
          *       "reading": false,
          *       "readAt": "2026-10-15T18:30:00.000Z",
@@ -17621,8 +17688,10 @@ export interface components {
             name: string;
             url: string;
             feedUrl: string;
-            /** @description Its newest recipes, newest first: posts Merran opened and can import. */
+            /** @description Its newest 24 recipes, newest first: posts Merran opened and can import. */
             recipes: components["schemas"]["ShelfRecipe"][];
+            /** @description How many recipes it has in all, up to the newest 120 Merran keeps. `GET /sites/{site}/recipes` gives the rest. */
+            total: number;
             /** @description New posts not opened yet: Merran opens them a few seconds apart. */
             waiting: number;
             /** @description Not read for the first time yet. */
@@ -17707,6 +17776,52 @@ export interface components {
                 url: string;
                 description: string;
             }[];
+        };
+        /**
+         * @example {
+         *       "recipes": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+         *           "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+         *           "name": "Honey Garlic Chicken",
+         *           "site": "RecipeTin Eats",
+         *           "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+         *           "minutes": 12,
+         *           "courses": [
+         *             "main"
+         *           ],
+         *           "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *           "publishedAt": "2026-10-01T17:30:00.000Z",
+         *           "inLibrary": null,
+         *           "suits": true
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000032",
+         *           "url": "https://www.recipetineats.com/lemon-chicken/",
+         *           "name": "Lemon Chicken",
+         *           "site": "RecipeTin Eats",
+         *           "description": null,
+         *           "minutes": 35,
+         *           "courses": [
+         *             "main"
+         *           ],
+         *           "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *           "publishedAt": "2026-10-01T17:30:00.000Z",
+         *           "inLibrary": {
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken"
+         *           },
+         *           "suits": true
+         *         }
+         *       ],
+         *       "total": 26
+         *     }
+         */
+        SiteRecipesPage: {
+            /** @description Newest first. */
+            recipes: components["schemas"]["ShelfRecipe"][];
+            /** @description How many it has in all. */
+            total: number;
         };
         /**
          * @example {
@@ -20023,7 +20138,11 @@ export interface operations {
     };
     getCollection: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description How many to skip: those shown already. */
+                offset?: number | null;
+                limit?: number;
+            };
             header?: never;
             path: {
                 collection: string;
@@ -20079,7 +20198,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ImportCollectionRequest"];
+            };
+        };
         responses: {
             /** @description Importing: follow it at /imports/{importId}. */
             202: {
@@ -29785,7 +29908,7 @@ export interface operations {
     getRecipePhoto: {
         parameters: {
             query?: {
-                size?: "full" | "card";
+                size?: "full" | "card" | "thumb";
                 /** @description Which photo: the links in `photo` say. */
                 v?: string;
             };
@@ -31835,7 +31958,7 @@ export interface operations {
     getSharedRecipePhoto: {
         parameters: {
             query?: {
-                size?: "full" | "card";
+                size?: "full" | "card" | "thumb";
                 /** @description Which photo: the links in `photo` say. */
                 v?: string;
             };
@@ -31992,7 +32115,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Their newest recipes. */
+            /** @description Their newest recipes that suit it. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -32125,6 +32248,59 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The household doesn't follow that site. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listFollowedSiteRecipes: {
+        parameters: {
+            query?: {
+                /** @description How many to skip: those shown already. */
+                offset?: number | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                site: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of its recipes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteRecipesPage"];
+                };
             };
             /** @description Not signed in. */
             401: {

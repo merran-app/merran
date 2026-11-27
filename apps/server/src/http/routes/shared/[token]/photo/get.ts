@@ -14,14 +14,14 @@ const route = createRoute({
   tags: ["Sharing"],
   summary: "A shared recipe's photo",
   description:
-    "As WebP, with no sign-in: `full` for the page, or `card` for previews. Use the links in the recipe's `photo`.",
+    "As WebP, with no sign-in: `full` for the page, `card` for previews, or `thumb` for small tiles. Use the links in the recipe's `photo`.",
   security: [],
   request: {
     params: z.object({
       token: z.string().openapi({ param: { name: "token", in: "path" } }),
     }),
     query: z.object({
-      size: z.enum(["full", "card"]).default("full"),
+      size: z.enum(["full", "card", "thumb"]).default("full"),
       v: z.string().optional().openapi({
         description: "Which photo: the links in `photo` say.",
       }),

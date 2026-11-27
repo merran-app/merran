@@ -364,7 +364,7 @@ describe("a shared recipe's photo", () => {
     expect(page.photo.full).toMatch(
       new RegExp(`^/api/shared/${redToken}/photo\\?size=full&v=\\w+$`)
     )
-    expect(Object.keys(page.photo).sort()).toEqual(["card", "full"])
+    expect(Object.keys(page.photo).sort()).toEqual(["card", "full", "thumb"])
     expect(page.photo.card).toContain("size=card")
     expect(JSON.stringify(page.photo)).not.toContain(red.id)
 

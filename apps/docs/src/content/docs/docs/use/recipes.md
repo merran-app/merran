@@ -58,7 +58,9 @@ Discover needs AI, with web search, so the household needs an AI key.
 
 Merran opens each recipe's page before it shows it, so what you see will import. Choose **Stop** to end the search early: it keeps what it found, and says **Stopped. Here's what it found.** Choose **Find more** to carry on with another round, which adds to the same search and leaves out what it has shown already. **Earlier searches** keeps the last 12, so you can come back to them.
 
-A collection under **Collections** has its own **Find more**. It adds to that collection's last search, and what the search already found stays out of it.
+Under **Sites**, each site you follow shows its newest 24 recipes, with **Show more** for the next 24, up to the 120 Merran keeps for it. The suggestions on Today and Recipes are picked from these sites to suit your household.
+
+A collection shows 24 recipes at first, with **Show more** for the rest. Its import button brings in what's shown that isn't in your library yet, up to 100: **Import these 24** while more are hidden, and **Import all 12** once everything is showing. A collection under **Collections** has its own **Find more**. It adds to that collection's last search, and what the search already found stays out of it.
 
 ### Type one in
 

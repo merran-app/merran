@@ -1,8 +1,11 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { AppError } from "../../../../../core/errors.ts"
-import { startLinkImport } from "../../../../../services/recipes/import/import-links.ts"
-import { getCollection } from "../../../../../services/recipes/discover/sites/collections.ts"
+import {
+  MAX_LINKS,
+  startLinkImport,
+} from "../../../../../services/recipes/import/import-links.ts"
+import { collectionRecipes } from "../../../../../services/recipes/discover/sites/collections.ts"
 import { languageOf } from "../../../../../services/recipes/discover/sites/sites.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import {
@@ -16,18 +19,29 @@ import {
   jsonResponse,
   SIGNED_IN_ERRORS,
 } from "../../../../schemas/responses.ts"
-import { CollectionParam } from "../../../../schemas/sites.ts"
+import {
+  CollectionParam,
+  ImportCollectionRequestSchema,
+} from "../../../../schemas/sites.ts"
 
 const route = createRoute({
   method: "post",
   path: "/collections/{collection}/import",
   operationId: "importCollection",
   tags: ["Collections"],
-  summary: "Import a whole collection",
+  summary: "Import a collection",
   description:
-    "Its recipes not in the library yet, in the background, as several links are: follow along at /imports/{importId}.",
+    "Its recipes not in the library yet, in the background, as several links are: follow along at /imports/{importId}. Send `recipes` to import just those (the ones shown); without them, it's the first 100 not in the library.",
   ...openToKeys("imports", "write"),
-  request: { params: CollectionParam },
+  request: {
+    params: CollectionParam,
+    body: {
+      required: false,
+      content: {
+        "application/json": { schema: ImportCollectionRequestSchema },
+      },
+    },
+  },
   responses: {
     202: jsonResponse(
       ImportSchema,
@@ -42,14 +56,21 @@ const route = createRoute({
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
-    const collection = await getCollection(
+    // Every recipe of the collection, to pick from: what the person saw
+    // may have changed since.
+    const { collection, recipes } = await collectionRecipes(
       em,
       householdId,
       await languageOf(em, userId),
       c.req.valid("param").collection
     )
-    const urls = collection.recipes
+    const asked = c.req.valid("json")?.recipes
+    const wanted = asked ? new Set(asked) : null
+    // In the collection's order, whatever order they were asked for in.
+    const urls = recipes
       .filter((recipe) => !recipe.inLibrary)
+      .filter((recipe) => !wanted || wanted.has(recipe.id))
+      .slice(0, MAX_LINKS)
       .map((recipe) => recipe.url)
     if (urls.length === 0) {
       throw new AppError(

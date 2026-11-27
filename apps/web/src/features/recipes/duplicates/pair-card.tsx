@@ -42,6 +42,7 @@ function PairSide({
       <div className="aspect-[4/3] w-full overflow-hidden rounded-xl bg-muted">
         {recipe.photo ? (
           <img
+            decoding="async"
             src={recipe.photo}
             alt=""
             loading="lazy"

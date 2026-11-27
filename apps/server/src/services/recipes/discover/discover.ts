@@ -13,7 +13,7 @@ import { removeFilesLater } from "../../storage/remove-job.ts"
 import { searchFolder } from "./photos.ts"
 import { RoundSaved, runRound } from "./rounds.ts"
 import { shelfMatches } from "./shelf-matches.ts"
-import { getCollection } from "./sites/collections.ts"
+import { collectionRecipes } from "./sites/collections.ts"
 import { languageOf } from "./sites/sites.ts"
 
 // Discover: new recipes online for a theme ("cozy fall soups"), found by
@@ -128,10 +128,11 @@ export async function findMore(
 }
 
 /**
- * The names of the recipes in the starter collection a search is for, as
- * the person sees the collection, so its Find more finds others than them,
- * whether it's pressed on the collection or on Discover. None for a search
- * of its own, or for a collection that's gone.
+ * The names of every recipe in the starter collection a search is for, as
+ * the person sees the collection (not just the page shown first), so its
+ * Find more finds others than them, whether it's pressed on the collection
+ * or on Discover. None for a search of its own, or for a collection that's
+ * gone.
  */
 async function collectionRecipeNames(
   em: EntityManager,
@@ -140,13 +141,13 @@ async function collectionRecipeNames(
 ) {
   if (!discovery.collection) return []
   try {
-    const collection = await getCollection(
+    const { recipes } = await collectionRecipes(
       em,
       person.householdId,
       await languageOf(em, person.userId),
       discovery.collection
     )
-    return collection.recipes.map((recipe) => recipe.name)
+    return recipes.map((recipe) => recipe.name)
   } catch (err) {
     if (err instanceof AppError && err.code === "collection_not_found") {
       return []

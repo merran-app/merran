@@ -111,6 +111,7 @@ function CardContent({
         )}
         {recipe.photo ? (
           <img
+            decoding="async"
             src={recipe.photo.card}
             alt=""
             loading="lazy"

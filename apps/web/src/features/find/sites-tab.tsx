@@ -1,10 +1,11 @@
 import { Add01Icon, Globe02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
+import { ShowMoreButton } from "@/components/show-more-button"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -19,8 +20,15 @@ import { Spinner } from "@/components/ui/spinner"
 import { useCapability } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { formatRelativeDate } from "@/lib/format"
+import { nextOffset, uniqueById } from "@/lib/pages"
 
-import { sitesQuery, useRefreshSites, type FollowedSite } from "./queries"
+import {
+  sitePages,
+  siteRecipesPagesQuery,
+  sitesQuery,
+  useRefreshSites,
+  type FollowedSite,
+} from "./queries"
 import { ShelfRecipeCard } from "./shelf-recipe-card"
 
 /** Follows a site by an address; true when it worked. */
@@ -130,11 +138,19 @@ export function SitesTab({
   )
 }
 
-/** A followed site: its newest recipes, or how reading it is going. */
+/**
+ * A followed site: its newest recipes, with Show more under them while it
+ * has more, or how reading it is going.
+ */
 function SiteSection({ site }: { site: FollowedSite }) {
   const { t, i18n } = useTranslation()
   const refresh = useRefreshSites()
   const [leaving, setLeaving] = React.useState(false)
+  const more = useInfiniteQuery(siteRecipesPagesQuery(site))
+  const pages = sitePages(site, more.data?.pages)
+  // A post read between two pages can bring a recipe round again.
+  const recipes = uniqueById(pages.flatMap((page) => page.recipes))
+  const hasMore = nextOffset(pages, (page) => page.recipes.length) !== undefined
 
   async function unfollow() {
     setLeaving(true)
@@ -195,7 +211,7 @@ function SiteSection({ site }: { site: FollowedSite }) {
           {site.error}
         </p>
       )}
-      {site.recipes.length === 0 ? (
+      {recipes.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           {site.reading || site.waiting > 0
             ? t("find.sites.soon")
@@ -203,12 +219,17 @@ function SiteSection({ site }: { site: FollowedSite }) {
         </p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {site.recipes.map((recipe) => (
+          {recipes.map((recipe) => (
             <li key={recipe.id}>
               <ShelfRecipeCard recipe={recipe} />
             </li>
           ))}
         </ul>
+      )}
+      {hasMore && (
+        <div className="flex justify-center">
+          <ShowMoreButton query={more} />
+        </div>
       )}
     </section>
   )

@@ -1,9 +1,10 @@
 import { Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { keepPreviousData, useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
+import { ShowMoreButton } from "@/components/show-more-button"
 import { Badge } from "@/components/ui/badge"
 import { usePlannedRecipes } from "@/features/plan/use-planned-recipes"
 import {
@@ -12,10 +13,12 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { Skeleton } from "@/components/ui/skeleton"
-import { api, unwrap, type Schemas } from "@/lib/api/client"
+import { type Schemas } from "@/lib/api/client"
+import { uniqueById } from "@/lib/pages"
 import { cn } from "@/lib/utils"
 
 import { formatMinutes } from "./format"
+import { pickRecipesQuery } from "./queries"
 
 type RecipeSummary = Schemas["RecipeSummary"]
 
@@ -47,22 +50,10 @@ export function RecipePicker({
     return () => clearTimeout(timer)
   }, [words])
 
-  const found = useQuery({
-    queryKey: ["recipes", "pick-one", find],
-    queryFn: () =>
-      unwrap(
-        api.GET("/api/recipes", {
-          params: {
-            query: { ...(find ? { q: find } : {}), sort: "name", limit: 50 },
-          },
-        })
-      ),
-    // The last results stay, dimmed, while the next search loads.
-    placeholderData: keepPreviousData,
-  })
-  const shown = (found.data?.recipes ?? []).filter(
-    (recipe) => !exclude.includes(recipe.id)
-  )
+  const found = useInfiniteQuery(pickRecipesQuery("pick-one", find, null))
+  const shown = uniqueById(
+    (found.data?.pages ?? []).flatMap((page) => page.recipes)
+  ).filter((recipe) => !exclude.includes(recipe.id))
 
   return (
     <div className="grid min-w-0 gap-3">
@@ -81,9 +72,13 @@ export function RecipePicker({
       {found.isPending ? (
         <Skeleton className="h-48" />
       ) : shown.length === 0 ? (
-        <p className="py-4 text-center text-sm text-muted-foreground">
-          {t("plan.pick.none")}
-        </p>
+        <div className="grid justify-items-center gap-2">
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            {t("plan.pick.none")}
+          </p>
+          {/* Every row loaded so far may be filtered out; later pages may not. */}
+          {found.hasNextPage && <ShowMoreButton query={found} />}
+        </div>
       ) : (
         <ul
           aria-busy={found.isPlaceholderData}
@@ -101,7 +96,8 @@ export function RecipePicker({
               >
                 {recipe.photo ? (
                   <img
-                    src={recipe.photo.card}
+                    decoding="async"
+                    src={recipe.photo.thumb}
                     alt=""
                     className="size-9 shrink-0 rounded-lg object-cover"
                   />
@@ -124,6 +120,11 @@ export function RecipePicker({
               </button>
             </li>
           ))}
+          {found.hasNextPage && (
+            <li className="flex justify-center p-2">
+              <ShowMoreButton query={found} />
+            </li>
+          )}
         </ul>
       )}
     </div>

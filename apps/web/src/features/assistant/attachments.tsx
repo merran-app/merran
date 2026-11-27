@@ -237,6 +237,7 @@ export function FilePreview({
             />
           ) : (
             <img
+              decoding="async"
               src={file.url}
               alt={file.name}
               className="max-h-[75dvh] w-full rounded-xl object-contain"
@@ -308,6 +309,7 @@ export function AttachmentTray({
               <PdfCard name={file.name} />
             ) : (
               <img
+                decoding="async"
                 src={file.preview}
                 alt=""
                 className="size-16 rounded-xl border object-cover"
@@ -362,6 +364,7 @@ export function SentFiles({
               <PdfCard name={name} />
             ) : (
               <img
+                decoding="async"
                 src={part.url}
                 alt=""
                 loading="lazy"

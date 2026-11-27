@@ -70,6 +70,8 @@ const EXAMPLE_SHARED_RECIPE = {
   photo: {
     full: "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=full&v=0199e8b0",
     card: "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=card&v=0199e8b0",
+    thumb:
+      "/api/shared/q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9z0x1c/photo?size=thumb&v=0199e8b0",
   },
   ingredients: [
     {
@@ -107,6 +109,9 @@ export const SharedRecipeSchema = z
       .object({
         full: z.string().openapi({ description: "For the recipe page." }),
         card: z.string().openapi({ description: "Cropped, for previews." }),
+        thumb: z
+          .string()
+          .openapi({ description: "A small square, for small tiles." }),
       })
       .nullable()
       .openapi({

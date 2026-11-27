@@ -118,6 +118,7 @@ export function SitesSpotlight({ folded }: { folded: boolean }) {
               {recipes.map((shown, i) =>
                 shown.photo ? (
                   <img
+                    decoding="async"
                     key={shown.id}
                     src={shown.photo}
                     alt=""
@@ -264,6 +265,7 @@ export function SitesSpotlight({ folded }: { folded: boolean }) {
                     <span className="size-10 shrink-0 overflow-hidden rounded-xl bg-muted">
                       {other.photo && (
                         <img
+                          decoding="async"
                           src={other.photo}
                           alt=""
                           loading="lazy"

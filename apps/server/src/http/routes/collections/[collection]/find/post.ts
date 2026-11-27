@@ -4,7 +4,10 @@ import {
   findMore,
   startDiscovery,
 } from "../../../../../services/recipes/discover/discover.ts"
-import { getCollection } from "../../../../../services/recipes/discover/sites/collections.ts"
+import {
+  collectionRecipes,
+  collectionSearch,
+} from "../../../../../services/recipes/discover/sites/collections.ts"
 import { languageOf } from "../../../../../services/recipes/discover/sites/sites.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
@@ -37,27 +40,28 @@ const route = createRoute({
 export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
-    const collection = await getCollection(
+    const { collection, recipes } = await collectionRecipes(
       em,
       householdId,
       await languageOf(em, userId),
       c.req.valid("param").collection
     )
+    const found = await collectionSearch(em, collection.id)
     // Its last search carries on with another round, leaving out the
     // collection's own recipes as any of its searches does; with none yet,
     // one starts.
-    const discovery = collection.found
+    const discovery = found
       ? await findMore(deps, em, {
           householdId,
           userId,
-          discoveryId: collection.found.id,
+          discoveryId: found.id,
         })
       : await startDiscovery(deps, em, {
           householdId,
           userId,
           theme: collection.theme,
           collection: collection.id,
-          avoid: collection.recipes.map((recipe) => recipe.name),
+          avoid: recipes.map((recipe) => recipe.name),
         })
     return c.json(discovery, 202)
   })

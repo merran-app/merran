@@ -233,6 +233,7 @@ function Review({ receipt }: { receipt: Receipt }) {
                     </span>
                   ) : (
                     <img
+                      decoding="async"
                       src={file.url}
                       alt=""
                       className="size-16 rounded-xl border object-cover object-top"

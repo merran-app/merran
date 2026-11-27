@@ -20,9 +20,6 @@ import { describeForHousehold, type ShelfRecipeView } from "./sites.ts"
 // files, data.ts), filled from the shelf as the sites post, and fitted to
 // the household: what it can't eat left out, what it has already last.
 
-/** The most recipes a collection shows. */
-const MOST = 24
-
 /** Fewer than this left for a household, and the collection's hidden. */
 const FEWEST = 4
 
@@ -158,7 +155,9 @@ function readShelf(em: EntityManager) {
   return em.find(
     SiteRecipe,
     { state: "recipe" },
-    { orderBy: { publishedAt: "desc", createdAt: "desc" } }
+    // The id last, so recipes kept at the same moment always come in the
+    // same order, and no page of a collection repeats or skips one.
+    { orderBy: { publishedAt: "desc", createdAt: "desc", id: "desc" } }
   )
 }
 
@@ -179,7 +178,10 @@ async function householdShelf(em: EntityManager, householdId: string) {
   return { shelf, views: new Map(views.map((view) => [view.id, view])) }
 }
 
-/** A collection's recipes for the household: those that suit it, unhad first. */
+/**
+ * Every recipe of a collection that suits the household, unhad first: the
+ * pages and the counts are cut from this.
+ */
 function recipesFor(
   collection: CollectionData,
   { shelf, views }: Awaited<ReturnType<typeof householdShelf>>
@@ -190,7 +192,7 @@ function recipesFor(
   return [
     ...shown.filter((recipe) => !recipe.inLibrary),
     ...shown.filter((recipe) => recipe.inLibrary),
-  ].slice(0, MOST)
+  ]
 }
 
 function describeCollection(
@@ -246,10 +248,10 @@ export function findCollection(language: string, id: string) {
 }
 
 /**
- * A collection with its recipes, and what Find more found for it last, or
- * is finding.
+ * A collection and every recipe in it that suits the household, in order:
+ * for what needs them all, not a page.
  */
-export async function getCollection(
+export async function collectionRecipes(
   em: EntityManager,
   householdId: string,
   language: string,
@@ -257,14 +259,39 @@ export async function getCollection(
 ) {
   const collection = findCollection(language, id)
   const recipes = recipesFor(collection, await householdShelf(em, householdId))
-  const search = await em.findOne(
-    Discovery,
-    { collection: collection.id },
-    { orderBy: { createdAt: "desc", id: "desc" } }
+  return { collection, recipes }
+}
+
+/**
+ * A collection with a page of its recipes (its summary counts them all), and
+ * what Find more found for it last, or is finding.
+ */
+export async function getCollection(
+  em: EntityManager,
+  householdId: string,
+  language: string,
+  id: string,
+  page: { offset: number; limit: number }
+) {
+  const { collection, recipes } = await collectionRecipes(
+    em,
+    householdId,
+    language,
+    id
   )
   return {
     ...describeCollection(collection, recipes),
-    recipes,
-    found: search ? describeDiscovery(search) : null,
+    recipes: recipes.slice(page.offset, page.offset + page.limit),
+    found: await collectionSearch(em, collection.id),
   }
+}
+
+/** What Find more found for a collection last, or is finding. */
+export async function collectionSearch(em: EntityManager, id: string) {
+  const search = await em.findOne(
+    Discovery,
+    { collection: id },
+    { orderBy: { createdAt: "desc", id: "desc" } }
+  )
+  return search ? describeDiscovery(search) : null
 }

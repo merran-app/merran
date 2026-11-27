@@ -33,6 +33,7 @@ const RECIPE = {
   slug: "lemon-chicken",
   name: "Lemon Chicken",
   photo: null,
+  thumb: null,
 }
 
 export const ImportParam = z.object({
@@ -125,6 +126,9 @@ const ImportRecipeSchema = z.object({
   slug: z.string(),
   name: z.string(),
   photo: z.string().nullable().openapi({ description: "Its card photo." }),
+  thumb: z.string().nullable().openapi({
+    description: "Its photo as a small square, for small tiles.",
+  }),
 })
 
 const ImportItemStateSchema = z

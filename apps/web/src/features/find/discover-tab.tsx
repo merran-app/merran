@@ -330,6 +330,7 @@ function FoundCard({ found }: { found: Found }) {
       <div className="aspect-[4/3] bg-muted">
         {found.photo && (
           <img
+            decoding="async"
             src={found.photo}
             alt=""
             loading="lazy"

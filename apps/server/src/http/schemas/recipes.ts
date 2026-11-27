@@ -108,6 +108,9 @@ export const RecipeSummarySchema = z
       .object({
         full: z.string().openapi({ description: "For the recipe page." }),
         card: z.string().openapi({ description: "Cropped, for recipe cards." }),
+        thumb: z
+          .string()
+          .openapi({ description: "A small square, for small tiles." }),
       })
       .nullable()
       .openapi({

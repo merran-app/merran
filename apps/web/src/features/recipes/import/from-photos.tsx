@@ -209,6 +209,7 @@ export function FromPhotos({
                     </span>
                   ) : (
                     <img
+                      decoding="async"
                       src={photo.url}
                       alt={t("recipes.import.photos.photo", { n: i + 1 })}
                       className="size-full object-cover"

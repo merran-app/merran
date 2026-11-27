@@ -13,6 +13,7 @@ import {
   RecipeSite,
   SiteRecipe,
   User,
+  type SiteRecipeState,
 } from "../../../../database/entities/index.ts"
 import { SITES } from "../../../../modules/sites/settings.ts"
 import { enqueue } from "../../../jobs/jobs.ts"
@@ -25,8 +26,22 @@ import { READ_SITES } from "./read-job.ts"
 // Following recipe sites: a household picks sites, and sees their newest
 // recipes, read from the shelf (shelf.ts) Merran keeps for every household.
 
-/** A site's newest recipes shown. */
+/** A site's newest recipes shown, and the most the spotlight gets. */
 const NEWEST = 24
+
+/** How many of the followed sites' recipes the spotlight looks through at a time. */
+const LOOK_THROUGH = 48
+
+/**
+ * Newest first. The id last, as it's made in time order, so recipes posted
+ * and kept at the same moment always come in the same order and no page
+ * repeats or skips one.
+ */
+const NEWEST_FIRST = {
+  publishedAt: "desc",
+  createdAt: "desc",
+  id: "desc",
+} as const
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -141,37 +156,65 @@ export async function describeForHousehold(
   )
 }
 
-/** A site a household follows, with its newest recipes. */
+/**
+ * Sites a household follows, each with its newest recipes. Those take a
+ * query for each site; how many each has, the library and the household's
+ * tastes are read once for them all.
+ */
 async function describeFollowed(
   em: EntityManager,
   householdId: string,
-  followed: FollowedSite
+  followed: readonly FollowedSite[]
 ) {
-  const site = followed.site.getEntity()
-  const [rows, waiting] = await Promise.all([
-    em.find(
-      SiteRecipe,
-      { site, state: "recipe" },
-      { orderBy: { publishedAt: "desc", createdAt: "desc" }, limit: NEWEST }
+  if (followed.length === 0) return []
+  const sites = followed.map((row) => row.site.getEntity())
+  const [newest, counts] = await Promise.all([
+    Promise.all(
+      sites.map((site) =>
+        em.find(
+          SiteRecipe,
+          { site, state: "recipe" },
+          { orderBy: NEWEST_FIRST, limit: NEWEST }
+        )
+      )
     ),
-    em.count(SiteRecipe, { site, state: "waiting" }),
+    em.countBy(SiteRecipe, ["site", "state"], {
+      where: {
+        site: { $in: sites.map((site) => site.id) },
+        state: { $in: ["recipe", "waiting"] },
+      },
+    }),
   ])
-  return {
-    id: followed.id,
-    name: site.name,
-    url: site.url,
-    feedUrl: site.feedUrl,
-    recipes: await describeForHousehold(em, householdId, rows),
-    /** New posts not opened yet. */
-    waiting,
-    /** Not read for the first time yet. */
-    reading: !site.readAt,
-    readAt: site.readAt?.toISOString() ?? null,
-    error: site.error ?? null,
-    followedAt: followed.createdAt.toISOString(),
-  }
+  const described = await describeForHousehold(em, householdId, newest.flat())
+  const byId = new Map(described.map((recipe) => [recipe.id, recipe]))
+
+  // countBy keys each count by the site's id and the state, joined with ~~~.
+  const count = (site: RecipeSite, state: SiteRecipeState) =>
+    counts[`${site.id}~~~${state}`] ?? 0
+
+  return followed.map((row, index) => {
+    const site = sites[index]!
+    return {
+      id: row.id,
+      name: site.name,
+      url: site.url,
+      feedUrl: site.feedUrl,
+      recipes: newest[index]!.map((recipe) => byId.get(recipe.id)!),
+      /** Its recipes in all, for Show more. */
+      total: count(site, "recipe"),
+      /** New posts not opened yet. */
+      waiting: count(site, "waiting"),
+      /** Not read for the first time yet. */
+      reading: !site.readAt,
+      readAt: site.readAt?.toISOString() ?? null,
+      error: site.error ?? null,
+      followedAt: row.createdAt.toISOString(),
+    }
+  })
 }
-export type FollowedSiteView = Awaited<ReturnType<typeof describeFollowed>>
+export type FollowedSiteView = Awaited<
+  ReturnType<typeof describeFollowed>
+>[number]
 
 /** The household's sites, oldest followed first, and sites it might follow. */
 export async function listSites(
@@ -184,11 +227,32 @@ export async function listSites(
     {},
     { populate: ["site"], orderBy: { createdAt: "asc", id: "asc" } }
   )
-  const sites = []
-  for (const row of followed) {
-    sites.push(await describeFollowed(em, householdId, row))
+  return {
+    sites: await describeFollowed(em, householdId, followed),
+    suggestions: suggestionsBesides(language, followed),
   }
-  return { sites, suggestions: suggestionsBesides(language, followed) }
+}
+
+/**
+ * A page of a followed site's recipes, newest first as `listSites` shows
+ * them, and how many it has in all: for Show more.
+ */
+export async function siteRecipes(
+  em: EntityManager,
+  householdId: string,
+  followedId: string,
+  page: { offset: number; limit: number }
+) {
+  const followed = await findFollowed(em, followedId)
+  const [rows, total] = await em.findAndCount(
+    SiteRecipe,
+    { site: followed.site.id, state: "recipe" },
+    { orderBy: NEWEST_FIRST, offset: page.offset, limit: page.limit }
+  )
+  return {
+    recipes: await describeForHousehold(em, householdId, rows),
+    total,
+  }
 }
 
 /** Sites that work well with Merran, in a language, but those followed. */
@@ -283,19 +347,52 @@ export async function followSite(
       maxAttempts: 1,
     })
   }
-  return describeFollowed(em, householdId, followed)
+  const [described] = await describeFollowed(em, householdId, [followed])
+  return described!
 }
 
-/** The newest recipes from every site the household follows. */
+/**
+ * Up to 24 recipes from the sites the household follows that suit it,
+ * newest first, for Recipes' spotlight and Today's idea. They're looked
+ * through 48 at a time, so a run of new posts with a food it avoids still
+ * leaves it older ones; the library is looked up only for those kept.
+ */
 export async function followedRecipes(em: EntityManager, householdId: string) {
   const followed = await em.find(FollowedSite, {}, { fields: ["site"] })
   if (followed.length === 0) return []
-  const rows = await em.find(
-    SiteRecipe,
-    { site: { $in: followed.map((row) => row.site.id) }, state: "recipe" },
-    { orderBy: { publishedAt: "desc", createdAt: "desc" }, limit: NEWEST }
+  const sites = followed.map((row) => row.site.id)
+  const tastes = await getTastes(em, householdId)
+
+  const kept: SiteRecipe[] = []
+  let offset = 0
+  while (kept.length < NEWEST) {
+    const rows = await em.find(
+      SiteRecipe,
+      { site: { $in: sites }, state: "recipe" },
+      { orderBy: NEWEST_FIRST, offset, limit: LOOK_THROUGH }
+    )
+    for (const row of rows) {
+      if (kept.length === NEWEST) break
+      // A post read between two looks moves the rest down one, so one
+      // could come round again.
+      if (kept.some((other) => other.id === row.id)) continue
+      if (suits(row, tastes)) kept.push(row)
+    }
+    // A short look was the last there is.
+    if (rows.length < LOOK_THROUGH) break
+    offset += LOOK_THROUGH
+  }
+
+  const library = await libraryByUrl(
+    em,
+    kept.map((row) => row.url)
   )
-  return describeForHousehold(em, householdId, rows)
+  return kept.map((row) =>
+    describeShelfRecipe(row, {
+      inLibrary: library.get(row.url) ?? null,
+      suits: true,
+    })
+  )
 }
 
 /** A recipe on the shelf, by its id. */
@@ -332,8 +429,8 @@ export async function shelfSummary(em: EntityManager) {
   }
 }
 
-/** Stops following a site. Its recipes stay on the shelf for others. */
-export async function unfollowSite(em: EntityManager, id: string) {
+/** A site the household follows, by the id it's followed under. */
+async function findFollowed(em: EntityManager, id: string) {
   const followed = UUID.test(id) ? await em.findOne(FollowedSite, { id }) : null
   if (!followed) {
     throw new AppError(
@@ -342,5 +439,11 @@ export async function unfollowSite(em: EntityManager, id: string) {
       "You're not following that site."
     )
   }
+  return followed
+}
+
+/** Stops following a site. Its recipes stay on the shelf for others. */
+export async function unfollowSite(em: EntityManager, id: string) {
+  const followed = await findFollowed(em, id)
   await em.remove(followed).flush()
 }

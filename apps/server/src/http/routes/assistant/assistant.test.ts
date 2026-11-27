@@ -242,6 +242,7 @@ describe("the assistant", () => {
               maxMinutes: null,
               notMadeYet: null,
               limit: null,
+              offset: null,
             },
           },
         ],
@@ -285,6 +286,72 @@ describe("the assistant", () => {
     expect(
       (await (await kyle.get(`/api/assistant/chats/${chatId}`)).json()).messages
     ).toHaveLength(4)
+  })
+
+  test("search_recipes goes through what matches a page at a time", async () => {
+    // At least three recipes match, so there are pages to go through.
+    for (const name of ["Squash Soup", "Leek Soup"]) {
+      const res = await kyle.post("/api/recipes", {
+        name,
+        servings: 4,
+        ingredients: ["1 onion"],
+        steps: ["Simmer."],
+      })
+      expect(res.status, await res.clone().text()).toBe(201)
+    }
+
+    type Found = {
+      total: number
+      recipes: { id: string }[]
+      nextOffset: number | null
+    }
+    // The assistant looks, with this limit and offset, and what it found.
+    const search = async (limit: number, offset: number | null) => {
+      const chatId = await startChat()
+      script = [
+        {
+          toolCalls: [
+            {
+              toolName: "search_recipes",
+              input: {
+                query: null,
+                tag: null,
+                maxMinutes: null,
+                notMadeYet: null,
+                limit,
+                offset,
+              },
+            },
+          ],
+        },
+        "Here.",
+      ]
+      const res = await send(chatId, "Show me recipes")
+      expect(res.status, await res.clone().text()).toBe(200)
+      const parts = await chunks(res)
+      const found = parts.find((part) => part.type === "tool-output-available")
+      return found?.output as Found
+    }
+
+    // limit 1, offset null: the first, and where the next starts.
+    const first = await search(1, null)
+    const total = first.total
+    expect(total).toBeGreaterThanOrEqual(3)
+    expect(first).toMatchObject({ total, nextOffset: 1 })
+    expect(first.recipes).toHaveLength(1)
+
+    // offset total - 1: the last, and no more.
+    const last = await search(1, total - 1)
+    expect(last).toMatchObject({ total, nextOffset: null })
+    expect(last.recipes).toHaveLength(1)
+
+    // offset 999: nothing, and no more.
+    const beyond = await search(1, 999)
+    expect(beyond).toMatchObject({ total, recipes: [], nextOffset: null })
+
+    // offset -3 is taken as 0.
+    const negative = await search(1, -3)
+    expect(negative.recipes[0]?.id).toBe(first.recipes[0]?.id)
   })
 
   test("knows what's on the screen", async () => {

@@ -18,12 +18,12 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "A recipe's photo",
   description:
-    "As WebP: `full` for the recipe page, or `card`, cropped for recipe cards. Use the links in the recipe's `photo`, which can be kept for good.",
+    "As WebP: `full` for the recipe page, `card`, cropped for recipe cards, or `thumb`, a small square for tiles. Use the links in the recipe's `photo`, which can be kept for good.",
   ...openToKeys("recipes", "read"),
   request: {
     params: RecipeParam,
     query: z.object({
-      size: z.enum(["full", "card"]).default("full"),
+      size: z.enum(["full", "card", "thumb"]).default("full"),
       v: z.string().optional().openapi({
         description: "Which photo: the links in `photo` say.",
       }),

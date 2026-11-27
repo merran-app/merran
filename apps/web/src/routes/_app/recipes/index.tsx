@@ -46,6 +46,7 @@ import { useRefreshReview } from "@/features/recipes/tidy/queries"
 import { ReviewBanner } from "@/features/recipes/tidy/tidy-runs"
 import { useCapability } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { uniqueById } from "@/lib/pages"
 import { cn } from "@/lib/utils"
 import { ManageTagsDialog } from "@/features/recipes/manage-tags-dialog"
 import {
@@ -134,7 +135,11 @@ function RecipesPage() {
     search.onSale
   )
   const total = recipes.data?.pages[0]?.total ?? 0
-  const items = recipes.data?.pages.flatMap((page) => page.recipes) ?? []
+  // A recipe added elsewhere between two presses of Show more can land on
+  // two pages; it shows once.
+  const items = uniqueById(
+    recipes.data?.pages.flatMap((page) => page.recipes) ?? []
+  )
   const picked = items.filter((recipe) => selection.isPicked(recipe.id))
   const aiOn = useCapability("ai")
   const refreshReview = useRefreshReview()

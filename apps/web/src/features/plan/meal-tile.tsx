@@ -142,9 +142,10 @@ export function MealTile({
         className="flex min-h-17 items-center gap-3 rounded-2xl bg-muted/50 p-2.5"
       >
         <div className="relative shrink-0">
-          {entry.recipe?.photo ? (
+          {entry.recipe?.thumb ? (
             <img
-              src={entry.recipe.photo}
+              decoding="async"
+              src={entry.recipe.thumb}
               alt=""
               className={cn(
                 "size-12 shrink-0 rounded-xl object-cover",
