@@ -4,7 +4,6 @@ import {
   DEFAULT_ON_HAND,
   guessAisle,
   judgeSale,
-  lineFoods,
   onHandTest,
   worthIt,
   type AisleKey,
@@ -20,8 +19,6 @@ import { AppError } from "../../core/errors.ts"
 import {
   Household,
   Job,
-  Recipe,
-  RecipeIngredient,
   StoreConnection,
   StoreProduct,
 } from "../../database/entities/index.ts"
@@ -30,6 +27,7 @@ import { STORE_SETTINGS } from "../../modules/stores/settings.ts"
 import { failureOf, HANDOVER_MS, waitThenHandOver } from "../jobs/hand-over.ts"
 import { enqueue } from "../jobs/jobs.ts"
 import type { JobHandler } from "../jobs/runner.ts"
+import { loadPlanningLibrary, type PlanningLibrary } from "../plan/library.ts"
 import { currentActor, withActor, type Actor } from "../webhooks/actor.ts"
 import { householdToday } from "../households/clock.ts"
 import { choose } from "./basket/products.ts"
@@ -78,32 +76,29 @@ type RecipeFood = { key: string; name: string; aisle: AisleKey }
  * The foods in the household's recipes: each recipe's, as it names them,
  * and every food once with its aisle and how many recipes use it.
  */
-export async function recipeFoods(em: EntityManager) {
-  const recipes = await em.find(Recipe, {}, { fields: ["id"] })
-  const lines =
-    recipes.length === 0
-      ? []
-      : await em.find(
-          RecipeIngredient,
-          { recipe: { $in: recipes.map((recipe) => recipe.id) } },
-          { fields: ["recipe", "rawText"] }
-        )
+export async function recipeFoods(
+  em: EntityManager,
+  library?: PlanningLibrary
+) {
+  const { recipes } = library ?? (await loadPlanningLibrary(em))
   const byRecipe = new Map<string, RecipeFood[]>()
   const foods = new Map<string, RecipeFood & { recipes: number }>()
-  for (const line of lines) {
-    for (const food of lineFoods(line.rawText)) {
-      const mine = byRecipe.get(line.recipe.id) ?? []
-      if (mine.some((one) => one.key === food.key)) continue
-      const found = {
-        name: food.name,
-        key: food.key,
-        aisle: guessAisle(food.name),
+  for (const recipe of recipes) {
+    for (const line of recipe.lines) {
+      for (const food of line.foods) {
+        const mine = byRecipe.get(recipe.id) ?? []
+        if (mine.some((one) => one.key === food.key)) continue
+        const found = {
+          name: food.name,
+          key: food.key,
+          aisle: guessAisle(food.name),
+        }
+        mine.push(found)
+        byRecipe.set(recipe.id, mine)
+        const counted = foods.get(food.key)
+        if (counted) counted.recipes++
+        else foods.set(food.key, { ...found, recipes: 1 })
       }
-      mine.push(found)
-      byRecipe.set(line.recipe.id, mine)
-      const counted = foods.get(food.key)
-      if (counted) counted.recipes++
-      else foods.set(food.key, { ...found, recipes: 1 })
     }
   }
   return { byRecipe, foods }
@@ -196,7 +191,8 @@ export type SuggestSales = {
 export async function salesForSuggest(
   deps: Pick<AppDeps, "settings">,
   em: EntityManager,
-  householdId: string
+  householdId: string,
+  library?: PlanningLibrary
 ): Promise<SuggestSales | null> {
   if (!(await krogerApp(deps.settings))) return null
   const lean = await deps.settings.household(
@@ -207,7 +203,7 @@ export async function salesForSuggest(
   if (lean === "off") return null
   const deals = await currentDeals(em, await householdToday(em, householdId))
   if (![...deals.values()].some((deal) => worthIt(deal.verdict))) return null
-  const { byRecipe } = await recipeFoods(em)
+  const { byRecipe } = await recipeFoods(em, library)
   return { lean, recipes: recipeSales(byRecipe, deals) }
 }
 

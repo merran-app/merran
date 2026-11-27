@@ -2,7 +2,7 @@ import { kindOf } from "../foods/kinds.ts"
 import { gramsEach } from "../foods/vocabulary.ts"
 import { guessAisle } from "./aisles.ts"
 import { amountRatio, type Amount } from "./amounts.ts"
-import { lineFoods } from "./food.ts"
+import { lineFoods, type LineFood } from "./food.ts"
 import { priceNow, type StoreProduct } from "./products.ts"
 
 // What things cost at the household's store: a pack's size as an amount,
@@ -122,7 +122,13 @@ export function recipeCost(
   {
     today,
     isOnHand = () => false,
-  }: { today: string; isOnHand?: (name: string) => boolean }
+    foodsOf = lineFoods,
+  }: {
+    today: string
+    isOnHand?: (name: string) => boolean
+    /** The foods a line names, for a caller that keeps them (see `lineFoods`). */
+    foodsOf?: (line: string) => readonly LineFood[]
+  }
 ): RecipeCost {
   const cost: RecipeCost = {
     total: 0,
@@ -132,7 +138,7 @@ export function recipeCost(
     currency: null,
   }
   // Each food a line names, with its amount: "salt and pepper" is two.
-  for (const each of lines.flatMap((line) => lineFoods(line))) {
+  for (const each of lines.flatMap((line) => foodsOf(line))) {
     const name = each.name
     const quantity = each.quantityMax ?? each.quantity
     if (!name || quantity === null || isOnHand(name)) continue

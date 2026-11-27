@@ -84,7 +84,9 @@ export async function findRecipe(em: EntityManager, idOrSlug: string) {
 }
 
 /** Total time as given, or prep and cook added up. */
-export function totalMinutes(recipe: Recipe) {
+export function totalMinutes(
+  recipe: Pick<Recipe, "totalMinutes" | "prepMinutes" | "cookMinutes">
+) {
   if (recipe.totalMinutes != null) return recipe.totalMinutes
   if (recipe.prepMinutes == null && recipe.cookMinutes == null) return null
   return (recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0)
