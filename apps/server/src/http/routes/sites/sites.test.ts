@@ -986,9 +986,13 @@ describe("show more of a collection, and import what's shown", () => {
 
   test("without a body, it imports the first 100 not in the library", async () => {
     const first = await collection()
-    const res = await kyle.post("/api/collections/soups/import")
+    // An open tab from before sends no body and no content type at all.
+    const res = await kyle.send("POST", "/api/collections/soups/import")
     expect(res.status).toBe(202)
-    expect((await res.json()).total).toBe(first.toImport)
+    const { total } = await res.json()
+    expect(total).toBe(Math.min(first.toImport, 100))
+    // More than the 24 a page shows.
+    expect(total).toBeGreaterThan(24)
   })
 
   test("what Find more leaves out is the whole collection, not just a page", async () => {

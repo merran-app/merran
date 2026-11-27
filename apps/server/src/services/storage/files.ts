@@ -1,4 +1,5 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import { randomUUID } from "node:crypto"
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
 import { dirname, join, resolve, sep } from "node:path"
 
 /**
@@ -38,7 +39,17 @@ export class LocalFileStore implements FileStore {
   async put(key: string, body: Buffer) {
     const path = this.#path(key)
     await mkdir(dirname(path), { recursive: true })
-    await writeFile(path, body)
+    // Write beside it and rename into place, so a reader (or a crash) never
+    // meets half a file: a thumbnail made twice at once, or cut short, would
+    // otherwise be served and kept by browsers for a year.
+    const temporary = `${path}.${randomUUID()}.tmp`
+    try {
+      await writeFile(temporary, body)
+      await rename(temporary, path)
+    } catch (err) {
+      await rm(temporary, { force: true })
+      throw err
+    }
   }
 
   async read(key: string) {

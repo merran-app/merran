@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_app/recipes/find/$collection")({
   component: CollectionPage,
 })
 
-/** The most recipes one import takes. */
+/** The most recipes one import takes: the server's `MAX_LINKS` for imports. */
 const MOST_IMPORTED = 100
 
 /**
@@ -40,7 +40,7 @@ function CollectionPage() {
   const queryClient = useQueryClient()
   const ai = useAiFor("discover")
   const pages = useInfiniteQuery(collectionQuery(id))
-  const { isPending, isError } = pages
+  const { isPending, isError, isFetchNextPageError } = pages
   // The header, its counts and Find more's search come with the first page.
   const collection = pages.data?.pages[0]
   const recipes = uniqueById(
@@ -112,11 +112,12 @@ function CollectionPage() {
     })
   }, [finished, id, queryClient])
 
-  // "Import all" only when it really is all: nothing hidden, and no more
-  // than one import takes.
+  // "Import all" only when it really is all: recipes not in the library come
+  // first, so once every one of them is shown, what's still hidden is in the
+  // library already. And never more than one import takes.
   const everythingImports =
-    !pages.hasNextPage &&
     collection !== undefined &&
+    collection.toImport <= MOST_IMPORTED &&
     toImportShown.length === collection.toImport
 
   return (
@@ -143,7 +144,7 @@ function CollectionPage() {
             ))}
           </div>
         </div>
-      ) : isError || !collection ? (
+      ) : (isError && !isFetchNextPageError) || !collection ? (
         <p className="pt-4 text-muted-foreground">
           {t("find.collections.missing")}
         </p>

@@ -41,11 +41,11 @@ import { cn } from "@/lib/utils"
 
 import {
   pairingsQuery,
+  pickRecipesQuery,
   tagsQuery,
   useRefreshRecipes,
   type Recipe,
   type RecipePairings,
-  pickRecipesQuery,
 } from "./queries"
 
 function failed(error: unknown) {
@@ -416,9 +416,13 @@ function PickRecipes({ recipe }: { recipe: Recipe }) {
       {found.isPending ? (
         <Skeleton className="h-32" />
       ) : shown.length === 0 ? (
-        <p className="py-4 text-center text-sm text-muted-foreground">
-          {t("recipes.pairing.noMatches")}
-        </p>
+        <div className="grid justify-items-center gap-2">
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            {t("recipes.pairing.noMatches")}
+          </p>
+          {/* Every row loaded so far may be filtered out; later pages may not. */}
+          {found.hasNextPage && <ShowMoreButton query={found} />}
+        </div>
       ) : (
         <ul
           aria-busy={found.isPlaceholderData}

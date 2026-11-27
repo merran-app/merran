@@ -74,7 +74,9 @@ export async function readPhoto(
 ) {
   const key = `${photoFolder(householdId, photoId)}/${size}.webp`
   const kept = await files.read(key)
-  if (kept || size !== "thumb") return kept
+  // An empty thumbnail is a broken one (cut short before writes were
+  // atomic): make it again.
+  if (size !== "thumb" ? kept : kept && kept.length > 0) return kept
 
   // A photo kept before thumbnails existed has none. Make it from the full
   // photo the first time it's asked for, and keep it for the next.

@@ -129,9 +129,10 @@ export async function findMore(
 
 /**
  * The names of every recipe in the starter collection a search is for, as
- * the person sees the collection (not just the page shown first), so its Find more finds others than them,
- * whether it's pressed on the collection or on Discover. None for a search
- * of its own, or for a collection that's gone.
+ * the person sees the collection (not just the page shown first), so its
+ * Find more finds others than them, whether it's pressed on the collection
+ * or on Discover. None for a search of its own, or for a collection that's
+ * gone.
  */
 async function collectionRecipeNames(
   em: EntityManager,

@@ -72,9 +72,13 @@ export function RecipePicker({
       {found.isPending ? (
         <Skeleton className="h-48" />
       ) : shown.length === 0 ? (
-        <p className="py-4 text-center text-sm text-muted-foreground">
-          {t("plan.pick.none")}
-        </p>
+        <div className="grid justify-items-center gap-2">
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            {t("plan.pick.none")}
+          </p>
+          {/* Every row loaded so far may be filtered out; later pages may not. */}
+          {found.hasNextPage && <ShowMoreButton query={found} />}
+        </div>
       ) : (
         <ul
           aria-busy={found.isPlaceholderData}

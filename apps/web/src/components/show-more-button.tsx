@@ -22,7 +22,8 @@ export function ShowMoreButton({
     <Button
       variant="outline"
       onClick={() => void query.fetchNextPage()}
-      // The pages shown belong to the last search until the new one's in.
+      // While placeholder data from the previous query is shown, there's no
+      // next page of the new one to ask for yet.
       disabled={query.isFetchingNextPage || query.isPlaceholderData}
     >
       {query.isFetchingNextPage && <Spinner />}
