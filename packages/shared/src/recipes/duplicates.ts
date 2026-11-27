@@ -178,14 +178,26 @@ function addTo<K, V>(map: Map<K, V[]>, key: K, value: V) {
 }
 
 /**
- * Every pair of recipes that may be the same one, each once, with `a` the
- * earlier in the list. Only recipes sharing a link key, a set of name
- * words, or the rarest word of the shorter name are compared, so a big
- * library isn't compared pair by pair.
+ * Whether judging two recipes needs their foods: only when one name's
+ * words are strictly inside the other's, the one case `namesMatch` asks
+ * them. Everything else is decided by the names and links alone.
  */
-export function findDuplicatePairs(
-  recipes: readonly (DuplicateCandidate & { id: string })[]
-): { a: string; b: string; reasons: DuplicateReason[] }[] {
+export function needsFoods(a: { name: string }, b: { name: string }): boolean {
+  const first = nameWords(a.name)
+  const second = nameWords(b.name)
+  if (first.size === 0 || second.size === 0) return false
+  return inside(first, second) || inside(second, first)
+}
+
+/**
+ * The pairs of recipes worth weighing, as indexes into the list, each once
+ * with the earlier first and in order. Only recipes sharing a link key, a
+ * set of name words, or the rarest word of the shorter name are paired, so
+ * a big library isn't compared pair by pair.
+ */
+export function candidatePairs(
+  recipes: readonly { name: string; sourceUrl: string | null }[]
+): [number, number][] {
   const byWord = new Map<string, number[]>()
   const candidates = new Map<string, [number, number]>()
   const consider = (i: number, j: number) => {
@@ -222,11 +234,20 @@ export function findDuplicatePairs(
     }
   })
 
-  const pairs: { a: string; b: string; reasons: DuplicateReason[] }[] = []
-  const ordered = [...candidates.values()].sort(
+  return [...candidates.values()].sort(
     ([a1, b1], [a2, b2]) => a1 - a2 || b1 - b2
   )
-  for (const [i, j] of ordered) {
+}
+
+/**
+ * Every pair of recipes that may be the same one, each once, with `a` the
+ * earlier in the list.
+ */
+export function findDuplicatePairs(
+  recipes: readonly (DuplicateCandidate & { id: string })[]
+): { a: string; b: string; reasons: DuplicateReason[] }[] {
+  const pairs: { a: string; b: string; reasons: DuplicateReason[] }[] = []
+  for (const [i, j] of candidatePairs(recipes)) {
     const reasons = duplicateReasons(recipes[i]!, recipes[j]!)
     if (reasons.length > 0) {
       pairs.push({ a: recipes[i]!.id, b: recipes[j]!.id, reasons })
