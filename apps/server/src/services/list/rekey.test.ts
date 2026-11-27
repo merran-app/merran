@@ -12,7 +12,7 @@ import type { Database } from "../../database/orm.ts"
 import { forHousehold } from "../../database/scope.ts"
 import { createTestApp, setUpServer } from "../../test/app.ts"
 import { rekeyHousehold } from "./rekey.ts"
-import { forgetAlias, sameAs } from "./teach.ts"
+import { forgetAlias, keepApart, sameAs } from "./teach.ts"
 
 // Food keys made again: a list made before names were tidied, as it was
 // left, tidied and joined up.
@@ -155,12 +155,10 @@ const product = (name: string) => ({
   url: null,
 })
 
+type Where = { householdId: string; listId: string; aisleId: string }
+
 /** Rows of three foods in every table: the rice with the key it's given. */
-async function seedFoods(
-  em: EntityManager,
-  where: { householdId: string; listId: string; aisleId: string },
-  riceKey: string
-) {
+async function seedFoods(em: EntityManager, where: Where, riceKey: string) {
   const { householdId, listId, aisleId } = where
   const at = Date.now()
   for (const [index, name] of FOODS.entries()) {
@@ -168,7 +166,7 @@ async function seedFoods(
     em.create(ShoppingItem, {
       household: householdId,
       list: listId,
-      foodKey: name,
+      foodKey: key,
       name,
       quantity: 2,
       unit: null,
@@ -217,6 +215,25 @@ async function itemIds(em: EntityManager) {
   return new Map(items.map((item) => [item.name, item.id]))
 }
 
+/** A test on a server of its own, with its household's list and an aisle. */
+async function onOwnServer(
+  run: (database: Database, where: Where) => Promise<void>
+) {
+  const own = await createTestApp()
+  try {
+    const kyle = await setUpServer(own.app, own.setupCode)
+    const household = await (await kyle.get("/api/households/current")).json()
+    const list = await (await kyle.get("/api/list")).json()
+    await run(own.database, {
+      householdId: household.id as string,
+      listId: list.lists[0].id as string,
+      aisleId: list.aisles[0].id as string,
+    })
+  } finally {
+    await own.close()
+  }
+}
+
 describe("Same as…", () => {
   test("leaves the household as a full rekey would", async () => {
     const em = forHousehold(database.em.fork(), householdId)
@@ -234,12 +251,23 @@ describe("Same as…", () => {
     const after = forHousehold(database.em.fork(), householdId)
     const keys = async (rows: Promise<{ foodKey: string }[]>) =>
       ourKeys((await rows).map((row) => row.foodKey))
+    // The two lines are one, keyed "butter", and no other line of theirs is
+    // left on the list.
+    const items = await after.find(
+      ShoppingItem,
+      {},
+      { orderBy: { createdAt: "asc" } }
+    )
     expect(
-      (await after.find(ShoppingItem, {})).map((row) => [
-        row.foodKey,
-        Number(row.quantity),
-      ])
-    ).toEqual(expect.arrayContaining([["butter", 4]]))
+      items
+        .filter((row) => FOODS.includes(row.foodKey ?? ""))
+        .map((row) => [row.name, row.foodKey, Number(row.quantity), row.unit])
+    ).toEqual([
+      // The first test's butter, in cups, which doesn't add up with these.
+      ["butter", "butter", 0.5, "cup"],
+      ["vegan butter", "butter", 4, null],
+      ["rice", "rice", 2, null],
+    ])
     expect(await keys(after.find(FoodPlacement, {}))).toEqual([
       "butter",
       "rice",
@@ -292,29 +320,24 @@ describe("Same as…", () => {
   test("doesn't touch rows of other foods", async () => {
     // A household of its own: the rice rows carry a key an older vocabulary
     // would have made, which a full rekey would change.
-    const own = await createTestApp()
-    try {
-      const kyle = await setUpServer(own.app, own.setupCode)
-      const ownHousehold = (
-        await (await kyle.get("/api/households/current")).json()
-      ).id
-      const list = await (await kyle.get("/api/list")).json()
-      const where = {
-        householdId: ownHousehold,
-        listId: list.lists[0].id as string,
-        aisleId: list.aisles[0].id as string,
-      }
-      const em = forHousehold(own.database.em.fork(), ownHousehold)
+    await onOwnServer(async (database, where) => {
+      const em = forHousehold(database.em.fork(), where.householdId)
       await seedFoods(em, where, "stale rice")
       const ids = await itemIds(em)
       await sameAs(
         em,
-        ownHousehold,
+        where.householdId,
         ids.get("vegan butter")!,
         ids.get("butter")!
       )
 
-      const after = forHousehold(own.database.em.fork(), ownHousehold)
+      const after = forHousehold(database.em.fork(), where.householdId)
+      const riceLine = async () =>
+        (await after.find(ShoppingItem, { name: "rice" })).map((row) => [
+          row.foodKey,
+          Number(row.quantity),
+        ])
+      expect(await riceLine()).toEqual([["stale rice", 2]])
       expect(
         (await after.find(Purchase, { name: "rice" })).map((row) => row.foodKey)
       ).toEqual(["stale rice"])
@@ -334,8 +357,110 @@ describe("Same as…", () => {
       expect(
         (await after.find(Purchase, { name: "rice" })).map((row) => row.foodKey)
       ).toEqual(["rice"])
-    } finally {
-      await own.close()
-    }
+      expect(await riceLine()).toEqual([["rice", 2]])
+    })
+  })
+
+  test("moves a line with no key whose name is one of the two foods", async () => {
+    await onOwnServer(async (database, where) => {
+      const em = forHousehold(database.em.fork(), where.householdId)
+      await seedFoods(em, where, "rice")
+      // A line kept before lines had keys, named for the food being joined.
+      em.create(ShoppingItem, {
+        household: where.householdId,
+        list: where.listId,
+        foodKey: null,
+        name: "Vegan butter",
+        quantity: 1,
+        unit: null,
+        aisle: null,
+        source: "typed",
+        createdAt: new Date(Date.now() + 10),
+      })
+      await em.flush()
+      const ids = await itemIds(em)
+
+      const done = await sameAs(
+        em,
+        where.householdId,
+        ids.get("vegan butter")!,
+        ids.get("butter")!
+      )
+      // It joins the butter line, as the "butter" line does.
+      expect(done).toEqual({ food: "butter", joined: 2 })
+
+      const after = forHousehold(database.em.fork(), where.householdId)
+      expect(
+        (
+          await after.find(ShoppingItem, {}, { orderBy: { createdAt: "asc" } })
+        ).map((row) => [row.foodKey, Number(row.quantity)])
+      ).toEqual([
+        ["butter", 5],
+        ["rice", 2],
+      ])
+      expect(await rekeyHousehold(after)).toEqual({ renamed: 0, joined: 0 })
+    })
+  })
+})
+
+describe("Not the same", () => {
+  test("forgetting it joins the name's rows to its food's, as a full rekey would", async () => {
+    // "unsalted butter" was kept apart from "butter", the vocabulary's food
+    // for it, and each has an aisle, a Kroger product and a line on the list.
+    await onOwnServer(async (database, { householdId, listId, aisleId }) => {
+      const em = forHousehold(database.em.fork(), householdId)
+      const at = Date.now()
+      for (const [index, name] of ["unsalted butter", "butter"].entries()) {
+        em.create(ShoppingItem, {
+          household: householdId,
+          list: listId,
+          foodKey: name,
+          name,
+          quantity: 2,
+          unit: null,
+          aisle: null,
+          source: "typed",
+          createdAt: new Date(at + index),
+        })
+        em.create(FoodPlacement, {
+          household: householdId,
+          foodKey: name,
+          aisle: aisleId,
+        })
+        em.create(StoreProduct, {
+          household: householdId,
+          store: "kroger",
+          food: name,
+          product: product(name),
+        })
+      }
+      await em.flush()
+      const ids = await itemIds(em)
+      await keepApart(em, householdId, ids.get("unsalted butter")!, [
+        "unsalted butter",
+      ])
+      const alias = await em.findOneOrFail(FoodAlias, {
+        name: "unsalted butter",
+      })
+
+      await forgetAlias(em, alias.id)
+
+      const after = forHousehold(database.em.fork(), householdId)
+      expect(await after.count(FoodAlias, {})).toBe(0)
+      // One aisle and one product for the food, and the two lines joined.
+      expect(
+        (await after.find(FoodPlacement, {})).map((row) => row.foodKey)
+      ).toEqual(["butter"])
+      expect(
+        (await after.find(StoreProduct, {})).map((row) => row.food)
+      ).toEqual(["butter"])
+      expect(
+        (await after.find(ShoppingItem, {})).map((row) => [
+          row.foodKey,
+          Number(row.quantity),
+        ])
+      ).toEqual([["butter", 4]])
+      expect(await rekeyHousehold(after)).toEqual({ renamed: 0, joined: 0 })
+    })
   })
 })

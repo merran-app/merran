@@ -55,12 +55,14 @@ type RekeyScope = {
   pantry: FilterQuery<PantryItem>
   purchases: FilterQuery<Purchase>
   /** Of the list items read, the ones that count. Everything, if not set. */
-  wanted?: (item: ShoppingItem, keyFor: (name: string) => string) => boolean
+  wanted?: (item: ShoppingItem) => boolean
 }
 
 /** One household's keys and list names, made again. */
 export async function rekeyHousehold(em: EntityManager) {
-  return rekeyRows(em, {
+  // The household's own names for foods count.
+  const keyFor = await householdKeys(em)
+  return rekeyRows(em, keyFor, {
     items: {},
     placements: {},
     products: {},
@@ -76,25 +78,31 @@ export async function rekeyHousehold(em: EntityManager) {
  * does, to these rows only: the others are already as it would leave them.
  */
 export async function rekeyFoods(em: EntityManager, keys: readonly string[]) {
-  const foods = new Set(keys)
-  return rekeyRows(em, {
+  const keyFor = await householdKeys(em)
+  // The rows of the foods the keys go to now are read too: a name kept
+  // apart and then forgotten goes back to the vocabulary's food, and its
+  // aisle, store products and list lines join that food's.
+  const foods = new Set([...keys, ...keys.map(keyFor)])
+  return rekeyRows(em, keyFor, {
     // A line with no key yet is matched by what its name would key to.
     items: { $or: [{ foodKey: { $in: [...foods] } }, { foodKey: null }] },
     placements: { foodKey: { $in: [...foods] } },
     products: { food: { $in: [...foods] } },
     pantry: { foodKey: { $in: [...foods] } },
     purchases: { foodKey: { $in: [...foods] } },
-    wanted: (item, keyFor) =>
+    wanted: (item) =>
       item.foodKey !== null && item.foodKey !== undefined
         ? foods.has(item.foodKey)
         : foods.has(plainKey(item.name)) || foods.has(keyFor(item.name)),
   })
 }
 
-/** The work of both, over the rows the scope reads. */
-async function rekeyRows(em: EntityManager, scope: RekeyScope) {
-  // The household's own names for foods count.
-  const keyFor = await householdKeys(em)
+/** The work of both, over the rows the scope reads, keyed by `keyFor`. */
+async function rekeyRows(
+  em: EntityManager,
+  keyFor: (name: string) => string,
+  scope: RekeyScope
+) {
   let renamed = 0
   let joined = 0
 
@@ -103,9 +111,7 @@ async function rekeyRows(em: EntityManager, scope: RekeyScope) {
   const read = await em.find(ShoppingItem, scope.items, {
     orderBy: { createdAt: "asc", id: "asc" },
   })
-  const items = scope.wanted
-    ? read.filter((item) => scope.wanted!(item, keyFor))
-    : read
+  const items = scope.wanted ? read.filter(scope.wanted) : read
   for (const item of items) {
     if (item.source === "plan") {
       const name = shoppingName(item.name)
