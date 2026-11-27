@@ -64,7 +64,10 @@ export async function listAliases(em: EntityManager) {
 /** A name's plain form, as "Not the same" keeps it. */
 export const apartName = (name: string) => plainKey(name.trim())
 
-/** Removes a household alias; the caller reconciles affected records. */
+/**
+ * Removes a household alias; the caller reconciles affected records. It
+ * says which two foods were joined, so the caller knows which to look at.
+ */
 export async function removeAlias(em: EntityManager, id: string) {
   const row = UUID.test(id) ? await em.findOne(FoodAlias, { id }) : null
   if (!row) {
@@ -76,4 +79,5 @@ export async function removeAlias(em: EntityManager, id: string) {
   }
   em.remove(row)
   await em.flush()
+  return { name: row.name, foodKey: row.foodKey }
 }
