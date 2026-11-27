@@ -1,3 +1,4 @@
+import { SqlitePlatform } from "@mikro-orm/sqlite"
 import { Job } from "../../database/entities/index.ts"
 import { clearExpiredInvitationTokens } from "../../modules/email/invitations.ts"
 import { cleanUpPasswordResets } from "../../modules/email/password-resets.ts"
@@ -32,6 +33,12 @@ export const cleanUpJobsJob: JobHandler = {
     const prices = await clearOldPrices(em)
     const signIns = await clearExpiredSignIns(em)
     const proposals = await clearOldProposals(em)
+    // SQLite keeps its planner's statistics until told to refresh them, and
+    // only the tables that changed a lot are worked on. Postgres does this
+    // itself.
+    if (em.getPlatform() instanceof SqlitePlatform) {
+      await em.getConnection().execute("pragma optimize")
+    }
     const removed = await em.nativeDelete(Job, {
       status: { $in: ["done", "failed", "cancelled"] },
       finishedAt: {
