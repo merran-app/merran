@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { afterAll, beforeAll, expect, test } from "vitest"
 import {
   Chat,
@@ -48,13 +49,14 @@ test("suggestions resolved 30 days ago go, unless their chat still shows them", 
   make("no chat, applied 31 days ago", "applied", 31, null)
   make("no chat, dismissed 31 days ago", "dismissed", 31, null)
   make("chat exists, 31 days ago", "applied", 31, chat.id)
-  make("chat deleted, 31 days ago", "dismissed", 31, "deleted-chat")
+  make("chat deleted, 31 days ago", "dismissed", 31, randomUUID())
+  make("not a chat's id, 31 days ago", "applied", 31, "deleted-chat")
   make("pending 60 days", "pending", null, null)
-  make("pending in a chat that is gone", "pending", null, "deleted-chat")
+  make("pending in a chat that is gone", "pending", null, randomUUID())
   make("no chat, resolved 29 days ago", "applied", 29, null)
   await em.flush()
 
-  expect(await clearOldProposals(database.em.fork(), now)).toBe(3)
+  expect(await clearOldProposals(database.em.fork(), now)).toBe(4)
 
   const left = await database.em
     .fork()
