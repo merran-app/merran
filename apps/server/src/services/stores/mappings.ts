@@ -1,9 +1,9 @@
 import {
+  addDays,
   foodKeyIn,
   foodName,
   guessAisle,
   householdKey,
-  lineFoods,
   shoppingName,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
@@ -17,7 +17,10 @@ import {
   FoodPlacement,
 } from "../../database/entities/index.ts"
 import { householdAliases } from "../foods/aliases.ts"
+import { householdToday } from "../households/clock.ts"
+import { lineFoodsOf } from "../foods/line-foods.ts"
 import { householdAisles } from "../list/aisles.ts"
+import { USUAL_WINDOW_DAYS } from "../list/usual.ts"
 import { yourStores } from "./yours.ts"
 import type { StoreDeps } from "./store-connections.ts"
 
@@ -37,12 +40,22 @@ export async function productMappings(
     if (!foods.has(food)) foods.set(food, foodName(food) ?? name)
   }
 
+  const today = await householdToday(em, householdId)
   const [ingredients, listItems, pantryItems, purchases, mappings] =
     await Promise.all([
-      em.find(RecipeIngredient, {}, { fields: ["rawText", "foodKey"] }),
+      // Not the lines of recipes in Recently deleted.
+      em.find(
+        RecipeIngredient,
+        { recipe: { deletedAt: null } },
+        { fields: ["rawText", "foodKey"] }
+      ),
       em.find(ShoppingItem, {}, { fields: ["name", "foodKey"] }),
       em.find(PantryItem, {}, { fields: ["name", "foodKey"] }),
-      em.find(Purchase, {}, { fields: ["name", "foodKey"] }),
+      em.find(
+        Purchase,
+        { boughtOn: { $gte: addDays(today, -USUAL_WINDOW_DAYS) } },
+        { fields: ["name", "foodKey"] }
+      ),
       em.find(StoreProduct, {
         store: { $in: stores.map((store) => store.key) },
       }),
@@ -53,7 +66,7 @@ export async function productMappings(
       remember(shoppingName(ingredient.rawText), ingredient.foodKey)
       continue
     }
-    for (const food of lineFoods(ingredient.rawText)) {
+    for (const food of lineFoodsOf(ingredient.rawText)) {
       remember(food.name, food.key)
     }
   }

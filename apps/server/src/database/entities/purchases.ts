@@ -19,7 +19,11 @@ export const Purchase = defineEntity({
     boughtOn: day(),
     createdAt: createdAt(),
   },
-  indexes: [{ properties: ["household", "foodKey"] }],
+  indexes: [
+    { properties: ["household", "foodKey"] },
+    // Usual buys read the last year by day.
+    { properties: ["household", "boughtOn"] },
+  ],
   filters: householdFilter,
 })
 export type Purchase = InferEntity<typeof Purchase>

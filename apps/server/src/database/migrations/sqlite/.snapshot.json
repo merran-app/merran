@@ -10326,6 +10326,17 @@
         {
           "columnNames": [
             "household_id",
+            "bought_on"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "purchases_household_id_bought_on_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "household_id",
             "food_key"
           ],
           "composite": true,
@@ -13915,6 +13926,17 @@
           "composite": false,
           "constraint": false,
           "keyName": "shopping_items_aisle_id_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "household_id",
+            "food_key"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "shopping_items_household_id_food_key_index",
           "primary": false,
           "unique": false
         },

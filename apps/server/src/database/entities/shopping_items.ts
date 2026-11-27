@@ -67,6 +67,8 @@ export const ShoppingItem = defineEntity({
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
+  // The list's items are looked up by food.
+  indexes: [{ properties: ["household", "foodKey"] }],
   filters: householdFilter,
 })
 export type ShoppingItem = InferEntity<typeof ShoppingItem>

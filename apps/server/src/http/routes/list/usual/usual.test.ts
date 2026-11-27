@@ -109,6 +109,24 @@ describe("usual buys", () => {
     ])
   })
 
+  test("read the last year of buying", async () => {
+    // Flour every 30 days, but only more than a year ago: it was a habit
+    // once, and it isn't a usual buy now.
+    await bought("flour", [460, 430, 400])
+    // The same pattern inside the year still is.
+    await bought("oats", [90, 60, 30])
+    try {
+      expect(await foods()).toEqual(["oat", "milk", "egg"])
+    } finally {
+      const em = forHousehold(database.em.fork(), householdId)
+      await em.nativeDelete(
+        Purchase,
+        { foodKey: { $in: ["flour", "oat"] } },
+        { filters: false }
+      )
+    }
+  })
+
   test("leave out what's on the list, at home or bought every week", async () => {
     const res = await kyle.post("/api/list/items", { text: "milk" })
     expect(res.status, await res.clone().text()).toBe(201)

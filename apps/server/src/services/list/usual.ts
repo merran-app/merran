@@ -27,11 +27,18 @@ import { recordListChange } from "../webhooks/events/list.ts"
 // list, at home, bought every week or always on hand, nor what's been
 // passed over until it's due again.
 
-/** What the household usually buys, from everything it's put away. */
-async function allUsualBuys(em: EntityManager) {
+/**
+ * How far back usual buys look. A habit older than a year has gone cold,
+ * and reading all of history would grow with every shop.
+ */
+export const USUAL_WINDOW_DAYS = 365
+
+/** What the household usually buys, from the last year of what it put away. */
+async function allUsualBuys(em: EntityManager, householdId: string) {
+  const today = await householdToday(em, householdId)
   const purchases = await em.find(
     Purchase,
-    {},
+    { boughtOn: { $gte: addDays(today, -USUAL_WINDOW_DAYS) } },
     { orderBy: { boughtOn: "asc", createdAt: "asc" } }
   )
   return usualBuys(
@@ -50,7 +57,7 @@ async function allUsualBuys(em: EntityManager) {
 export async function dueUsualBuys(em: EntityManager, householdId: string) {
   const keyOf = await householdKeys(em)
   const [usual, today, household] = await Promise.all([
-    allUsualBuys(em),
+    allUsualBuys(em, householdId),
     householdToday(em, householdId),
     em.findOneOrFail(Household, { id: householdId }),
   ])
@@ -85,7 +92,7 @@ export async function skipUsualBuy(
   food: string
 ) {
   const [usual, today] = await Promise.all([
-    allUsualBuys(em),
+    allUsualBuys(em, householdId),
     householdToday(em, householdId),
   ])
   const buy = usual.find((found) => found.food === food)

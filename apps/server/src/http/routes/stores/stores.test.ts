@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../app.ts"
-import { addDays } from "@merran/shared"
+import { addDays, foodKey } from "@merran/shared"
 import {
   Job,
+  Purchase,
   Secret,
   StoreConnection,
   StorePrice,
@@ -721,6 +722,62 @@ describe("Kroger", () => {
     ).toBe(204)
     expect((await get()).some((food) => food.food === "rice")).toBe(false)
     await kyle.patch("/api/settings/server", { "stores.walmart": false })
+  })
+
+  test("offers foods from recipes, list, pantry and the last year's buying, not from the bin or long ago", async () => {
+    const created = await kyle.post("/api/recipes", {
+      name: "Quinoa Bowl",
+      servings: 2,
+      ingredients: ["1 cup quinoa"],
+      steps: ["Cook it."],
+    })
+    expect(created.status, await created.clone().text()).toBe(201)
+    const recipe = (await created.json()).id as string
+    const home = (await (await kyle.get("/api/households/current")).json()).id
+
+    const em = forHousehold(database.em.fork(), home)
+    const today = new Date().toISOString().slice(0, 10)
+    for (const [name, daysAgo] of [
+      ["harissa", 10],
+      ["tahini", 400],
+    ] as const) {
+      em.create(Purchase, {
+        household: home,
+        foodKey: foodKey(name),
+        name,
+        boughtOn: addDays(today, -daysAgo),
+      })
+    }
+    await em.flush()
+
+    const offered = async () =>
+      (
+        (await (await kyle.get("/api/stores/products")).json()) as {
+          foods: { food: string }[]
+        }
+      ).foods.map((food) => food.food)
+
+    try {
+      // A recipe's lines and a recent purchase are offered.
+      expect(await offered()).toEqual(
+        expect.arrayContaining(["quinoa", "harissa"])
+      )
+      // A purchase from over a year ago isn't.
+      expect(await offered()).not.toContain("tahini")
+
+      // Neither are the lines of a recipe that's in the bin.
+      expect((await kyle.delete(`/api/recipes/${recipe}`)).status).toBe(204)
+      expect(await offered()).not.toContain("quinoa")
+      expect(await offered()).toContain("harissa")
+    } finally {
+      // Later tests read the household's recipes and buying.
+      await kyle.delete("/api/recipes/deleted")
+      await forHousehold(database.em.fork(), home).nativeDelete(
+        Purchase,
+        { foodKey: { $in: ["harissa", "tahini"] } },
+        { filters: false }
+      )
+    }
   })
 
   test("sends what's ticked to the linked account's cart, by barcode", async () => {
