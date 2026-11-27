@@ -1,9 +1,9 @@
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { afterAll, beforeAll, expect, test } from "vitest"
+import { afterAll, beforeAll, expect, test, vi } from "vitest"
 import type { Database } from "../../database/orm.ts"
-import { createTestDatabase } from "../../test/database.ts"
+import { createTestDatabase, testDatabaseKind } from "../../test/database.ts"
 import { cleanUpJobsJob } from "./clean-up.ts"
 import type { JobContext } from "./runner.ts"
 
@@ -34,4 +34,25 @@ test("the daily clean-up reports what it cleared of prices, sign-ins and suggest
     signIns: { sessions: 0, verifications: 0, tokens: 0, rateLimits: 0 },
     proposals: 0,
   })
+})
+
+test("refreshes SQLite's statistics last, so it can't stop the clearing out", async () => {
+  const em = database.em.fork()
+  const execute = vi.spyOn(em.getConnection(), "execute")
+  try {
+    await cleanUpJobsJob.run({
+      em,
+      deps: { config: { dataDir } },
+    } as unknown as JobContext)
+    const queries = execute.mock.calls.map(([query]) => String(query))
+    const optimize = queries.filter((query) => query === "pragma optimize")
+    if (testDatabaseKind === "sqlite") {
+      expect(optimize).toHaveLength(1)
+      expect(queries.at(-1)).toBe("pragma optimize")
+    } else {
+      expect(optimize).toEqual([])
+    }
+  } finally {
+    execute.mockRestore()
+  }
 })

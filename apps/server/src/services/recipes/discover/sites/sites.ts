@@ -90,7 +90,11 @@ export async function libraryByUrl(em: EntityManager, urls: readonly string[]) {
     wanted.size <= URLS_IN_ONE_QUERY
       ? { sourceUrl: { $in: [...wanted] } }
       : { sourceUrl: { $ne: null } },
-    { fields: ["slug", "name", "sourceUrl"], orderBy: { createdAt: "asc" } }
+    {
+      fields: ["slug", "name", "sourceUrl"],
+      // Two recipes made in the same moment are still in the same order.
+      orderBy: { createdAt: "asc", id: "asc" },
+    }
   )
   for (const recipe of recipes) {
     const url = recipe.sourceUrl

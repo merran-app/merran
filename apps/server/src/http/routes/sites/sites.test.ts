@@ -1128,14 +1128,17 @@ describe("the library by link", () => {
         (_, index) => `https://elsewhere.example/recipe-${index}/`
       )
       const execute = vi.spyOn(em.getConnection(), "execute")
-      const many = await libraryByUrl(em, [...elsewhere, stew, pie])
-      const sent = execute.mock.calls.flatMap(([, params]) => params ?? [])
-      execute.mockRestore()
-
-      expect(many).toEqual(few)
-      // The links weren't sent to the database, so however many there are
-      // they can't reach its limit on a query's parameters.
-      expect(sent).not.toContain(elsewhere[0])
+      try {
+        const many = await libraryByUrl(em, [...elsewhere, stew, pie])
+        expect(many).toEqual(few)
+        // The links weren't sent to the database, so however many there are
+        // they can't reach its limit on a query's parameters.
+        expect(execute).toHaveBeenCalled()
+        const sent = execute.mock.calls.flatMap(([, params]) => params ?? [])
+        expect(sent).not.toContain(elsewhere[0])
+      } finally {
+        execute.mockRestore()
+      }
     } finally {
       await em.remove(made).flush()
     }

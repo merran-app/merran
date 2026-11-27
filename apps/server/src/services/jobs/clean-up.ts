@@ -33,18 +33,18 @@ export const cleanUpJobsJob: JobHandler = {
     const prices = await clearOldPrices(em)
     const signIns = await clearExpiredSignIns(em)
     const proposals = await clearOldProposals(em)
-    // SQLite keeps its planner's statistics until told to refresh them, and
-    // only the tables that changed a lot are worked on. Postgres does this
-    // itself.
-    if (em.getPlatform() instanceof SqlitePlatform) {
-      await em.getConnection().execute("pragma optimize")
-    }
     const removed = await em.nativeDelete(Job, {
       status: { $in: ["done", "failed", "cancelled"] },
       finishedAt: {
         $lt: new Date(Date.now() - KEEP_FINISHED_DAYS * 24 * 60 * 60 * 1000),
       },
     })
+    // SQLite keeps its planner's statistics until told to refresh them, and
+    // only the tables that changed a lot are worked on. Postgres does this
+    // itself. Last, so it can never stop the clearing out.
+    if (em.getPlatform() instanceof SqlitePlatform) {
+      await em.getConnection().execute("pragma optimize")
+    }
     return {
       removed,
       uploads,

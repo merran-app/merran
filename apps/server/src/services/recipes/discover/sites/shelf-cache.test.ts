@@ -129,6 +129,22 @@ test("a read in a transaction isn't kept, and a change in one drops the shelf ag
   expect(names(await shelf())).toContain("Transaction Soup")
 })
 
+test("a read in a transaction that's rolled back isn't kept", async () => {
+  await shelf()
+
+  await expect(
+    database.em.fork().transactional(async (tx) => {
+      shelve(tx, "Rolled Back Soup", 0)
+      await tx.flush()
+      expect(names(await shelfRows(tx))).toContain("Rolled Back Soup")
+      throw new Error("Rolled back")
+    })
+  ).rejects.toThrow("Rolled back")
+
+  // Had the read inside been kept, the soup would still be on the shelf.
+  expect(names(await shelf())).not.toContain("Rolled Back Soup")
+})
+
 test("a change in a savepoint drops the shelf as the transaction around it commits", async () => {
   await shelf()
   let outside: Promise<readonly ShelfRow[]> | undefined
