@@ -27,7 +27,7 @@ import { appLink } from "../webhooks/payloads.ts"
 import { record } from "../webhooks/record.ts"
 import { addEntries } from "./plan.ts"
 import { loadPlanningLibrary } from "./library.ts"
-import { suggestMeals } from "./suggest.ts"
+import { suggestMeals, type Suggestion } from "./suggest.ts"
 
 // The weekly autoplan: on the household's day and hour, in its time zone,
 // it fills the week ahead's empty meals the way Fill the week does, saying
@@ -160,15 +160,21 @@ export async function planWeek(
       slots.push({ date, meal })
     }
   }
-  // The recipes are read once, for the suggestions, sales and costs alike.
-  const library = await loadPlanningLibrary(em)
-  const suggestions = await suggestMeals(em, householdId, slots, {
-    library,
-    sales: deps ? await salesForSuggest(deps, em, householdId, library) : null,
-    budget: deps
-      ? await budgetForSuggest(deps, em, householdId, slots, library)
-      : null,
-  })
+  let suggestions: Suggestion[] = []
+  // A full week has nothing to fill, so no recipes are read.
+  if (slots.length > 0) {
+    // The recipes are read once, for the suggestions, sales and costs alike.
+    const library = await loadPlanningLibrary(em)
+    suggestions = await suggestMeals(em, householdId, slots, {
+      library,
+      sales: deps
+        ? await salesForSuggest(deps, em, householdId, library)
+        : null,
+      budget: deps
+        ? await budgetForSuggest(deps, em, householdId, slots, library)
+        : null,
+    })
+  }
   if (suggestions.length > 0) {
     await addEntries(
       em,

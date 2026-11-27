@@ -7,7 +7,7 @@ import {
   nextAutoplanRun,
   weekStartOf,
 } from "@merran/shared"
-import { afterAll, beforeAll, describe, expect, test } from "vitest"
+import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import type { App } from "../../../../app.ts"
 import { Household, Job } from "../../../../database/entities/index.ts"
 import type { Database } from "../../../../database/orm.ts"
@@ -322,6 +322,31 @@ describe("the autoplan", () => {
     expect((await autoplan()).last).toMatchObject({ week: ahead, planned: 7 })
     expect(await week()).toHaveLength(7)
     await save({ enabled: false })
+    await clearAll()
+  })
+
+  test("reads no recipes for a week with nothing to fill", async () => {
+    // Off the list, so only filling the week could read recipes.
+    await save({ enabled: false, addToList: false })
+    const first = await kyle.post("/api/plan/autoplan/run")
+    expect(first.status, await first.clone().text()).toBe(200)
+    expect(await first.json()).toMatchObject({ planned: 7 })
+
+    const execute = vi.spyOn(database.em.getConnection(), "execute")
+    try {
+      const again = await kyle.post("/api/plan/autoplan/run")
+      expect(await again.json()).toMatchObject({ planned: 0, empty: 0 })
+      expect(execute).toHaveBeenCalled()
+      // The plan's entries are read with their recipes joined, but the
+      // recipes themselves aren't.
+      const read = execute.mock.calls
+        .map(([query]) => String(query))
+        .filter((query) => /from [`"]recipes[`"]/.test(query))
+      expect(read).toEqual([])
+    } finally {
+      execute.mockRestore()
+    }
+    await save({ enabled: false, addToList: true })
     await clearAll()
   })
 
