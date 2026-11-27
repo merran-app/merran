@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { createTestDatabase } from "../test/database.ts"
-import { atCommit } from "./at-commit.ts"
+import { atCommit, outermostTransaction } from "./at-commit.ts"
 import { Job } from "./entities/index.ts"
 import type { Database } from "./orm.ts"
 
@@ -80,6 +80,25 @@ describe("atCommit", () => {
     })
 
     expect(ran).toEqual(["kept"])
+  })
+
+  test("a savepoint's outermost transaction is the one that commits", async () => {
+    await database.em.fork().transactional(async (tx) => {
+      const transaction = tx.getTransactionContext()!
+      expect(outermostTransaction(transaction)).toBe(transaction)
+
+      await tx.transactional(async (savepoint) => {
+        const inner = savepoint.getTransactionContext()!
+        expect(inner).not.toBe(transaction)
+        expect(outermostTransaction(inner)).toBe(transaction)
+
+        await savepoint.transactional(async (deeper) => {
+          expect(outermostTransaction(deeper.getTransactionContext()!)).toBe(
+            transaction
+          )
+        })
+      })
+    })
   })
 
   test("outside a transaction, it leaves the work to the caller", () => {

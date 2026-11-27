@@ -53,6 +53,21 @@ export function atCommit(
 }
 
 /**
+ * The transaction that really commits: the one a savepoint was made in, or
+ * the one around that, or the transaction itself. What's saved in a
+ * savepoint is in the database for others only once that one commits.
+ */
+export function outermostTransaction(transaction: object): object {
+  let outermost = transaction
+  let outer = outerOf.get(outermost)
+  while (outer) {
+    outermost = outer
+    outer = outerOf.get(outermost)
+  }
+  return outermost
+}
+
+/**
  * Runs the work given to `atCommit` as each transaction commits. Every
  * database has it (orm.ts).
  */

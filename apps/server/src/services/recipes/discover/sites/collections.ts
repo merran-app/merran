@@ -1,11 +1,7 @@
 import { clockIn } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../../../core/errors.ts"
-import {
-  Discovery,
-  Household,
-  SiteRecipe,
-} from "../../../../database/entities/index.ts"
+import { Discovery, Household } from "../../../../database/entities/index.ts"
 import { describeDiscovery } from "../discover.ts"
 import {
   dataFor,
@@ -13,6 +9,7 @@ import {
   type CollectionRule,
   type Season,
 } from "./data.ts"
+import { shelfRows, type ShelfRow } from "./shelf-cache.ts"
 import { wordPattern } from "./shelf.ts"
 import { describeForHousehold, type ShelfRecipeView } from "./sites.ts"
 
@@ -100,10 +97,7 @@ function patternsFor(rule: CollectionRule) {
 /** Whether a recipe on the shelf fits a collection's rule. */
 export function fitsRule(
   rule: CollectionRule,
-  recipe: Pick<
-    SiteRecipe,
-    "name" | "courses" | "keywords" | "diets" | "minutes"
-  >
+  recipe: Pick<ShelfRow, "name" | "courses" | "keywords" | "diets" | "minutes">
 ) {
   const { words, without } = patternsFor(rule)
   const said = [recipe.name ?? "", ...recipe.keywords].join("\n")
@@ -129,13 +123,13 @@ export function fitsRule(
  */
 export function pickFor(
   collection: CollectionData,
-  shelf: readonly SiteRecipe[]
+  shelf: readonly ShelfRow[]
 ) {
   const classics = new Map(
     collection.classics.map((classic, index) => [classic.url, index])
   )
   const newSince = Date.now() - NEW_FOR_MS
-  const isNew = (row: SiteRecipe) =>
+  const isNew = (row: ShelfRow) =>
     !classics.has(row.url) &&
     (row.publishedAt ?? row.createdAt).getTime() >= newSince
   const fits = shelf.filter(
@@ -150,17 +144,6 @@ export function pickFor(
   ]
 }
 
-/** Every recipe on the shelf that can be shown, newest first. */
-function readShelf(em: EntityManager) {
-  return em.find(
-    SiteRecipe,
-    { state: "recipe" },
-    // The id last, so recipes kept at the same moment always come in the
-    // same order, and no page of a collection repeats or skips one.
-    { orderBy: { publishedAt: "desc", createdAt: "desc", id: "desc" } }
-  )
-}
-
 /** The household's month, and whether its seasons are the south's. */
 async function householdSeason(em: EntityManager, householdId: string) {
   const household = await em.findOneOrFail(Household, { id: householdId })
@@ -170,10 +153,11 @@ async function householdSeason(em: EntityManager, householdId: string) {
 
 /**
  * The shelf as the household sees it, once for every collection: in its
- * library or not, suiting it or not.
+ * library or not, suiting it or not. The shelf is kept in memory
+ * (shelf-cache.ts); the household's library and tastes are read each time.
  */
 async function householdShelf(em: EntityManager, householdId: string) {
-  const shelf = await readShelf(em)
+  const shelf = await shelfRows(em)
   const views = await describeForHousehold(em, householdId, shelf)
   return { shelf, views: new Map(views.map((view) => [view.id, view])) }
 }
