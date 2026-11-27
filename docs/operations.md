@@ -188,6 +188,7 @@ Local validation: `node --test .github/scripts/*.test.mjs` covers routing, real 
 ## Backups and restore
 
 - **Nightly backups by Merran itself,** on either database, so there's no separate backup container: SQLite's online backup (a consistent copy while Merran keeps running) or `pg_dump` for Postgres, into `data/backups`, kept for `MERRAN_BACKUP_KEEP_DAYS` (14 by default). The time is a setting.
+- **Nightly clean-up** clears what nothing reads again, in the same daily job as the other clean-up: store prices after 91 days, expired sessions, verifications and OAuth tokens, rate-limit rows after a day, and applied or dismissed suggestions after 30 days (kept while the assistant chat they came from exists). On SQLite it also runs `pragma optimize`. Finished jobs go after 30 days.
 - **Files** (photos, the secret key) are in `data/`, next to the compose file. The docs say plainly: back up the whole `data` folder, and keep `data/app/secret` (or `MERRAN_SECRET`) with it, or saved keys must be entered again.
 - **Download a backup** (server admin, Settings → Server): the database and files in one archive.
 - **Restoring** is documented step by step, and CI restores a dump into a fresh install on every release to prove the steps work.
