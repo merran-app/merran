@@ -1,11 +1,9 @@
 import { DIETS } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
-import {
-  SiteRecipe,
-  type DiscoveredRecipe,
-} from "../../../database/entities/index.ts"
+import type { DiscoveredRecipe } from "../../../database/entities/index.ts"
 import { getTastes } from "../../households/tastes.ts"
 import { sameDish } from "./dishes.ts"
+import { shelfRows, type ShelfRow } from "./sites/shelf-cache.ts"
 import { coursesOf, wordPattern } from "./sites/shelf.ts"
 import { describeShelfRecipe, libraryByUrl, suits } from "./sites/sites.ts"
 
@@ -73,7 +71,7 @@ function forms(word: string) {
  */
 export function fitsTheme(
   words: readonly string[],
-  recipe: Pick<SiteRecipe, "name" | "keywords" | "courses" | "diets">
+  recipe: Pick<ShelfRow, "name" | "keywords" | "courses" | "diets">
 ) {
   if (words.length === 0) return false
   const said = [recipe.name ?? "", ...recipe.keywords].join("\n")
@@ -101,12 +99,8 @@ export async function shelfMatches(
   if (words.length === 0) return []
 
   // Words first, in memory, so the library and tastes are only looked up
-  // for the few that fit.
-  const shelf = await em.find(
-    SiteRecipe,
-    { state: "recipe" },
-    { orderBy: { publishedAt: "desc", createdAt: "desc" } }
-  )
+  // for the few that fit. The shelf is kept in memory (shelf-cache.ts).
+  const shelf = await shelfRows(em)
   const fitting = shelf.filter(
     (row) =>
       row.name && fitsTheme(words, row) && !options.skip.includes(row.url)

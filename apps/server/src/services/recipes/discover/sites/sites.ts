@@ -22,6 +22,7 @@ import { normalizeLink } from "../../import/links.ts"
 import { allSuggestedSites, dataFor, type Course } from "./data.ts"
 import { findFeed } from "./feeds.ts"
 import { READ_SITES } from "./read-job.ts"
+import type { ShelfRow } from "./shelf-cache.ts"
 
 // Following recipe sites: a household picks sites, and sees their newest
 // recipes, read from the shelf (shelf.ts) Merran keeps for every household.
@@ -66,32 +67,49 @@ export async function languageOf(em: EntityManager, userId: string) {
   return user?.preferences?.language ?? "en"
 }
 
-/** Recipes the household has from these links, by link. */
-export async function libraryByUrl(em: EntityManager, urls: string[]) {
-  if (urls.length === 0)
-    return new Map<string, { slug: string; name: string }>()
+/**
+ * Past this many links, the household's own links are read instead of
+ * these: a whole shelf's links in one query could reach the database's
+ * limit on a query's parameters.
+ */
+export const URLS_IN_ONE_QUERY = 100
+
+/**
+ * Recipes the household has from these links, by link: the first it got
+ * from each. Up to a hundred are looked up by link; past that, every link
+ * in the household's library is read and matched here, with the same
+ * answer.
+ */
+export async function libraryByUrl(em: EntityManager, urls: readonly string[]) {
+  const found = new Map<string, { slug: string; name: string }>()
+  const wanted = new Set(urls)
+  if (wanted.size === 0) return found
+
   const recipes = await em.find(
     Recipe,
-    { sourceUrl: { $in: [...new Set(urls)] } },
+    wanted.size <= URLS_IN_ONE_QUERY
+      ? { sourceUrl: { $in: [...wanted] } }
+      : { sourceUrl: { $ne: null } },
     { fields: ["slug", "name", "sourceUrl"], orderBy: { createdAt: "asc" } }
   )
-  const found = new Map<string, { slug: string; name: string }>()
   for (const recipe of recipes) {
-    if (recipe.sourceUrl && !found.has(recipe.sourceUrl)) {
-      found.set(recipe.sourceUrl, { slug: recipe.slug, name: recipe.name })
+    const url = recipe.sourceUrl
+    if (url && wanted.has(url) && !found.has(url)) {
+      found.set(url, { slug: recipe.slug, name: recipe.name })
     }
   }
   return found
 }
 
 /** Whether a recipe on the shelf suits the household: no avoided food, on its diets. */
-export function suits(row: SiteRecipe, tastes: HouseholdTastes) {
-  if (missingDiets(row.diets as Diet[], tastes.diets).length > 0) return false
+export function suits(row: ShelfRow, tastes: HouseholdTastes) {
+  const diets = row.diets as readonly Diet[]
+  if (missingDiets(diets, tastes.diets).length > 0) return false
   const check = checkTastes(
     {
       name: row.name ?? "",
       lines: row.ingredients,
-      diets: row.diets as Diet[],
+      diets,
     },
     tastes.avoid
   )
@@ -110,7 +128,7 @@ function cleanDescription(description: string | null | undefined) {
 
 /** A recipe on the shelf, as the app shows it. */
 export function describeShelfRecipe(
-  row: SiteRecipe,
+  row: ShelfRow,
   options: {
     inLibrary: { slug: string; name: string } | null
     suits: boolean
@@ -139,7 +157,7 @@ export type ShelfRecipeView = ReturnType<typeof describeShelfRecipe>
 export async function describeForHousehold(
   em: EntityManager,
   householdId: string,
-  rows: readonly SiteRecipe[]
+  rows: readonly ShelfRow[]
 ) {
   const [library, tastes] = await Promise.all([
     libraryByUrl(

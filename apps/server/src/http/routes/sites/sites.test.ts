@@ -2,13 +2,14 @@ import { randomUUID } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 import sharp from "sharp"
-import { afterAll, beforeAll, describe, expect, test } from "vitest"
+import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import type { App } from "../../../app.ts"
 import { AppError } from "../../../core/errors.ts"
 import {
   Household,
   Import,
   ImportItem,
+  Recipe,
   RecipeSite,
   SiteRecipe,
 } from "../../../database/entities/index.ts"
@@ -20,7 +21,9 @@ import type { JobRunner } from "../../../services/jobs/runner.ts"
 import { collectionRecipes } from "../../../services/recipes/discover/sites/collections.ts"
 import { siteData } from "../../../services/recipes/discover/sites/data.ts"
 import { forgetRobots } from "../../../services/recipes/discover/sites/robots.ts"
+import { shelfRows } from "../../../services/recipes/discover/sites/shelf-cache.ts"
 import { PACE } from "../../../services/recipes/discover/sites/shelf.ts"
+import { libraryByUrl } from "../../../services/recipes/discover/sites/sites.ts"
 import { createTestApp, setUpServer, TestClient } from "../../../test/app.ts"
 
 const recipePage = (recipe: Record<string, unknown>) =>
@@ -915,6 +918,31 @@ describe("show more of a collection, and import what's shown", () => {
     expect(listed.toImport).toBe(first.toImport)
   })
 
+  test("a recipe imported from a collection shows as in the library at once", async () => {
+    // All of it: what's in the library goes last.
+    const before = await collection("?limit=96")
+    const shown = before.recipes.find((recipe) => !recipe.inLibrary)!
+    const kept = await shelfRows(database.em.fork())
+    web.set(shown.url, {
+      body: recipePage({
+        name: "Bulk Soup",
+        recipeIngredient: ["1 onion", "4 cups stock"],
+      }),
+    })
+
+    const imported = await kyle.post("/api/recipes/import", { url: shown.url })
+    expect(imported.status).toBe(201)
+    const { recipe } = await imported.json()
+
+    const after = await collection("?limit=96")
+    expect(
+      after.recipes.find((listed) => listed.id === shown.id)!.inLibrary
+    ).toMatchObject({ slug: recipe.slug })
+    expect(after.toImport).toBe(before.toImport - 1)
+    // The shelf was kept all along: only the library was read again.
+    expect(await shelfRows(database.em.fork())).toBe(kept)
+  })
+
   test("Import these imports just the recipes shown", async () => {
     const first = await collection()
     const ids = first.recipes.slice(0, 3).map((recipe) => recipe.id)
@@ -1046,6 +1074,70 @@ describe("show more of a collection, and import what's shown", () => {
       expect(paged).toEqual(once)
     } finally {
       await em.remove(tied).flush()
+    }
+  })
+})
+
+describe("the library by link", () => {
+  test("over 100 links, the library is matched by the household's links", async () => {
+    const [household] = await database.em
+      .fork()
+      .find(Household, {}, { filters: false })
+    const em = forHousehold(database.em, household!.id)
+    const stew = "https://library.example/stew/"
+    const pie = "https://library.example/pie/"
+    const recipe = (
+      slug: string,
+      name: string,
+      sourceUrl: string,
+      createdAt = new Date()
+    ) =>
+      em.create(Recipe, {
+        household: household!.id,
+        slug,
+        name,
+        origin: "link",
+        sourceUrl,
+        createdAt,
+      })
+    const made = [
+      recipe(
+        "library-stew",
+        "Library Stew",
+        stew,
+        new Date(Date.now() - 86_400_000)
+      ),
+      // The same link again, later: the first is the one found.
+      recipe("library-stew-again", "Library Stew Again", stew),
+      recipe("library-pie", "Library Pie", pie),
+    ]
+    await em.flush()
+
+    try {
+      const few = await libraryByUrl(em, [stew, pie])
+      expect(few).toEqual(
+        new Map([
+          [stew, { slug: "library-stew", name: "Library Stew" }],
+          [pie, { slug: "library-pie", name: "Library Pie" }],
+        ])
+      )
+
+      // 150 links in all, two of them the household's.
+      const elsewhere = Array.from(
+        { length: 148 },
+        (_, index) => `https://elsewhere.example/recipe-${index}/`
+      )
+      const execute = vi.spyOn(em.getConnection(), "execute")
+      const many = await libraryByUrl(em, [...elsewhere, stew, pie])
+      const sent = execute.mock.calls.flatMap(([, params]) => params ?? [])
+      execute.mockRestore()
+
+      expect(many).toEqual(few)
+      // The links weren't sent to the database, so however many there are
+      // they can't reach its limit on a query's parameters.
+      expect(sent).not.toContain(elsewhere[0])
+    } finally {
+      await em.remove(made).flush()
     }
   })
 })
