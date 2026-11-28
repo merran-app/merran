@@ -1,6 +1,9 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
-import { onboardingStatus } from "../../../../../services/onboarding/status.ts"
+import {
+  onboardingStatus,
+  rememberProgress,
+} from "../../../../../services/onboarding/status.ts"
 import { inHousehold } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import { OnboardingSchema } from "../../../../schemas/onboarding.ts"
@@ -25,6 +28,9 @@ const route = createRoute({
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, userId, householdId } = inHousehold(c)
+    // Remember new progress as it's read, so the web app doesn't have to
+    // save it back.
+    await rememberProgress(em, householdId)
     return c.json(await onboardingStatus(em, userId, householdId), 200)
   })
 }

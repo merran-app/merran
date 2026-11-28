@@ -1,10 +1,10 @@
 import * as React from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useRouterState } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { useActiveHousehold, useMe } from "@/features/auth/use-me"
 import { api, unwrap, type Schemas } from "@/lib/api/client"
+import { checklistCanChange } from "./progress"
 import { onboardingQuery } from "./queries"
 
 function useStateForOnboarding() {
@@ -14,9 +14,6 @@ function useStateForOnboarding() {
   const { t } = useTranslation()
   const options = onboardingQuery(me.id, household?.id)
   const query = useQuery(options)
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  })
   const [saving, setSaving] = React.useState(false)
   const [tourReset, setTourReset] = React.useState(0)
   const writes = React.useRef(Promise.resolve())
@@ -48,13 +45,11 @@ function useStateForOnboarding() {
     },
     [queryClient, me.id, household?.id, t]
   )
+  const canChange = checklistCanChange(query.data)
   React.useEffect(() => {
-    if (household)
-      void queryClient.invalidateQueries({
-        queryKey: onboardingQuery(me.id, household.id).queryKey,
-      })
-  }, [pathname, me.id, household?.id, queryClient])
-  React.useEffect(() => {
+    // Once the checklist is finished or dismissed, nothing can change it,
+    // so there's nothing to listen for.
+    if (!canChange) return
     let pending: ReturnType<typeof setTimeout> | undefined
     const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
       // Both local actions and live updates refresh these queries. Keep the
@@ -75,13 +70,7 @@ function useStateForOnboarding() {
       unsubscribe()
       clearTimeout(pending)
     }
-  }, [queryClient, me.id, household?.id])
-  // Remember observed progress so clearing next week's plan doesn't undo it.
-  const observed = query.data ? JSON.stringify(query.data.progress) : ""
-  React.useEffect(() => {
-    if (observed && observed.includes("true"))
-      void update({ recordProgress: true })
-  }, [observed, update])
+  }, [queryClient, me.id, household?.id, canChange])
   return { ...query, update, saving, tourReset }
 }
 const OnboardingContext = React.createContext<ReturnType<
