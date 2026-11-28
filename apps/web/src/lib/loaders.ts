@@ -1,4 +1,5 @@
 import type {
+  EnsureInfiniteQueryDataOptions,
   EnsureQueryDataOptions,
   QueryClient,
   QueryKey,
@@ -27,9 +28,21 @@ export async function preloadQuery<
 }
 
 /** The same for a query that loads in pages: its first page. */
-export async function preloadInfiniteQuery(
+export async function preloadInfiniteQuery<
+  TQueryFnData,
+  TError,
+  TData,
+  TQueryKey extends QueryKey,
+  TPageParam,
+>(
   queryClient: QueryClient,
-  options: Parameters<QueryClient["ensureInfiniteQueryData"]>[0]
+  options: EnsureInfiniteQueryDataOptions<
+    TQueryFnData,
+    TError,
+    TData,
+    TQueryKey,
+    TPageParam
+  >
 ) {
   try {
     await queryClient.ensureInfiniteQueryData(options)

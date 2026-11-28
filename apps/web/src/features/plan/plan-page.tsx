@@ -16,7 +16,6 @@ import {
   dayOfWeek,
   NO_THEMES,
   weekDays,
-  weekStartOf,
 } from "@merran/shared"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
@@ -41,6 +40,7 @@ import {
   useSelectionKeepOnly,
 } from "@/features/select/use-selection"
 
+import { weekShown } from "./clock"
 import { AddMealDialog, type Slot } from "./add-meal-dialog"
 import {
   calendarSettingsQuery,
@@ -74,14 +74,14 @@ export function PlanPage({ week: asked }: { week?: string }) {
   const clock = useHouseholdClock()
   const notFilled = useNotFilled()
   const actions = usePlanActions()
-  const week = weekStartOf(asked ?? clock.today, clock.weekStartsOn)
+  const { from: week, to: weekEnd } = weekShown(asked, clock)
   // The assistant knows which week is on screen.
   useAssistantPage({ week })
   const days = weekDays(week)
-  const plan = useQuery(planQuery(week, addDays(week, 6)))
+  const plan = useQuery(planQuery(week, weekEnd))
   const calendarSettings = useQuery(calendarSettingsQuery).data
   const calendarSlots =
-    useQuery(calendarSlotTimesQuery(week, addDays(week, 6))).data?.slots ?? []
+    useQuery(calendarSlotTimesQuery(week, weekEnd)).data?.slots ?? []
   const entries = plan.data?.entries ?? []
   const themes = useQuery(themesQuery).data?.themes ?? NO_THEMES
   // What the week's meals cost, where their recipes' costs are known.

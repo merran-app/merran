@@ -34,6 +34,10 @@ import {
 } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+import { householdQuery } from "@/features/household/queries"
+import { clockOf, weekShown } from "@/features/plan/clock"
+import { planQuery } from "@/features/plan/queries"
+import { preloadInfiniteQuery, preloadQuery } from "@/lib/loaders"
 import { SitesSpotlight, SitesStart } from "@/features/find/sites-spotlight"
 import { AddRecipeDialog } from "@/features/recipes/add-recipe-dialog"
 import { usePlannedRecipes } from "@/features/plan/use-planned-recipes"
@@ -95,6 +99,20 @@ export const Route = createFileRoute("/_app/recipes/")({
         ? { sort: search.sort as RecipeSort }
         : {}),
     }
+  },
+  // The loader gets the same search the page uses, so what it starts is
+  // the query the page asks for.
+  loaderDeps: ({ search }) => search,
+  loader: ({ context: { queryClient }, deps }) => {
+    // Signing in has loaded the household, so its clock is known here.
+    const clock = clockOf(queryClient.getQueryData(householdQuery.queryKey))
+    const { from, to } = weekShown(undefined, clock)
+
+    // The library shows at once, with skeletons where its data isn't in yet,
+    // so the loader starts the requests with the page's code and doesn't
+    // wait for them. The plan is what marks recipes as planned.
+    void preloadInfiniteQuery(queryClient, recipesQuery(deps))
+    void preloadQuery(queryClient, planQuery(from, to))
   },
   component: RecipesPage,
 })
