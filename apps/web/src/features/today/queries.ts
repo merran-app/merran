@@ -6,15 +6,14 @@ export type TodaySummary = Schemas["Today"]
 
 /**
  * What Today shows of the list, the pantry and the recipes, in one request.
- * It's always asked again when Today opens: it depends on the day (what's
- * to use soon, what's not been made in three weeks), and the live stream
- * only says when something changed, not that the day did. Until the answer
- * comes, Today shows what it has.
+ * It's fresh as long as the live stream says nothing changed, as with the
+ * areas it counts (see LIVE_REFRESH). Changes made on this device, which the
+ * stream doesn't send back, make it stale through followOwnChanges. Until the
+ * answer comes, Today shows what it has.
  */
 export const todayQuery = queryOptions({
   queryKey: ["today"],
   queryFn: () => unwrap(api.GET("/api/today")),
-  staleTime: 0,
 })
 
 /**
