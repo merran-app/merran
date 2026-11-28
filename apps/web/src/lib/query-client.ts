@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query"
 
 import { freshFor, refetchOnFocus } from "@/features/live/state"
+import { followOwnChanges } from "@/features/today/own-changes"
 
 import { ApiError } from "./api/client"
 
@@ -19,3 +20,7 @@ export const queryClient = new QueryClient({
     },
   },
 })
+
+// The live stream doesn't come back to the device that made a change, so
+// this device says itself when Today's summary is out of date.
+followOwnChanges(queryClient)
