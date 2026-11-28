@@ -4,6 +4,7 @@ import {
   budgetProblems,
   FIRST_LOAD_BUDGET,
   firstLoad,
+  missingRoutes,
   TODAY_FIRST_LOAD,
   type BuiltChunk,
 } from "./budget.ts"
@@ -117,5 +118,23 @@ describe("budgetProblems", () => {
     const problems = budgetProblems([foods], small, FIRST_LOAD_BUDGET)
     assert.equal(problems.length, 1)
     assert.match(problems.join(" "), /assets\/foods-abc\.js/)
+  })
+})
+
+describe("missingRoutes", () => {
+  it("a route no chunk has is named", () => {
+    const load = firstLoad(chunks, TODAY_FIRST_LOAD)
+    const routes = [
+      ...TODAY_FIRST_LOAD,
+      "src/routes/_app/gone.tsx?tsr-split=component",
+    ]
+    const problems = missingRoutes(load, routes)
+    assert.equal(problems.length, 1)
+    assert.match(problems[0] ?? "", /gone\.tsx/)
+  })
+
+  it("routes that all have chunks give no problems", () => {
+    const load = firstLoad(chunks, TODAY_FIRST_LOAD)
+    assert.deepEqual(missingRoutes(load, TODAY_FIRST_LOAD), [])
   })
 })

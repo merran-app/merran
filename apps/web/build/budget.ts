@@ -64,6 +64,24 @@ export function firstLoad(
   return [...load.values()]
 }
 
+/**
+ * One sentence for each route no chunk was built for. Without this, a
+ * renamed route would leave the load as just the entry, and the budget would
+ * pass with a number that's too small.
+ */
+export function missingRoutes(load: BuiltChunk[], routes: string[]): string[] {
+  const facades = load.map(
+    (chunk) => chunk.facadeModuleId?.replaceAll("\\", "/") ?? ""
+  )
+
+  return routes
+    .filter((route) => !facades.some((facade) => facade.endsWith(route)))
+    .map(
+      (route) =>
+        `No built chunk is for the route ${route}, so the first load is counted short.`
+    )
+}
+
 /** One sentence for each limit the load goes over. Empty when it's within. */
 export function budgetProblems(
   load: BuiltChunk[],
@@ -141,7 +159,10 @@ export function budgetPlugin(): Plugin {
         `Today's first load: ${load.length} files, ${Math.round(bytes / 1000)} KB with Brotli`
       )
 
-      const problems = budgetProblems(load, brotliSize, FIRST_LOAD_BUDGET)
+      const problems = [
+        ...missingRoutes(load, TODAY_FIRST_LOAD),
+        ...budgetProblems(load, brotliSize, FIRST_LOAD_BUDGET),
+      ]
       if (problems.length > 0) {
         throw new Error(problems.join("\n"))
       }
