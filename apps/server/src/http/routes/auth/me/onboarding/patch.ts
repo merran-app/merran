@@ -2,7 +2,10 @@ import { createRoute } from "@hono/zod-openapi"
 import { LockMode } from "@mikro-orm/core"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { Household, User } from "../../../../../database/entities/index.ts"
-import { onboardingStatus } from "../../../../../services/onboarding/status.ts"
+import {
+  onboardingStatus,
+  rememberProgress,
+} from "../../../../../services/onboarding/status.ts"
 import { asHouseholdAdmin, inHousehold } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import {
@@ -62,7 +65,7 @@ export default (router: Router, _deps: AppDeps) => {
             : {}),
         },
       }
-      if (changes.reviewed || changes.recordProgress) {
+      if (changes.reviewed) {
         const household = await tx.findOneOrFail(Household, householdId, {
           lockMode: LockMode.PESSIMISTIC_WRITE,
         })
@@ -72,11 +75,12 @@ export default (router: Router, _deps: AppDeps) => {
           onboarding: {
             ...household.settings?.onboarding,
             ...status.progress,
-            ...(changes.reviewed ? { reviewed: true } : {}),
+            reviewed: true,
           },
         }
       }
     })
+    if (changes.recordProgress) await rememberProgress(em, householdId)
     return c.json(await onboardingStatus(em, userId, householdId), 200)
   })
 }

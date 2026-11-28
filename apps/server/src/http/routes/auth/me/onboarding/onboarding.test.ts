@@ -1,4 +1,7 @@
 import { expect, test } from "vitest"
+import { Household } from "../../../../../database/entities/index.ts"
+import { forHousehold } from "../../../../../database/scope.ts"
+import { rememberProgress } from "../../../../../services/onboarding/status.ts"
 import {
   account,
   createTestApp,
@@ -117,6 +120,50 @@ test("progress comes from household data and stays separate between households",
     expect(
       await (await member.get("/api/auth/me/onboarding")).json()
     ).toMatchObject({ progress: { recipe: true } })
+  } finally {
+    await test.close()
+  }
+})
+
+async function addRecipe(owner: TestClient) {
+  const response = await owner.post("/api/recipes", {
+    name: "Dinner",
+    servings: 2,
+    ingredients: [],
+    steps: [],
+  })
+  expect(response.status).toBe(201)
+  return await response.json()
+}
+
+test("reading it remembers progress", async () => {
+  const test = await createTestApp()
+  try {
+    const owner = await setUpServer(test.app, test.setupCode)
+    const recipe = await addRecipe(owner)
+    expect(
+      await (await owner.get("/api/auth/me/onboarding")).json()
+    ).toMatchObject({ progress: { recipe: true } })
+    // Delete it for good: it moves to Recently deleted, then that's emptied.
+    await owner.delete(`/api/recipes/${recipe.id}`)
+    expect((await owner.delete("/api/recipes/deleted")).status).toBe(204)
+    expect(
+      await (await owner.get("/api/auth/me/onboarding")).json()
+    ).toMatchObject({ progress: { recipe: true, plan: false } })
+  } finally {
+    await test.close()
+  }
+})
+
+test("remembering twice saves nothing the second time", async () => {
+  const test = await createTestApp()
+  try {
+    const owner = await setUpServer(test.app, test.setupCode)
+    await addRecipe(owner)
+    const households = await test.database.em.fork().find(Household, {})
+    const em = forHousehold(test.database.em, households[0]!.id)
+    expect(await rememberProgress(em, households[0]!.id)).toBe(true)
+    expect(await rememberProgress(em, households[0]!.id)).toBe(false)
   } finally {
     await test.close()
   }
