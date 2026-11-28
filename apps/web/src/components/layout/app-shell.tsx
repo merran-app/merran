@@ -7,7 +7,6 @@ import { AssistantPanel } from "@/features/assistant/assistant-panel"
 import { EdgeBack } from "@/features/gestures/edge-back"
 import { PullToRefresh } from "@/features/gestures/pull-to-refresh"
 import { InstallGuide } from "@/features/install/install-ui"
-import { LiveUpdates } from "@/features/live/live-updates"
 import { TelemetryQuestion } from "@/features/server/telemetry-question"
 import { OnboardingProvider } from "@/features/onboarding/onboarding-context"
 import { TourProvider } from "@/features/onboarding/tour-context"
@@ -33,9 +32,7 @@ export function AppShell() {
                   className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 md:px-8 md:pb-12"
                 >
                   <AutomaticTour />
-                  <LiveUpdates>
-                    <Outlet />
-                  </LiveUpdates>
+                  <Outlet />
                 </main>
               </SidebarInset>
               <BottomNav />

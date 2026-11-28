@@ -22465,6 +22465,84 @@
         }
       }
     },
+    "/api/events/page": {
+      "put": {
+        "operationId": "openPage",
+        "tags": [
+          "Live"
+        ],
+        "summary": "Say which page is open",
+        "description": "Says which page this device has open, on its live stream that's open already (the same `client`), so who's on the list or the plan changes without connecting again. A device with no stream open says its page when it connects.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "client": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "description": "This device's id, as it connected with."
+                  },
+                  "page": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "list",
+                      "plan",
+                      null
+                    ],
+                    "description": "The page open, or null for any other."
+                  }
+                },
+                "required": [
+                  "client",
+                  "page"
+                ],
+                "example": {
+                  "client": "kyle-laptop",
+                  "page": "list"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Noted."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "operationId": "checkHealth",
