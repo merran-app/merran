@@ -283,19 +283,22 @@ Built November 28, 2026, in one pull request, from [its plan](superpowers/plans/
 - **The live stream stays open across pages.** It's keyed by the person and the household, so it starts afresh when the household switches, and it reconnects itself on any error. The page open is told with the new `PUT /api/events/page`, which takes the stream's `client` and a page (`list`, `plan` or none). A new connection carries the page open now, and presence is ignored for a page the device isn't on.
 - **A recipe write announces the areas it changes** ([decision 12](#decisions)). Stand-ins and finding links announce nothing, and **Work out nutrition** announces recipes and the plan. An edit, delete, photo, swap, needs, a version put back, **Made it**, bulk changes and Recently deleted announce all four, as before. Everything else announces recipes only: a new or imported recipe, a rating, diets, pairings, sharing, cook notes, duplicates, tidying, tags, and starting library runs. After checking each service, no route needed moving up.
 
-Measured (November 28, 2026), Today's signed-in first load, as the budget measures it:
+Measured (November 28, 2026). Both columns were measured the same way: a build with a manifest and source maps, walking the manifest from the entry, the signed-in layout and the page's route chunk, with sizes from the Brotli and gzip files. The build's own budget check measures the normal build's files, and logs `Today's first load: 55 files, 363 KB with Brotli`, which is the figure it enforces.
 
 | | Before (main, `d73a82c0`) | After |
 |---|---|---|
-| Files in the first load | 152 | 55 |
-| With Brotli | 424 KB | 363 KB |
-| Raw | 1,376 KB | not measured |
 | JS files in the build | 271, 137 under 2 KB | 170, 73 under 2 KB |
-| The library's first load | 159 files, 428 KB | not measured |
-| The plan's first load | 143 files, 403 KB | not measured |
+| Today's signed-in first load | 152 files, 1,376 KB, 480 KB gzip, 424 KB Brotli | 55 files, 1,276 KB, 415 KB gzip, 359 KB Brotli |
+| The library's first load | 159 files, 428 KB Brotli | 60 files, 361 KB Brotli |
+| The plan's first load | 143 files, 403 KB Brotli | 53 files, 357 KB Brotli |
+| Then the library, after Today | 17 files, 23 KB | 12 files, 19 KB |
+| Then the plan | 7 files, 16 KB | 7 files, 14 KB |
+| Then the list | 22 files, 46 KB | 20 files, 66 KB (the foods vocabulary comes here now) |
+| Then a recipe | 18 files, 31 KB | 19 files, 53 KB (likewise) |
+| Foods vocabulary in the first load | Yes | No |
 | Fraunces, Latin | 121 KB | 67 KB |
 
-The build logs the budget as `Today's first load: 55 files, 363 KB with Brotli`. Requests, on a reload of Today: `/api/today` and `/api/plan` once each.
+Requests, on a reload of Today: `/api/today` and `/api/plan` once each.
 
 Decided while planning (November 28, 2026): decisions 11 to 14 in the [table](#decisions), the bar's 200 ms, 85% and 8 s, the common chunk's 4 pages and the icon sets' 16 KB, and the pull request's title being `perf:`.
 
