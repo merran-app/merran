@@ -1,8 +1,9 @@
-import { clockIn, plannedMeals, weekStartOf } from "@merran/shared"
 import { queryOptions, useQuery } from "@tanstack/react-query"
 
 import { householdQuery } from "@/features/household/queries"
 import { api, unwrap, type Schemas } from "@/lib/api/client"
+
+import { clockOf } from "./clock"
 
 export type PlanEntry = Schemas["PlanEntry"]
 export type PlanSnapshot = Schemas["PlanEntrySnapshot"]
@@ -35,21 +36,7 @@ export const nextMealQuery = queryOptions({
   refetchInterval: 5 * 60_000,
 })
 
-/**
- * The household's clock: today and the hour in its time zone, its week's
- * first day, and the meals it plans. Today is the household's, so everyone
- * in it sees the same day.
- */
+/** The household's clock, from the household once it's loaded. */
 export function useHouseholdClock() {
-  const { data: household } = useQuery(householdQuery)
-  const timeZone = household?.timeZone ?? "UTC"
-  const weekStartsOn = household?.weekStartsOn ?? 1
-  const { today, hour } = clockIn(timeZone)
-  return {
-    today,
-    hour,
-    weekStartsOn,
-    meals: plannedMeals(household?.meals),
-    thisWeek: weekStartOf(today, weekStartsOn),
-  }
+  return clockOf(useQuery(householdQuery).data)
 }
