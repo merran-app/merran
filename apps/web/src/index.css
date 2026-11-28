@@ -51,6 +51,18 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --animate-page-progress: page-progress 8s cubic-bezier(0.1, 0.6, 0.2, 1)
+    forwards;
+
+  /* The page-loading bar: it never reaches the end, because the load's length isn't known. */
+  @keyframes page-progress {
+    from {
+      inline-size: 0;
+    }
+    to {
+      inline-size: 85%;
+    }
+  }
 }
 
 :root {
