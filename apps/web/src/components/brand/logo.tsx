@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react"
 
+import { Wordmark } from "@/components/brand/wordmark"
 import { cn } from "@/lib/utils"
 
 /**
@@ -42,11 +43,7 @@ export function Logo({
       style={{ "--logo-accent": "var(--highlight)" } as CSSProperties}
     >
       <MerranMark className="size-8 shrink-0" />
-      {showWordmark && (
-        <span className="font-heading text-2xl leading-none font-medium tracking-tight text-foreground [font-variation-settings:'SOFT'_100]">
-          merr<span className="text-primary">a</span>n
-        </span>
-      )}
+      {showWordmark && <Wordmark className="text-2xl" />}
     </span>
   )
 }

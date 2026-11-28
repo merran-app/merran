@@ -40,7 +40,7 @@ export function AppSidebar() {
         {/* Same height as a large menu button, so the nav below stays put; the
             padding centers the mark over the nav icons. */}
         <div className="flex h-14 items-center px-1.5 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-          <Logo className="[&_svg]:size-7 group-data-[collapsible=icon]:[&_svg]:size-6 group-data-[collapsible=icon]:[&>span]:hidden" />
+          <Logo className="group-data-[collapsible=icon]:[&>span]:hidden [&>svg:first-child]:size-7 group-data-[collapsible=icon]:[&>svg:first-child]:size-6" />
         </div>
       </SidebarHeader>
 
