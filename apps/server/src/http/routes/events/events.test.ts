@@ -268,6 +268,97 @@ describe("live updates", () => {
     await listeners(0)
   })
 
+  test("say who has moved to another page, without connecting again", async () => {
+    const kyleOnList = await listen(kyle, {
+      page: "list",
+      client: "kyle-laptop",
+    })
+    expect(await kyleOnList.next()).toMatchObject({
+      event: "presence",
+      data: { page: "list", people: [{ name: "Kyle" }] },
+    })
+    const jamiePhone = await listen(jamie, {
+      page: "list",
+      client: "jamie-phone",
+    })
+    const jamieTablet = await listen(jamie, {
+      page: "plan",
+      client: "jamie-tablet",
+    })
+    expect(await jamiePhone.next()).toMatchObject({
+      event: "presence",
+      data: { page: "list" },
+    })
+    expect(await kyleOnList.next()).toMatchObject({
+      event: "presence",
+      data: { page: "list", people: [{ name: "Kyle" }, { name: "Jamie" }] },
+    })
+    expect(await jamieTablet.next()).toMatchObject({
+      event: "presence",
+      data: { page: "plan", people: [{ name: "Jamie" }] },
+    })
+
+    const moved = await kyle.put("/api/events/page", {
+      client: "kyle-laptop",
+      page: "plan",
+    })
+    expect(moved.status).toBe(204)
+
+    // Jamie's phone is on the list, and Kyle has left it.
+    expect(await jamiePhone.next()).toMatchObject({
+      event: "presence",
+      data: { page: "list", people: [{ name: "Jamie" }] },
+    })
+    // Her tablet is on the plan, and Kyle has joined her.
+    expect(await jamieTablet.next()).toMatchObject({
+      event: "presence",
+      data: { page: "plan", people: [{ name: "Kyle" }, { name: "Jamie" }] },
+    })
+    // Kyle's own stream is on the plan now, and hears who's there.
+    expect(await kyleOnList.next()).toMatchObject({
+      event: "presence",
+      data: { page: "plan", people: [{ name: "Kyle" }, { name: "Jamie" }] },
+    })
+
+    for (const stream of [kyleOnList, jamiePhone, jamieTablet]) stream.close()
+    await listeners(0)
+  })
+
+  test("a page for a stream that isn't open changes nothing", async () => {
+    const stream = await listen(jamie, { client: "jamie-phone" })
+    const moved = await kyle.put("/api/events/page", {
+      client: "nobody",
+      page: "list",
+    })
+    expect(moved.status).toBe(204)
+    // The next thing Jamie hears is the next change, not presence.
+    await typeItem(kyle, "rice")
+    expect(await stream.next()).toMatchObject({ event: "list" })
+    stream.close()
+    await listeners(0)
+  })
+
+  test("a key can't say it's on a page", async () => {
+    const key = (
+      await (
+        await kyle.post("/api/auth/api-keys", {
+          name: "Page sayer",
+          permissions: { list: "read" },
+          expiresInDays: 30,
+        })
+      ).json()
+    ).key
+    const res = await app.request(`${TEST_ORIGIN}/api/events/page`, {
+      method: "PUT",
+      headers: {
+        authorization: `Bearer ${key}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ client: "key-device", page: "list" }),
+    })
+    expect([401, 403]).toContain(res.status)
+  })
+
   test("are open to API keys, about what they can read", async () => {
     const key = (
       await (

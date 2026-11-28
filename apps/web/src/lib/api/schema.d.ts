@@ -706,6 +706,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Say which page is open
+         * @description Says which page this device has open, on its live stream that's open already (the same `client`), so who's on the list or the plan changes without connecting again. A device with no stream open says its page when it connects.
+         */
+        put: operations["openPage"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -21120,6 +21140,54 @@ export interface operations {
                 content: {
                     "text/event-stream": string;
                 };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    openPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description This device's id, as it connected with. */
+                    client: string;
+                    /**
+                     * @description The page open, or null for any other.
+                     * @enum {string|null}
+                     */
+                    page: "list" | "plan" | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Noted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Not signed in. */
             401: {

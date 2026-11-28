@@ -49,6 +49,7 @@ export type Listener = {
   person: Person | null
   /** The device listening, so it isn't told what it did itself. */
   client: string | null
+  /** The page it has open; says so again as the person moves about. */
   page: LivePage | null
   /** The areas it may hear about. */
   areas: ReadonlySet<LiveArea>
@@ -131,6 +132,39 @@ export function createEventBus() {
         if (listeners.size === 0) households.delete(householdId)
         if (listener.page) sendPresence(householdId, listener.page)
       }
+    },
+
+    /**
+     * Moves a person's stream (the one with this client) to another page,
+     * or to none, and tells the pages it left and opened who's there now.
+     * Says how many streams moved: none when that device isn't listening.
+     */
+    movePage(
+      householdId: string,
+      who: { personId: string; client: string },
+      page: LivePage | null
+    ) {
+      const moving = [...(households.get(householdId) ?? [])].filter(
+        (listener) =>
+          listener.person?.id === who.personId && listener.client === who.client
+      )
+      const left = new Set<LivePage>()
+      const arrived: Listener[] = []
+      for (const listener of moving) {
+        if (listener.page === page) continue
+        if (listener.page) left.add(listener.page)
+        listener.page = page
+        arrived.push(listener)
+      }
+      for (const each of left) sendPresence(householdId, each)
+      // Each stream that arrived is told who's there, even when nothing
+      // changed for the others already on the page.
+      if (page) {
+        for (const listener of arrived) {
+          sendPresence(householdId, page, listener)
+        }
+      }
+      return moving.length
     },
 
     /** How many are listening, across households. */
