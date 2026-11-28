@@ -43,6 +43,10 @@ An SSE parser must handle frames split across network chunks, multiple frames in
 
 For clients that also write data, supply the same client identifier in the stream's `client` parameter and each write's `X-Merran-Client` header. The connection then suppresses echoes of its own changes. Distinct devices should use distinct identifiers; a shared identifier can hide changes from each other.
 
+## Say which page is open
+
+A stream opened with `page=list` or `page=plan` (and a `client`) tells the household who else has that page open. The Merran web app keeps one stream open as you move between pages, so it says its page as it changes with `PUT /api/events/page`, with the same `client` as the stream and a `page` of `list`, `plan` or `null` for any other. The answer is `204`, and the `presence` event follows. It takes a browser session: an API key isn't a person on a page, so a client that only listens has no use for it.
+
 ## Reconnect and recover
 
 The stream does not provide a replay cursor or durable event history. After reconnecting, fetch a fresh snapshot of each permitted area, then continue processing events. Use bounded reconnect backoff, close unused streams, and respect authentication failures and rate limits instead of reconnecting continuously. Coalesce bursts of events so one busy household does not produce unnecessary API requests.
