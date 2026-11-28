@@ -15,7 +15,10 @@ test("the list and the plan are pages with people on them", () => {
 test("the stream is wanted in the app and the cook view, not on sign-in or a shared recipe", () => {
   assert.equal(liveWanted(["__root__", "/_app", "/_app/"]), true)
   assert.equal(liveWanted(["__root__", "/_app", "/_app/plan"]), true)
-  assert.equal(liveWanted(["__root__", "/_focus", "/_focus/cook"]), true)
+  assert.equal(
+    liveWanted(["__root__", "/_focus", "/_focus/recipes/$slug/cook"]),
+    true
+  )
   assert.equal(liveWanted(["__root__", "/login"]), false)
   assert.equal(liveWanted(["__root__", "/r/$token/"]), false)
   assert.equal(liveWanted(["__root__", "/r/$token/cook"]), false)

@@ -137,7 +137,7 @@ export function createEventBus() {
     /**
      * Moves a person's stream (the one with this client) to another page,
      * or to none, and tells the pages it left and opened who's there now.
-     * Says how many streams moved: none when that device isn't listening.
+     * Says how many streams moved: none when that device isn't listening, or is on that page already.
      */
     movePage(
       householdId: string,
@@ -164,7 +164,7 @@ export function createEventBus() {
           sendPresence(householdId, page, listener)
         }
       }
-      return moving.length
+      return arrived.length
     },
 
     /** How many are listening, across households. */
