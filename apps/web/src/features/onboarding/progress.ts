@@ -15,3 +15,12 @@ export function checklistCanChange(
   if (onboarding.dismissed) return false
   return Object.values(onboarding.progress).includes(false)
 }
+
+/**
+ * Whether a query that just loaded can have changed a checklist step: the
+ * recipes, the plan and the list are what the steps count, and Today's
+ * summary carries all of them, so it's the one that loads on that page.
+ */
+export function mayChangeChecklist(queryKey: readonly unknown[]): boolean {
+  return ["recipes", "plan", "list", "today"].includes(String(queryKey[0]))
+}

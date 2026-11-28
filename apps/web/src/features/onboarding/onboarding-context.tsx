@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { useActiveHousehold, useMe } from "@/features/auth/use-me"
 import { api, unwrap, type Schemas } from "@/lib/api/client"
-import { checklistCanChange } from "./progress"
+import { checklistCanChange, mayChangeChecklist } from "./progress"
 import { onboardingQuery } from "./queries"
 
 function useStateForOnboarding() {
@@ -54,11 +54,10 @@ function useStateForOnboarding() {
     const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
       // Both local actions and live updates refresh these queries. Keep the
       // checklist current without waiting for navigation or polling the API.
+      // On Today the recipes, plan and list come in one "today" query, so
+      // that counts too.
       if (event.type !== "updated" || event.action.type !== "success") return
-      if (
-        !["recipes", "plan", "list"].includes(String(event.query.queryKey[0]))
-      )
-        return
+      if (!mayChangeChecklist(event.query.queryKey)) return
       clearTimeout(pending)
       pending = setTimeout(() => {
         void queryClient.invalidateQueries({

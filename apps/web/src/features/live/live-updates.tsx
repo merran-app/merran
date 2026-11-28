@@ -10,7 +10,7 @@ import { useJobNotice } from "@/features/jobs/use-job-notice"
 import { api, CLIENT_ID } from "@/lib/api/client"
 
 import { gatherChanges } from "./gather"
-import { heardFromLive, LIVE_REFRESH, lostLive } from "./state"
+import { everyLiveKey, heardFromLive, LIVE_REFRESH, lostLive } from "./state"
 import { liveWanted, pageOf, type LivePage } from "./where"
 
 export type Person = { id: string; name: string }
@@ -174,7 +174,7 @@ function LiveConnection({
         // Back after a gap: catch up on whatever changed meanwhile.
         if (opened) {
           changes.stop()
-          refresh(Object.values(LIVE_REFRESH).flat())
+          refresh(everyLiveKey())
         }
         opened = true
         stream.current.ready = true

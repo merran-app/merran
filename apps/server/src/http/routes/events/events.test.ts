@@ -384,6 +384,21 @@ describe("live updates", () => {
     await listeners(0)
   })
 
+  test("a PUT naming another person's client moves nothing", async () => {
+    const stream = await listen(jamie, { client: "jamie-phone" })
+    // Kyle names Jamie's device: a client id belongs to its person alone.
+    const moved = await kyle.put("/api/events/page", {
+      client: "jamie-phone",
+      page: "list",
+    })
+    expect(moved.status).toBe(204)
+    // The next thing Jamie hears is the next change, not presence.
+    await typeItem(kyle, "flour")
+    expect(await stream.next()).toMatchObject({ event: "list" })
+    stream.close()
+    await listeners(0)
+  })
+
   test("a key can't say it's on a page", async () => {
     const key = (
       await (
@@ -402,7 +417,7 @@ describe("live updates", () => {
       },
       body: JSON.stringify({ client: "key-device", page: "list" }),
     })
-    expect([401, 403]).toContain(res.status)
+    expect(res.status).toBe(403)
   })
 
   test("are open to API keys, about what they can read", async () => {

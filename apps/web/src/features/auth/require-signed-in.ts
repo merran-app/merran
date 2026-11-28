@@ -21,8 +21,9 @@ export async function requireSignedIn(queryClient: QueryClient, href: string) {
   if (me?.requiresTwoFactor)
     throw redirect({ to: "/verify", search: { redirect: href } })
   if (me) {
-    // Wait only for a household not seen yet; one already known is refreshed
-    // behind the page as it always was.
+    // Wait only for a household not seen yet. One already known is never
+    // waited for: it's refreshed in the background when it's stale (every
+    // 30 seconds while the live stream is down).
     if (!queryClient.getQueryData(householdQuery.queryKey)) await household
     // The person's own language, before any page of the app draws.
     return applyLanguage(me.language)

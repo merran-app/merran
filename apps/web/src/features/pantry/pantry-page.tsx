@@ -10,7 +10,7 @@ import {
   SnowIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { addDays, useSoonOrder } from "@merran/shared"
+import { addDays, useSoonRank } from "@merran/shared"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import * as React from "react"
@@ -96,7 +96,7 @@ export function PantryPage() {
   const items = pantry.data?.items ?? []
   const soon = items
     .filter((item) => item.useSoon)
-    .sort((a, b) => useSoonOrder(a.useSoon!) - useSoonOrder(b.useSoon!))
+    .sort((a, b) => useSoonRank(a.useSoon!) - useSoonRank(b.useSoon!))
   const places = [...STORAGE_PLACES, null].map((place) => ({
     place,
     items: items.filter((item) => item.storedIn === place),
