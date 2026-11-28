@@ -38,8 +38,25 @@ const CHANGES: [RegExp, LiveArea[]][] = [
   // What ran out cooking is used up, and goes on the list.
   [/^\/api\/pantry\/ran-out$/, ["pantry", "list"]],
   [/^\/api\/pantry(\/|$)/, ["pantry"]],
-  // Made it cooks the meal; Recently deleted takes meals off the plan.
-  [/^\/api\/recipes(\/|$)/, ["recipes", "plan", "list", "pantry"]],
+  // Recipes, most specific first. Nothing's saved by asking for stand-ins or
+  // by finding links in some text.
+  [/^\/api\/recipes\/(import\/links\/check|[^/]+\/stand-ins)$/, []],
+  // The plan's nutrition totals follow a recipe's nutrition. (The
+  // library-wide run, at /api/recipes/nutrition, falls to the last rule.)
+  [/^\/api\/recipes\/[^/]+\/nutrition$/, ["recipes", "plan"]],
+  // What the plan, the list and the pantry show of a recipe (its name,
+  // photo, servings, lines and what's left out) changes with an edit, a
+  // swap, what it needs, a photo or a restored version; Made it cooks a
+  // meal; and Recently deleted takes meals off the plan. A recipe's own
+  // path is any one part but the names of the collections beside it.
+  [
+    /^\/api\/recipes\/(bulk|deleted(\/.*)?|(?!(?:import|nutrition|photos|tidy|tags|duplicates)$)[^/]+(\/(photo|photo\/make|swap|needs|made|versions\/[^/]+\/restore))?)$/,
+    ["recipes", "plan", "list", "pantry"],
+  ],
+  // The rest only show in recipes, Review and tags: a new recipe, an
+  // import, a rating, diets, pairings, sharing, cook notes, duplicates,
+  // tags, and the library runs (which tell of their own work as they go).
+  [/^\/api\/recipes(\/|$)/, ["recipes"]],
   // Shared to Merran, sites followed, a collection imported, a search for
   // more: recipes, and the shelf and searches kept with them.
   [/^\/api\/(share|sites|collections|discover|imports)(\/|$)/, ["recipes"]],
