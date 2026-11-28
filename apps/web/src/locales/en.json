@@ -1,6 +1,7 @@
 {
   "app": {
-    "home": "Merran home"
+    "home": "Merran home",
+    "loadingPage": "Loading the page"
   },
   "nav": {
     "main": "Main",
