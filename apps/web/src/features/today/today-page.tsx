@@ -9,8 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AiLimitNote } from "@/features/ai/household/status"
 import { useMe } from "@/features/auth/use-me"
 import { InstallBanner } from "@/features/install/install-ui"
-import { listQuery } from "@/features/list/queries"
-import { pantryQuery } from "@/features/pantry/queries"
 import { Fact, MealHero } from "@/features/plan/next-meal-card"
 import {
   planQuery,
@@ -23,7 +21,7 @@ import { AutoplanNote } from "./autoplan-note"
 import { ComingUp } from "./coming-up"
 import { DidYouMake } from "./did-you-make"
 import { Glance } from "./glance"
-import { recentRecipesQuery } from "./queries"
+import { todayQuery } from "./queries"
 import { Shelves } from "./shelves"
 import { TonightIdea } from "./tonight-idea"
 import { Welcome } from "./welcome"
@@ -57,7 +55,7 @@ export function TodayPage() {
   useMinute()
   const clock = useHouseholdClock()
   const plan = useQuery(planQuery(clock.thisWeek, addDays(clock.today, 7)))
-  const recent = useQuery(recentRecipesQuery)
+  const summary = useQuery(todayQuery)
 
   const greeting =
     clock.hour < 5 || clock.hour >= 17
@@ -107,7 +105,7 @@ export function TodayPage() {
       <InstallBanner />
       <FirstMealChecklist />
 
-      {recent.data?.total === 0 ? (
+      {summary.data?.recipes?.total === 0 ? (
         onboarding?.dismissed ? (
           <Welcome />
         ) : null
@@ -148,14 +146,11 @@ function UpNext({
   others: PlanEntry[]
 }) {
   const { t, i18n } = useTranslation()
-  const list = useQuery(listQuery)
-  const pantry = useQuery(pantryQuery)
-  const listed = (list.data?.items ?? []).some(
-    (item) => !item.checked && item.meals.some((meal) => meal.id === entry.id)
-  )
-  const home = (pantry.data?.items ?? [])
-    .filter((item) => item.meals.some((meal) => meal.id === entry.id))
-    .map((item) => item.name)
+  const summary = useQuery(todayQuery)
+  const listed = summary.data?.list?.meals.includes(entry.id) ?? false
+  const home =
+    summary.data?.pantry?.meals.find((meal) => meal.id === entry.id)?.names ??
+    []
   const names = new Intl.ListFormat(i18n.language, { type: "conjunction" })
   return (
     <MealHero

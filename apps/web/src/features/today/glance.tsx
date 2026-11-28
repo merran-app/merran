@@ -1,14 +1,14 @@
-import { addDays, firstOpenMeal, useSoonOrder } from "@merran/shared"
+import { addDays, firstOpenMeal } from "@merran/shared"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 
-import { listQuery } from "@/features/list/queries"
-import { pantryQuery } from "@/features/pantry/queries"
 import { missedMeal, useDayLabel } from "@/features/pantry/use-soon"
 import { formatWeekday } from "@/features/plan/format"
 import { useHouseholdClock, type PlanEntry } from "@/features/plan/queries"
 import { cn } from "@/lib/utils"
+
+import { todayQuery } from "./queries"
 
 type Tile = {
   to: "/plan" | "/list" | "/pantry"
@@ -26,8 +26,7 @@ type Tile = {
 export function Glance({ entries }: { entries: PlanEntry[] }) {
   const { t, i18n } = useTranslation()
   const clock = useHouseholdClock()
-  const list = useQuery(listQuery)
-  const pantry = useQuery(pantryQuery)
+  const summary = useQuery(todayQuery)
   const dayLabel = useDayLabel()
   const names = new Intl.ListFormat(i18n.language, { type: "conjunction" })
 
@@ -41,11 +40,11 @@ export function Glance({ entries }: { entries: PlanEntry[] }) {
   const filled = new Set(week.map((entry) => `${entry.date} ${entry.meal}`))
   const open = firstOpenMeal(week, { ...clock, meals: clock.meals })
 
-  const left = (list.data?.items ?? []).filter((item) => !item.checked)
+  const toBuy = summary.data?.list?.toBuy ?? 0
+  const toBuyNames = summary.data?.list?.names ?? []
 
-  const soon = (pantry.data?.items ?? [])
-    .filter((item) => item.useSoon)
-    .sort((a, b) => useSoonOrder(a.useSoon!) - useSoonOrder(b.useSoon!))
+  // The summary has them most urgent first.
+  const soon = summary.data?.pantry?.useSoon ?? []
   const first = soon[0]
   const when = (() => {
     const use = first?.useSoon
@@ -78,13 +77,10 @@ export function Glance({ entries }: { entries: PlanEntry[] }) {
       to: "/list",
       label: t("today.tiles.shopping"),
       value:
-        left.length > 0
-          ? t("today.tiles.toBuy", { count: left.length })
+        toBuy > 0
+          ? t("today.tiles.toBuy", { count: toBuy })
           : t("today.tiles.nothingToBuy"),
-      detail:
-        left.length > 0
-          ? names.format(left.slice(0, 3).map((item) => item.name))
-          : t("today.tiles.fromPlan"),
+      detail: toBuy > 0 ? names.format(toBuyNames) : t("today.tiles.fromPlan"),
     },
     ...(first
       ? [

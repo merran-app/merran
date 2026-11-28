@@ -1,28 +1,27 @@
 import { queryOptions } from "@tanstack/react-query"
 
-import { api, unwrap } from "@/lib/api/client"
+import { api, unwrap, type Schemas } from "@/lib/api/client"
 
-// What Today shows of the recipes. Under "recipes", so changes to them
-// fetch these again.
+export type TodaySummary = Schemas["Today"]
 
-/** What was added lately, and how many recipes there are in all. */
-export const recentRecipesQuery = queryOptions({
-  queryKey: ["recipes", "today", "recent"],
-  queryFn: () =>
-    unwrap(
-      api.GET("/api/recipes", {
-        params: { query: { sort: "newest", limit: 6 } },
-      })
-    ),
+/**
+ * What Today shows of the list, the pantry and the recipes, in one request.
+ * It's always asked again when Today opens: it depends on the day (what's
+ * to use soon, what's not been made in three weeks), and the live stream
+ * only says when something changed, not that the day did. Until the answer
+ * comes, Today shows what it has.
+ */
+export const todayQuery = queryOptions({
+  queryKey: ["today"],
+  queryFn: () => unwrap(api.GET("/api/today")),
+  staleTime: 0,
 })
 
-/** The best rated, to find favorites not made lately among. */
-export const topRatedQuery = queryOptions({
-  queryKey: ["recipes", "today", "top"],
-  queryFn: () =>
-    unwrap(
-      api.GET("/api/recipes", {
-        params: { query: { sort: "rating", limit: 48 } },
-      })
-    ),
+/**
+ * Past meals nobody marked. Under "plan", so a meal answered on another
+ * phone leaves this one too.
+ */
+export const unmarkedQuery = queryOptions({
+  queryKey: ["plan", "unmarked"],
+  queryFn: () => unwrap(api.GET("/api/plan/unmarked")),
 })
