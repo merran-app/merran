@@ -24,7 +24,7 @@ const UseSoonSchema = z
       "Why to use it soon: its use-by date has gone (`past`) or is close (`soon`), or it's fresh food bought for meals that were skipped or went by uncooked (`leftover`).",
   })
 
-const ITEM = {
+export const ITEM = {
   id: IDS.pantryItems[0],
   name: "chicken thighs",
   amount: "2 lb",

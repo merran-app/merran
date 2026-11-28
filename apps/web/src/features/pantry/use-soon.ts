@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { formatMonthDay, formatShortWeekday } from "@/features/plan/format"
 import { useHouseholdClock } from "@/features/plan/queries"
 
-import type { PantryItem, UseSoon } from "./queries"
+import type { PantryItem } from "./queries"
 
 // Saying when to use food: the pantry's and Today's.
 
@@ -28,10 +28,6 @@ export function useDayLabel() {
           ? formatShortWeekday(day, i18n.language)
           : formatMonthDay(day, i18n.language)
 }
-
-/** Most urgent first: past dates, then by date, then leftovers. */
-export const urgency = (soon: UseSoon) =>
-  soon.kind === "leftover" ? Number.MAX_SAFE_INTEGER : Date.parse(soon.date)
 
 /** The meal a leftover was bought for: the one skipped, or gone by uncooked. */
 export function missedMeal(item: PantryItem, today: string) {

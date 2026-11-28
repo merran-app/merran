@@ -79,6 +79,10 @@
       "description": "What's at home, in the fridge, the freezer and the cupboard: what to use soon, and what's set aside for planned meals. Shopping put away goes in, and cooking a planned meal uses it up."
     },
     {
+      "name": "Today",
+      "description": "What Today shows at a glance: what's left to buy, what to use soon, and recipes to cook again, in one request."
+    },
+    {
       "name": "Live",
       "description": "What changes in the household, as it happens: the live updates the app uses, and who has the list open."
     },
@@ -19009,6 +19013,238 @@
           "households": "1",
           "people": "2-5",
           "recipes": "100-499"
+        }
+      },
+      "Today": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "toBuy": {
+                "type": "number",
+                "description": "How many things on the list aren't checked off."
+              },
+              "names": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "The first three of them, in the list's order."
+              },
+              "meals": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "The planned meals they're for, by plan entry id, each once."
+              }
+            },
+            "required": [
+              "toBuy",
+              "names",
+              "meals"
+            ],
+            "description": "What's left to buy, or null for a key that can't read the list."
+          },
+          "pantry": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "useSoon": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PantryItem"
+                },
+                "description": "What to use soon, most urgent first."
+              },
+              "meals": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "The plan entry's id."
+                    },
+                    "names": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Up to four things set aside for it, in the pantry's order."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "names"
+                  ]
+                },
+                "description": "The planned meals something at home is set aside for."
+              }
+            },
+            "required": [
+              "useSoon",
+              "meals"
+            ],
+            "description": "What's at home, or null for a key that can't read the pantry."
+          },
+          "recipes": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "total": {
+                "type": "number",
+                "description": "How many recipes, in all."
+              },
+              "recent": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RecipeSummary"
+                },
+                "description": "The six newest."
+              },
+              "cookAgain": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RecipeSummary"
+                },
+                "description": "Up to six favorites to cook again: rated four stars or more and not made in three weeks, from the 48 top rated."
+              }
+            },
+            "required": [
+              "total",
+              "recent",
+              "cookAgain"
+            ],
+            "description": "The recipes, or null for a key that can't read recipes."
+          }
+        },
+        "required": [
+          "list",
+          "pantry",
+          "recipes"
+        ],
+        "description": "What Today shows at a glance. A part is null when an API key can't read its area.",
+        "example": {
+          "list": {
+            "toBuy": 7,
+            "names": [
+              "milk",
+              "eggs",
+              "lemons"
+            ],
+            "meals": [
+              "0199e8b0-5a10-7a01-8b00-00000000001b"
+            ]
+          },
+          "pantry": {
+            "useSoon": [
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+                "name": "chicken thighs",
+                "amount": "2 lb",
+                "quantity": 2,
+                "unit": "pound",
+                "amountText": null,
+                "storedIn": "fridge",
+                "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+                "useBy": "2026-10-18",
+                "meals": [
+                  {
+                    "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                    "name": "Lemon Chicken",
+                    "date": "2026-10-17",
+                    "status": "planned",
+                    "onList": true,
+                    "amount": "2 lb",
+                    "short": null
+                  }
+                ],
+                "useSoon": {
+                  "kind": "soon",
+                  "date": "2026-10-18"
+                },
+                "createdAt": "2026-10-15T18:30:00.000Z"
+              }
+            ],
+            "meals": [
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                "names": [
+                  "chicken thighs"
+                ]
+              }
+            ]
+          },
+          "recipes": {
+            "total": 1,
+            "recent": [
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken",
+                "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+                "servings": 4,
+                "totalMinutes": 50,
+                "rating": 5,
+                "tags": [
+                  "chicken",
+                  "dinner"
+                ],
+                "diets": [
+                  "gluten-free",
+                  "dairy-free",
+                  "egg-free",
+                  "nut-free"
+                ],
+                "photo": {
+                  "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+                  "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+                  "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
+                },
+                "lastMadeAt": "2026-10-09T01:15:00.000Z",
+                "createdAt": "2026-10-01T17:30:00.000Z",
+                "updatedAt": "2026-10-15T18:30:00.000Z"
+              }
+            ],
+            "cookAgain": [
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken",
+                "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+                "servings": 4,
+                "totalMinutes": 50,
+                "rating": 5,
+                "tags": [
+                  "chicken",
+                  "dinner"
+                ],
+                "diets": [
+                  "gluten-free",
+                  "dairy-free",
+                  "egg-free",
+                  "nut-free"
+                ],
+                "photo": {
+                  "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+                  "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+                  "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
+                },
+                "lastMadeAt": "2026-10-09T01:15:00.000Z",
+                "createdAt": "2026-10-01T17:30:00.000Z",
+                "updatedAt": "2026-10-15T18:30:00.000Z"
+              }
+            ]
+          }
         }
       },
       "HouseholdVoice": {
@@ -40735,6 +40971,60 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TelemetryStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/today": {
+      "get": {
+        "operationId": "getToday",
+        "tags": [
+          "Today"
+        ],
+        "summary": "Today at a glance",
+        "description": "What's left to buy, what to use soon, and recipes to cook again, in one request. An API key gets the parts it can read, and the others are null. With an API key, it needs the `any: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "x-merran-permission": "any:read",
+        "responses": {
+          "200": {
+            "description": "What Today shows.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Today"
                 }
               }
             }
