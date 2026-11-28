@@ -1,11 +1,11 @@
-import { addDays, firstOpenMeal } from "@merran/shared"
+import { addDays, firstOpenMeal, useSoonOrder } from "@merran/shared"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 
 import { listQuery } from "@/features/list/queries"
 import { pantryQuery } from "@/features/pantry/queries"
-import { missedMeal, urgency, useDayLabel } from "@/features/pantry/use-soon"
+import { missedMeal, useDayLabel } from "@/features/pantry/use-soon"
 import { formatWeekday } from "@/features/plan/format"
 import { useHouseholdClock, type PlanEntry } from "@/features/plan/queries"
 import { cn } from "@/lib/utils"
@@ -45,7 +45,7 @@ export function Glance({ entries }: { entries: PlanEntry[] }) {
 
   const soon = (pantry.data?.items ?? [])
     .filter((item) => item.useSoon)
-    .sort((a, b) => urgency(a.useSoon!) - urgency(b.useSoon!))
+    .sort((a, b) => useSoonOrder(a.useSoon!) - useSoonOrder(b.useSoon!))
   const first = soon[0]
   const when = (() => {
     const use = first?.useSoon

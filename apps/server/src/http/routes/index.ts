@@ -21,6 +21,7 @@ import sharedRoutes from "./shared/index.ts"
 import sitesRoutes from "./sites/index.ts"
 import storesRoutes from "./stores/index.ts"
 import telemetryRoutes from "./telemetry/index.ts"
+import todayRoutes from "./today/index.ts"
 import voiceRoutes from "./voice/index.ts"
 
 /**
@@ -50,5 +51,6 @@ export default (router: Router, deps: AppDeps) => {
   sitesRoutes(router, deps)
   storesRoutes(router, deps)
   telemetryRoutes(router, deps)
+  todayRoutes(router, deps)
   voiceRoutes(router, deps)
 }

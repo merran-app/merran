@@ -85,6 +85,11 @@ const TAGS = [
       "What's at home, in the fridge, the freezer and the cupboard: what to use soon, and what's set aside for planned meals. Shopping put away goes in, and cooking a planned meal uses it up.",
   },
   {
+    name: "Today",
+    description:
+      "What Today shows at a glance: what's left to buy, what to use soon, and recipes to cook again, in one request.",
+  },
+  {
     name: "Live",
     description:
       "What changes in the household, as it happens: the live updates the app uses, and who has the list open.",

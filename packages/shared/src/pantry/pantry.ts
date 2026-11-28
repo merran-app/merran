@@ -103,3 +103,16 @@ export function whyUseSoon(
   )
   return missed && !upcoming ? { kind: "leftover" } : null
 }
+
+/**
+ * Where something to use soon sorts: most urgent first, past dates, then
+ * by date, then leftovers.
+ */
+export function useSoonOrder(soon: {
+  kind: "past" | "soon" | "leftover"
+  date?: string
+}) {
+  return soon.kind === "leftover" || !soon.date
+    ? Number.MAX_SAFE_INTEGER
+    : Date.parse(soon.date)
+}

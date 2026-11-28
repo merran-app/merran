@@ -4949,6 +4949,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Today at a glance
+         * @description What's left to buy, what to use soon, and recipes to cook again, in one request. An API key gets the parts it can read, and the others are null. With an API key, it needs the `any: read` permission.
+         */
+        get: operations["getToday"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/voice": {
         parameters: {
             query?: never;
@@ -18867,6 +18887,154 @@ export interface components {
             households: string;
             people: string;
             recipes: string;
+        };
+        /**
+         * @description What Today shows at a glance. A part is null when an API key can't read its area.
+         * @example {
+         *       "list": {
+         *         "toBuy": 7,
+         *         "names": [
+         *           "milk",
+         *           "eggs",
+         *           "lemons"
+         *         ],
+         *         "meals": [
+         *           "0199e8b0-5a10-7a01-8b00-00000000001b"
+         *         ]
+         *       },
+         *       "pantry": {
+         *         "useSoon": [
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *             "name": "chicken thighs",
+         *             "amount": "2 lb",
+         *             "quantity": 2,
+         *             "unit": "pound",
+         *             "amountText": null,
+         *             "storedIn": "fridge",
+         *             "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *             "useBy": "2026-10-18",
+         *             "meals": [
+         *               {
+         *                 "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *                 "name": "Lemon Chicken",
+         *                 "date": "2026-10-17",
+         *                 "status": "planned",
+         *                 "onList": true,
+         *                 "amount": "2 lb",
+         *                 "short": null
+         *               }
+         *             ],
+         *             "useSoon": {
+         *               "kind": "soon",
+         *               "date": "2026-10-18"
+         *             },
+         *             "createdAt": "2026-10-15T18:30:00.000Z"
+         *           }
+         *         ],
+         *         "meals": [
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *             "names": [
+         *               "chicken thighs"
+         *             ]
+         *           }
+         *         ]
+         *       },
+         *       "recipes": {
+         *         "total": 1,
+         *         "recent": [
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken",
+         *             "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *             "servings": 4,
+         *             "totalMinutes": 50,
+         *             "rating": 5,
+         *             "tags": [
+         *               "chicken",
+         *               "dinner"
+         *             ],
+         *             "diets": [
+         *               "gluten-free",
+         *               "dairy-free",
+         *               "egg-free",
+         *               "nut-free"
+         *             ],
+         *             "photo": {
+         *               "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+         *               "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *               "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
+         *             },
+         *             "lastMadeAt": "2026-10-09T01:15:00.000Z",
+         *             "createdAt": "2026-10-01T17:30:00.000Z",
+         *             "updatedAt": "2026-10-15T18:30:00.000Z"
+         *           }
+         *         ],
+         *         "cookAgain": [
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken",
+         *             "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *             "servings": 4,
+         *             "totalMinutes": 50,
+         *             "rating": 5,
+         *             "tags": [
+         *               "chicken",
+         *               "dinner"
+         *             ],
+         *             "diets": [
+         *               "gluten-free",
+         *               "dairy-free",
+         *               "egg-free",
+         *               "nut-free"
+         *             ],
+         *             "photo": {
+         *               "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+         *               "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e",
+         *               "thumb": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=thumb&v=4b1c2d3e"
+         *             },
+         *             "lastMadeAt": "2026-10-09T01:15:00.000Z",
+         *             "createdAt": "2026-10-01T17:30:00.000Z",
+         *             "updatedAt": "2026-10-15T18:30:00.000Z"
+         *           }
+         *         ]
+         *       }
+         *     }
+         */
+        Today: {
+            /** @description What's left to buy, or null for a key that can't read the list. */
+            list: {
+                /** @description How many things on the list aren't checked off. */
+                toBuy: number;
+                /** @description The first three of them, in the list's order. */
+                names: string[];
+                /** @description The planned meals they're for, by plan entry id, each once. */
+                meals: string[];
+            } | null;
+            /** @description What's at home, or null for a key that can't read the pantry. */
+            pantry: {
+                /** @description What to use soon, most urgent first. */
+                useSoon: components["schemas"]["PantryItem"][];
+                /** @description The planned meals something at home is set aside for. */
+                meals: {
+                    /** @description The plan entry's id. */
+                    id: string;
+                    /** @description Up to four things set aside for it, in the pantry's order. */
+                    names: string[];
+                }[];
+            } | null;
+            /** @description The recipes, or null for a key that can't read recipes. */
+            recipes: {
+                /** @description How many recipes, in all. */
+                total: number;
+                /** @description The six newest. */
+                recent: components["schemas"]["RecipeSummary"][];
+                /** @description Up to six favorites to cook again: rated four stars or more and not made in three weeks, from the 48 top rated. */
+                cookAgain: components["schemas"]["RecipeSummary"][];
+            } | null;
         };
         /**
          * @example {
@@ -33708,6 +33876,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TelemetryStatus"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getToday: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What Today shows. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Today"];
                 };
             };
             /** @description Not signed in. */
