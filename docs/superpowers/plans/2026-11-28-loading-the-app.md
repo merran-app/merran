@@ -6,11 +6,11 @@
 
 **Architecture:** Web: route loaders that start a page's queries without throwing, the household fetched alongside the sign-in check, a pure household clock that loaders and pages share, a progress bar on the router's pending state, `@merran/shared` marked free of side effects, and Rolldown code-splitting groups with a size budget checked by every build. Server: `GET /api/today` (Today's summary), `PUT /api/events/page` (the page open, told over a stream that stays open), onboarding that remembers progress as it's read, and fewer areas announced per recipe write.
 
-**Tech Stack:** Vite 8.3 on Rolldown 1.2 (`build.rolldownOptions.output.codeSplitting`), TanStack Router 1.170 (loaders, `loaderDeps`, the loader's `cause`, `defaultPreloadStaleTime`), TanStack Query 5.108, `@fontsource-variable/fraunces` 5.3, Hono with OpenAPI, MikroORM 7.2, vitest (server), node:test (web).
+**Tech Stack:** Vite 8.3 on Rolldown 1.2 (`build.rolldownOptions.output.codeSplitting`), TanStack Router 1.170 (loaders, `loaderDeps`, `defaultPreloadStaleTime`), TanStack Query 5.108, `@fontsource-variable/fraunces` 5.3, Hono with OpenAPI, MikroORM 7.2, vitest (server), node:test (web).
 
 **Branch:** `perf/loading`, made from this worktree's branch, which has the plan.
 
-**Spec:** [docs/performance.md](../../performance.md): slice 8's row in The plan, the findings under [The web app](../../performance.md#the-web-app) from "`@merran/shared` is one 109 KB chunk" on, and what slice 1 left there (announcing fewer areas, and keeping the stream open across pages). Decisions 11 to 14 in its [Decisions](../../performance.md#decisions) table are open for the user; the tasks that depend on them say so.
+**Spec:** [docs/performance.md](../../performance.md): slice 8's row in The plan, the findings under [The web app](../../performance.md#the-web-app) from "`@merran/shared` is one 109 KB chunk" on, and what slice 1 left there (announcing fewer areas, and keeping the stream open across pages). Decisions 11 to 14 in its [Decisions](../../performance.md#decisions) table were decided on November 28, 2026: Fraunces with weight and optical size and the wordmark drawn as SVG (Task 3); fewer areas per recipe write, in this slice (Task 11); pages that show at once, with skeletons, rather than waiting for their data (Tasks 6 and 7); and a size budget in every build (Task 2).
 
 ## Measured (November 28, 2026)
 
@@ -42,7 +42,7 @@ For the user to confirm with the plan:
 3. **The household is fetched alongside the sign-in check,** not added to `/api/auth/me`: no API change, and the two requests go at once.
 4. **Today's summary is one new route, `GET /api/today`,** open to API keys as the live stream is: each part (`list`, `pantry`, `recipes`) is null for a key that can't read its area. It shows what Today shows now, worked out the same way: cook again is chosen from the 48 best rated by `cookAgain`.
 5. **Today asks for its summary each time it opens,** in the background while the last one shows (`staleTime: 0`), so what you changed on another page is right on Today. Other people's and other devices' changes come over the live stream.
-6. **Loaders don't throw.** They start a page's queries and wait for them however they end (`preloadQuery`), so a page whose data fails still opens and shows its own error or empty state, as it does now. The list, the pantry and the recipe pages keep their `ensureQueryData` loaders.
+6. **Loaders start a page's data and don't wait for it** (decision 13): Today, the library and the plan show at once with the skeletons they have, and fill in as their data comes. Their loaders start the queries alongside the page's code (`preloadQuery`, which never throws, so a page whose data fails still opens and shows its own error or empty state, as now). The pages that wait already (the list, the pantry, a recipe, its editor and cook view, Settings) are drawn from loaded data, with no skeletons, so they keep their `ensureQueryData` loaders and wait, with the progress bar.
 7. **Reading onboarding remembers new progress** (at most four writes per household, ever) and counts only what isn't remembered yet. The web app stops sending `recordProgress`, which the API still takes.
 8. **The live stream stays open while someone's signed in,** across the app's pages and the cook view. The page open is told with `PUT /api/events/page`, so who's on the list or the plan changes at once, without connecting again.
 9. **Nothing breaks:** two new routes, no changed ones. The pull request's title is `perf:`.
@@ -62,7 +62,7 @@ For the user to confirm with the plan:
 ## Review Focus
 
 1. **Someone signed out, or asked for a second factor.** The household request now goes out with the sign-in check: it must not hold up the redirect to sign in, setup or verify, and its refused answer mustn't stop the household loading once they've signed in. Checked in Task 4's browser steps.
-2. **Typing in the library's search.** A loader runs for every change of search; a page must never wait on the router for its own search or filter changes, or the box would lag and the bar would flash. Pinned by `waitOnOpen` in Task 4 and checked in Task 7.
+2. **Typing in the library's search.** A loader runs for every change of search; the page must never wait on the router for its own search or filter changes, or the box would lag and the bar would flash. The library's loader returns without waiting (Task 7), checked in Task 7's browser steps.
 3. **Today after a change made elsewhere on this device.** Live events don't come back to the device that made the change, so checking things off the list and going back to Today must still show the new count. `staleTime: 0` in Task 6, checked in its browser steps.
 4. **Presence when the page changes before the stream is open, or while it's reconnecting.** The page told by `PUT` is lost if no stream is open; the next connection must carry the page open then. Pinned in Task 10.
 5. **Grouped chunks loading in the wrong order.** Moving modules into a common chunk changes which file defines what; a page could fail with "Cannot access … before initialization" only in a production build. Task 2 opens every main page from a production build.
@@ -82,7 +82,7 @@ For the user to confirm with the plan:
 
 ### Task 2: Small chunks grouped, with a budget the build checks
 
-Decision 14 sets the budget; if it's declined, keep the grouping and drop `budgetPlugin` and its test.
+Decision 14: the budget, with the limits recommended.
 
 **Files:**
 - Create: `apps/web/build/budget.ts`, `apps/web/build/budget.test.ts`
@@ -137,7 +137,7 @@ groups: [
 
 ### Task 3: Fraunces with only the axes it shows
 
-Decision 11. These steps are for its recommendation, weight and optical size with the wordmark drawn as SVG. Weight only (`wght.css`) or weight and SOFT (`soft.css`) is Step 3 alone; keeping all of it skips the task.
+Decision 11: weight and optical size, with the wordmark drawn as SVG.
 
 **Files:**
 - Create: `apps/web/src/components/brand/wordmark.tsx`
@@ -168,12 +168,11 @@ Decision 11. These steps are for its recommendation, weight and optical size wit
 - Produces, in `lib/loaders.ts` (imports only `@tanstack/react-query`):
   - `preloadQuery(queryClient: QueryClient, options: Parameters<QueryClient["ensureQueryData"]>[0]): Promise<void>`, taking the `queryOptions(...)` a page's query uses: `ensureQueryData`, settling whether it worked or not.
   - `preloadInfiniteQuery(queryClient: QueryClient, options: Parameters<QueryClient["ensureInfiniteQueryData"]>[0]): Promise<void>`: the same with `ensureInfiniteQueryData`.
-  - `waitOnOpen(cause: "preload" | "enter" | "stay", loading: Promise<unknown>): Promise<void> | undefined`: `loading` when the page is opened or preloaded; when only its search changed (`"stay"`), `undefined`, with `loading` left to run.
 - `useHouseholdClock()` becomes `clockOf(useQuery(householdQuery).data)`.
 
 - [ ] **Step 1: Write the failing tests.**
   - `clock.test.ts`: `the clock is the household's` (`{ timeZone: "Pacific/Auckland", weekStartsOn: 1, meals: ["dinner"] }` at `2026-11-28T20:00:00Z` gives today `2026-11-29`, hour 9, `thisWeek` `2026-11-23`, meals `["dinner"]`). `without a household it's UTC, from Monday` (today `2026-11-28`, `thisWeek` `2026-11-23`). `Today's plan runs from the week's first day to a week from today` (that Auckland clock gives `2026-11-23` to `2026-12-06`). `the plan shows the week of the day asked, or this week` (`"2026-12-03"` gives `2026-11-30` to `2026-12-06`; `undefined` gives `2026-11-23` to `2026-11-29`).
-  - `loaders.test.ts`, with a real `QueryClient` (`retry: false`): `a preload that fails doesn't throw` (resolves; the query is in error). `a preload keeps what it loaded` (the data is in the cache). `a page waits for its data when it opens, not when its search changes` (`waitOnOpen("enter", p)` is `p`; `waitOnOpen("stay", p)` is `undefined`).
+  - `loaders.test.ts`, with a real `QueryClient` (`retry: false`): `a preload that fails doesn't throw` (resolves; the query is in error). `a preload keeps what it loaded` (the data is in the cache). `an infinite preload keeps its first page` (the same for `preloadInfiniteQuery`).
 - [ ] **Step 2: Run them** and check they fail.
 - [ ] **Step 3: Implement** `clock.ts` and `loaders.ts`, and `useHouseholdClock` on `clockOf`. Add both tests to `package.json`.
 - [ ] **Step 4: The household with the sign-in check.** In `requireSignedIn`, start `queryClient.prefetchQuery(householdQuery)` before awaiting `meQuery`, so they go together. Once `me` is someone signed in without a second factor to give, await the household's before returning. Anyone else is redirected at once; `prefetchQuery` never throws, and a refused household answer is fetched again once they're signed in, since it has no data.
@@ -231,7 +230,7 @@ type TodaySummary = {
 
 ### Task 6: Today on its summary, with a loader
 
-Decision 13: the loader awaits; if the user chose pages that show at once, return nothing from it instead.
+Decision 13: Today shows at once, with its skeletons, and its loader starts its data without waiting for it.
 
 **Files:**
 - Modify: `apps/web/src/features/today/queries.ts`, `today-page.tsx`, `glance.tsx`, `shelves.tsx`, `did-you-make.tsx`, `apps/web/src/routes/_app/index.tsx`, `apps/web/src/features/live/state.ts`, `apps/web/src/features/live/state.test.ts`
@@ -250,25 +249,25 @@ Decision 13: the loader awaits; if the user chose pages that show at once, retur
   - `Glance`: the list tile from `list.toBuy` and `list.names`; the pantry tile from `pantry.useSoon` (its first item and how many), with `missedMeal` as now.
   - `Shelves`: `recipes.cookAgain` and `recipes.recent`, with the skeleton while the summary loads.
   - A part that's `null` shows as empty.
-- [ ] **Step 5: Today's loader**, in `routes/_app/index.tsx`: the clock from the household already loaded (`clockOf(queryClient.getQueryData(householdQuery.queryKey))`) and `{ from, to } = todayPlanRange(clock)`, then wait for `preloadQuery` of `planQuery(from, to)`, `todayQuery`, `unmarkedQuery` and `autoplanQuery`, all at once.
+- [ ] **Step 5: Today's loader**, in `routes/_app/index.tsx`: the clock from the household already loaded (`clockOf(queryClient.getQueryData(householdQuery.queryKey))`) and `{ from, to } = todayPlanRange(clock)`, then start `preloadQuery` of `planQuery(from, to)`, `todayQuery`, `unmarkedQuery` and `autoplanQuery`, all at once, and return without waiting for them (a comment says why: decision 13).
 - [ ] **Step 6: Run the web tests and typecheck.**
-- [ ] **Step 7: Check in a browser,** against main's Today in the same household (screenshots before and after): the next meal with "On the list" and what's at home, the three tiles, Did you make these?, the days coming up and both shelves are the same. A reload of Today asks for `/api/today` and `/api/plan` once each, with no `/api/list`, `/api/pantry` or `/api/recipes`. Then check something off on the list page and go back to Today: one fewer to buy. In a second tab (another client), add something to the list: the first tab's Today shows it within a few seconds.
+- [ ] **Step 7: Check in a browser,** against main's Today in the same household (screenshots before and after): the next meal with "On the list" and what's at home, the three tiles, Did you make these?, the days coming up and both shelves are the same. A reload of Today asks for `/api/today` and `/api/plan` once each, with no `/api/list`, `/api/pantry` or `/api/recipes`. Going to Today from another page shows it at once, with skeletons only where its data isn't cached yet. Then check something off on the list page and go back to Today: one fewer to buy. In a second tab (another client), add something to the list: the first tab's Today shows it within a few seconds.
 - [ ] **Step 8: Commit:** "Draw Today from its summary, loaded with the page".
 
 ### Task 7: Loaders for the library and the plan
 
-Decision 13, as in Task 6.
+Decision 13, as in Task 6: both pages show at once with their skeletons, and their loaders start the data without waiting for it.
 
 **Files:**
 - Modify: `apps/web/src/routes/_app/recipes/index.tsx`, `apps/web/src/routes/_app/plan.tsx`, `apps/web/src/features/plan/plan-page.tsx`
 
 **Interfaces:**
-- Consumes: `preloadQuery`, `preloadInfiniteQuery`, `waitOnOpen`, `clockOf`, `weekShown`.
+- Consumes: `preloadQuery`, `preloadInfiniteQuery`, `clockOf`, `weekShown`.
 
-- [ ] **Step 1: The library's loader:** `loaderDeps: ({ search }) => search`, and a loader that starts `preloadInfiniteQuery(recipesQuery(deps))` and `preloadQuery` of `planQuery(from, to)` for this week (`weekShown(undefined, clock)`, with the clock from the household already loaded: what `usePlannedRecipes` asks for), returning `waitOnOpen(cause, both)`.
-- [ ] **Step 2: The plan's loader:** `loaderDeps: ({ search }) => ({ week: search.week })`; the clock from the household already loaded; `weekShown(deps.week, clock)`; `preloadQuery` of `planQuery(from, to)`, `calendarSettingsQuery`, `calendarSlotTimesQuery(from, to)` and `themesQuery`; return `waitOnOpen(cause, all)`. Its household loader goes. `PlanPage` takes its week from `weekShown` too, so the two always agree.
+- [ ] **Step 1: The library's loader:** `loaderDeps: ({ search }) => search`, and a loader that starts `preloadInfiniteQuery(recipesQuery(deps))` and `preloadQuery` of `planQuery(from, to)` for this week (`weekShown(undefined, clock)`, with the clock from the household already loaded: what `usePlannedRecipes` asks for), and returns without waiting.
+- [ ] **Step 2: The plan's loader:** `loaderDeps: ({ search }) => ({ week: search.week })`; the clock from the household already loaded; `weekShown(deps.week, clock)`; start `preloadQuery` of `planQuery(from, to)`, `calendarSettingsQuery`, `calendarSlotTimesQuery(from, to)` and `themesQuery`, and return without waiting. Its household loader goes. `PlanPage` takes its week from `weekShown` too, so the two always agree.
 - [ ] **Step 3: Typecheck.**
-- [ ] **Step 4: Check in a browser** (Review Focus 2). Hover the Recipes link: `/api/recipes?…` starts before the click. Type in the library's search: no bar, and the last results stay, dimmed, until the new ones come, as now. Change a filter and the sort: the same. Open the plan from Today: `/api/plan`, the calendar's settings and slots, and the themes start together, and the page shows complete. Go to next week and back: as before.
+- [ ] **Step 4: Check in a browser** (Review Focus 2). Hover the Recipes link: `/api/recipes?…` starts before the click. Type in the library's search: no bar, and the last results stay, dimmed, until the new ones come, as now. Change a filter and the sort: the same. Open the plan from Today: it shows at once, and `/api/plan`, the calendar's settings and slots, and the themes start together, alongside its code. Go to next week and back: as before.
 - [ ] **Step 5: Commit:** "Start the library's and the plan's data with their code".
 
 ### Task 8: A bar while a page loads
@@ -282,7 +281,7 @@ Decision 13, as in Task 6.
 
 - [ ] **Step 1: Words.** `app.loadingPage`: "Loading the page".
 - [ ] **Step 2: Implement `PageProgress`.** It reads `useRouterState({ select: (state) => state.status === "pending" })`. After 200 ms of pending it shows a 2 px bar fixed across the top of the window (`inset-x-0 top-0`, below the phone's status bar in the installed app: `top-[env(safe-area-inset-top)]`), `pointer-events-none`, above the page's top bar. Inside, a `bg-primary` bar anchored at `start-0` grows from nothing to 85% of the width over 8 s, easing out (a `page-progress` keyframe on `inline-size`, as `--animate-page-progress` in `index.css`). When the router is idle again, the bar fills and fades out over 200 ms, then goes. A load under 200 ms shows nothing. With reduced motion, it's a full-width bar at half opacity while loading, with no growth. `role="progressbar"`, `aria-label={t("app.loadingPage")}`, no value (it doesn't know how far along it is). Preloads never show it: they don't make the router pending.
-- [ ] **Step 3: Check in a browser.** Put a 2-second wait in the plan's loader, for this check only. Click Plan: the bar appears after 200 ms, grows from the start edge, fills and fades when the plan shows. With `dir="rtl"` on `<html>` (devtools), it grows from the right. With reduced motion emulated, it's a still bar. Take the wait out; loads on the dev server are quick enough that the bar doesn't show. Typing in the library's search never shows it.
+- [ ] **Step 3: Check in a browser.** The router is pending while a page's code loads, and while a page that waits (the list, the pantry, a recipe, Settings) loads its data. Put a 2-second wait in the list's loader, for this check only. Click List: the bar appears after 200 ms, grows from the start edge, fills and fades when the list shows. With `dir="rtl"` on `<html>` (devtools), it grows from the right. With reduced motion emulated, it's a still bar. Take the wait out; loads on the dev server are quick enough that the bar doesn't show. Typing in the library's search never shows it.
 - [ ] **Step 4: Run `pnpm --filter @merran/web check:locales` and `typecheck`.**
 - [ ] **Step 5: Commit:** "Show a bar while a page loads".
 
@@ -333,7 +332,7 @@ Decision 13, as in Task 6.
 
 ### Task 11: A recipe write announces only what it changes
 
-Decision 12. If it isn't in this slice, skip the task.
+Decision 12: in this slice.
 
 **Files:**
 - Modify: `apps/server/src/http/middleware/live.ts`, `apps/server/src/http/routes/events/events.test.ts`
@@ -360,7 +359,7 @@ What each write under `/api/recipes` announces, in place of the one rule giving 
 - Modify: `docs/performance.md`:
   - "What slice 8 built" after slice 7's: what each task did, the measurements before and after (from Task 2's build log and the table above), the decisions as decided, and what was decided while building.
   - Slice 8's row: built, with the date; the opening paragraph's list of slices.
-  - Under "The web app", each finding it fixes marked "Fixed in slice 8": `@merran/shared`'s chunk, the small chunks, the font, pages waiting in a chain, Today's whole collections, onboarding's refetches, nothing showing while a page loads, and the rest of the refetch storms (announcing fewer areas, if decision 12 was yes, and the stream across pages).
+  - Under "The web app", each finding it fixes marked "Fixed in slice 8": `@merran/shared`'s chunk, the small chunks, the font, pages waiting in a chain, Today's whole collections, onboarding's refetches, nothing showing while a page loads, and the rest of the refetch storms (announcing fewer areas, and the stream across pages).
   - Decisions 11 to 14 marked decided, with the date and what was chosen.
 - Modify: `docs/features.md`: "Today: the next meal…" (one summary, loaded with the page), "Made for phone, tablet and desktop" (a lighter first load in fewer files, pages loaded with their data, a bar while one loads), and "Live events stream" (stays open across pages; `PUT /api/events/page`).
 - Modify: the site's `apps/docs/src/content/docs/docs/api/live-events.md` (the stream stays open; the page open is told with `PUT /api/events/page`), and `api/index.md`'s onboarding sentence (reading it remembers the household's progress; `recordProgress` isn't needed).
