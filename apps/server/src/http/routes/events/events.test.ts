@@ -320,6 +320,15 @@ describe("live updates", () => {
       data: { page: "plan", people: [{ name: "Kyle" }, { name: "Jamie" }] },
     })
 
+    // Moving to the page a stream is on already moves nothing.
+    const kyleId = (await (await kyle.get("/api/auth/me")).json()).id
+    expect(
+      events.movePage(home, { personId: kyleId, client: "kyle-laptop" }, "plan")
+    ).toBe(0)
+    expect(
+      events.movePage(home, { personId: kyleId, client: "nobody" }, "plan")
+    ).toBe(0)
+
     for (const stream of [kyleOnList, jamiePhone, jamieTablet]) stream.close()
     await listeners(0)
   })

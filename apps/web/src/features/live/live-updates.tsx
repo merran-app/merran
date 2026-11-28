@@ -50,7 +50,15 @@ export function LiveUpdates({ children }: { children: React.ReactNode }) {
 
   return (
     <LiveContext.Provider value={people}>
-      {me && wanted ? <LiveConnection me={me} onPeople={setPeople} /> : null}
+      {me && wanted ? (
+        // A stream belongs to one household, which it joins when it connects:
+        // switching household starts a new one, with nothing of the old.
+        <LiveConnection
+          key={`${me.id} ${me.activeHouseholdId}`}
+          me={me}
+          onPeople={setPeople}
+        />
+      ) : null}
       {children}
     </LiveContext.Provider>
   )
