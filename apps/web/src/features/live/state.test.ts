@@ -7,6 +7,7 @@ import {
   freshFor,
   heardFromLive,
   liveConnected,
+  LIVE_REFRESH,
   lostLive,
   refetchOnFocus,
 } from "./state.ts"
@@ -21,6 +22,16 @@ test("a plan query is covered, a settings one isn't", () => {
   assert.equal(coveredByLive(["settings", "server"]), false)
   // A key that only starts the same way isn't one of them.
   assert.equal(coveredByLive(["planning"]), false)
+})
+
+test("Today's summary is refreshed by the list, the pantry, recipes and the plan", () => {
+  for (const area of ["list", "pantry", "recipes", "plan"]) {
+    assert.ok(
+      LIVE_REFRESH[area]!.some((key) => key.length === 1 && key[0] === "today"),
+      `${area} refreshes ["today"]`
+    )
+  }
+  assert.equal(coveredByLive(["today"]), true)
 })
 
 test("what changes without a word on the stream isn't covered", () => {

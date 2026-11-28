@@ -1,4 +1,4 @@
-import { queryOptions, useQuery } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -7,21 +7,12 @@ import { Button } from "@/components/ui/button"
 import { formatWeekday } from "@/features/plan/format"
 import type { PlanEntry } from "@/features/plan/queries"
 import { usePlanActions } from "@/features/plan/use-plan-actions"
-import { api, unwrap } from "@/lib/api/client"
 
+import { unmarkedQuery } from "./queries"
 import { SectionHeading } from "./section-heading"
 
 /** How long Undo stays offered. */
 const UNDO_MS = 10_000
-
-/**
- * Past meals nobody marked. Under "plan", so a meal answered on another
- * phone leaves this one too.
- */
-const unmarkedQuery = queryOptions({
-  queryKey: ["plan", "unmarked"],
-  queryFn: () => unwrap(api.GET("/api/plan/unmarked")),
-})
 
 /**
  * "Did you make these?": recipe meals from the past six days, and last

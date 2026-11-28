@@ -2,16 +2,19 @@ import type { QueryKey } from "@tanstack/react-query"
 
 /** What to fetch again when something in an area changes. */
 export const LIVE_REFRESH: Record<string, QueryKey[]> = {
-  plan: [["plan"]],
+  plan: [["plan"], ["today"]],
+  // Today's summary counts the list, the pantry, the recipes and the plan,
+  // so a change to any of them fetches it again.
   list: [
     ["list"],
+    ["today"],
     ["stores", "kroger", "basket"],
     ["stores", "walmart", "basket"],
   ],
   // What's at home is what the list counts on.
-  pantry: [["pantry"], ["list", "covered"]],
+  pantry: [["pantry"], ["list", "covered"], ["today"]],
   // What AI suggests for recipes is in Review.
-  recipes: [["recipes"], ["tags"], ["review"]],
+  recipes: [["recipes"], ["tags"], ["review"], ["today"]],
   household: [["household"]],
 }
 

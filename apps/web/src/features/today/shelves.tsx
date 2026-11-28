@@ -1,27 +1,23 @@
 import { CookBookIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { cookAgain } from "@merran/shared"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { useHouseholdClock } from "@/features/plan/queries"
 import type { RecipeSummary } from "@/features/recipes/queries"
 import { formatRelativeDate } from "@/lib/format"
 
-import { recentRecipesQuery, topRatedQuery } from "./queries"
+import { todayQuery } from "./queries"
 import { SectionHeading } from "./section-heading"
 
 /** Favorites not made in three weeks, and what was added lately. */
 export function Shelves() {
   const { t, i18n } = useTranslation()
-  const { today } = useHouseholdClock()
-  const top = useQuery(topRatedQuery)
-  const recent = useQuery(recentRecipesQuery)
-  if (!top.data || !recent.data)
-    return <Skeleton className="h-48 rounded-3xl" />
-  const again = cookAgain(top.data.recipes, today)
+  const summary = useQuery(todayQuery)
+  if (!summary.data) return <Skeleton className="h-48 rounded-3xl" />
+  const again = summary.data.recipes?.cookAgain ?? []
+  const recent = summary.data.recipes?.recent ?? []
 
   return (
     <div className="grid gap-8">
@@ -43,7 +39,7 @@ export function Shelves() {
         id="recently-added"
         title={t("today.shelves.recent")}
         link={t("today.shelves.all")}
-        recipes={recent.data.recipes}
+        recipes={recent}
         detail={(recipe) =>
           t("today.shelves.added", {
             when: formatRelativeDate(recipe.createdAt, i18n.language),

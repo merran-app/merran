@@ -26,7 +26,7 @@ test("a person's changes are gathered for a second", () => {
   mock.timers.tick(699)
   assert.equal(refreshes.length, 0)
   mock.timers.tick(1)
-  assert.deepEqual(refreshes, [[["plan"]]])
+  assert.deepEqual(refreshes, [LIVE_REFRESH.plan])
 })
 
 test("Merran's changes wait five seconds", () => {
@@ -45,9 +45,12 @@ test("a person's change brings Merran's forward", () => {
   assert.equal(refreshes.length, 0)
   mock.timers.tick(1)
   assert.equal(refreshes.length, 1)
+  // Both areas refresh Today's summary, which is asked for once.
+  const eachOnce = (keys: QueryKey[]) =>
+    new Set(keys.map((key) => JSON.stringify(key)))
   assert.deepEqual(
-    new Set(refreshes[0]),
-    new Set([...LIVE_REFRESH.recipes!, ...LIVE_REFRESH.list!])
+    eachOnce(refreshes[0]!),
+    eachOnce([...LIVE_REFRESH.recipes!, ...LIVE_REFRESH.list!])
   )
   // Nothing more comes at five seconds.
   mock.timers.tick(5_000)

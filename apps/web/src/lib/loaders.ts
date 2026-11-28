@@ -1,4 +1,8 @@
-import type { QueryClient } from "@tanstack/react-query"
+import type {
+  EnsureQueryDataOptions,
+  QueryClient,
+  QueryKey,
+} from "@tanstack/react-query"
 
 /**
  * Starts a page's query when its route opens, for the page to find in the
@@ -6,9 +10,14 @@ import type { QueryClient } from "@tanstack/react-query"
  * error on the page, and a loader that threw would show the router's error
  * page instead.
  */
-export async function preloadQuery(
+export async function preloadQuery<
+  TQueryFnData,
+  TError,
+  TData,
+  TQueryKey extends QueryKey,
+>(
   queryClient: QueryClient,
-  options: Parameters<QueryClient["ensureQueryData"]>[0]
+  options: EnsureQueryDataOptions<TQueryFnData, TError, TData, TQueryKey>
 ) {
   try {
     await queryClient.ensureQueryData(options)
