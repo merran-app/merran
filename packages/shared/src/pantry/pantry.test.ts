@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { foodKey } from "../list/food.ts"
-import { guessStorage, guessUseBy, useSoonOrder, whyUseSoon } from "./pantry.ts"
+import { guessStorage, guessUseBy, useSoonRank, whyUseSoon } from "./pantry.ts"
 
 const today = "2026-10-15"
 
@@ -94,7 +94,7 @@ describe("using soon", () => {
   })
 })
 
-describe("useSoonOrder", () => {
+describe("useSoonRank", () => {
   test("puts past dates first, then by date, then leftovers", () => {
     const soon = [
       { kind: "leftover" as const },
@@ -102,7 +102,7 @@ describe("useSoonOrder", () => {
       { kind: "past" as const, date: "2026-10-12" },
       { kind: "soon" as const, date: "2026-10-16" },
     ]
-    const sorted = [...soon].sort((a, b) => useSoonOrder(a) - useSoonOrder(b))
+    const sorted = [...soon].sort((a, b) => useSoonRank(a) - useSoonRank(b))
     expect(sorted).toEqual([
       { kind: "past", date: "2026-10-12" },
       { kind: "soon", date: "2026-10-16" },

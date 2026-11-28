@@ -72,6 +72,11 @@ const CHANGES: [RegExp, LiveArea[]][] = [
   [/^\/api\/households\/current\//, ["household"]],
 ]
 
+/** What a change to this path changes: the first rule that matches it. */
+export function areasFor(path: string): LiveArea[] {
+  return CHANGES.find(([pattern]) => pattern.test(path))?.[1] ?? []
+}
+
 /**
  * After a change goes through (anything but a read that answered without
  * an error), tells the household's open pages and other devices what
@@ -86,7 +91,7 @@ export function announceChanges(events: EventBus) {
     const { household, user } = c.var
     const delegated = delegatedCredential(c.var.credential)
     if (!household) return
-    const areas = CHANGES.find(([path]) => path.test(c.req.path))?.[1] ?? []
+    const areas = areasFor(c.req.path)
     const by = user
       ? { id: user.id, name: delegated ? delegated.name : user.name }
       : null

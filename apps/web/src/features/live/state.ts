@@ -19,6 +19,17 @@ export const LIVE_REFRESH: Record<string, QueryKey[]> = {
 }
 
 /**
+ * Every query key the areas refresh, each once: several areas refresh the
+ * same one (Today's summary), and asking for it four times cancels three.
+ */
+export function everyLiveKey(): QueryKey[] {
+  const seen = new Map<string, QueryKey>()
+  for (const key of Object.values(LIVE_REFRESH).flat())
+    seen.set(JSON.stringify(key), key)
+  return [...seen.values()]
+}
+
+/**
  * In those areas, but changed by what doesn't say so on the stream: recipe
  * sites read for the whole server, prices checked and webhooks delivered by
  * jobs, and receipts read. These are fetched again as any other query is.

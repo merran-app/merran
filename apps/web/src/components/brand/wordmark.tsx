@@ -8,17 +8,17 @@ import { cn } from "@/lib/utils"
  * kerning and the font's contextual m and n match the browser's, and spaced
  * with -0.025em after each letter, which is Tailwind's `tracking-tight`.
  * Font units go up and the SVG's go down, so each outline is flipped. The
- * view box is one em tall, with the baseline where `leading-none` text puts
- * it, so this sits where the text sat. To make them again, instance the font
- * with fontTools' `instantiateVariableFont`, shape the word with uharfbuzz,
- * and draw each glyph with `SVGPathPen`.
+ * view box is one em (2000 units) tall, with the baseline at 1723 of them,
+ * where `leading-none` text puts it, so this sits where the text sat. To make
+ * them again, instance the font with fontTools' `instantiateVariableFont`,
+ * shape the word with uharfbuzz, and draw each glyph with `SVGPathPen`.
  */
 export function Wordmark({ className }: { className?: string }) {
   return (
     <span className={cn("flex", className)}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 6798.0 2000"
+        viewBox="0 0 6798 2000"
         aria-hidden="true"
         className="h-[1em] w-auto"
       >

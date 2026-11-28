@@ -3,6 +3,7 @@ import { beforeEach, test } from "node:test"
 
 import {
   coveredByLive,
+  everyLiveKey,
   followEvery,
   freshFor,
   heardFromLive,
@@ -84,4 +85,11 @@ test("jobs are asked about rarely while the live stream says when they move", ()
   assert.equal(followEvery(1_000, NOW + 60_000), 1_000)
   lostLive()
   assert.equal(followEvery(2_000, NOW), 2_000)
+})
+
+test("a reconnect fetches every key once, Today's summary among them", () => {
+  const keys = everyLiveKey().map((key) => JSON.stringify(key))
+  assert.equal(new Set(keys).size, keys.length)
+  assert.equal(keys.filter((key) => key === '["today"]').length, 1)
+  assert.ok(keys.includes('["plan"]'))
 })

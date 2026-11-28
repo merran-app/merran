@@ -1,4 +1,4 @@
-import { clockIn, cookAgain, useSoonOrder } from "@merran/shared"
+import { clockIn, cookAgain, useSoonRank } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { Household } from "../../database/entities/index.ts"
 import { getList } from "../list/list.ts"
@@ -56,7 +56,7 @@ async function pantryGlance(em: EntityManager, householdId: string) {
   // The sort is stable, so items as urgent as each other keep the pantry's order.
   const useSoon = items
     .filter((item) => item.useSoon)
-    .sort((a, b) => useSoonOrder(a.useSoon!) - useSoonOrder(b.useSoon!))
+    .sort((a, b) => useSoonRank(a.useSoon!) - useSoonRank(b.useSoon!))
 
   const namesByMeal = new Map<string, string[]>()
   for (const item of items) {

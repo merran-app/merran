@@ -108,7 +108,7 @@ export function whyUseSoon(
  * Where something to use soon sorts: most urgent first, past dates, then
  * by date, then leftovers.
  */
-export function useSoonOrder(soon: {
+export function useSoonRank(soon: {
   kind: "past" | "soon" | "leftover"
   date?: string
 }) {

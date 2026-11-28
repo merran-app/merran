@@ -141,31 +141,36 @@ export function budgetPlugin(): Plugin {
         ]
       })
     },
-    // After precompressPlugin's, so the .br files are there to measure.
-    closeBundle() {
-      const load = firstLoad(chunks, TODAY_FIRST_LOAD)
+    // After precompressPlugin's, so the .br files are there to measure: by
+    // rule (post, one at a time), not only by where the plugins sit in the list.
+    closeBundle: {
+      order: "post",
+      sequential: true,
+      handler() {
+        const load = firstLoad(chunks, TODAY_FIRST_LOAD)
 
-      // Files under 1 KB get no .br, so their own size stands in.
-      function brotliSize(fileName: string): number {
-        const path = join(outDir, fileName)
-        return statSync(existsSync(`${path}.br`) ? `${path}.br` : path).size
-      }
+        // Files under 1 KB get no .br, so their own size stands in.
+        function brotliSize(fileName: string): number {
+          const path = join(outDir, fileName)
+          return statSync(existsSync(`${path}.br`) ? `${path}.br` : path).size
+        }
 
-      const bytes = load.reduce(
-        (total, chunk) => total + brotliSize(chunk.fileName),
-        0
-      )
-      console.log(
-        `Today's first load: ${load.length} files, ${Math.round(bytes / 1000)} KB with Brotli`
-      )
+        const bytes = load.reduce(
+          (total, chunk) => total + brotliSize(chunk.fileName),
+          0
+        )
+        console.log(
+          `Today's first load: ${load.length} files, ${Math.round(bytes / 1000)} KB with Brotli`
+        )
 
-      const problems = [
-        ...missingRoutes(load, TODAY_FIRST_LOAD),
-        ...budgetProblems(load, brotliSize, FIRST_LOAD_BUDGET),
-      ]
-      if (problems.length > 0) {
-        throw new Error(problems.join("\n"))
-      }
+        const problems = [
+          ...missingRoutes(load, TODAY_FIRST_LOAD),
+          ...budgetProblems(load, brotliSize, FIRST_LOAD_BUDGET),
+        ]
+        if (problems.length > 0) {
+          throw new Error(problems.join("\n"))
+        }
+      },
     },
   }
 }

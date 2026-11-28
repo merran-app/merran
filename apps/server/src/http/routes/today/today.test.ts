@@ -256,6 +256,23 @@ describe("Today at a glance", () => {
     expect(body.recipes?.total).toBeGreaterThan(0)
   })
 
+  test("refuses a key that can read none of what Today shows", async () => {
+    const key = (
+      await (
+        await kyle.post("/api/auth/api-keys", {
+          name: "Plan only",
+          permissions: { plan: "read" },
+          expiresInDays: 30,
+        })
+      ).json()
+    ).key
+
+    const res = await app.request(`${TEST_ORIGIN}/api/today`, {
+      headers: new Headers({ authorization: `Bearer ${key}` }),
+    })
+    expect(res.status, await res.clone().text()).toBe(403)
+  })
+
   test("is only the household's own", async () => {
     const before = await today()
 

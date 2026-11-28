@@ -4978,7 +4978,7 @@ export interface paths {
         };
         /**
          * Today at a glance
-         * @description What's left to buy, what to use soon, and recipes to cook again, in one request. An API key gets the parts it can read, and the others are null. With an API key, it needs the `any: read` permission.
+         * @description What's left to buy, what to use soon, and recipes to cook again, in one request. An API key gets the parts it can read, and the others are null; a key that can read none of the list, the pantry or the recipes is refused with 403. With an API key, it needs the `any: read` permission.
          */
         get: operations["getToday"];
         put?: never;
