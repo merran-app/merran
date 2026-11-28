@@ -181,6 +181,43 @@ describe("live updates", () => {
     await listeners(0)
   })
 
+  test("say what a recipe write changes: a rating only recipes, finding links nothing, Made it the plan too", async () => {
+    const created = await kyle.post("/api/recipes", {
+      name: "Rated soup",
+      servings: 4,
+      ingredients: ["1 cup water"],
+    })
+    expect(created.status).toBe(201)
+    const recipe = (await created.json()).id as string
+
+    const stream = await listen(jamie)
+    // Only recipes show a rating.
+    const rated = await kyle.put(`/api/recipes/${recipe}/rating`, {
+      rating: 4,
+    })
+    expect(rated.status).toBe(200)
+    expect(await stream.next()).toMatchObject({ event: "recipes" })
+
+    // Finding links saves nothing, so the next event is the list's.
+    const found = await kyle.post("/api/recipes/import/links/check", {
+      text: "https://example.com/soup",
+    })
+    expect(found.status).toBe(200)
+    await typeItem(kyle, "Milk")
+    expect(await stream.next()).toMatchObject({ event: "list" })
+    // Adding to the list changes the pantry too.
+    expect(await stream.next()).toMatchObject({ event: "pantry" })
+
+    // Made it cooks a meal, which uses up the pantry and the list.
+    const made = await kyle.post(`/api/recipes/${recipe}/made`)
+    expect(made.status).toBe(200)
+    for (const event of ["recipes", "plan", "list", "pantry"]) {
+      expect(await stream.next()).toMatchObject({ event })
+    }
+    stream.close()
+    await listeners(0)
+  })
+
   test("say that clearing the list, and turning put-away on, change the pantry too", async () => {
     const stream = await listen(jamie)
     await kyle.post("/api/list/clear", { which: "checked" })
