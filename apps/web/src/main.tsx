@@ -23,6 +23,9 @@ const router = createRouter({
   routeTree,
   context: { queryClient },
   defaultPreload: "intent",
+  // The router asks each loader every time, and a loader answers from Query's
+  // cache at once when it has the data, so Query decides what stays fresh.
+  defaultPreloadStaleTime: 0,
   scrollRestoration: true,
 })
 
